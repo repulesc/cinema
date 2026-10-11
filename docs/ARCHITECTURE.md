@@ -461,3 +461,23 @@ Sonnet writes everything in one pass but in this order, and syntax-checks each f
 | 14 | Settings UI | Long-press button → dialog menu, settings stored in Linkset Data |
 | 15 | Build approach | All scripts in one delivery, with in-world probe tools for the unknowns |
 | 16 | Audience | Give or sell: first-run, notecard, protected settings, owner-change reset, versioning |
+
+---
+
+## 9. Implementation notes (v1.0.0)
+Where the shipped scripts differ from, or add to, the spec above. The scripts are the source of truth.
+
+| # | Topic | What the code does |
+|---|---|---|
+| 1 | Thirds yaw sign (§2.5) | The spec text says `V' = yaw(V, side·α)`. That puts a subject who faces right on the right third, so they look out of the frame. The code uses `V' = yaw(V, −side·α)`: the subject sits on the third *opposite* to where they look (lead room). |
+| 2 | Reverse shot (§2.6) | Shot / reverse shot alternate each time a pair scene is composed. The camera keeps the **same world side** of the axis (`N·s·cos γ ∓ A·sin γ`), so the 180° rule holds. The spec's "swap A → −A" would flip the side. |
+| 3 | Link messages (§6.2) | `7312` is `END_SESSION` only (`EARLY_CUT` was dropped: the director simply sends a new `SHOT` early). `7340 DEBUG` is unused: each script prints its own debug lines when `cin.debug` is on. `7360 MSG_VER` was added (version announce / `"?"` request). `7350 PROBE` also carries `fov`. |
+| 4 | FOV | Permissions are per script, so only core can call `llGetCameraFOV()`. It sends the value to the director inside `DIR_START` as `"afk|1.047"` / `"manual|1.047"`. |
+| 5 | Settings | Added `peek` (1 = watch for Alt-cam, 0 = ignore). Menu: Options → Alt-cam → Peek / Ends cinema / Ignore. |
+| 6 | Floor / water guards (§3.4) | A HUD's `llGetPos()` is not a world position, so `llGround()` is not used. Terrain/floor under a candidate camera comes from short down-rays; the region water height comes from `llWater(ZERO_VECTOR)` once per engage. |
+| 7 | Speaker cut | Level 1 polls `AGENT_TYPING` once per second for the cached near avatars (not only at each 5 s scan). Level 2 additionally listens on channel 0 and only reacts to avatars already in the scan list. |
+| 8 | Overlay (phase 2) | Not implemented. The director already sends the `fade` flag (long shots and cuts > 20 m); core ignores it. |
+| 9 | Memory limit | `llSetMemoryLimit` is not called; the scripts run with the default 64 KB each. Measure `llGetFreeMemory()` in-world (Menu → About shows the UI script's value) and tighten later. |
+| 10 | Pause behaviour | Mouselook and Alt-cam "peek" pause the director and the hold timer; on resume core re-applies the last shot. Teleport / region change clears the camera, pauses 3 s, then asks for a fresh establishing shot (new scan + survey). |
+| 11 | Axial / jump cuts (§4.6) | Ozu (axial, d×0.6) and Nouvelle Vague (jump, d×0.75) re-use the previous solo angle with 30 % probability when the last shot was a solo portrait. |
+| 12 | Ray budget | Survey 10 rays (on engage, teleport, > 2 m movement, every 6 cuts) + per cut: 7 sweep rays, up to 2 candidates × (reverse ray [+ floor ray] [+ 2 member rays for ensembles]) ≈ 11–15, plus fallbacks. Pillow shots use 2–4 rays. |
