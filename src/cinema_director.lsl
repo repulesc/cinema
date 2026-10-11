@@ -375,12 +375,12 @@ list clusterIdx()
 {
     list inC = [];
     integer n = llGetListLength(gAv) / 5;
-    integer changed = TRUE;
+    integer grew = TRUE;
     integer pass = 0;
     integer i;
-    while (changed && pass < 4 && llGetListLength(inC) < 5)
+    while (grew && pass < 4 && llGetListLength(inC) < 5)
     {
-        changed = FALSE;
+        grew = FALSE;
         pass++;
         for (i = 0; i < n && llGetListLength(inC) < 5; i++)
         {
@@ -401,7 +401,7 @@ list clusterIdx()
                     if (linked)
                     {
                         inC += [i];
-                        changed = TRUE;
+                        grew = TRUE;
                     }
                 }
             }
@@ -1197,7 +1197,8 @@ commit(list s)
     gPendEvent = "";
     gErrCount = 0;
     dbg(archName(arch) + "  hold " + (string)llRound(hold) + " s  rays " + (string)gRays
-        + "  dist " + (string)llRound(llVecDist(cam, gOP)) + " m" + "  fade " + (string)fade);
+        + "  dist " + (string)llRound(llVecDist(cam, gOP)) + " m" + "  fade " + (string)fade
+        + "  free mem " + (string)llGetFreeMemory());
 }
 
 // F4: keep the current composition and give it a fresh hold

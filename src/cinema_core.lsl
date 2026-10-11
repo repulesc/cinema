@@ -244,7 +244,7 @@ engage(integer src)
     llMessageLinked(LINK_SET, DIR_START, s + "|" + (string)fov, "");
     setUi("rolling");
     llSetTimerEvent(0.5);
-    dbg("engage: " + s);
+    dbg("engage: " + s + "  free mem " + (string)llGetFreeMemory());
 }
 
 pause(string why)
