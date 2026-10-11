@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md  (6.3 settings, 6.4 UI)
 // ============================================================================
 
-string VERSION  = "1.0.0";
+string VERSION  = "1.0.1";
 string PASS     = "cinema-1.0-build1";      // same in all 3 scripts; change per build
 string NOTECARD = "Cinema HUD - Read Me";   // give this notecard together with the HUD
 
@@ -17,6 +17,8 @@ integer UI_MENU     = 7321;
 integer CFG_CHANGED = 7330;
 integer PROBE       = 7350;
 integer MSG_VER     = 7360;
+integer STATUS      = 7370;
+integer CMD         = 7371;
 
 // ---- defaults (section 6.3) ---------------------------------------------------
 list DEFAULTS = [
@@ -35,7 +37,8 @@ list DEFAULTS = [
     "aspect", "1.778",
     "maxcam", "45",
     "cutmode", "0",
-    "debug", "0",
+    "debug", "1",
+    "far_ok", "0",
     "overlay", "0"
 ];
 
@@ -44,6 +47,7 @@ integer gChan;
 integer gListen;
 integer gMenuT;
 integer gVerAsked;
+integer gCmdListen;
 string  gPage;
 
 // ============================================================================
@@ -346,6 +350,63 @@ onChoice(string msg)
     }
 }
 
+// chat commands: /9 <command>   (works even if the long-press menu does not)
+help()
+{
+    llOwnerSay("[Cinema] commands: /9 menu | start | stop | status | debug on|off | far on|off | maxcam <m> | probe cut|campos|dist|fov | reset");
+}
+
+onCommand(string msg)
+{
+    list a = llParseString2List(llToLower(llStringTrim(msg, STRING_TRIM)), [" "], []);
+    string c = llList2String(a, 0);
+    string v = llList2String(a, 1);
+    if (c == "menu") openMenu("main");
+    else if (c == "start") llMessageLinked(LINK_SET, CMD, "start", "");
+    else if (c == "stop") llMessageLinked(LINK_SET, CMD, "stop", "");
+    else if (c == "status")
+    {
+        llOwnerSay("[Cinema/ui] v" + VERSION + " style " + cfgGet("style") + ", afk " + afkText() + ", hold " + holdText()
+            + ", debug " + cfgGet("debug") + ", far shots " + cfgGet("far_ok") + ", maxcam " + cfgGet("maxcam")
+            + ", free mem " + (string)llGetFreeMemory());
+        llMessageLinked(LINK_SET, STATUS, "?", "");
+    }
+    else if (c == "debug")
+    {
+        if (v == "on") cfgSet("debug", "1");
+        else cfgSet("debug", "0");
+        llOwnerSay("[Cinema] Debug: " + onoff("debug"));
+    }
+    else if (c == "far")
+    {
+        if (v == "on") cfgSet("far_ok", "1");
+        else cfgSet("far_ok", "0");
+        llOwnerSay("[Cinema] Long shots (25-45 m): " + onoff("far_ok"));
+    }
+    else if (c == "maxcam")
+    {
+        float m = (float)v;
+        if (m >= 5.0 && m <= 60.0)
+        {
+            cfgSet("maxcam", (string)m);
+            llOwnerSay("[Cinema] maxcam: " + (string)m + " m");
+        }
+        else llOwnerSay("[Cinema] maxcam needs a number between 5 and 60.");
+    }
+    else if (c == "probe")
+    {
+        if (v == "cut" || v == "campos" || v == "dist" || v == "fov") llMessageLinked(LINK_SET, PROBE, v, "");
+        else help();
+    }
+    else if (c == "reset")
+    {
+        initDefaults(TRUE);
+        llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
+        llOwnerSay("[Cinema] Settings reset to defaults.");
+    }
+    else help();
+}
+
 // ============================================================================
 default
 {
@@ -355,6 +416,8 @@ default
         gVerAsked = FALSE;
         checkOwner();
         setLook("armed");
+        if (gCmdListen) llListenRemove(gCmdListen);
+        gCmdListen = llListen(9, "", gOwner, "");
         llSetTimerEvent(3.0);
     }
 
@@ -383,6 +446,11 @@ default
     listen(integer channel, string name, key id, string msg)
     {
         if (id != gOwner) return;
+        if (channel == 9)
+        {
+            onCommand(msg);
+            return;
+        }
         gMenuT = llGetUnixTime();
         onChoice(msg);
     }

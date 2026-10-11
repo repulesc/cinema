@@ -46,13 +46,23 @@ Button colours: grey = off, white = ready, red = rolling, amber = peeking, blue 
 - It only moves *your* view. Nobody else sees what the camera does.
 - It needs no scripts rights on the land except what the HUD itself uses; it also works in no-script parcels.
 
+## Chat commands
+Type these in local chat (they use channel 9, only you can use them):
+`/9 menu` | `/9 start` | `/9 stop` | `/9 status` | `/9 debug on|off` | `/9 far on|off` | `/9 maxcam <metres>` | `/9 probe cut|campos|dist|fov` | `/9 reset`
+
+- `/9 status` prints one line from each of the three scripts (state, permissions, memory). Include it when asking for help.
+- `/9 debug on` prints a line for every shot decision.
+- Long shots (25-45 m away) are **off** until you run `/9 probe dist`, confirm the camera really reaches those distances, then `/9 far on`.
+
 ## Probes (for tinkerers)
 *Options > Probe* runs small tests and prints the results in chat: *Cut* (instant cut or glide?), *CamPos* (can the HUD see Alt-cam?), *Distance* (how far can the camera sit from you?), *FOV* (what field of view does your viewer report?).
 
 ## Troubleshooting
 | Problem | Try |
 |---|---|
-| Nothing happens when I tap | Re-attach the HUD and accept the permissions. Check the button is not grey/blue. |
+| Nothing happens when I tap | Re-attach the HUD and accept the permissions. Type `/9 status`: all three scripts should answer. |
+| Button turns red but the camera does not change | Type `/9 debug on`, tap again, and read the `[cinema/...]` lines in chat. After 5 s with no shot the button turns blue. |
+| Long-press shows no menu | Keep the button held for a full second (the menu opens while held). Or type `/9 menu`. |
 | Camera glides instead of cutting | Options > Cut mode. |
 | Shots look cropped at the sides | Raise/lower your viewer field of view, or ask the creator to switch the FOV axis setting. |
 | It starts too early / late | Menu > AFK. |

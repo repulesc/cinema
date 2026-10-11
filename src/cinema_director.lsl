@@ -10,7 +10,7 @@
 //  Design: docs/ARCHITECTURE.md  (section numbers below refer to it)
 // ============================================================================
 
-string VERSION = "1.0.0";
+string VERSION = "1.0.1";
 string PASS    = "cinema-1.0-build1";      // same in all 3 scripts
 
 // ---- link message numbers (section 6.2) ------------------------------------
@@ -25,6 +25,7 @@ integer SHOT         = 7310;
 integer NO_SHOT      = 7311;
 integer CFG_CHANGED  = 7330;
 integer MSG_VER      = 7360;
+integer STATUS       = 7370;
 
 // ---- calibration constants (docs/CALIBRATION.md) ---------------------------
 float K_EYE_STAND  = 0.37;     // eye height as a fraction of avatar height, above its centre
@@ -62,6 +63,7 @@ float   gAspect;
 float   gMaxCam;
 string  gFovAxis;
 integer gDebug;
+integer gFarOk;               // long shots (25-45 m) allowed once the distance probe passed
 list    gRayOpts;
 
 // ---- lens ---------------------------------------------------------------------
@@ -130,6 +132,7 @@ string  gSigPend;
 integer gSigCount;
 
 // ---- current shot ---------------------------------------------------------------
+integer gSaidFirst;
 integer gHaveShot;
 integer gShotT;
 vector  gCurCam;
@@ -209,6 +212,12 @@ dbg(string s)
     if (gDebug) llOwnerSay("[cinema/dir] " + s);
 }
 
+// always printed (important events and failures)
+say(string s)
+{
+    llOwnerSay("[cinema/dir] " + s);
+}
+
 updateLens()
 {
     float t = llTan(gFov * 0.5);
@@ -250,6 +259,7 @@ loadCfg()
     gMaxCam   = (float)cfg("maxcam", "45");
     gFovAxis  = cfg("fovaxis", "v");
     gDebug    = (integer)cfg("debug", "0");
+    gFarOk    = (integer)cfg("far_ok", "0");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if (gPhantom) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
     if (gFov < 0.1) gFov = 1.047198;
@@ -1196,6 +1206,12 @@ commit(list s)
     gFocusKey = NULL_KEY;
     gPendEvent = "";
     gErrCount = 0;
+    if (!gSaidFirst)
+    {
+        gSaidFirst = TRUE;
+        say("first shot: " + archName(arch) + ", camera " + (string)llRound(llVecDist(cam, gOP)) + " m away, hold "
+            + (string)llRound(hold) + " s");
+    }
     dbg(archName(arch) + "  hold " + (string)llRound(hold) + " s  rays " + (string)gRays
         + "  dist " + (string)llRound(llVecDist(cam, gOP)) + " m" + "  fade " + (string)fade
         + "  free mem " + (string)llGetFreeMemory());
@@ -1219,7 +1235,8 @@ giveUp()
     gHaveShot = FALSE;
     gRetryAt = llGetUnixTime() + 15;
     gPreferA = FALSE;
-    dbg("F5: no shot, retry in 15 s");
+    say("no usable shot found (tried all archetypes and fallbacks) - retrying in 15 s. env " + (string)gEnv
+        + " (0 open,1 semi,2 interior), avatars seen " + (string)(llGetListLength(gAv) / 5) + ", max clearance " + (string)gMaxClear + " m");
 }
 
 // ray errors: keep the current shot, retry in 3 s; after 3 failures fall back to F4
@@ -1236,7 +1253,7 @@ rayFail()
         else giveUp();
     }
     else gRetryAt = llGetUnixTime() + 3;
-    dbg("ray error (" + (string)gErrCount + ")");
+    say("ray error (" + (string)gErrCount + "/3) - retrying");
 }
 
 // weights [A, B, C1, C2] for the current scene
@@ -1249,7 +1266,7 @@ list ctxWeights(integer nNear, integer total, integer norepeat)
     else if (gEnv == 2) w = [45.0, 0.0, 0.0, 55.0];
     else w = [15.0, 0.0, 30.0, 55.0];
     if (total < 3) w = llListReplaceList(w, [0.0], 1, 1);
-    if (gEnv == 2 || gMaxClear < 27.0 || gMaxCam < 26.0) w = llListReplaceList(w, [0.0], 2, 2);
+    if (gEnv == 2 || !gFarOk || gMaxClear < 27.0 || gMaxCam < 26.0) w = llListReplaceList(w, [0.0], 2, 2);
     if (gMaxClear < 15.0) w = llListReplaceList(w, [0.0], 3, 3);
     if (gCool)
     {
@@ -1321,6 +1338,7 @@ nextShot(string why)
     gRetryAt = 0;
     if (!refreshOwner())
     {
+        say("cannot read your avatar position - retrying");
         gRetryAt = llGetUnixTime() + 5;
         return;
     }
@@ -1592,6 +1610,7 @@ default
             gSincePillow = 0;
             newPillowTarget();
             gWater = llWater(ZERO_VECTOR);
+            gSaidFirst = FALSE;
             gWaitFirst = TRUE;
             gWaitWhy = "start";
             startScan();
@@ -1644,6 +1663,15 @@ default
         else if (num == MSG_VER)
         {
             if (str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "director");
+        }
+        else if (num == STATUS)
+        {
+            if (str == "?")
+            {
+                say("v" + VERSION + " active " + (string)gActive + ", paused " + (string)gPaused + ", waiting first scan " + (string)gWaitFirst
+                    + ", have shot " + (string)gHaveShot + ", env " + (string)gEnv + ", avatars seen " + (string)(llGetListLength(gAv) / 5)
+                    + ", last category " + (string)gLastCat + ", long shots " + (string)gFarOk + ", free mem " + (string)llGetFreeMemory());
+            }
         }
     }
 

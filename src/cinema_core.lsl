@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md   (section numbers below refer to it)
 // ============================================================================
 
-string VERSION = "1.0.0";
+string VERSION = "1.0.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all 3 scripts
 
 // ---- link message numbers (section 6.2) ------------------------------------
@@ -26,6 +26,8 @@ integer UI_MENU      = 7321;   // core -> ui         (long press)
 integer CFG_CHANGED  = 7330;   // ui -> all          key name
 integer PROBE        = 7350;   // ui -> core         cut / campos / dist / fov
 integer MSG_VER      = 7360;   // all                version string ("?" = please announce)
+integer STATUS       = 7370;   // anyone -> all      "?" = every script prints one status line
+integer CMD          = 7371;   // ui -> core         start / stop
 
 // ---- tunables (docs/CALIBRATION.md) -----------------------------------------
 float PEEK_TOL     = 0.3;      // m   camera deviation that counts as "user took the camera"
@@ -67,6 +69,7 @@ integer gHaveShot;
 integer gHoldInf;
 integer gPending;           // a shot arrived while paused/peeking
 integer gTouchSkip;
+integer gMenuShown;
 string  gPauseWhy;
 string  gLastPacked;
 float   gHold;
@@ -411,7 +414,7 @@ probeTick()
         integer i = gProbeStep / 2;
         if (i >= llGetListLength(gProbeDist))
         {
-            pSay("distance probe finished. Set cin.maxcam to the largest distance that was reached.");
+            pSay("distance probe finished. If the largest distances were reached, type /9 far on (long shots) and /9 maxcam <metres>.");
             endProbe();
             return;
         }
@@ -639,6 +642,7 @@ default
     touch_start(integer n)
     {
         if (llDetectedKey(0) != gOwner) return;
+        gMenuShown = FALSE;
         if (gState != ST_IDLE)
         {
             bail("tap");              // instant: do not wait for touch_end
@@ -649,9 +653,26 @@ default
         gTouchT = llGetTime();
     }
 
+    // while the button is held: open the menu as soon as the long-press time is reached
+    touch(integer n)
+    {
+        if (llDetectedKey(0) != gOwner) return;
+        if (gState != ST_IDLE || gTouchSkip || gMenuShown) return;
+        if (llGetTime() - gTouchT > TOUCH_LONG)
+        {
+            gMenuShown = TRUE;
+            llMessageLinked(LINK_SET, UI_MENU, "", "");
+        }
+    }
+
     touch_end(integer n)
     {
         if (llDetectedKey(0) != gOwner) return;
+        if (gMenuShown)
+        {
+            gMenuShown = FALSE;      // the menu already opened while held
+            return;
+        }
         if (gTouchSkip)
         {
             gTouchSkip = FALSE;
@@ -722,6 +743,28 @@ default
         else if (num == MSG_VER)
         {
             if (str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
+        }
+        else if (num == STATUS)
+        {
+            if (str == "?")
+            {
+                llOwnerSay("[Cinema/core] v" + VERSION + " state " + (string)gState + " (0 idle,1 engaging,2 rolling,3 paused,4 peek,5 noshot,6 probe)"
+                    + ", source " + (string)gSource + " (0 afk,1 manual), permissions " + (string)gPermOK
+                    + ", shot " + (string)gHaveShot + ", attached " + (string)llGetAttached()
+                    + ", free mem " + (string)llGetFreeMemory());
+            }
+        }
+        else if (num == CMD)
+        {
+            if (str == "start")
+            {
+                if (gState == ST_IDLE) engage(SRC_MANUAL);
+                else llOwnerSay("[Cinema] already running (state " + (string)gState + ").");
+            }
+            else if (str == "stop")
+            {
+                if (gState != ST_IDLE) bail("cmd");
+            }
         }
     }
 }
