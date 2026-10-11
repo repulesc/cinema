@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md   (section numbers below refer to it)
 // ============================================================================
 
-string VERSION = "1.0.2";
+string VERSION = "1.1.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all 3 scripts
 
 // ---- link message numbers (section 6.2) ------------------------------------
@@ -101,6 +101,7 @@ integer gManVistaEnd;
 integer gCutMode;
 integer gDebug;
 integer gTrace;
+string  gChan;
 integer gReportCam;
 
 // ============================================================================
@@ -126,6 +127,7 @@ loadCfg()
     gCutMode     = (integer)cfg("cutmode", "0");
     gDebug       = (integer)cfg("debug", "0");
     gTrace       = (integer)cfg("trace", "1");
+    gChan        = cfg("cmd_chan", "77");
 }
 
 dbg(string s)
@@ -417,7 +419,7 @@ probeTick()
         {
             float goff = llVecDist(llGetCameraPos(), gProbeA);
             if (goff < 1.0) pSay("result: the viewer FOLLOWED the script camera (off by " + (string)goff + " m). Grabbing works; the problem is elsewhere (director).");
-            else pSay("result: the viewer IGNORED the script camera (still " + (string)goff + " m from the requested spot). Press ESC, leave Alt-cam / mouselook, check your viewer's camera / Move & View preferences, then repeat /9 grab.");
+            else pSay("result: the viewer IGNORED the script camera (still " + (string)goff + " m from the requested spot). Press ESC, leave Alt-cam / mouselook, check your viewer's camera / Move & View preferences, then repeat the grab test.");
             endProbe();
         }
         return;
@@ -451,7 +453,7 @@ probeTick()
         integer i = gProbeStep / 2;
         if (i >= llGetListLength(gProbeDist))
         {
-            pSay("distance probe finished. If the largest distances were reached, type /9 far on (long shots) and /9 maxcam <metres>.");
+            pSay("distance probe finished. Set /" + gChan + " maxcam <metres> to the largest distance that was reached.");
             endProbe();
             return;
         }
@@ -555,7 +557,7 @@ activeTick(integer now, float dt)
     {
         gState = ST_NOSHOT;
         setUi("noshot");
-        llOwnerSay("[Cinema] no shot from the director after " + (string)llRound(ENGAGE_WAIT) + " s. Is cinema_director.lsl in this prim and running? Type /9 status.");
+        llOwnerSay("[Cinema] no shot from the director after " + (string)llRound(ENGAGE_WAIT) + " s. Is cinema_director.lsl in this prim and running? Type /" + gChan + " status.");
     }
 
     if (gState == ST_ROLLING && !gHoldInf)

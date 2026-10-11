@@ -8,7 +8,7 @@ A minimalist Second Life HUD that turns your viewer into an autonomous **static 
 - **Aware of its surroundings.** A light raycast pass keeps the camera out of walls, roofs and terrain.
 
 ## Status
-Version 1.0.0 scripts are written but **untested in-world** (no LSL compiler was available while writing them). Next step: compile in the viewer, run *Menu > Options > Probe*, and fill in `docs/CALIBRATION.md`.
+Version 1.1.0. First in-world tests showed the camera can be taken (`/77 grab`), but the original 1,500-line director did not fit in one 64 KB script, so 1.1.0 ships a lean director (portraits, over-the-shoulder pairs, pillow shots). The full director is parked in `src/future/` for a multi-script split. Still to do: in-world calibration (`docs/CALIBRATION.md`).
 
 | Document | Contents |
 |---|---|
@@ -21,7 +21,8 @@ Version 1.0.0 scripts are written but **untested in-world** (no LSL compiler was
 ## Layout
 ```
 src/cinema_core.lsl       permissions, controls, AFK, state machine, camera apply/clear, probes
-src/cinema_director.lsl   scene scan, raycasts, composition, editing grammar
+src/cinema_director.lsl   lean director: scan, raycasts, composition, grammar (~470 statements)
+src/future/               full-featured director, too big for one script (not for pasting)
 src/cinema_ui.lsl         menus, Linkset Data settings, first-run, button look
 ```
 

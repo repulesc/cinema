@@ -482,3 +482,15 @@ Where the shipped scripts differ from, or add to, the spec above. The scripts ar
 | 11 | Axial / jump cuts (§4.6) | Ozu (axial, d×0.6) and Nouvelle Vague (jump, d×0.75) re-use the previous solo angle with 30 % probability when the last shot was a solo portrait. |
 | 13 | Avatar scan | A HUD's own position is in HUD space, so `llSensor` is unreliable from an attachment. The director uses `llGetAgentList(AGENT_LIST_REGION)` + `llGetObjectDetails` per agent, keeps those within 20 m, sorted nearest-first (max 12). Cap: the region list returns at most 100 agents. |
 | 12 | Ray budget | Survey 10 rays (on engage, teleport, > 2 m movement, every 6 cuts) + per cut: 7 sweep rays, up to 2 candidates × (reverse ray [+ floor ray] [+ 2 member rays for ensembles]) ≈ 11–15, plus fallbacks. Pillow shots use 2–4 rays. |
+
+### 9.1 Lean build (v1.1.0) - what changed after the first in-world test
+The v1.0.x director was ~1,500 lines. Measured free memory (core 17 KB free at ~650 lines, UI 27 KB at ~350 lines) puts compiled size at roughly 58 bytes per statement + ~18 KB fixed + 2 bytes per string character, so that director (~1,000 statements) needed ~80 KB and never started. The shipped director keeps ~470 statements (est. 18 KB free).
+
+| Kept | Dropped (parked in `src/future/cinema_director_full.lsl`) |
+|---|---|
+| owner + nearest-avatar scan, 10-ray survey, thirds-by-height, lead room, level horizon | ensembles (cluster / PCA), long shots, Rueckenfigur |
+| solo portrait, over-the-shoulder pair + reverse shot, pillow shot, shoulder fallback (F2), F4/F5 | speaker cut, style presets, jump / axial cuts, F3 high corner |
+| 7-candidate sweep, reverse-ray verify, roof/region/maxcam guards, ray-error retry | floor / water guards, strict-vs-relaxed candidate filter, periodic re-survey |
+| event cuts (arrival, owner leaves frame, owner walked > 3 m), director mode, cooldown | scene-signature hysteresis |
+
+Chat commands use channel **77** (setting `cmd_chan`, `/77 chan <n>` to change); channel 9 clashed with another HUD.

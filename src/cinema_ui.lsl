@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md  (6.3 settings, 6.4 UI)
 // ============================================================================
 
-string VERSION  = "1.0.2";
+string VERSION  = "1.1.0";
 string PASS     = "cinema-1.0-build1";      // same in all 3 scripts; change per build
 string NOTECARD = "Cinema HUD - Read Me";   // give this notecard together with the HUD
 
@@ -39,7 +39,7 @@ list DEFAULTS = [
     "cutmode", "0",
     "debug", "1",
     "trace", "1",
-    "far_ok", "0",
+    "cmd_chan", "77",
     "overlay", "0"
 ];
 
@@ -49,6 +49,7 @@ integer gListen;
 integer gMenuT;
 integer gVerAsked;
 integer gCmdListen;
+integer gCmdChan;
 string  gPage;
 
 // ============================================================================
@@ -92,7 +93,7 @@ giveHelp()
 
 welcome()
 {
-    llOwnerSay("[Cinema] Welcome! Tap the button to start / stop the cinema camera. Hold it for 1 second for the menu."
+    llOwnerSay("[Cinema] Welcome! Tap the button to start / stop the cinema camera. Hold it for 1 second for the menu (or type /77 menu)."
         + " It also starts by itself after " + cfgGet("afk_sec") + " s without activity. Any movement key brings your camera back.");
     giveHelp();
 }
@@ -175,11 +176,8 @@ openMenu(string page)
 
     string head = "Cinema HUD v" + VERSION + "\n";
     if (page == "main")
-        dlg(head + "Style: " + cfgGet("style") + "\nAFK start: " + afkText() + "\nHold: " + holdText(),
-            ["Style", "AFK", "Holds", "Options", "Help", "About", "Close"]);
-    else if (page == "style")
-        dlg(head + "Director style (now: " + cfgGet("style") + ")\nBlend mixes all three.",
-            ["Blend", "Ozu", "Jarmusch", "Nouvelle V.", "< Back"]);
+        dlg(head + "AFK start: " + afkText() + "\nHold: " + holdText() + "\nChat commands: /" + (string)gCmdChan + " help",
+            ["AFK", "Holds", "Options", "Help", "About", "Close"]);
     else if (page == "afk")
         dlg(head + "Start the cinema after this long without activity (now: " + afkText() + ")",
             ["Off", "60 s", "90 s", "120 s", "3 min", "5 min", "10 min", "SL Away", "< Back"]);
@@ -187,17 +185,13 @@ openMenu(string page)
         dlg(head + "How long a shot is held (now: " + holdText() + ")",
             ["x0.5", "x1", "x1.5", "x2", "x3", "Until event", "< Back"]);
     else if (page == "opts")
-        dlg(head + "Speaker cut: " + cfgGet("speaker") + "  (0 off, 1 typing, 2 typing+chat)"
-            + "\nPhantom obstacles: " + onoff("phantom")
+        dlg(head + "Phantom obstacles: " + onoff("phantom")
             + "\nManual: vista ends on move: " + onoff("man_vista_end")
             + "\nAlt-cam: peek " + cfgGet("peek") + " / ends " + cfgGet("peek_bail")
             + "\nCooldown after: " + cfgGet("cool_min") + " min"
             + "\nCut mode clear-first: " + onoff("cutmode")
             + "\nDebug: " + onoff("debug"),
-            ["Speaker", "Phantom", "Man. vista", "Alt-cam", "Cooldown", "Cut mode", "Debug", "Probe", "Reset", "< Back"]);
-    else if (page == "speaker")
-        dlg(head + "Cut to whoever speaks near you.\nTyping = typing flag only.\nTyping+chat also listens to local chat.",
-            ["Off", "Typing", "Typing+chat", "< Back"]);
+            ["Phantom", "Man. vista", "Alt-cam", "Cooldown", "Cut mode", "Debug", "Probe", "Reset", "< Back"]);
     else if (page == "altcam")
         dlg(head + "When you Alt-orbit the camera while the cinema runs:\nPeek = pause, resume after ESC\nEnds cinema = stop\nIgnore = do not watch for it",
             ["Peek", "Ends cinema", "Ignore", "< Back"]);
@@ -213,7 +207,7 @@ openMenu(string page)
 
 string parentOf(string page)
 {
-    if (page == "speaker" || page == "altcam" || page == "cool" || page == "probe" || page == "reset") return "opts";
+    if (page == "altcam" || page == "cool" || page == "probe" || page == "reset") return "opts";
     return "main";
 }
 
@@ -228,7 +222,7 @@ toggle(string k, string label)
 about()
 {
     llOwnerSay("[Cinema] Cinema HUD v" + VERSION + "  |  ui free memory " + (string)llGetFreeMemory() + " bytes"
-        + "  |  style " + cfgGet("style") + ", afk " + afkText() + ", hold " + holdText());
+        + "  |  afk " + afkText() + ", hold " + holdText());
 }
 
 onChoice(string msg)
@@ -238,22 +232,11 @@ onChoice(string msg)
 
     if (gPage == "main")
     {
-        if (msg == "Style") openMenu("style");
-        else if (msg == "AFK") openMenu("afk");
+        if (msg == "AFK") openMenu("afk");
         else if (msg == "Holds") openMenu("holds");
         else if (msg == "Options") openMenu("opts");
         else if (msg == "Help") { giveHelp(); openMenu("main"); }
         else if (msg == "About") { about(); openMenu("main"); }
-    }
-    else if (gPage == "style")
-    {
-        string s = "blend";
-        if (msg == "Ozu") s = "ozu";
-        else if (msg == "Jarmusch") s = "jarmusch";
-        else if (msg == "Nouvelle V.") s = "nv";
-        cfgSet("style", s);
-        llOwnerSay("[Cinema] Style: " + s);
-        openMenu("main");
     }
     else if (gPage == "afk")
     {
@@ -288,8 +271,7 @@ onChoice(string msg)
     }
     else if (gPage == "opts")
     {
-        if (msg == "Speaker") openMenu("speaker");
-        else if (msg == "Alt-cam") openMenu("altcam");
+        if (msg == "Alt-cam") openMenu("altcam");
         else if (msg == "Cooldown") openMenu("cool");
         else if (msg == "Probe") openMenu("probe");
         else if (msg == "Reset") openMenu("reset");
@@ -301,15 +283,6 @@ onChoice(string msg)
             else if (msg == "Debug") toggle("debug", "Debug");
             openMenu("opts");
         }
-    }
-    else if (gPage == "speaker")
-    {
-        string sp = "0";
-        if (msg == "Typing") sp = "1";
-        else if (msg == "Typing+chat") sp = "2";
-        cfgSet("speaker", sp);
-        llOwnerSay("[Cinema] Speaker cut: " + sp);
-        openMenu("opts");
     }
     else if (gPage == "altcam")
     {
@@ -354,7 +327,7 @@ onChoice(string msg)
 // chat commands: /9 <command>   (works even if the long-press menu does not)
 help()
 {
-    llOwnerSay("[Cinema] commands: /9 menu | start | stop | grab | status | debug on|off | trace on|off | far on|off | maxcam <m> | probe cut|campos|dist|fov | reset");
+    llOwnerSay("[Cinema] commands: /" + (string)gCmdChan + " menu | start | stop | grab | status | debug on|off | trace on|off | maxcam <m> | chan <n> | probe cut|campos|dist|fov | reset");
 }
 
 onCommand(string msg)
@@ -367,8 +340,8 @@ onCommand(string msg)
     else if (c == "stop") llMessageLinked(LINK_SET, CMD, "stop", "");
     else if (c == "status")
     {
-        llOwnerSay("[Cinema/ui] v" + VERSION + " style " + cfgGet("style") + ", afk " + afkText() + ", hold " + holdText()
-            + ", debug " + cfgGet("debug") + ", far shots " + cfgGet("far_ok") + ", maxcam " + cfgGet("maxcam")
+        llOwnerSay("[Cinema/ui] v" + VERSION + " chat channel " + (string)gCmdChan + ", afk " + afkText() + ", hold " + holdText()
+            + ", debug " + cfgGet("debug") + ", maxcam " + cfgGet("maxcam")
             + ", free mem " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, STATUS, "?", "");
     }
@@ -385,11 +358,18 @@ onCommand(string msg)
         llOwnerSay("[Cinema] Progress messages: " + onoff("trace"));
     }
     else if (c == "grab") llMessageLinked(LINK_SET, CMD, "grab", "");
-    else if (c == "far")
+    else if (c == "chan")
     {
-        if (v == "on") cfgSet("far_ok", "1");
-        else cfgSet("far_ok", "0");
-        llOwnerSay("[Cinema] Long shots (25-45 m): " + onoff("far_ok"));
+        integer ch = (integer)v;
+        if (ch > 0 && ch != 9)
+        {
+            cfgSet("cmd_chan", (string)ch);
+            gCmdChan = ch;
+            if (gCmdListen) llListenRemove(gCmdListen);
+            gCmdListen = llListen(gCmdChan, "", gOwner, "");
+            llOwnerSay("[Cinema] Commands now on /" + (string)ch);
+        }
+        else llOwnerSay("[Cinema] chan needs a positive number (not 9, used by other HUDs).");
     }
     else if (c == "maxcam")
     {
@@ -425,7 +405,9 @@ default
         checkOwner();
         setLook("armed");
         if (gCmdListen) llListenRemove(gCmdListen);
-        gCmdListen = llListen(9, "", gOwner, "");
+        gCmdChan = (integer)cfgGet("cmd_chan");
+        if (gCmdChan <= 0) gCmdChan = 77;
+        gCmdListen = llListen(gCmdChan, "", gOwner, "");
         llSetTimerEvent(3.0);
     }
 
@@ -454,7 +436,7 @@ default
     listen(integer channel, string name, key id, string msg)
     {
         if (id != gOwner) return;
-        if (channel == 9)
+        if (channel == gCmdChan)
         {
             onCommand(msg);
             return;

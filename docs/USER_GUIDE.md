@@ -2,9 +2,12 @@
 *(Put this text into a notecard named exactly **Cinema HUD - Read Me** inside the HUD.)*
 
 ## What it does
-Cinema HUD turns your camera into a quiet film camera. It never glides or swoops: it **cuts** between still, carefully composed shots - a portrait of you, a tableau of the people around you, a long shot of you small in the landscape, an empty "pillow shot" of sky or sea - and holds each one for a while, in the spirit of Ozu, Jarmusch and the French New Wave.
+Cinema HUD turns your camera into a quiet film camera. It never glides or swoops: it **cuts** between still, carefully composed shots and holds each one for a while, in the spirit of Ozu, Jarmusch and the French New Wave.
 
 It starts by itself when you go idle, and the moment you move, type or touch the HUD, your own camera is back instantly.
+
+**Shots in this version:** a portrait of you (varied angles), an over-the-shoulder shot of you and a person standing near you (with shot / reverse shot), and a "pillow shot" of the empty sky, sea or horizon. It keeps the camera out of walls and keeps the horizon level.
+**Coming later:** group tableaux, long landscape shots, speaker cuts, director style presets, letterbox bars.
 
 ## Setup
 1. Wear the HUD (right-click > *Attach To HUD*). Accept the permission request if one appears: it needs control of your camera and your movement keys (to notice that you are back).
@@ -17,7 +20,7 @@ It starts by itself when you go idle, and the moment you move, type or touch the
 | **Hold** the button for 1 second | Open the menu. |
 | Stay idle for 90 seconds (default) | The cinema starts by itself. |
 | Press any movement key (while it started itself) | Your camera returns instantly. |
-| Press a movement key (while *you* started it) | Social shots keep rolling and re-frame when you walk out of shot. Long shots can end instead (Options > Man. vista). |
+| Press a movement key (while *you* started it) | It keeps rolling and re-frames when you walk out of shot. |
 | Start typing in local chat | The cinema stops. |
 | Sit down / stand up | The cinema stops. |
 | Alt-orbit / free-look the camera | The cinema **pauses** ("peek"); press ESC to let it carry on. |
@@ -27,45 +30,37 @@ It starts by itself when you go idle, and the moment you move, type or touch the
 Button colours: grey = off, white = ready, red = rolling, amber = peeking, blue = no usable shot (it keeps trying).
 
 ## Menu
-- **Style** - *Blend* (default), *Ozu* (low, level, frontal), *Jarmusch* (symmetric, deadpan, long holds), *Nouvelle V.* (restless, jump cuts).
 - **AFK** - start after 60 s / 90 s / 2 / 3 / 5 / 10 min, when Second Life marks you Away, or off.
 - **Holds** - how long a shot stays: x0.5 ... x3, or *Until event* (cuts only when something changes).
 - **Options**
-  - *Speaker* - cut to whoever starts typing near you (off / typing / typing + local chat).
   - *Phantom* - treat phantom objects (foliage, triggers) as obstacles.
-  - *Man. vista* - in a manual session, end when you walk during a long shot.
+  - *Man. vista* - in a manual session, end when you walk during an empty-view shot.
   - *Alt-cam* - what Alt-orbiting does: peek / end the cinema / ignore.
   - *Cooldown* - after this long idle (default 10 min) it prefers empty sky and sea shots, which are lighter for your graphics card.
   - *Cut mode* - use if you see the camera glide instead of cut.
-  - *Debug* - prints why each shot was chosen.
+  - *Debug* - prints extra information.
   - *Probe* - in-world tests (see below).
   - *Reset* - back to defaults.
 
-## Good to know
-- It works best outdoors and in rooms with some space. In a tiny room it falls back to a camera just behind your shoulder, and if nothing works it hands your camera back (blue button) and tries again later.
-- It only moves *your* view. Nobody else sees what the camera does.
-- It needs no scripts rights on the land except what the HUD itself uses; it also works in no-script parcels.
-
 ## Chat commands
-Type these in local chat (they use channel 9, only you can use them):
-`/9 menu` | `/9 start` | `/9 stop` | `/9 grab` | `/9 status` | `/9 trace on|off` | `/9 debug on|off` | `/9 far on|off` | `/9 maxcam <metres>` | `/9 probe cut|campos|dist|fov` | `/9 reset`
+Type these in local chat (default channel **77**, only you can use them). Change the channel with `/77 chan <number>` if another HUD uses 77.
+`/77 menu` | `start` | `stop` | `grab` | `status` | `debug on|off` | `trace on|off` | `maxcam <metres>` | `chan <number>` | `probe cut|campos|dist|fov` | `reset`
 
-- `/9 grab` is a 4-second test that takes your camera **without** the director: your view should jump 4 m in front of you and chat says whether the viewer followed. Run it first if the cinema never changes your view.
-- `/9 status` prints one line from each of the three scripts (state, permissions, memory). Include it when asking for help.
-- `/9 debug on` prints a line for every shot decision.
-- Long shots (25-45 m away) are **off** until you run `/9 probe dist`, confirm the camera really reaches those distances, then `/9 far on`.
+- `/77 grab` is a 4-second test that takes your camera **without** the director: your view should jump 4 m in front of you, and chat says whether the viewer followed.
+- `/77 status` prints one line from each of the three scripts (state, permissions, free memory). Include it when asking for help.
+- `trace` prints a few progress lines each time a shot is chosen (on by default).
 
 ## Probes (for tinkerers)
-*Options > Probe* runs small tests and prints the results in chat: *Cut* (instant cut or glide?), *CamPos* (can the HUD see Alt-cam?), *Distance* (how far can the camera sit from you?), *FOV* (what field of view does your viewer report?).
+*Options > Probe* (or `/77 probe ...`) runs small tests and prints the results in chat: *Cut* (instant cut or glide?), *CamPos* (can the HUD see Alt-cam?), *Distance* (how far can the camera sit from you?), *FOV* (what field of view does your viewer report?).
 
 ## Troubleshooting
 | Problem | Try |
 |---|---|
-| Nothing happens when I tap | Re-attach the HUD and accept the permissions. Type `/9 status`: all three scripts should answer. |
-| Camera never changes at all | Press **ESC** once (an Alt-orbited / free camera makes the viewer ignore scripts), leave mouselook, then type `/9 grab`. If grab works but the cinema does not, type `/9 status` and send what the three scripts print. |
-| Button turns red but the camera does not change | Type `/9 debug on`, tap again, and read the `[cinema/...]` lines in chat. After 5 s with no shot the button turns blue. |
-| Long-press shows no menu | Keep the button held for a full second (the menu opens while held). Or type `/9 menu`. |
+| Camera never changes at all | Press **ESC** once (an Alt-orbited / free camera makes the viewer ignore scripts), leave mouselook, then type `/77 grab`. If grab works but the cinema does not, type `/77 status` and send what the three scripts print. |
+| A script says nothing at `/77 status` | That script is not running: re-save it, check it is in the same prim, and look for a script error in chat. |
+| Button turns red but the camera does not change | After 5 s with no shot the button turns blue and chat explains why. |
+| Long-press shows no menu | Keep the button held for a full second (the menu opens while held), or type `/77 menu`. |
 | Camera glides instead of cutting | Options > Cut mode. |
-| Shots look cropped at the sides | Raise/lower your viewer field of view, or ask the creator to switch the FOV axis setting. |
+| Shots look cropped at the sides | Ask the creator to switch the FOV axis setting (`fovaxis`). |
 | It starts too early / late | Menu > AFK. |
 | "script version mismatch" message | Re-drop all three scripts from the same release. |
