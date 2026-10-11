@@ -1206,6 +1206,7 @@ extendCurrent()
 {
     llMessageLinked(LINK_SET, SHOT, packShot(gCurCam, gCurFocus, holdFor(gCurArch), gCurArch, 0), "");
     gShotT = llGetUnixTime();
+    gOwnerAtShot = gOP;
     gPendEvent = "";
     gPreferA = FALSE;
     dbg("F4: holding current shot");
@@ -1255,7 +1256,7 @@ list ctxWeights(integer nNear, integer total, integer norepeat)
         // long AFK: favour empty sky / sea (lighter on the GPU)
         w = [llList2Float(w, 0) * 0.5, llList2Float(w, 1) * 0.5, llList2Float(w, 2) * 0.7, llList2Float(w, 3) * 2.5];
     }
-    if (gEstablish && (llList2Float(w, 1) > 0.0 || llList2Float(w, 2) > 0.0))
+    if (gEstablish && norepeat && (llList2Float(w, 1) > 0.0 || llList2Float(w, 2) > 0.0))
     {
         w = [0.0, llList2Float(w, 1), llList2Float(w, 2), 0.0];
     }
@@ -1428,12 +1429,6 @@ checkTypers()
     gPrevTyp = typNow;
 }
 
-startScan()
-{
-    gScanT = llGetUnixTime();
-    llSensor("", NULL_KEY, AGENT, 20.0, PI);
-}
-
 onScan()
 {
     gScanT = llGetUnixTime();
@@ -1479,6 +1474,55 @@ onScan()
     else if (gCurArch != 4 && !inFrame(gOP)) ev = "frame";
     if (nNear < gNearAtShot) gNearAtShot = nNear;
     if (ev != "") gPendEvent = ev;
+}
+
+// Avatar scan. A HUD's own position is in HUD space, so llSensor is unreliable here;
+// use the region agent list instead (max 100) and keep the nearest MAX_AV within 20 m.
+startScan()
+{
+    gScanT = llGetUnixTime();
+    if (!refreshOwner())
+    {
+        onScan();
+        return;
+    }
+    list ids = llGetAgentList(AGENT_LIST_REGION, []);
+    list tmp = [];                       // stride 6: dist, key, pos, yaw, eyeZ, flags
+    integer n = llGetListLength(ids);
+    integer i;
+    for (i = 0; i < n; i++)
+    {
+        key k = llList2Key(ids, i);
+        if (k != gOwner)
+        {
+            list d = llGetObjectDetails(k, [OBJECT_POS, OBJECT_ROT]);
+            if (llGetListLength(d) >= 2)
+            {
+                vector pos = llList2Vector(d, 0);
+                float dist = llVecDist(pos, gOP);
+                vector sz = llGetAgentSize(k);
+                if (dist <= 20.0 && sz != ZERO_VECTOR)
+                {
+                    integer inf = llGetAgentInfo(k);
+                    integer fl = 0;
+                    float ke = K_EYE_STAND;
+                    if (inf & AGENT_SITTING)
+                    {
+                        fl += 1;
+                        ke = K_EYE_SIT;
+                    }
+                    if (inf & AGENT_TYPING) fl += 2;
+                    vector fwd = llRot2Fwd(llList2Rot(d, 1));
+                    tmp += [dist, k, pos, llAtan2(fwd.y, fwd.x), pos.z + ke * sz.z, fl];
+                }
+            }
+        }
+    }
+    tmp = llListSort(tmp, 6, TRUE);
+    gAv = [];
+    n = llGetListLength(tmp) / 6;
+    for (i = 0; i < n && i < MAX_AV; i++) gAv += llList2List(tmp, i * 6 + 1, i * 6 + 5);
+    onScan();
 }
 
 stopAll()
@@ -1603,42 +1647,6 @@ default
         }
     }
 
-    sensor(integer n)
-    {
-        gAv = [];
-        integer i;
-        for (i = 0; i < n && llGetListLength(gAv) < MAX_AV * 5; i++)
-        {
-            key k = llDetectedKey(i);
-            if (k != gOwner)
-            {
-                vector sz = llGetAgentSize(k);
-                if (sz != ZERO_VECTOR)
-                {
-                    integer inf = llGetAgentInfo(k);
-                    integer fl = 0;
-                    float ke = K_EYE_STAND;
-                    if (inf & AGENT_SITTING)
-                    {
-                        fl += 1;
-                        ke = K_EYE_SIT;
-                    }
-                    if (inf & AGENT_TYPING) fl += 2;
-                    vector pos = llDetectedPos(i);
-                    vector fwd = llRot2Fwd(llDetectedRot(i));
-                    gAv += [k, pos, llAtan2(fwd.y, fwd.x), pos.z + ke * sz.z, fl];
-                }
-            }
-        }
-        onScan();
-    }
-
-    no_sensor()
-    {
-        gAv = [];
-        onScan();
-    }
-
     listen(integer channel, string name, key id, string msg)
     {
         if (!gActive || gPaused || gSpeaker != 2) return;
@@ -1663,7 +1671,7 @@ default
         }
         float iv = SCAN_SEC;
         if (llGetRegionTimeDilation() < 0.8) iv = SCAN_SEC * 2.0;
-        if (!gWaitFirst && now - gScanT >= iv) startScan();
+        if (now - gScanT >= iv) startScan();
         if (!gHaveShot) return;
         checkTypers();
         integer since = now - gShotT;

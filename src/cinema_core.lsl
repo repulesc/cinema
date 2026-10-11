@@ -582,7 +582,7 @@ default
                 | CONTROL_ROT_LEFT | CONTROL_ROT_RIGHT | CONTROL_UP | CONTROL_DOWN, TRUE, TRUE);
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
-            setUi(idleUi());
+            if (gState == ST_IDLE) setUi(idleUi());
         }
         else
         {
@@ -609,6 +609,7 @@ default
     // ---- instant bail-out: keep this handler tiny ------------------------
     control(key id, integer level, integer edge)
     {
+        if (!(level | edge)) return;
         integer now = llGetUnixTime();
         if (now < gIgnoreCtl) return;
         if (gState == ST_IDLE)
