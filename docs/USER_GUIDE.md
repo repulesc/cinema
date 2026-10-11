@@ -48,8 +48,9 @@ Button colours: grey = off, white = ready, red = rolling, amber = peeking, blue 
 
 ## Chat commands
 Type these in local chat (they use channel 9, only you can use them):
-`/9 menu` | `/9 start` | `/9 stop` | `/9 status` | `/9 debug on|off` | `/9 far on|off` | `/9 maxcam <metres>` | `/9 probe cut|campos|dist|fov` | `/9 reset`
+`/9 menu` | `/9 start` | `/9 stop` | `/9 grab` | `/9 status` | `/9 trace on|off` | `/9 debug on|off` | `/9 far on|off` | `/9 maxcam <metres>` | `/9 probe cut|campos|dist|fov` | `/9 reset`
 
+- `/9 grab` is a 4-second test that takes your camera **without** the director: your view should jump 4 m in front of you and chat says whether the viewer followed. Run it first if the cinema never changes your view.
 - `/9 status` prints one line from each of the three scripts (state, permissions, memory). Include it when asking for help.
 - `/9 debug on` prints a line for every shot decision.
 - Long shots (25-45 m away) are **off** until you run `/9 probe dist`, confirm the camera really reaches those distances, then `/9 far on`.
@@ -61,6 +62,7 @@ Type these in local chat (they use channel 9, only you can use them):
 | Problem | Try |
 |---|---|
 | Nothing happens when I tap | Re-attach the HUD and accept the permissions. Type `/9 status`: all three scripts should answer. |
+| Camera never changes at all | Press **ESC** once (an Alt-orbited / free camera makes the viewer ignore scripts), leave mouselook, then type `/9 grab`. If grab works but the cinema does not, type `/9 status` and send what the three scripts print. |
 | Button turns red but the camera does not change | Type `/9 debug on`, tap again, and read the `[cinema/...]` lines in chat. After 5 s with no shot the button turns blue. |
 | Long-press shows no menu | Keep the button held for a full second (the menu opens while held). Or type `/9 menu`. |
 | Camera glides instead of cutting | Options > Cut mode. |

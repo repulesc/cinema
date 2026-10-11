@@ -10,7 +10,7 @@
 //  Design: docs/ARCHITECTURE.md  (section numbers below refer to it)
 // ============================================================================
 
-string VERSION = "1.0.1";
+string VERSION = "1.0.2";
 string PASS    = "cinema-1.0-build1";      // same in all 3 scripts
 
 // ---- link message numbers (section 6.2) ------------------------------------
@@ -63,6 +63,7 @@ float   gAspect;
 float   gMaxCam;
 string  gFovAxis;
 integer gDebug;
+integer gTrace;
 integer gFarOk;               // long shots (25-45 m) allowed once the distance probe passed
 list    gRayOpts;
 
@@ -212,6 +213,12 @@ dbg(string s)
     if (gDebug) llOwnerSay("[cinema/dir] " + s);
 }
 
+// progress messages for testing (setting cin.trace, default on)
+tsay(string s)
+{
+    if (gTrace) llOwnerSay("[cinema/dir] " + s);
+}
+
 // always printed (important events and failures)
 say(string s)
 {
@@ -260,6 +267,7 @@ loadCfg()
     gFovAxis  = cfg("fovaxis", "v");
     gDebug    = (integer)cfg("debug", "0");
     gFarOk    = (integer)cfg("far_ok", "0");
+    gTrace    = (integer)cfg("trace", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if (gPhantom) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
     if (gFov < 0.1) gFov = 1.047198;
@@ -528,6 +536,7 @@ integer survey()
     gSurveyOK = TRUE;
     gSurveyPos = gOP;
     gCutsSinceSurvey = 0;
+    tsay("survey: environment " + (string)gEnv + " (0 open, 1 semi, 2 interior), openness " + (string)gOpen + ", most open direction " + (string)llRound(gMaxClear) + " m");
     dbg("survey: env " + (string)gEnv + ", open " + (string)gOpen + ", maxclear " + (string)gMaxClear
         + ", roof " + (string)roofD + ", floor " + (string)gFloorZ);
     return TRUE;
@@ -1380,6 +1389,7 @@ nextShot(string why)
         else
         {
             tried += [a];
+            tsay("trying shot type " + (string)a + " (0 portrait/pair, 1 group, 2 long shot, 3 behind-you/empty view)");
             shot = tryArch(a);
             tries++;
         }
@@ -1452,6 +1462,7 @@ onScan()
     gScanT = llGetUnixTime();
     if (!gActive || gPaused) return;
     if (!refreshOwner()) return;
+    if (gWaitFirst) tsay("scan: " + (string)(llGetListLength(gAv) / 5) + " other avatar(s) within 20 m");
     if (gWaitFirst)
     {
         gWaitFirst = FALSE;

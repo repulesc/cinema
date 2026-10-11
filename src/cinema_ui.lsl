@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md  (6.3 settings, 6.4 UI)
 // ============================================================================
 
-string VERSION  = "1.0.1";
+string VERSION  = "1.0.2";
 string PASS     = "cinema-1.0-build1";      // same in all 3 scripts; change per build
 string NOTECARD = "Cinema HUD - Read Me";   // give this notecard together with the HUD
 
@@ -38,6 +38,7 @@ list DEFAULTS = [
     "maxcam", "45",
     "cutmode", "0",
     "debug", "1",
+    "trace", "1",
     "far_ok", "0",
     "overlay", "0"
 ];
@@ -353,7 +354,7 @@ onChoice(string msg)
 // chat commands: /9 <command>   (works even if the long-press menu does not)
 help()
 {
-    llOwnerSay("[Cinema] commands: /9 menu | start | stop | status | debug on|off | far on|off | maxcam <m> | probe cut|campos|dist|fov | reset");
+    llOwnerSay("[Cinema] commands: /9 menu | start | stop | grab | status | debug on|off | trace on|off | far on|off | maxcam <m> | probe cut|campos|dist|fov | reset");
 }
 
 onCommand(string msg)
@@ -377,6 +378,13 @@ onCommand(string msg)
         else cfgSet("debug", "0");
         llOwnerSay("[Cinema] Debug: " + onoff("debug"));
     }
+    else if (c == "trace")
+    {
+        if (v == "on") cfgSet("trace", "1");
+        else cfgSet("trace", "0");
+        llOwnerSay("[Cinema] Progress messages: " + onoff("trace"));
+    }
+    else if (c == "grab") llMessageLinked(LINK_SET, CMD, "grab", "");
     else if (c == "far")
     {
         if (v == "on") cfgSet("far_ok", "1");

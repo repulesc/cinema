@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 - find out why the camera is not grabbed
+- `/9 grab`: takes the camera for 4 s without the director, prints permission bits and whether the viewer followed.
+- Progress messages (`/9 trace on|off`, default on): started, scan, survey, shot type tried, shot received, and a camera check that compares where the view really is with where it was asked to be.
+- A loud message if the director does not answer within 5 s.
+
 ## 1.0.1 - first in-world test fixes
 - Long-press opens the menu while the button is still held (`touch` event), not only on release.
 - Chat commands on channel 9 (`/9 menu|start|stop|status|debug|far|maxcam|probe|reset`) so the HUD can be driven and diagnosed even if the menu does not open.

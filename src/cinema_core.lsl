@@ -7,7 +7,7 @@
 //  Design: docs/ARCHITECTURE.md   (section numbers below refer to it)
 // ============================================================================
 
-string VERSION = "1.0.1";
+string VERSION = "1.0.2";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all 3 scripts
 
 // ---- link message numbers (section 6.2) ------------------------------------
@@ -100,6 +100,8 @@ integer gPeekBail;
 integer gManVistaEnd;
 integer gCutMode;
 integer gDebug;
+integer gTrace;
+integer gReportCam;
 
 // ============================================================================
 //  helpers
@@ -123,11 +125,18 @@ loadCfg()
     gManVistaEnd = (integer)cfg("man_vista_end", "0");
     gCutMode     = (integer)cfg("cutmode", "0");
     gDebug       = (integer)cfg("debug", "0");
+    gTrace       = (integer)cfg("trace", "1");
 }
 
 dbg(string s)
 {
     if (gDebug) llOwnerSay("[cinema/core] " + s);
+}
+
+// progress messages for testing (setting cin.trace, default on)
+tsay(string s)
+{
+    if (gTrace) llOwnerSay("[Cinema] " + s);
 }
 
 vector ownerPos()
@@ -195,7 +204,10 @@ applyShot(string packed)
     gLastPacked = packed;
     gHaveShot = TRUE;
     gPending = FALSE;
+    gReportCam = TRUE;
     setCam(p, f);
+    tsay("shot received: type " + (string)gArch + " (0 portrait/pair, 1 group, 2 long, 3 behind you, 4 empty view), camera "
+        + (string)llRound(llVecDist(p, ownerPos())) + " m from you, hold " + (string)llRound(gHold) + " s");
     if (gState != ST_ROLLING)
     {
         gState = ST_ROLLING;
@@ -247,6 +259,7 @@ engage(integer src)
     llMessageLinked(LINK_SET, DIR_START, s + "|" + (string)fov, "");
     setUi("rolling");
     llSetTimerEvent(0.5);
+    tsay("started (" + s + ") - waiting for the director to pick a shot...");
     dbg("engage: " + s + "  free mem " + (string)llGetFreeMemory());
 }
 
@@ -327,6 +340,11 @@ startProbe(string kind)
             + " (setting cin.fovaxis = v). If shots look cropped at the sides, try h.");
         return;
     }
+    if (kind == "grab")
+    {
+        pSay("permissions held " + (string)llGetPermissions() + ", needed " + (string)gNeedPerms
+            + ", attach point " + (string)llGetAttached() + " (0 = not attached)");
+    }
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
     if (llGetListLength(d) == 0) return;
     vector P = llList2Vector(d, 0);
@@ -382,6 +400,25 @@ probeTick()
                 pSay("result: camera never reached B (still " + (string)dist + " m away). If llGetCameraPos does not follow scripted cameras this is meaningless - check by eye.");
                 endProbe();
             }
+        }
+        return;
+    }
+    if (gProbe == "grab")
+    {
+        if (gProbeStep == 0)
+        {
+            gProbeA = gProbeEye + gProbeFwd * 4.0;
+            setCam(gProbeA, gProbeEye);
+            gProbeStep = 1;
+            gProbeT = t;
+            pSay("camera request sent: 4 m in front of you, looking at you. Watch your view...");
+        }
+        else if (t - gProbeT >= 2.5)
+        {
+            float goff = llVecDist(llGetCameraPos(), gProbeA);
+            if (goff < 1.0) pSay("result: the viewer FOLLOWED the script camera (off by " + (string)goff + " m). Grabbing works; the problem is elsewhere (director).");
+            else pSay("result: the viewer IGNORED the script camera (still " + (string)goff + " m from the requested spot). Press ESC, leave Alt-cam / mouselook, check your viewer's camera / Move & View preferences, then repeat /9 grab.");
+            endProbe();
         }
         return;
     }
@@ -486,6 +523,14 @@ activeTick(integer now, float dt)
         else return;
     }
 
+    if (gReportCam && gHaveShot && gState == ST_ROLLING && llGetTime() - gApplyT > PEEK_GRACE)
+    {
+        gReportCam = FALSE;
+        float off = llVecDist(llGetCameraPos(), gShotPos);
+        if (off < 1.0) tsay("camera check: your view IS at the requested spot (off by " + (string)off + " m).");
+        else tsay("camera check: your view is " + (string)off + " m away from the requested spot - the viewer may be ignoring the script camera (press ESC, leave Alt-cam / mouselook).");
+    }
+
     // Alt-cam / orbit: the viewer silently ignores scripted params, so compare the real camera
     if (gPeekOn && gHaveShot && (gState == ST_ROLLING || gState == ST_PEEK) && llGetTime() - gApplyT > PEEK_GRACE)
     {
@@ -510,6 +555,7 @@ activeTick(integer now, float dt)
     {
         gState = ST_NOSHOT;
         setUi("noshot");
+        llOwnerSay("[Cinema] no shot from the director after " + (string)llRound(ENGAGE_WAIT) + " s. Is cinema_director.lsl in this prim and running? Type /9 status.");
     }
 
     if (gState == ST_ROLLING && !gHoldInf)
@@ -749,7 +795,7 @@ default
             if (str == "?")
             {
                 llOwnerSay("[Cinema/core] v" + VERSION + " state " + (string)gState + " (0 idle,1 engaging,2 rolling,3 paused,4 peek,5 noshot,6 probe)"
-                    + ", source " + (string)gSource + " (0 afk,1 manual), permissions " + (string)gPermOK
+                    + ", source " + (string)gSource + " (0 afk,1 manual), permissions ok " + (string)gPermOK + " (held " + (string)llGetPermissions() + " of " + (string)gNeedPerms + ")"
                     + ", shot " + (string)gHaveShot + ", attached " + (string)llGetAttached()
                     + ", free mem " + (string)llGetFreeMemory());
             }
@@ -764,6 +810,10 @@ default
             else if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
+            }
+            else if (str == "grab")
+            {
+                startProbe("grab");
             }
         }
     }
