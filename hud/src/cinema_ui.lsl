@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.0.0";
+string VERSION  = "4.0.1";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 string NOTECARD = "Cinema HUD - Read Me";
 
@@ -21,7 +21,7 @@ integer CMD         = 7371;
 
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
-float FADE_A    = 0.15;     // button opacity while the camera rolls
+float gFadeA    = 0.4;      // button opacity while the camera rolls (Options > Fade)
 
 list DEFAULTS = [
     "afk_on", "1",
@@ -32,6 +32,7 @@ list DEFAULTS = [
     "indoors", "auto",
     "chat_cuts", "1",
     "emoji", "1",
+    "fade", "40",
     "peek", "1",
     "peek_bail", "0",
     "phantom", "0",
@@ -51,7 +52,7 @@ list ITEMS = [
     "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
     "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
     "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Trace", "emoji", "🔤", "Emoji",
-    "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
+    "fade", "🔆", "Fade", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
     "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a300", "", "5 min", "a600", "", "10 min",
     "away", "", "SL Away", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
     "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
@@ -101,6 +102,7 @@ cfgSet(string k, string v)
     cfgWrite(k, v);
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
     if (k == "emoji") gEmoji = (integer)v;
+    if (k == "fade") gFadeA = (float)v / 100.0;
 }
 
 initDefaults(integer force)
@@ -134,6 +136,8 @@ checkOwner()
     }
     else initDefaults(FALSE);
     gEmoji = (cfgGet("emoji") != "0");
+    gFadeA = (float)cfgGet("fade") / 100.0;
+    if (gFadeA < 0.1) gFadeA = 0.4;
     gFirst = (cfgGet("seen_intro") != "1");
     llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
 }
@@ -153,7 +157,7 @@ setLook(string st)
 {
     integer idle = (st == "off" || st == "armed");
     float a = 1.0;
-    if (!idle) a = FADE_A;
+    if (!idle) a = gFadeA;
     if (!idle && gShownIdle)
     {
         llOffsetTexture(0.25, 0.0, ALL_SIDES);      // frame 2: clapped
@@ -169,7 +173,7 @@ endClap()
 {
     gClapT = 0.0;
     llOffsetTexture(-0.25, 0.0, ALL_SIDES);        // frame 1: open
-    if (!gShownIdle) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, FADE_A]);
+    if (!gShownIdle) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, gFadeA]);
 }
 
 // ============================================================================
@@ -290,8 +294,8 @@ openMenu(string page)
     {
         text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace") + " · Emoji: " + onoff("emoji");
-        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "emoji", "test", "reset", "back"];
+            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace") + " · Emoji: " + onoff("emoji") + " · Button fade: " + cfgGet("fade") + " %";
+        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "emoji", "fade", "test", "reset", "back"];
     }
     else if (page == "indoors")
     {
@@ -415,6 +419,15 @@ onChoice(string msg)
             if (id == "phantom") toggle("phantom", "Phantom obstacles");
             else if (id == "trace") toggle("trace", "Trace lines");
             else if (id == "emoji") toggle("emoji", "Emoji");
+            else if (id == "fade")
+            {
+                string nf = "40";                           // cycle 20 -> 40 -> 70 %
+                if (cfgGet("fade") == "40") nf = "70";
+                else if (cfgGet("fade") == "70") nf = "20";
+                cfgSet("fade", nf);
+                llOwnerSay("[Cinema] Button fade while rolling: " + nf + " % visible");
+                if (gUiState != "idle") setLook("rolling");
+            }
             openMenu("opts");
         }
     }
