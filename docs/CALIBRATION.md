@@ -1,43 +1,28 @@
-# Calibration & In-World Probe Log
+# Calibration and in-world log (v4)
 
-Fill this in after running **Menu → Options → Probe** with **Debug** on. These values decide the `cin.cutmode`, `cin.maxcam` and `cin.fovaxis` settings.
+Fill this in while testing in-world. `/77 status` and the trace lines give most of it.
 
-## Platform probes (the SL wiki leaves these open)
-| Probe | Question | Firestorm result | Official viewer result | Setting adjusted |
-|---|---|---|---|---|
-| a | Does lag 0 / threshold 0 give a clean cut (no glide)? | | | `cutmode` |
-| b | Does `llClearCameraParams` snap back or ease back? | | | — |
-| c | Does `llGetCameraPos` follow Alt-orbit? (peek detection) | | | `peek_bail` |
-| d | Max distance from avatar to locked camera (10 / 25 / 45 / 60 m) | | | `maxcam` |
-| e | Is `llGetCameraFOV` the vertical FOV? | | | `fovaxis` |
-| f | What does ESC do while rolling? | | | — |
+| Question | Result |
+|---|---|
+| Is the clapper crisp at 40 px? Is the right face / offset set? | |
+| Tap opens the menu after a short beat; do double-taps register reliably (0.35 s window)? | |
+| Does a long press (0.8 s) open the live menu? | |
+| Emoji show on the buttons? (if boxes: Options › Emoji off) | |
+| Does the button fade to 15 % and clap once on start? | |
+| Scenery outdoors: varied views, nothing blocked, reach your viewer allows | |
+| Skybox: do views stay inside the room (corner / centre / you small)? Trace line "inside a room"? | |
+| House on the ground: views from outside above the roof? | |
+| Photo hold: frozen until a tap? Double-tap = next? | |
+| Favourites: ⭐ Save, then do they come back (about every 4th cut)? | |
+| Friends: does the glide look smooth (lag 1.5 s)? If the camera does not ease: report it, there is a step-glide fallback | |
+| Friends: someone runs out of frame: snap within about 1 s to a wider shot? | |
+| Social / Friends chat cuts: a cut to the speaker within about 6 s, not more often than every 10 s? | |
+| Typing in Social / Friends keeps the camera rolling and cuts to you? | |
+| Free memory printed by each script (core / ui / scenery / people / friends / picker) | |
 
-## Composition constants
-| Constant | Initial | Calibrated | Notes |
-|---|---|---|---|
-| K_EYE_STAND | 0.37 | | eye height factor of avatar bbox height |
-| K_EYE_SIT | 0.25 | | |
-| BODY_R | 0.35 m | | |
-| MARGIN | 1.15 | | |
-| THETA_MAX | 10° | | |
-| STANDOFF | 0.4 m | | gap kept from walls |
-| R_INT | 4.5 m | | intimate radius |
-| R_ENS | 10 m | | ensemble radius |
-| LINK | 3.5 m | | cluster link distance |
-| W_OWN | 1.5 | | owner weight in centroid |
-| MIN_HOLD | 6 s | | |
-| SURVEY_RANGE | 50 m | | |
-| VISTA | 25–45 m | | |
-| PEEK_TOL | 0.3 m | | |
-
-## Test matrix log
-| # | Scenario | Date | Result | Notes |
-|---|---|---|---|---|
-| 1 | Open field, solo | | | |
-| 2 | Small room with ceiling | | | |
-| 3 | Sofa with a friend | | | |
-| 4 | Club crowd | | | |
-| 5 | Skybox / region border / teleport | | | |
-| 6 | Activity policy (§4.2) | | | |
-| 7 | 10 min AFK cooldown | | | |
-| 8 | Give copy to alt (first run) | | | |
+Numbers I may tune from your feedback:
+- tap window 0.35 s, long press 0.8 s, fade 15 %;
+- glide lag 1.5 s and the 0.2 m glide threshold, the 1 s snap, the 25 m max distance;
+- room heights (corner at most 6 m above the floor, centre 1.7 m, you-small 2.5 m);
+- chat cut hold 10 s and cooldown 10 s;
+- drone height 10-30 m, wide 2.5-4 m, distance 20 m to reach, pace 60 s +/-25 %.

@@ -1,463 +1,344 @@
-# Cinema HUD — Architecture & Build Spec (Second Life / LSL Mono)
+# Cinema HUD: Architecture (v4)
 
-## Context
-The user wants a minimalist Second Life HUD that turns their viewer into an autonomous "static tableau" cinema camera (Ozu / Jarmusch / Nouvelle Vague grammar). One tap toggles it, and it also engages by itself when the user goes AFK. While it runs, it **cuts** between locked, composed vantage points and never glides. A Gemini-written brief set the vision. This document is the architecture and algorithm spec that Sonnet will implement in one pass. The HUD will be **given away or sold**, so v1 must be distribution-ready.
+- What the product is: `docs/PRODUCT.md`.
+- The order of work: `docs/ROADMAP.md`.
+- The frozen v3 is in `legacy/v3/`, with its own ARCHITECTURE.
 
-**Status:** architecture approved. Next step: Sonnet implements all scripts in one delivery, following §6. Quiz answers are in [`DECISIONS.md`](DECISIONS.md).
+This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
----
+## 1. Scripts
+All six scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
-## 0. Reality checks on the Gemini brief (verified against the SL wiki)
-| Brief says | Reality in SL | Design response |
-|---|---|---|
-| "Chat focus" bails out | LSL can't see where UI focus is | Poll `llGetAgentInfo(owner) & AGENT_TYPING`. It follows the viewer's start/stop-typing messages. |
-| Input via `llTakeControls` | Controls see movement keys only, not mouse orbit or Alt-cam | Camera poll via `llGetCameraPos` (TRACK_CAMERA). Alt-cam = **peek**, not bail (§4.2) |
-| Alt-cam / ESC | Free camera / Alt-orbit **silently overrides** scripted params. ESC *reverts to* the scripted camera. Scripted camera doesn't work in mouselook | Peek: pause cutting while the camera deviates, resume when it returns. Mouselook pauses and resumes the cinema |
-| One 64 KB budget | 64 KB is **per script**, and permissions are **per script** | 3 scripts. The script that bails out also holds CONTROL_CAMERA + TAKE_CONTROLS → "Core" |
-| Scripts keep running everywhere | `llTakeControls` keeps scripts running in no-script parcels **only for scripts in the same prim** | All scripts live in the **root prim** |
-| Ghost inputs | A ghost FWD+BACK `control()` event fires after teleport | Ignore `control()` for 2 s after `CHANGED_TELEPORT` |
-| Vista = GPU cooldown | A far camera looking *back* at the sim can show *more* geometry and makes objects stream in around the new camera | Vista splits into **Long shot** and **Pillow shot** (sky, sea, horizon, no avatars). Only the pillow shot is the cooldown shot |
-| Floor height via ground | `llGround` is terrain only, so it's useless in skyboxes and buildings | Floor = a downward ray. `llGround`/`llWater` are only guards against the camera going below terrain or water |
-| Sensor sees "the user" | Attachments can't detect their wearer. Results are capped at 32, sorted nearest-first, same region only | Owner via `llGetObjectDetails(owner,[OBJECT_POS,OBJECT_ROT])`. Others via one-shot `llSensor`, keeping the 12 nearest |
-| Horizon lock via `focus.z = pos.z` | Correct, but a level camera at eye height centres the head and leaves an empty top half | **Compose vertically by camera HEIGHT, never by tilt** (§2.4) |
-| FOV-based framing | Scripts can *read* FOV (`llGetCameraFOV`, TRACK_CAMERA) but not set it. Aspect ratio is unknown | Read FOV at engage (default 1.047 rad), treat it as vertical (setting), aspect 16:9 (setting) |
-
-**Unknowns the wiki doesn't settle.** Code has to handle both outcomes, because there is no milestone in which to test them first:
-- (a) Lag 0 might glide instead of cutting. Setting `cin.cutmode`: `0` = set params directly, `1` = `llClearCameraParams()` then set in the same event.
-- (b) We don't know whether `llClearCameraParams` snaps back or eases back. Nothing to handle; just record it.
-- (c) `llGetCameraPos` might not follow Alt-orbit. Then peek simply never triggers, which is harmless.
-- (d) The maximum distance between a locked camera and the avatar is unknown. Setting `cin.maxcam` defaults to 45 m and clamps every shot.
-- (e) The FOV axis is unknown. Setting `cin.fovaxis`.
-- (f) ESC behaviour. Covered by peek.
-
-The debug menu has a **Probe** item that runs (a), (c) and (d) as scripted tests and prints the results, so the user can fill in CALIBRATION.md.
-
----
-
-## 1. System overview
-```
- HUD linkset (v1 = a single prim: the BUTTON. All 3 scripts live in it.)
- ┌───────────────────────────────────────────────────────────────────┐
- │ cinema_core.lsl  ◄──── link msgs ────►  cinema_director.lsl       │
- │  perms, controls, AFK timer, state      scene scan, survey rays,  │
- │  machine, touch (tap / long-press),     composition math, ray     │
- │  camera apply / CLEAR, peek, button     scoring, editing grammar  │
- │  look                                                             │
- │        ▲                                                          │
- │        └──── link msgs ────►  cinema_ui.lsl                       │
- │                               dialog menus, llLinksetData config, │
- │                               first-run, help, debug/probe, ver   │
- └───────────────────────────────────────────────────────────────────┘
- Phase 2 (optional, separate project, can be shelved): screen-overlay prims:
- FADE (dip-to-black) + BAR_TOP/BAR_BOT (letterbox), all switchable off.
-```
-**Rule:** Core never waits on anyone to stop. Bail-out stays inside Core: an integer compare, then `llClearCameraParams()` as the first statement. Director is the "brains" and may be slow. Core keeps the previous shot on screen until a new one arrives, so there are no gaps and no flashes of the default camera.
-
-**Transitions in v1:** hard cuts everywhere. The chosen "dip-to-black for far cuts" needs the FADE prim, so it ships with Phase 2. Director already sets a `fade` flag on each SHOT (TRUE for C1 long shots and any cut longer than 20 m). Core ignores the flag until a FADE prim exists, which it finds by prim name at startup.
-
----
-
-## 2. Vector mathematics & framing formulas
-
-### 2.1 Notation & primitives
-- `P0`: owner position (centre of the avatar's bounding box). `F0`: owner facing, `norm(flat(llRot2Fwd(rot)))`.
-- `flat(v) = <v.x, v.y, 0>`. `yaw(v, a) = v * llEuler2Rot(<0,0,a>)`. `UP = <0,0,1>`.
-- `V`: view direction, a horizontal unit vector from camera to subject. Right vector `R = <V.y, −V.x, 0>`.
-- Eye height: `eyeZ(i) = Pi.z + K_EYE·size.z`.
-  - `K_EYE_STAND ≈ 0.37`, `K_EYE_SIT ≈ 0.25`.
-  - `size = llGetAgentSize(k)`.
-  - Sitting comes from `llGetAgentInfo(k) & AGENT_SITTING`, which works on other avatars in the region.
-- Floor `Zf` = the hit of a 10 m down ray from `P0`.
-- Lens: `VFOV = llGetCameraFOV()`, `ASPECT = 1.778`.
-  - `tanV = tan(VFOV/2) ≈ 0.577`.
-  - `tanH = tanV·ASPECT ≈ 1.026`.
-
-### 2.2 Horizon lock (keystone suppression)
-- Default: `focus.z = cam.z` exactly. Pitch is 0, so vertical lines stay parallel.
-- Controlled down-angle `θ ∈ [5°,10°]`, used for seated subjects and ring-shaped groups: `focus.z = cam.z − d·tan θ`.
-- Clamp `θ ≤ THETA_MAX` (10°, a setting). Only fallback F3 may go to 15°.
-- Every shot is normalized before it is sent: `f.z = cam.z − d·tan(clamp(θ, 0, THETA_MAX))`.
-
-### 2.3 Fit distance
-```
-halfW = max_i |(Pi − C)·R| + BODY_R            (BODY_R ≈ 0.35 m)
-dW    = halfW / tanH
-dH    = HALF_H / tanV                           (HALF_H: CU 0.6, MS 0.9, FULL 1.3)
-d     = clamp( max(dW,dH) · MARGIN, DMIN_arch, DMAX_arch )      (MARGIN ≈ 1.15)
-```
-
-### 2.4 Vertical composition by camera height (the core trick)
-To put the eye line on the upper-third line with a perfectly level camera:
-```
-(eyeZ − cam.z)/d = tanV/3   ⇒   cam.z = eyeZ − d·tanV/3
-```
-- At d = 3 m the camera drops about 0.58 m, to chest height. That is Ozu's low, level camera. Walls stay straight and headroom is right.
-- For seated subjects the same formula gives tatami height.
-- Guard: `cam.z ≥ Zf + 0.35`.
-
-### 2.5 Horizontal composition (rule of thirds via yaw; yaw doesn't cause keystoning)
-- Thirds offset: `α = atan(tanH/3)` (≈ 18.9°).
-- Lead room: put the subject on the third opposite to where they face, with `side = sign(F_subject·R)`.
-- Then `V' = yaw(V, side·α)` and `focus = cam + V'·d`, with z from §2.2.
-
-### 2.6 Archetype A — Intimate (solo portrait / two-shot / three-shot)
-`S` = owner + up to 2 nearest avatars within `R_INT = 4.5 m`. Weighted centroid `C = (W_OWN·P0 + ΣPi)/(W_OWN + k)`, with `W_OWN = 1.5`.
-- **k = 0, solo portrait.**
-  - Camera azimuth relative to owner facing, weighted by style: `φ ∈ {±135° 3/4 rear, ±45° 3/4 front, 180° Jarmusch back, 0° frontal symmetric}`.
-  - `Dcam = yaw(F0, φ)`, `cam = C + Dcam·d`, `V = −Dcam`. Thirds per §2.5.
-- **k ≥ 1, axis of action.**
-  - Axis `A = norm(flat(P1 − P0))`, normal `N = <−A.y, A.x, 0>`.
-  - 180° rule: keep side `s ∈ {±1}` for the whole scene.
-  - Over the owner's shoulder: `Dcam = norm(N·s·cos γ − A·sin γ)`, γ ≈ 35°.
-  - Reverse shot: use `A → −A` and keep the same `s`.
-  - `d` per §2.3, MS framing, clamped to [2.5, 5].
-- **k = 2:** mini-ensemble (§2.7), d clamped to [3, 6].
-- Height per §2.4 using the mean eyeZ. If seated, θ = 5°.
-- Others are framed freely, close two-shots included.
-- **Speaker cut** is optional and OFF by default. When on, the subject role may move to the avatar who is typing.
-
-### 2.7 Archetype B — Social ensemble tableau
-1. Members: single-link cluster seeded with the owner, over avatars within `R_ENS = 10 m`. Link distance 3.5 m, cap 6.
-2. Centroid `C` and the XY covariance `Sxx, Syy, Sxy`.
-3. Principal axis: `θp = 0.5·llAtan2(2Sxy, Sxx−Syy)`, `L = <cos θp, sin θp, 0>`, `N = <−sin θp, cos θp, 0>`.
-   - Eigenvalues: `λ1,2 = (Sxx+Syy)/2 ± sqrt(((Sxx−Syy)/2)² + Sxy²)`.
-   - Anisotropy: `a = (λ1−λ2)/(λ1+λ2)`.
-4. Row or line (`a > 0.35`): camera along `±N`. Pick the sign by facing score `Σ F_i·(±N)`, then by rays.
-5. Ring or blob (`a ≤ 0.35`): take the azimuth from the sweep, scored by facing score and owner visibility. Raise the camera to `cam.z = meanEye + 0.4` with θ = 6°.
-6. Owner occlusion is a pure-math penalty: another member nearer the camera and within 4° of the owner's bearing.
-7. `d` per §2.3, FULL framing, clamped to [6, 10] (up to 14 if the fit demands and clearance allows).
-
-### 2.8 Archetype C — Architectural vista
-`Do` = the survey ray direction with the most clearance.
-- **C1 Long shot (figure in landscape).**
-  - `cam = P0 + Do·d`, with `d ∈ [25, min(45, cin.maxcam)]`, limited by `clear(Do) − 2`.
-  - `cam.z = max(Zf + 1.6, ground + 1.6)`.
-  - Level focus toward the owner, owner on a third.
-  - Needs a line-of-sight ray. `fade = TRUE`.
-- **C2a Rückenfigur.** Camera 3 m behind the owner, owner on a third, looking out along `Do`.
-- **C2b Pillow shot (GPU cooldown).**
-  - Camera 1 m beside the owner, at eye height + 0.3, looking along `Do`. Focus 60 m out. No avatars in frame.
-  - Optional: horizon on the lower third with a pitch-up of `atan(tanV/3)` (≈ 10.9°). Pillow shots only.
-- **Interiors:** C1 and C2 only if some survey ray reaches past 15 m (a "window shot"). Otherwise use A instead.
-
----
-
-## 3. Raycast candidate selection pipeline (`llCastRay`)
-**Ray parameters**
-- `[RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]`, plus `RC_DETECT_PHANTOM, TRUE` only if `cin.phantom` is on (default OFF).
-- Status is the last list element: `<0` error, `0` clear, `1` hit. Terrain is hit, with key `NULL_KEY`.
-
-**Blind spots**
-- A ray that starts inside a prim doesn't detect that prim.
-- Prims with `PRIM_PHYSICS_SHAPE_NONE` are never hit.
-- **Clamp both ray endpoints into [0.5, 255.5] in x and y.**
-
-### 3.1 Survey
-- **When:** on engage, after a teleport or region change, when the owner has moved more than 2 m, and every 6 cuts.
-- **Rays (10 total)**, from `E = <P0.x, P0.y, eyeZ>`:
-  - 8 horizontal rays, 45° apart, to 50 m.
-  - An up ray to 40 m (`roofZ`).
-  - A down ray to 10 m (`Zf`).
-- **Openness:** `O = Σ min(clear_i, 50)/400`.
-- **Environment class:**
-  - INTERIOR: `roof < 12 && O < 0.25`.
-  - SEMI: `roof < 12 || O < 0.5`.
-  - Otherwise EXTERIOR.
-
-### 3.2 Candidate sweep (per cut)
-- Each archetype proposes an ideal `(φ*, d*, cam.z, θ)`.
-- Make 7 candidates at `φ* + {0, ±25°, ±50°, ±80°}`.
-- Cast a ray from the **focus point to each candidate camera**:
-  - A hit at distance h gives `d_eff = h − 0.4`. A clear ray gives `d_eff = d*`.
-  - A candidate is valid if `d_eff ≥ max(0.7·DMIN, 1.2)`.
-  - Recompute `cam.z` for `d_eff`.
-
-### 3.3 Score
-```
-S = 3.0·min(d_eff/d*,1) + 2.0·cos(φ−φ*) + 1.5·min(|φ−φ_last|/60°,1)
-  + 1.0·[same 180° side] + 1.0·facingScore − 2.0·ownerOccluded
-```
-
-### 3.4 Verify (top 2 only)
-1. Reverse ray from camera to focus. Ignore hits within 0.8 m of the focus (the subject's own sofa).
-2. Ensemble: at most 2 line-of-sight rays to the farthest members. A blocked ray is a soft penalty.
-3. Guards:
-   - Region clamp.
-   - `cam.z ≥ llGround(off) + 0.5` and `≥ llWater(off) + 0.2` (only near terrain).
-   - INTERIOR: `cam.z ≤ roofZ − 0.3`.
-   - `|cam − P0| ≤ cin.maxcam`.
-
-Worst case is about 11 rays per cut.
-
-### 3.5 Fallback ladder
-- **F1 Shrink:** accept `d_eff ≥ 1.2` and step framing down FULL → MS → CU.
-- **F2 Shoulder:** camera 0.9 m behind the owner's head and 0.25 m to the side, looking forward, level.
-- **F3 High corner:** the survey direction with the most clearance, `d = min(clear − 0.4, 3)`, `cam.z = min(roofZ − 0.3, eyeZ + 1)`, θ ≤ 15°.
-- **F4 Hold:** re-check the current shot with one ray and extend its hold.
-- **F5 Release:** send `NO_SHOT`. Core goes back to the default camera and the button shows "no shot". Retry in 15 s.
-- **Ray errors** (−2 / −3): keep the current shot and retry in 3 s. After 3 failures, go to F4.
-
----
-
-## 4. State machine & control loop
-
-### 4.1 Core states
-```
-        tap / AFK≥T            first SHOT                 hold expired / event
- IDLE ─────────────► ENGAGING ───────────► ROLLING ─────────────────────► CUTTING
-  ▲ (armed if AFK on)   │ 5 s no shot       ▲  ▲      SHOT applied          │
-  │                     ▼                   │  └──────────────────────────────┘
-  │                   NOSHOT ── retry ──────┘
-  │                                 ROLLING ⇄ PEEK  (camera deviates / returns)
-  │                                 ROLLING ⇄ PAUSED (mouselook / teleport / region; resume after 3 s)
-  └──── BAIL (per §4.2 policy) from any active state
-```
-`gSource ∈ {MANUAL, AFK}`. `gArch` = the archetype of the current shot.
-
-### 4.2 Activity policy (decided in the quiz)
-| Event | AFK-started session | MANUAL-started session |
-|---|---|---|
-| Movement keys | **Bail** (instant, first line of `control()`) | **A/B shots: keep rolling** (director mode, §4.5). **C shots:** setting `cin.man_vista_end`, default 0 = keep rolling |
-| HUD tap | Bail | Bail (toggle off) |
-| Typing (`AGENT_TYPING`, polled every 0.5 s) | **Bail** | **Bail** |
-| Sit / stand change (`AGENT_SITTING`/`AGENT_ON_OBJECT` toggled) | **Bail** | **Bail** |
-| Camera deviates > 0.3 m from the shot (Alt-cam/orbit) | **Peek:** freeze cutting and the hold timer; resume when the camera returns (ESC). Setting `cin.peek_bail` (default 0) turns this into a bail | same |
-| Mouselook | Pause, resume on exit | same |
-| Teleport / region change | Clear now, PAUSED, re-survey, resume | same |
-| Detach | `llClearCameraParams()` (CONTROL_CAMERA is revoked anyway) | same |
-
-Idle-side activity, which resets the AFK clock: control events, typing, and the camera moving while IDLE (orbiting counts as being present).
-
-### 4.3 Timers (one per script)
-- **Core IDLE:** 2 s tick. Fires the AFK trigger when `now − gLastAct ≥ cin.afk_sec`. The AFK option `"away"` triggers on the `AGENT_AWAY` flag instead.
-- **Core active:** 0.5 s tick. Polls, runs the hold countdown and the peek check. Never uses `llSleep`.
-- **Director, active only:**
-  - Sensor rescan every 5 s: `llSensor("", NULL_KEY, AGENT, 20, PI)`, one-shot.
-  - In MANUAL with movement: owner-only position check every 1 s through `llGetObjectDetails`.
-  - All intervals double when `llGetRegionTimeDilation() < 0.8`.
-
-### 4.4 Editing grammar (Director)
-| Context | A Intimate/Portrait | B Ensemble | C1 Long | C2 Pillow/Rücken |
-|---|---|---|---|---|
-| solo, exterior | 15 | – | 30 | **55** |
-| solo, interior | 45 | – | 0 (window only) | 55 (window/F2) |
-| pair/trio | 55 | 20 | 10 | 15 |
-| group ≥ 3 | 30 | 45 | 10 | 15 |
-| **cooldown** (AFK ≥ `cin.cool_min`, 10 min) | ×0.5 | ×0.5 | ×0.7 | ×2.5 |
-
-(Solo scenes favour landscape and pillow shots, as chosen.)
-
-**Rules**
-- The first shot of a scene is an establishing shot (B or C1).
-- No archetype twice in a row, except A shot / reverse shot.
-- A pillow shot every 4–6 cuts.
-- A scene change (group membership changes, or the owner moves more than 3 m) means re-establish and pick a new 180° side.
-
-**Holds**
-- Base: A 20 s, B 25 s, C1 18 s, C2 8 s.
-- ±20% jitter, × `cin.hold_mul` (0.5–3), × the style preset multiplier.
-- `hold_mul = 0` means "hold until an event".
-
-**Event cuts** (after `MIN_HOLD = 6 s`):
-- The subject leaves the frame cone, `angle(V, owner − cam) > 0.85·HFOV/2`.
-- Someone arrives within R_INT.
-- Speaker cut, if enabled.
-
-### 4.5 Director mode (MANUAL + movement)
-- Core sends `DIR_MOVING` when a control event arrives in a MANUAL session.
-- Director checks the owner every 1 s against the frame cone.
-- When the owner leaves the frame or moves more than 4 m: an event cut with MIN_HOLD = 2 s, preferring A (portrait or two-shot).
-- Still only cuts, never glides.
-- If `cin.man_vista_end = 1` and the current shot is C: bail as if AFK.
-
-### 4.6 Style presets (`cin.style`)
-| Preset | Height | Azimuth weights (solo A) | Holds × | Pillow every | Extra |
-|---|---|---|---|---|---|
-| Blend (default) | §2.4 | mixed | 1.0 | 4–6 | — |
-| Ozu | §2.4 − 0.25 m (low) | frontal 0°/180° heavy | 1.2 | 3–4 | axial cuts (same φ, d×0.6) |
-| Jarmusch | §2.4 | 0°/180° symmetric, centred (no thirds yaw) | 1.6 | 6–8 | wider d ×1.2 |
-| Nouvelle Vague | §2.4 | ±45°/±135° | 0.6 | 8+ | jump cuts (same φ, d×0.75, 30% chance) |
-
-### 4.7 Applying a shot (Core)
-```
-if (cin.cutmode) llClearCameraParams();
-llSetCameraParams([CAMERA_ACTIVE,TRUE, CAMERA_POSITION,p, CAMERA_FOCUS,f,
-  CAMERA_POSITION_LOCKED,TRUE, CAMERA_FOCUS_LOCKED,TRUE,
-  CAMERA_POSITION_LAG,0.0, CAMERA_FOCUS_LAG,0.0,
-  CAMERA_POSITION_THRESHOLD,0.0, CAMERA_FOCUS_THRESHOLD,0.0]);
-gShotPos = p;   // for peek detection
-```
-
----
-
-## 5. Resource & memory budget (Mono, 64 KB per script)
-| Script | Target | `llSetMemoryLimit` | Notes |
+| Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
-| core | ≤ 18 KB | peak + 8 KB | no lists beyond the current shot |
-| director | ≤ 46 KB | peak + 8 KB | if it goes over 50 KB, split out `cinema_composer.lsl` (pure math, called by link message) |
-| ui | ≤ 20 KB | peak + 6 KB | dialog lists built on demand |
+| `cinema_core.lsl` | Owns the camera: permissions, controls, AFK, modes, exits, hold timer, peek, pauses, watchdog plus basic shots, reach verification, `grab` test. **New:** FREEZE (photo hold), GLIDE, SPEAKER (owner typing), FAV forwarding, richer UI_STATE. **Touch handlers removed.** | 302 | ~350 (≥ 23 KB) |
+| `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
+| `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
+| `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
+| `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
+| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (alpha fade and clap) | 173 | ~300 (≥ 17 KB) |
 
-- Avatar list: `gAv = [key, vector pos, float yaw, float eyeZ, integer flags]`, stride 5, at most 12 entries, rebuilt once per scan.
-- Survey: an 8-float list, plus `gRoofZ, gFloorZ, gOpen, gEnv`.
-- Shot message: `"<p>|<f>|hold|arch|fade"`.
-- Settings live in **`llLinksetData`**. They survive resets and cost no script memory. Scripts cache them in globals and refresh on the `linkset_data` event.
-- No `llSensorRepeat`. A channel-0 listen only when speaker cut level 2 is on. Rays average under 1 per second.
+If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
 
----
+## 2. Link messages
+The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 
-## 6. Implementation spec for Sonnet (build all at once)
-
-### 6.1 Repo layout
-```
-README.md                 what it is, how to build the HUD prim, install
-docs/ARCHITECTURE.md      this spec
-docs/DECISIONS.md         quiz answers
-docs/CALIBRATION.md       constants + in-world probe results (to fill in)
-docs/USER_GUIDE.md        becomes the in-world "Cinema HUD — Read Me" notecard
-src/cinema_core.lsl
-src/cinema_director.lsl
-src/cinema_ui.lsl
-CHANGELOG.md
-```
-
-### 6.2 Link-message protocol (`llMessageLinked(LINK_THIS, num, str, id)`)
-| num | from → to | name | str |
+| num | from → to | string | notes |
 |---|---|---|---|
-| 7301 | core → dir | DIR_START | `afk` / `manual` |
-| 7302 | core → dir | DIR_STOP | — |
-| 7303 | core → dir | DIR_NEXT | `hold` / `invalid` / `retry` |
-| 7304 | core → dir | DIR_PAUSE / 7305 DIR_RESUME | `ml` / `tp` / `region` / `peek` |
-| 7306 | core → dir | DIR_MOVING | — (manual director mode) |
-| 7307 | core → dir | DIR_COOLDOWN | `1` once AFK ≥ cool_min |
-| 7310 | dir → core | SHOT | `"<p>|<f>|hold|arch|fade"` |
-| 7311 | dir → core | NO_SHOT | retry seconds |
-| 7312 | dir → core | EARLY_CUT / END_SESSION | reason |
-| 7320 | core → ui | UI_STATE | `off` / `armed` / `rolling` / `peek` / `noshot` |
-| 7321 | core → ui | UI_MENU | (long press) |
-| 7330 | ui → all | CFG_CHANGED | LSD key |
-| 7340 | any → ui | DEBUG | text (printed only when `cin.debug`) |
-| 7350 | ui → core/dir | PROBE | `cut` / `campos` / `dist` |
+| 7301 START | core → all | `"<mode>|<fov>"` | mode = `scenery` / `personal` / `social` / **`friends`**. Only the owner of that mode takes it |
+| 7302 STOP | core → all | reason | |
+| 7303 NEXT | core → active | why: `hold` / `retry` / **`skip`** | |
+| 7304 PAUSE / 7305 RESUME | core → active | `ml` / `tp` / `peek` / **`photo`** | |
+| 7306 MOVING | core → active | – | movement key in a following mode |
+| 7310 SHOT | worker → core | `"<pos>|<focus>|<hold>|<type>"` | a hard cut |
+| 7311 NO_SHOT | worker → core | reason | core covers it with a basic shot |
+| **7312 GLIDE** | friends → core | `"<pos>|<focus>"` | a slow move, see §5 |
+| 7313 ACK | worker → core | mode | |
+| 7314 REACH_FAIL | core → scenery | distance | |
+| **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
+| **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
+| 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
+| 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |
+| **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
+| 7330 CFG_CHANGED | ui or friends → all | key | |
+| 7360 VERSION | all | version, or `?` | |
+| 7370 STATUS | ui → all | `?` | every script prints one line |
+| 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |
 
-### 6.3 Settings (`llLinksetData`, prefix `cin.`, defaults in brackets)
-| Key | Default | Range / meaning |
+**Shot types**
+| Group | Type | Meaning |
 |---|---|---|
-| `afk_on` | 1 | 0 / 1 |
-| `afk_sec` | 90 | 60, 90, 120, 180, 300, 600, or `away` |
-| `style` | `blend` | `blend`, `ozu`, `jarmusch`, `nv` |
-| `hold_mul` | 1.0 | 0 (hold until an event), 0.5–3 |
-| `cool_min` | 10 | 0 = off |
-| `speaker` | 0 | 0 = off, 1 = typing flag, 2 = typing + local-chat listen |
-| `phantom` | 0 | |
-| `man_vista_end` | 0 | |
-| `peek_bail` | 0 | |
-| `theta_max` | 10 | |
-| `fovaxis` | `v` | |
-| `aspect` | 1.778 | |
-| `maxcam` | 45 | |
-| `cutmode` | 0 | |
-| `debug` | 0 | |
-| `overlay` | 0 | Phase 2 |
-| `ver` | — | |
+| People | 0 | portrait |
+| People | 1 | pair or over-the-shoulder |
+| People | 2 | group |
+| People | **3** | friends group |
+| People | **4** | speaker |
+| Scenery | 5 | drone |
+| Scenery | 6 | wide |
+| Scenery | **7** | favourite |
+| Scenery | **10** | room corner |
+| Scenery | **11** | room centre |
+| Scenery | **12** | room "you small" |
+| Core | 9 | basic |
 
-**Distribution hardening**
-- Write `cin.*` keys with `llLinksetDataWriteProtected` and a per-build pass constant, so other scripts that get into the linkset can't change them.
-- On `CHANGED_OWNER`, wipe and reset to defaults, and show first-run.
+Reach verification (§3) applies to types 5, 6 and 7 only.
 
-### 6.4 UI (long-press menu, `llDialog` on a random negative channel, listener removed after 60 s)
-**Button behaviour**
-- Tap toggles the cinema.
-- Long-press (`touch_end` with more than 1 s since `touch_start`) opens the menu.
+## 3. Core changes
+**States:** IDLE 0, WAIT 1, ROLL 2, PAUSE 3, PEEK 4, TEST 5, **FREEZE 6**.
 
-**Main menu:** Style · AFK · Holds · Options · Help · About
-- **AFK:** On/Off, 60 / 90 / 120 / 180 / 300 / 600 / "SL Away".
-- **Holds:** ×0.5 / ×1 / ×1.5 / ×2 / ×3 / Until event.
-- **Options:** Speaker cut (Off / Typing / Typing + chat), Phantom obstacles, Manual vista ends on move, Alt-cam ends cinema, Cooldown (Off / 5 / 10 / 20 min), Debug, Probe, Reset.
-- **Help:** gives the Read Me notecard.
+- **Touch:** delete `touch_start`, `touch` and `touch_end` from core, along with `gTouchT`, `gTouchSkip`, `gMenuShown` and `TOUCH_LONG`. The UI sends CMDs instead.
+- **UI_STATE:** `setUi(st)` sends `st + "|" + gMode + "|" + (string)gNextCut`.
+  - `gNextCut = llGetUnixTime() + llRound(gHold)` is set in `applyShot`.
+  - Call `setUi` on every applyShot, not only on a state change. That is cheap, and the live menu shows "next cut in N s".
+- **CMD `next`:** if the state is ROLL or FREEZE: leave FREEZE (send RESUME `photo`), then `askWorker("skip")`.
+- **CMD `photo`:**
+  - From ROLL or PEEK → FREEZE:
+    - send PAUSE `photo`;
+    - re-apply `gLast` (snap back if the user had orbited);
+    - `setUi("frozen")`.
+  - From FREEZE → ROLL:
+    - send RESUME `photo`;
+    - re-apply `gLast`;
+    - `gHold = 8.0`, so it continues briefly and then cuts;
+    - `setUi("rolling")`.
+- **FREEZE behaviour in `activeTick`:**
+  - The exits run as for the mode: typing, sitting, and movement keys in Scenery.
+  - Mouselook and teleport pause as usual. Resuming from that pause returns to FREEZE, not ROLL; keep a `gFrozen` flag.
+  - **No** hold countdown, **no** peek check and **no** watchdog.
+  - Incoming SHOT or GLIDE messages are ignored while frozen (the workers are paused too), so the frozen shot never changes.
+- **CMD `fav`:**
+  - In Scenery while ROLL or FREEZE: send FAV with the pos and focus of `gLast` (the first two fields), and say "⭐ saved".
+  - Otherwise say "⭐ Save works in Scenery".
+- **GLIDE (7312):**
+  - Accept it only in ROLL, with `gMode == "friends"`.
+  - Call `llSetCameraParams([CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LAG, 1.5, CAMERA_FOCUS_LAG, 1.5])`, leaving the locks and thresholds as already set.
+  - Set `gShotPos = p` and `gGlideUntil = llGetTime() + 3.0`.
+  - The peek check is skipped while `llGetTime() < gGlideUntil`.
+  - Do **not** touch `gHold`, `gType` or `gVerify`.
+  - Set `gGlided = TRUE`.
+- **The cut after a glide:** in `setCam`, if `gGlided`, call `llClearCameraParams()` first (the same as cut mode) and clear `gGlided`. The lag-0 cut is then never eased by the leftover lag. *Verify in-world that lag eases a locked camera between positions. v3's "cut mode" shows that viewers do ease locked cameras. If lag does nothing, fall back to 5 GLIDE steps 0.3 s apart sent by the friends script (TUNE).*
+- **Typing:** in `activeTick`, `if (info & AGENT_TYPING)`:
+  - Mode `scenery` or `personal` → `bail("typing")`, as in v3.
+  - Mode `social` or `friends`:
+    - If `!gTypingSent`: send SPEAKER with the owner key and set `gTypingSent = TRUE`.
+    - Clear `gTypingSent` when typing stops.
+- **Watchdog and basic shots:** `friends` uses the people basic shot (portrait orbit).
+- **Status line:** add `frozen`, the glide count and `friends` to the mode names.
 
-**Button look:** colour or glow per UI_STATE: off = dim grey, armed = soft white, rolling = red dot, peek = amber, noshot = blue.
-
-**First run:** a one-time `llOwnerSay` welcome, plus the notecard offer.
-
-**About:** the version string. Each script has a `VERSION` constant that it checks against the others at startup, and it warns on a mismatch.
-
-### 6.5 Function prototypes
-**core**
+## 4. UI (`cinema_ui.lsl`)
+### 4.1 Touch decoder
+Owner only:
 ```
-engage(integer src); bail(string why); pause(string why); resume();
-applyShot(string packed); setUi(string st); integer camDeviates();
-requestPerms();   // TAKE_CONTROLS|CONTROL_CAMERA|TRACK_CAMERA, auto-granted for attachments
+touch_start: gDown = llGetTime(); gHeld = TRUE; gLongDone = FALSE; fast timer (0.05 s)
+timer:       if gHeld && !gLongDone && now-gDown >= 0.8 → gLongDone = TRUE; onLong()
+             if gTapN && now-gTapT > 0.35 → gTapN = FALSE; onTap()
+touch_end:   gHeld = FALSE
+             if gLongDone → return                      // long press already handled
+             if gTapN && now-gTapT <= 0.35 → gTapN = FALSE; onDouble()
+             else gTapN = TRUE; gTapT = now
 ```
-**director**
-```
-vector flat(vector v); vector yaw(vector v, float a);
-float  eyeZ(vector pos, vector size, integer sitting);
-vector clampRegion(vector v);
-list   ray(vector a, vector b);                       // [status, dist]
-integer survey();                                     // gClear, gRoofZ, gFloorZ, gOpen, gEnv
-float  fitDistance(list members, vector V, float halfH);
-float  camHeightThirds(float eye, float d);           // §2.4
-vector thirdsYaw(vector V, vector faceDir);           // §2.5
-list   composeIntimate(); list composeEnsemble(); list composeVista(integer variant);
-list   composeFallback(integer level);
-list   sweep(vector focus, float phiIdeal, float dIdeal, float dMin, float camZ, float theta);
-integer chooseArchetype(); float holdFor(integer arch);
-integer inFrame(vector p);                            // frame-cone test (event cuts, director mode)
-string packShot(vector p, vector f, float hold, integer arch, integer fade);
-```
-**ui**
-```
-menu(string page); cfgGet(string k); cfgSet(string k, string v); firstRun(); runProbe(string which); dbg(string s);
-```
+- The timer returns to the menu-timeout cadence (5 s) or to off when nothing is pending. Use one `timer()` with a `nextTimer()` helper that picks the rate.
+- `gUiState` (from UI_STATE):
+  - `idle` = off or armed;
+  - `rolling` = rolling or peek;
+  - `frozen`.
 
-### 6.6 Build order inside the single delivery
-Sonnet writes everything in one pass but in this order, and syntax-checks each file as it goes:
-1. **core:** perms, controls, states, peek, the `cutmode` handling.
-2. **ui:** LSD defaults, menus, protected writes, first-run, probe.
-3. **director:**
-   - Scan and survey.
-   - A (with §2.4/§2.5).
-   - The ray pipeline and fallbacks.
-   - B, then C.
-   - Grammar, styles, cooldown, director mode, speaker cut.
-4. Docs: README (prim setup: one prim, HUD attach point Center or Bottom Right, drop in the 3 scripts and the notecard), USER_GUIDE, CHANGELOG.
+| | idle | rolling | frozen |
+|---|---|---|---|
+| `onTap()` | `openMenu("main")` | CMD `stop` | CMD `photo` (resume) |
+| `onDouble()` | CMD `scenery` | CMD `next` | CMD `next` |
+| `onLong()` | `openMenu("main")` | `openMenu("live")` | `openMenu("live")` |
 
-### 6.7 Calibration constants (initial values, all collected in a top-of-file block per script)
-`K_EYE_STAND 0.37, K_EYE_SIT 0.25, BODY_R 0.35, MARGIN 1.15, THETA_MAX 10°, STANDOFF 0.4, R_INT 4.5, R_ENS 10, LINK 3.5, W_OWN 1.5, MIN_HOLD 6, SURVEY_RANGE 50, VISTA 25–45, PEEK_TOL 0.3`
+Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
+- a single tap;
+- a double tap at 0.2 s;
+- two taps 0.5 s apart (two singles);
+- a long press of 1.0 s;
+- a long press followed by a tap.
 
----
+### 4.2 Button look
+- `setLook(state)`:
+  - `PRIM_COLOR, ALL_SIDES, <1,1,1>, alpha` with alpha 1.0 when idle and **0.15** when rolling or frozen;
+  - `PRIM_GLOW 0` and `PRIM_FULLBRIGHT TRUE`, set once.
+- **No colour changes ever.**
+- **Clap** on idle→rolling:
+  - `llOffsetTexture(0.25, 0.0, ALL_SIDES)` (frame 2, clapped);
+  - after 0.3 s `llOffsetTexture(-0.25, 0.0, ALL_SIDES)` (frame 1);
+  - then fade.
+- The texture is set up by the builder (README): repeats 0.5 × 1.0, offset -0.25. `state_entry` calls `llScaleTexture(0.5, 1.0, ALL_SIDES)` and `llOffsetTexture(-0.25, 0.0, ALL_SIDES)`, so a fresh prim is right too.
 
-## 7. Verification
-**Offline:** run each `.lsl` through `lslint` (or LSL-PyOptimizer) if it can be installed in the container. Otherwise do a careful manual review against the wiki signatures.
+### 4.3 Menus
+- **Table-driven.** Each button is a pair `[id, emoji]`, for example `["scenery", "🏞"]`.
+  - The label is `emoji + " " + Title(id)`, or `Title(id)` alone when `cin.emoji` is `0`.
+  - Replies are matched by stripping everything up to and including the first space when the label starts with a non-ASCII character, then comparing case-insensitively with the title. One `onChoice` handles both styles.
+- **Layout helper:** `llDialog` fills from the **bottom-left**, so write each page top row first and pass it through `order(list b)`, which reverses the rows of three.
+- **Label rules:** at most 24 bytes; aim for ≤ 10 visible characters after the emoji. The exact labels are in PRODUCT.md. Keep them.
+- **Header:**
+  - First line: `🎬 Cinema · <status>`.
+  - Second line: `Pace: <name> (<s> s) · AFK: <text> · Indoors: <auto|inside|outside>`.
+  - The live page shows `next cut in N s` from `nextCutUnix`.
+  - The text-only fallback uses `Cinema - ` in place of the emoji.
+  - Keep each dialog under 512 bytes.
+- **Pages:**
+  - `main`, `live`, `pace`, `afk`, `opts`, `indoors`, `chat`, `favs`, `altcam`, `reach` and `reset`.
+  - `friends` and `pick` belong to the friends script: the UI sends UI_FRIENDS `page`, and the friends script answers "↩ Back" with UI_MENU `main`.
+- **Live page:**
+  - 📷 Photo shows as ▶ Resume when frozen.
+  - ⭐ Save shows only when the mode is `scenery`; in other modes the space is left out.
+- **The listener:**
+  - removed on Close, on choosing a mode, and after **60 s** of no reply;
+  - re-created on each `openMenu` with a fresh random negative channel.
+- **First run** (new owner): one welcome **dialog**, not a chat wall:
+  ```
+  🎬 Welcome to Cinema
+  Double-tap: scenery camera
+  Tap: menu · while rolling, tap stops
+  Hold: live menu · AFK starts it by itself
+  ```
+  Buttons `[👍 Got it][❔ Help]`. It also gives the notecard.
 
-**In-world** (the user, with Debug on):
-1. Probe menu → record (a) cut vs glide, (c) campos follows Alt-cam, (d) max distance in CALIBRATION.md, and adjust `cutmode` / `maxcam`.
-2. Open field, solo: mostly pillow and long shots; portraits with straight walls, eyes on the upper third, correct lead room.
-3. Small room with a ceiling: never behind a wall or above the roof; F2/F3 appear in debug.
-4. Sofa with a friend: two-shot / over-the-shoulder, θ = 5°, no false hits on your own sofa.
-5. Club crowd: ensemble ≤ 6 members, no script-time spikes (Top Scripts, `llGetSPMaxMemory`).
-6. Skybox at 3000 m, region border, teleport: pause, then a clean resume.
-7. Policy table §4.2: AFK + key = instant bail. Manual + walking = keeps cutting. Typing and sit/stand bail. Alt-cam = peek, ESC resumes.
-8. After 10 min AFK: the pillow-shot share visibly rises.
-9. Give a copy to an alt: first-run greeting, defaults reset, notecard delivered.
-
----
-
-## 8. Decisions (quiz answers) → `docs/DECISIONS.md`
-| # | Topic | Decision |
+### 4.4 Settings (`cin.*`, protected Linkset Data)
+| Key | Default | Notes |
 |---|---|---|
-| 1 | AFK delay | 90 s default; submenu presets 60–600 s + "SL Away" |
-| 2 | What ends cinema | Movement keys (AFK sessions), HUD tap, **typing**, **sit/stand**. Alt-cam = peek (option to bail). Mouselook = pause |
-| 3 | Manual mode + movement | Social shots (A/B) keep rolling in "director mode". Vista: option, default keeps rolling |
-| 4 | Transitions | Hard cut near, dip-to-black far. Dip-to-black ships with the Phase 2 overlay; v1 hard-cuts everywhere |
-| 5 | Style | Blend default; Ozu / Jarmusch / Nouvelle Vague presets in the menu |
-| 6 | Hold | 20–30 s varied by shot type, menu multiplier (incl. "until event") |
-| 7 | Letterbox | Deferred to Phase 2 (optional, can be shelved), with an off switch. v1 = button only |
-| 8 | Vertical composition | Thirds by camera height, level camera |
-| 9 | Solo scenes | Mostly landscape and pillow shots |
-| 10 | Speaker cut | Optional (menu): Off / typing flag / typing + chat listen; default Off |
-| 11 | Other avatars | Framed freely, incl. close two-shots |
-| 12 | GPU cooldown | After 10 min AFK, favour pillow shots |
-| 13 | Phantom objects | Ignored by default, menu toggle |
-| 14 | Settings UI | Long-press button → dialog menu, settings stored in Linkset Data |
-| 15 | Build approach | All scripts in one delivery, with in-world probe tools for the unknowns |
-| 16 | Audience | Give or sell: first-run, notecard, protected settings, owner-change reset, versioning |
+| `afk_on`, `afk_sec` | 1, 90 | as v3 |
+| `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
+| `reach` | 100 | learned. `relearn` sets 100 and clears `reach_ok` |
+| `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
+| `indoors` | `auto` | `auto` / `inside` / `outside` |
+| `chat_cuts` | 1 | |
+| `emoji` | 1 | |
+| `peek`, `peek_bail`, `phantom`, `cutmode`, `trace`, `cmd_chan` | as v3 | `cutmode` is now command-only |
+| `friends` | "" | written by the friends script: `key,name;key,name;…`, at most 10 |
+| `fav.<region>` | "" | written by scenery: `pos|focus;pos|focus;…`, at most 8. The region name has spaces replaced by `_` |
+| `seen_intro` | 0 | the welcome dialog has been shown |
+| `theta_max`, `aspect` | 10, 1.778 | as v3 |
+
+**Version mismatch warning:** "Re-drop all Cinema scripts from the same release." It no longer says "four".
+
+### 4.5 Commands
+All commands are listed in PRODUCT.md.
+- `pace <s>` takes 10–600 s and writes `hold`; `hold <s>` is kept as an alias.
+- `friend list|clear` is forwarded to the friends script as CMD-like UI_FRIENDS `list` / `clear`.
+
+## 5. Friends (`cinema_friends.lsl`, new)
+- **Copied from `cinema_people.lsl`** (separate memory, so they are copied, not shared): `cfg`, `fmin`, `fmax`, `fclamp`, `dirOf`, `tsay`, `ray`, `refreshOwner`, `survey`, `camZ`, `fitDist`, `planG` (generalised below), `tryCand`, `sweep`, `shoulderShot`, `inFrame`, and the FOV maths in `loadCfg` / START.
+- **Friends list:**
+  - Kept as two lists, `gFKeys` and `gFNames`, loaded from `cin.friends` on START and on CFG_CHANGED `friends`.
+- **Presence scan** (1 s):
+  - From `llGetAgentList(AGENT_LIST_REGION, [])`, keep the keys that are in `gFKeys` and within **30 m** of you.
+  - `gTargets = [you] + their positions`, with eye heights from `llGetAgentSize`.
+- **Planning:**
+  - `planF()` = `planG` over `gTargets`. It already works for two people (you plus 1 friend, a two-shot square-on to your axis).
+  - Distance: `fitDist(spread, 1.3, 3.0, 25.0)`.
+  - If the fit wants more than 25 m, drop the target farthest from you and re-plan, until it fits or only you are left.
+  - With only you left: Personal-style `planA(FALSE)` and one note.
+- **Hold:** a cut every 25 s × (0.8–1.2) for a fresh angle (type 3).
+- **Glide and snap loop** (timer 0.5 s while active and not paused):
+  1. Refresh the owner and target positions (no full region scan; that stays at 1 s).
+  2. `allIn` = every target passes `inFrame(p)`, using `gCurCam` / `gCurV` and `0.9 × halfH`.
+  3. If `allIn`:
+     - `gOutTicks = 0`.
+     - If the centroid C has moved more than 0.4 m since the last shot or glide: the new cam = old cam + (C − C_last), with z re-derived by `camZ`, and the new focus = old focus + (C − C_last).
+     - Check `ray(oldCam, newCam)` and `ray(newCam, newFocus)`. If both are clear, send GLIDE. Otherwise re-plan with a SHOT.
+  4. If not `allIn`: `gOutTicks++`. At **2 ticks (1 s)**: re-plan with `MARGIN` × 1.3 → SHOT (a snap).
+  5. The **arrival** of a new friend means a pending cut at the next `MIN_HOLD` (6 s) boundary.
+- **Chat cuts:**
+  - `llListen(0, "", NULL_KEY, "")` while active and `chat_cuts` is on. Remove it on STOP.
+  - A speaker must be in `gFKeys` and present, or be the owner (from SPEAKER).
+  - The speaker is not cut to again within 10 s, and at least 6 s must have passed since the last cut.
+  - Speaker shot (type 4), held 8 s, no glide during it:
+    - a friend speaks → an over-the-shoulder shot from behind you, facing the friend (`planA(TRUE)` logic with N = the speaker and `gRev = FALSE`);
+    - you speak → from behind the nearest friend, facing you (`gRev = TRUE`).
+  - Then back to a group shot.
+- **Menu pages** (own dialog channel, own listener, 60 s timeout):
+  - `page`:
+    - header `💞 Friends · <n> saved · <m> here now` plus their names, truncated to 400 bytes;
+    - buttons `[▶ Start][➕ Pick][🗑 Clear] [↩ Back][✖ Close]`;
+    - ▶ Start → CMD `friends`.
+  - `pick`:
+    - avatars within 20 m, nearest first, excluding you, 9 per page;
+    - label = `"✓ " + llGetUsername(k)` if saved, else the username, cut to 22 bytes;
+    - extra buttons `[▶ More]` (if there is another page) and `[✔ Done]`;
+    - a tap toggles and re-opens the same page;
+    - map label → key with a parallel list built when the page opens;
+    - at most 10 saved; at 10 say "Friends list is full (10)".
+  - `🗑 Clear` asks for confirmation, `[Yes, clear][↩ Back]`.
+- **Status line:** saved count, present count, glides, snaps and free memory.
+
+## 6. Scenery (`cinema_scenery.lsl`)
+### 6.1 Outdoor
+Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v3/docs/ARCHITECTURE.md` §Scenery.
+
+### 6.2 Room classifier (in `context()`, once per session or after a 10 m move)
+- Eye point `E = gOP + <0, 0, 0.6>`.
+- Rays:
+  - **8 horizontal rays** from E, 60 m long, at azimuths `i × 45°` → `gWallD[i]` (60 if not hit). Let `nHit` be the count of hits.
+  - **Up:** the existing 40 m ray → `gCovered`, and the ceiling `gCeilZ = E.z + hit distance`.
+  - **Down:** from `gOP` to `gOP − <0, 0, 30>` → `gFloorZ` (the hit z), or `gFloorless = TRUE` if nothing is hit.
+- `gEnclosed = gCovered && nHit >= 6`.
+- `gSky = gFloorless || (gOP.z − llGround(ZERO_VECTOR) > 50.0)`.
+- Decide `gInside`:
+  - `indoors == "inside"` → `gInside = gEnclosed`;
+  - `"outside"` → FALSE;
+  - `auto` → `gEnclosed && gSky`.
+- `gSpan` = the largest `gWallD`, and `gInsideFails = 0`.
+- **Trace (once per context):** `scenery: inside a room (8/8 walls, ceiling 4 m, span 23 m)`, or `outdoors`, or `enclosed on the ground → above the roof`.
+
+### 6.3 Room shots (when `gInside`)
+- `findRoomShot()` builds up to **6 candidates**, two of each kind, and keeps the best by score. The kinds are chosen with weights corner 0.45, centre 0.30 and small 0.25, with each candidate rolling its kind.
+- The camera height `zc` is always clamped to `[gFloorZ + 1.2, gCeilZ − 0.6]`.
+
+| Kind | Camera | Focus |
+|---|---|---|
+| **Corner wide (10)** | `zc = min(gCeilZ − 0.6, gFloorZ + 6.0)`. From `<gOP.x, gOP.y, zc>` (first check that the vertical ray from E to there is clear), cast 8 diagonal-biased rays at `22.5° + i × 45°`, 60 m long. Take the 2 longest (corners in a box room) and put the camera `0.8 m` back from each hit | The point on the floor plane 1/3 of the way from the opposite corner to you (looks across the room through your area), pitch clamped to 15–45° down |
+| **Room centre (11)** | The centroid of the 8 horizontal wall-hit points from §6.2, at `gFloorZ + 1.7` | Along the direction from the centroid to the farthest wall-hit point, level (2° down) |
+| **You small (12)** | Along the longest `gWallD[i]`, `gWallD[i] − 0.8` from you, at `gFloorZ + 2.5`. Skip it if that is less than 6 m | You (`gOP`), so you are a small figure in the frame |
+
+**Every candidate must pass, in this order** (stop at the first failure to save rays):
+1. Inside the region `[1, 255]`.
+2. **Same room:** `ray(E, cam)` has no hit before `|cam − E| − 0.2`.
+3. **Clearance:** 5 rays of 0.5 m from the camera (±x, ±y, +z) are all clear.
+4. **View:** `ray(cam, cam + norm(focus − cam) × 60)` is clear for at least `max(3, 0.4 × gSpan)`. For "you small": clear up to `|focus − cam| − 1`.
+
+**Score** = `3 × clear/60 + 2 × novelty(az of cam from you) + 1 if the kind differs from the last + rand(0.5)`.
+
+If nothing passes:
+- `gInsideFails++` and fall back to `findShot` (outdoor logic, which puts the camera above the roof);
+- after 3 fails in a row, trace once: "room too small for room views; using outside views here".
+
+**Hold:** `gHold × (0.75 + 0.5 × rand)`, the same as outdoors.
+
+### 6.4 Favourites
+- **FAV received** (from core):
+  - append `pos|focus` to `cin.fav.<region>`;
+  - drop the oldest beyond 8;
+  - trace "⭐ saved (n/8 here)".
+- **Using favourites:** when `gCuts % 4 == 3` and the region has favourites, pick one that:
+  - is not `gLastFav`;
+  - has a camera within `gReach + 20` of you;
+  - passes a 10 m view-ray check (`ray(cam, cam + norm(focus − cam) × 10)` is clear).
+
+  Send it as type 7. If none passes, fall through to the normal finder.
+- **Clearing:** Options › Favourites › Clear here / Clear all. The UI deletes the keys with `llLinksetDataDeleteProtected`, or for "all", by finding the keys with `llLinksetDataFindKeys("^cin\\.fav\\.", 0, 0)`.
+
+### 6.5 Reach regrowth (fix)
+- After **20 consecutive cuts** without a REACH_FAIL (saved in `cin.reach_ok`), raise `gReach` by 10 %, up to 100 m, and save it.
+- REACH_FAIL resets the count.
+
+## 7. People (`cinema_people.lsl`): chat cuts in Social
+- On START `social` with `chat_cuts` on: `gChat = llListen(0, "", NULL_KEY, "")`. Remove it on STOP and on a switch.
+- `listen`:
+  - Ignore non-agents (`llGetAgentSize(id) == ZERO_VECTOR`) and the owner (the owner arrives as SPEAKER).
+  - The speaker must be within `R_GRP` (8 m), and not the same speaker within 10 s.
+  - Set `gSpeaker = id` and `gPendEvent = "speaker"`.
+- **SPEAKER (owner):** `gSpeaker = owner` and `gPendEvent = "speaker"`.
+- **In `nextShot`**, when the event is "speaker":
+  - A speaker other than you: `gNPos` / `gNEye` = the speaker, `gRev = FALSE`, then `planA(TRUE)` → over your shoulder, facing them.
+  - You: `gNPos` = the nearest other, `gRev = TRUE`, then `planA(TRUE)` → over their shoulder, facing you.
+  - Nobody else near: a portrait of you.
+  - The type is 4, and the hold is 8–12 s.
+- The pending-event mechanism and MIN_HOLD 6 s are unchanged.
+
+## 8. Building and textures
+- **Icon:**
+  - The source is `tools/art/make_icon.py`, with pixel grids as strings.
+  - Its outputs:
+    - `hud/art/cinema_icon_256x128.png`: 2 frames side by side, each 16×16 scaled ×8 with nearest-neighbour, on a transparent background;
+    - previews.
+  - **Upload settings:** no lossless needed; the alpha must be kept.
+  - **On the prim:**
+    - Texture face: the face that points at you on the HUD. In Edit, select the face, apply the texture, repeats 0.5 × 1, offset −0.25.
+    - All other faces get the default transparent texture.
+- **Prim:** one box, size `<0.01, 0.04, 0.04>`, which is about 40 px on a 1080 px screen. Attach it to **HUD Top Right** and drag it into place.
+
+## 9. Checks and sims
+| Tool | Covers |
+|---|---|
+| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory |
+| `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
+| `tools/sim/people_geometry.py` | Composition, unchanged |
+| **`tools/sim/room_sim.py`** | Python port of §6.2–6.3 over these worlds: skybox box 20×20×5 at z 3000, sky mall 60×40×8, small room 4×4×3, ground house (must classify as enclosed-ground → outside), open field (must not be enclosed), and an L-shaped room. Assert: `gInside` is as expected, and the camera is inside the room's box with ≥ 0.5 m margin, in the same room as the owner and with a clear view. Seeded, 40 shots per world |
+| **`tools/sim/friends_sim.py`** | Port of the §5 loop. Targets walk on scripted paths. Assert: a glide when the centroid moves more than 0.4 m with everyone in frame; a snap within 2 ticks when someone leaves; the fit distance ≤ 25 m; no glide through a wall box |
+| **`tools/sim/tap_test.py`** | The §4.1 decoder sequences |
+
+CI (`.github/workflows/lsl-check.yml`) runs all of them.

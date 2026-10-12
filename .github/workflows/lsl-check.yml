@@ -1,0 +1,19 @@
+name: LSL compile check
+on: [push, pull_request]
+jobs:
+  lslcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile-check the v4 HUD scripts (hud/src) and the frozen v3 (legacy/v3/src)
+        run: bash tools/lslcheck.sh
+      - name: Simulate the scenery spot finder, room views, people geometry and the tap decoder
+        run: |
+          python3 tools/sim/scenery_sim.py
+          python3 tools/sim/people_geometry.py
+          python3 tools/sim/room_sim.py
+          python3 tools/sim/tap_test.py
+          python3 tools/sim/friends_sim.py
