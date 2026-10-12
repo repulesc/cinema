@@ -17,7 +17,7 @@ A movement key, a tap or typing gives your camera back.
 |---|---|
 | Icon | A **deliberately pixel-art clapperboard**: 16×16, a few colours with a dark 1 px outline, fun rather than serious. The textures are in `hud/art/`; "Rec" is the default |
 | Size and place | About 40 px, **top right** by default. You can move it like any HUD |
-| Feedback | **No colours, no glow.** While the camera is rolling the button fades to **15 % opacity**, so it is nearly invisible in your view and in snapshots, but still clickable. Idle = 100 %. On start the clapper "claps" once (two-frame swap). There is no other indicator |
+| Feedback | **No colours, no glow.** While the camera is rolling the button fades to **40 % opacity** (Options › 🔆 Fade cycles 20 / 40 / 70 %), so it is nearly invisible in your view and in snapshots, but still clickable. Idle = 100 %. On start the clapper "claps" once (two-frame swap). There is no other indicator |
 
 ## Gestures
 | Gesture | Idle | Rolling | Photo hold |
@@ -74,21 +74,22 @@ How long each view is held. Now: Calm, about 60 s
 💞 Friends · 3 saved · 2 here now
 Ana, Bo, Kit
 
-[▶ Start   ][➕ Pick    ][🗑 Clear  ]
-[↩ Back    ][✖ Close   ]
+[▶ Start   ][➕ Pick    ][➖ Remove ]
+[🗑 Clear  ][↩ Back    ][✖ Close   ]
 ```
 - **➕ Pick** opens the **picker**: up to 9 avatars within 20 m, nearest first, one button each.
   - A saved friend is shown as `✓ name`. Tapping a name toggles it.
   - The picker re-opens after each toggle, until you press Done.
   - If more than 9 avatars are in range, ▶ More shows the next page.
+- **➖ Remove** lists every saved friend (here or not); tap a name to remove just that person.
 - Up to **10 friends** can be saved, stored in the HUD. A script cannot read your SL friends list.
 
 ### ⚙ Options
 ```
 [🏠 Indoors ][💬 Chat cuts][⭐ Favourites]
 [👁 Alt-cam ][🧱 Phantom ][📏 Reach   ]
-[📝 Trace   ][🔤 Emoji   ][🧪 Test cam]
-[♻ Reset    ][↩ Back    ]
+[📝 Trace   ][🔤 Emoji   ][🔆 Fade   ]
+[🧪 Test cam][♻ Reset   ][↩ Back   ]
 ```
 | Option | Choices (default first) | What it does |
 |---|---|---|
@@ -100,6 +101,7 @@ Ana, Bo, Kit
 | 📏 Reach | 25 / 50 / 75 / **100** m / Re-learn | The furthest Scenery camera distance. The HUD lowers it by itself if your viewer refuses far cameras |
 | 📝 Trace | **On** / Off | One chat line per cut |
 | 🔤 Emoji | **On** / Off | Emoji on the menu buttons |
+| 🔆 Fade | 20 / **40** / 70 % | How visible the button stays while the camera rolls |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
 | ♻ Reset | – | All settings to defaults (asks first) |
 

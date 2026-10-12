@@ -6,7 +6,7 @@
 //  the camera work is in cinema_friends.lsl.
 // ============================================================================
 
-string VERSION = "4.0.0";
+string VERSION = "4.0.1";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -117,7 +117,7 @@ friendsPage()
     string text = head + " · " + (string)llGetListLength(gFKeys) + " saved · " + (string)hereNow() + " here now\n";
     if (llGetListLength(gFKeys) == 0) text += "Nobody yet: use Pick to choose from the people near you.";
     else text += llGetSubString(llDumpList2String(gFNames, ", "), 0, 380);
-    openMenu("page", text, [lb("▶", "Start"), lb("➕", "Pick"), lb("🗑", "Clear"), lb("↩", "Back"), lb("✖", "Close")]);
+    openMenu("page", text, [lb("▶", "Start"), lb("➕", "Pick"), lb("➖", "Remove"), lb("🗑", "Clear"), lb("↩", "Back"), lb("✖", "Close")]);
 }
 
 pickMenu(integer pg)
@@ -164,6 +164,35 @@ pickMenu(integer pg)
     openMenu("pick", text, b);
 }
 
+// saved friends, one button each (also those who are not here): tap a name to remove just that one
+removeMenu(integer pg)
+{
+    loadFriends();
+    integer n = llGetListLength(gFNames);
+    if (n == 0)
+    {
+        llOwnerSay("[Cinema] Your friends list is empty.");
+        friendsPage();
+        return;
+    }
+    if (pg * 9 >= n) pg = 0;
+    gPickPg = pg;
+    gPickL = [];
+    list b = [];
+    integer i;
+    for (i = pg * 9; i < n && i < pg * 9 + 9; i++)
+    {
+        string nm = llGetSubString(llList2String(gFNames, i), 0, 21);
+        gPickL += [nm];
+        b += [nm];
+    }
+    while (llGetListLength(b) < 9) b += " ";
+    b += [lb("✔", "Done"), " "];
+    if (n > pg * 9 + 9) b += [lb("▶", "More")];
+    else b += " ";
+    openMenu("remove", "Remove a friend\nTap a name to remove just that person.\n" + (string)n + " of " + (string)MAX_F + " saved", b);
+}
+
 onChoice(string msg)
 {
     if (msg == " ") { closeMenu(); return; }
@@ -172,6 +201,7 @@ onChoice(string msg)
     {
         if (msg == lb("▶", "Start")) { closeMenu(); llMessageLinked(LINK_SET, CMD, "friends", ""); }
         else if (msg == lb("➕", "Pick")) pickMenu(0);
+        else if (msg == lb("➖", "Remove")) removeMenu(0);
         else if (msg == lb("🗑", "Clear")) openMenu("clear", "Remove all saved friends?", [lb("✔", "Yes, clear"), lb("↩", "Back")]);
         else if (msg == lb("↩", "Back")) { closeMenu(); llMessageLinked(LINK_SET, UI_MENU, "main", ""); }
     }
@@ -185,6 +215,24 @@ onChoice(string msg)
             llOwnerSay("[Cinema] Friends list cleared.");
         }
         friendsPage();
+    }
+    else if (gPage == "remove")
+    {
+        if (msg == lb("✔", "Done")) friendsPage();
+        else if (msg == lb("▶", "More")) removeMenu(gPickPg + 1);
+        else
+        {
+            integer j = llListFindList(gPickL, [msg]);
+            if (j >= 0)
+            {
+                integer at = gPickPg * 9 + j;
+                llOwnerSay("[Cinema] Removed " + llList2String(gFNames, at));
+                gFKeys = llDeleteSubList(gFKeys, at, at);
+                gFNames = llDeleteSubList(gFNames, at, at);
+                saveFriends();
+            }
+            removeMenu(gPickPg);
+        }
     }
     else if (gPage == "pick")
     {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.0.1
+- The button no longer fades so hard: 40 % visible by default (it was 15 % and got lost). Options › 🔆 Fade cycles 20 / 40 / 70 %.
+- Friends › ➖ Remove lists all saved friends (here or not) and removes just the one you tap.
+- Clapper texture: clear margin, no halo, no black edge lines or white fringes.
+
 ## 4.0.0
 **New look and controls**
 - Tap opens the menu, double-tap starts Scenery, long press opens the live menu. While rolling, tap stops and double-tap skips to the next view.
