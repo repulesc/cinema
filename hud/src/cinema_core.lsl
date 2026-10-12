@@ -1,12 +1,12 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_core.lsl  (v3)
-//  Owns the camera. Modes: scenery (default, AFK + tap), personal and social
-//  (optional, from the menu). Triggers, exits, hold timer, Alt-cam peek,
+//  Cinema HUD  -  cinema_core.lsl  (v4)
+//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social
+//  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "3.0.0";
+string VERSION = "4.0.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 
 integer START      = 7301;   // core -> workers  "<mode>|<fov>"
@@ -17,20 +17,21 @@ integer RESUME     = 7305;
 integer MOVING     = 7306;
 integer SHOT       = 7310;   // worker -> core   "<pos>|<focus>|<hold>|<type>"
 integer NO_SHOT    = 7311;
+integer GLIDE      = 7312;   // friends -> core  "<pos>|<focus>"
 integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<distance>"
-integer UI_STATE   = 7320;
-integer UI_MENU    = 7321;
+integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
+integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
+integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;   // ui -> core  scenery / personal / social / stop / grab
+integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / stop / next / photo / fav / grab
 
 float FIRST_WAIT  = 1.5;     // s  wait for the first shot, then cut to a basic shot
 float NEXT_WAIT   = 2.5;     // s  wait for the next shot
 float BASIC_HOLD  = 20.0;    // s  hold of a basic shot
 float PEEK_GRACE  = 2.5;     // s  after a cut, before the camera is checked
-float TOUCH_LONG  = 1.0;     // s  long press opens the menu
 list  FB_ANG      = [140.0, -140.0, 40.0, -40.0, 175.0];
 
 integer ST_IDLE  = 0;
@@ -39,13 +40,14 @@ integer ST_ROLL  = 2;
 integer ST_PAUSE = 3;
 integer ST_PEEK  = 4;
 integer ST_TEST  = 5;
+integer ST_FREEZE= 6;
 
 key     gOwner;
 integer gNeed;
 integer gSitMask;
 integer gPermOK;
 integer gState;
-string  gMode;                // "scenery" / "personal" / "social"
+string  gMode;                // "scenery" / "personal" / "social" / "friends"
 integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gLastAct;
@@ -58,16 +60,18 @@ integer gAsking;
 integer gWarned;
 integer gVerify;              // first camera check after a cut still pending
 integer gFb;
-integer gTouchSkip;
-integer gMenuShown;
 integer gPending;
+integer gFrozen;              // photo hold is on
+integer gGlided;              // a glide moved the camera since the last cut
+integer gTypeSent;
+integer gNextCut;
 string  gPauseWhy;
 string  gLast;
 float   gAskT;
 float   gHold;
 float   gApplyT;
 float   gLastTick;
-float   gTouchT;
+float   gGlideUntil;
 vector  gShotPos;
 vector  gCamPos;
 rotation gCamRot;
@@ -101,7 +105,7 @@ loadCfg()
 
 setUi(string st)
 {
-    llMessageLinked(LINK_SET, UI_STATE, st, "");
+    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut, "");
 }
 
 string idleUi()
@@ -127,7 +131,8 @@ float clampf(float v, float lo, float hi)
 // ---- camera ------------------------------------------------------------------
 setCam(vector p, vector f)
 {
-    if (gCutMode) llClearCameraParams();
+    if (gCutMode || gGlided) llClearCameraParams();
+    gGlided = FALSE;
     llSetCameraParams([
         CAMERA_ACTIVE, TRUE,
         CAMERA_POSITION, p,
@@ -154,11 +159,16 @@ applyShot(string s)
     gPending = FALSE;
     gAsking = FALSE;
     setCam((vector)llList2String(L, 0), (vector)llList2String(L, 1));
-    if (gState != ST_ROLL)
-    {
-        gState = ST_ROLL;
-        setUi("rolling");
-    }
+    gNextCut = llGetUnixTime() + llRound(gHold);
+    gState = ST_ROLL;
+    setUi("rolling");
+}
+
+// put the stored shot back on screen (photo hold on / off) without touching state
+reapply()
+{
+    list L = llParseStringKeepNulls(gLast, ["|"], []);
+    if (gLast != "") setCam((vector)llList2String(L, 0), (vector)llList2String(L, 1));
 }
 
 // first surface found going down at (x, y) from zTop to zBottom; zBottom if none
@@ -226,6 +236,8 @@ bail(string why)
     gAsking = FALSE;
     gPending = FALSE;
     gPauseWhy = "";
+    gFrozen = FALSE;
+    gTypeSent = FALSE;
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
@@ -243,6 +255,7 @@ engage(string mode)
     }
     if (gState != ST_IDLE) llMessageLinked(LINK_SET, STOP, "switch", "");
     gMode = mode;
+    gFrozen = FALSE;
     gState = ST_WAIT;
     gWorkerOK = FALSE;
     gWarned = FALSE;
@@ -269,8 +282,15 @@ resume()
 {
     string why = gPauseWhy;
     gPauseWhy = "";
-    gState = ST_WAIT;
     llMessageLinked(LINK_SET, RESUME, why, "");
+    if (gFrozen && why != "tp")
+    {
+        gState = ST_FREEZE;                         // back to the frozen shot
+        reapply();
+        return;
+    }
+    gFrozen = FALSE;
+    gState = ST_WAIT;
     if (why != "tp" && gLast != "") applyShot(gLast);
     else if (gWorkerOK)
     {
@@ -302,7 +322,16 @@ idleTick(integer now)
 activeTick(float dt)
 {
     integer info = llGetAgentInfo(gOwner);
-    if (info & AGENT_TYPING) { bail("typing"); return; }
+    if (info & AGENT_TYPING)
+    {
+        if (gMode == "scenery" || gMode == "personal") { bail("typing"); return; }
+        if (!gTypeSent)
+        {
+            gTypeSent = TRUE;                       // social / friends: you are part of the scene
+            llMessageLinked(LINK_SET, SPEAKER, (string)gOwner, "");
+        }
+    }
+    else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
     if (info & AGENT_MOUSELOOK)
     {
@@ -314,6 +343,7 @@ activeTick(float dt)
         if (gPauseWhy == "tp" && llGetUnixTime() < gResumeAt) return;
         resume();
     }
+    if (gState == ST_FREEZE) return;                // photo hold: no cuts, no checks
 
     // worker slow or absent: cover with a basic shot so the camera never sits idle
     if (gAsking && (gState == ST_WAIT || gState == ST_ROLL))
@@ -331,7 +361,7 @@ activeTick(float dt)
         }
     }
 
-    if ((gState == ST_ROLL || gState == ST_PEEK) && llGetTime() - gApplyT > PEEK_GRACE)
+    if ((gState == ST_ROLL || gState == ST_PEEK) && llGetTime() - gApplyT > PEEK_GRACE && llGetTime() > gGlideUntil)
     {
         vector cp = llGetCameraPos();
         vector op = ownerPos();
@@ -340,7 +370,7 @@ activeTick(float dt)
         {
             // first check after a cut: did the viewer put the camera where we asked?
             gVerify = FALSE;
-            if ((gType == 5 || gType == 6) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, op) < 0.8 * want)
+            if ((gType == 5 || gType == 6 || gType == 7) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, op) < 0.8 * want)
             {
                 llMessageLinked(LINK_SET, REACH_FAIL, (string)want, "");
                 return;
@@ -475,32 +505,6 @@ default
         }
     }
 
-    touch_start(integer n)
-    {
-        if (llDetectedKey(0) != gOwner) return;
-        gMenuShown = FALSE;
-        gTouchSkip = (gState != ST_IDLE);
-        if (gTouchSkip) bail("tap");                // instant
-        gTouchT = llGetTime();
-    }
-
-    touch(integer n)
-    {
-        if (gState != ST_IDLE || gTouchSkip || gMenuShown || llDetectedKey(0) != gOwner) return;
-        if (llGetTime() - gTouchT > TOUCH_LONG)
-        {
-            gMenuShown = TRUE;
-            llMessageLinked(LINK_SET, UI_MENU, "", "");
-        }
-    }
-
-    touch_end(integer n)
-    {
-        if (llDetectedKey(0) != gOwner || gMenuShown || gTouchSkip || gState != ST_IDLE) return;
-        if (llGetTime() - gTouchT > TOUCH_LONG) llMessageLinked(LINK_SET, UI_MENU, "", "");
-        else engage("scenery");
-    }
-
     timer()
     {
         integer now = llGetUnixTime();
@@ -517,12 +521,29 @@ default
         if (num == SHOT)
         {
             gWorkerOK = TRUE;
+            if (gState == ST_FREEZE) return;         // frozen: the shot on screen stays
             if (gState == ST_WAIT || gState == ST_ROLL) applyShot(str);
             else if (gState == ST_PAUSE || gState == ST_PEEK)
             {
                 gLast = str;                         // shown when the pause ends
                 gPending = TRUE;
                 gAsking = FALSE;
+            }
+        }
+        else if (num == GLIDE)
+        {
+            // friends: slowly move the camera to keep the group framed (the viewer eases it using the lag)
+            if (gState == ST_ROLL && gMode == "friends")
+            {
+                list L = llParseStringKeepNulls(str, ["|"], []);
+                vector gp = (vector)llList2String(L, 0);
+                vector gf = (vector)llList2String(L, 1);
+                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, 1.5, CAMERA_FOCUS_LAG, 1.5]);
+                gShotPos = gp;
+                gGlideUntil = llGetTime() + 3.0;
+                gGlided = TRUE;
+                list O = llParseStringKeepNulls(gLast, ["|"], []);
+                gLast = (string)gp + "|" + (string)gf + "|" + llList2String(O, 2) + "|" + llList2String(O, 3);
             }
         }
         else if (num == NO_SHOT)
@@ -556,12 +577,54 @@ default
                     llSetTimerEvent(0.25);
                 }
             }
-            else if (str == "scenery" || str == "personal" || str == "social") engage(str);
+            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends") engage(str);
+            else if (str == "photo")
+            {
+                if ((gState == ST_ROLL || gState == ST_PEEK) && gLast != "")
+                {
+                    gFrozen = TRUE;
+                    gState = ST_FREEZE;
+                    llMessageLinked(LINK_SET, PAUSE, "photo", "");
+                    reapply();
+                    setUi("frozen");
+                }
+                else if (gState == ST_FREEZE)
+                {
+                    gFrozen = FALSE;
+                    gState = ST_ROLL;
+                    gAsking = FALSE;
+                    gHold = 8.0;
+                    llMessageLinked(LINK_SET, RESUME, "photo", "");
+                    reapply();
+                    gNextCut = llGetUnixTime() + 8;
+                    setUi("rolling");
+                }
+            }
+            else if (str == "next")
+            {
+                if (gState == ST_FREEZE)
+                {
+                    gFrozen = FALSE;
+                    gState = ST_ROLL;
+                    llMessageLinked(LINK_SET, RESUME, "photo", "");
+                    setUi("rolling");
+                }
+                if (gState == ST_ROLL || gState == ST_PEEK) askWorker("skip");
+            }
+            else if (str == "fav")
+            {
+                if (gMode == "scenery" && gLast != "" && (gState == ST_ROLL || gState == ST_FREEZE || gState == ST_PEEK))
+                {
+                    list F = llParseStringKeepNulls(gLast, ["|"], []);
+                    llMessageLinked(LINK_SET, FAV, llList2String(F, 0) + "|" + llList2String(F, 1), "");
+                }
+                else llOwnerSay("[Cinema] Save spot works while the scenery camera is rolling.");
+            }
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test)"
+            llOwnerSay("[Cinema/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
                 + ", permissions " + (string)gPermOK + ", worker answered " + (string)gWorkerOK
                 + ", shot type " + (string)gType + ", free mem " + (string)llGetFreeMemory());
         }
