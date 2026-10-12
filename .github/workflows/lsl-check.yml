@@ -10,3 +10,7 @@ jobs:
           python-version: "3.12"
       - name: Compile-check all HUD scripts
         run: bash tools/lslcheck.sh
+      - name: Simulate the scenery spot finder and the people-shot geometry
+        run: |
+          python3 tools/sim/scenery_sim.py
+          python3 tools/sim/people_geometry.py

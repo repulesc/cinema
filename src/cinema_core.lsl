@@ -1,74 +1,68 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_core.lsl  (v2)
-//  Owns the camera: permissions, controls, AFK detection, touch, state machine,
-//  apply / release the camera, Alt-cam "peek", the hold timer, and a built-in
-//  basic composer so the camera ALWAYS does something even if the director
-//  script is missing or not running.
-//  All three scripts (core, director, ui) go in the ROOT prim of the HUD.
+//  Cinema HUD  -  cinema_core.lsl  (v3)
+//  Owns the camera. Modes: scenery (default, AFK + tap), personal and social
+//  (optional, from the menu). Triggers, exits, hold timer, Alt-cam peek,
+//  pauses, a watchdog with a basic fallback shot per mode, reach verification.
+//  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "2.0.0";
+string VERSION = "3.0.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 
-// ---- link messages -----------------------------------------------------------
-integer DIR_START    = 7301;   // core -> director  "afk|<fov>" / "manual|<fov>"
-integer DIR_STOP     = 7302;
-integer DIR_NEXT     = 7303;   // core -> director  hold expired, send the next shot
-integer DIR_PAUSE    = 7304;
-integer DIR_RESUME   = 7305;
-integer DIR_MOVING   = 7306;
-integer DIR_COOLDOWN = 7307;
-integer SHOT         = 7310;   // director -> core  "<pos>|<focus>|<hold>|<type>|0"
-integer NO_SHOT      = 7311;   // director -> core  nothing usable (core covers)
-integer DIR_ACK      = 7313;   // director -> core  "I am alive" (version)
-integer UI_STATE     = 7320;
-integer UI_MENU      = 7321;
-integer CFG_CHANGED  = 7330;
-integer MSG_VER      = 7360;
-integer STATUS       = 7370;
-integer CMD          = 7371;   // ui -> core  start / stop / grab
+integer START      = 7301;   // core -> workers  "<mode>|<fov>"
+integer STOP       = 7302;
+integer NEXT       = 7303;
+integer PAUSE      = 7304;
+integer RESUME     = 7305;
+integer MOVING     = 7306;
+integer SHOT       = 7310;   // worker -> core   "<pos>|<focus>|<hold>|<type>"
+integer NO_SHOT    = 7311;
+integer ACK        = 7313;
+integer REACH_FAIL = 7314;   // core -> scenery  "<distance>"
+integer UI_STATE   = 7320;
+integer UI_MENU    = 7321;
+integer CFG_CHANGED= 7330;
+integer MSG_VER    = 7360;
+integer STATUS     = 7370;
+integer CMD        = 7371;   // ui -> core  scenery / personal / social / stop / grab
 
-// ---- tunables -------------------------------------------------------------------
-float FIRST_WAIT  = 1.5;       // s  wait for the director's first shot, then use a basic shot
-float NEXT_WAIT   = 2.5;       // s  wait for the director's next shot, then use a basic shot
-float BASIC_HOLD  = 14.0;      // s  hold of a basic (core) shot
-float PEEK_TOL    = 1.0;       // m  camera deviation that counts as "user took the camera"
-float PEEK_GRACE  = 1.5;       // s  ignore deviation right after a cut
-float TOUCH_LONG  = 1.0;       // s  long press opens the menu
-list  FB_ANG      = [140.0, -140.0, 40.0, -40.0, 175.0];   // basic shot angles around you
+float FIRST_WAIT  = 1.5;     // s  wait for the first shot, then cut to a basic shot
+float NEXT_WAIT   = 2.5;     // s  wait for the next shot
+float BASIC_HOLD  = 20.0;    // s  hold of a basic shot
+float PEEK_GRACE  = 2.5;     // s  after a cut, before the camera is checked
+float TOUCH_LONG  = 1.0;     // s  long press opens the menu
+list  FB_ANG      = [140.0, -140.0, 40.0, -40.0, 175.0];
 
-// ---- states -------------------------------------------------------------------
 integer ST_IDLE  = 0;
-integer ST_WAIT  = 1;          // started, waiting for the first shot
-integer ST_ROLL  = 2;          // a shot is on screen
-integer ST_PAUSE = 3;          // mouselook / teleport
-integer ST_PEEK  = 4;          // user is Alt-camming
-integer ST_TEST  = 5;          // /77 grab test
+integer ST_WAIT  = 1;
+integer ST_ROLL  = 2;
+integer ST_PAUSE = 3;
+integer ST_PEEK  = 4;
+integer ST_TEST  = 5;
 
 key     gOwner;
 integer gNeed;
 integer gSitMask;
 integer gPermOK;
 integer gState;
-integer gManual;
-integer gType;                 // type of the shot on screen (4 = empty view, 9 = basic)
+string  gMode;                // "scenery" / "personal" / "social"
+integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gLastAct;
 integer gNoEngageUntil;
 integer gIgnoreCtl;
 integer gMovSent;
 integer gResumeAt;
-integer gCoolSent;
-integer gDirOK;                // director acknowledged this session
-integer gAsking;               // waiting for a director shot
+integer gWorkerOK;            // the mode's worker script answered this session
+integer gAsking;
 integer gWarned;
+integer gVerify;              // first camera check after a cut still pending
 integer gFb;
 integer gTouchSkip;
 integer gMenuShown;
 integer gPending;
 string  gPauseWhy;
-string  gSrc;                  // "afk" / "manual"
-string  gLast;                 // last shot string (re-applied after a pause)
+string  gLast;
 float   gAskT;
 float   gHold;
 float   gApplyT;
@@ -78,13 +72,10 @@ vector  gShotPos;
 vector  gCamPos;
 rotation gCamRot;
 
-// settings
 integer gAfkOn;
 integer gAfkSec;
-integer gCoolMin;
 integer gPeekOn;
 integer gPeekBail;
-integer gManVistaEnd;
 integer gCutMode;
 integer gTrace;
 
@@ -98,21 +89,14 @@ string cfg(string k, string d)
 
 loadCfg()
 {
-    gAfkOn       = (integer)cfg("afk_on", "1");
-    string a     = cfg("afk_sec", "90");
-    gAfkSec      = (integer)a;
+    gAfkOn    = (integer)cfg("afk_on", "1");
+    string a  = cfg("afk_sec", "90");
+    gAfkSec   = (integer)a;
     if (a == "away") gAfkSec = -1;
-    gCoolMin     = (integer)cfg("cool_min", "10");
-    gPeekOn      = (integer)cfg("peek", "1");
-    gPeekBail    = (integer)cfg("peek_bail", "0");
-    gManVistaEnd = (integer)cfg("man_vista_end", "0");
-    gCutMode     = (integer)cfg("cutmode", "0");
-    gTrace       = (integer)cfg("trace", "1");
-}
-
-tsay(string s)
-{
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    gPeekOn   = (integer)cfg("peek", "1");
+    gPeekBail = (integer)cfg("peek_bail", "0");
+    gCutMode  = (integer)cfg("cutmode", "0");
+    gTrace    = (integer)cfg("trace", "1");
 }
 
 setUi(string st)
@@ -126,7 +110,21 @@ string idleUi()
     return "off";
 }
 
-// ---- camera -------------------------------------------------------------------
+vector ownerPos()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
+    if (llGetListLength(d) == 0) return ZERO_VECTOR;
+    return llList2Vector(d, 0);
+}
+
+float clampf(float v, float lo, float hi)
+{
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
+// ---- camera ------------------------------------------------------------------
 setCam(vector p, vector f)
 {
     if (gCutMode) llClearCameraParams();
@@ -143,9 +141,10 @@ setCam(vector p, vector f)
     ]);
     gShotPos = p;
     gApplyT = llGetTime();
+    gVerify = TRUE;
 }
 
-// "<pos>|<focus>|<hold>|<type>|0"
+// "<pos>|<focus>|<hold>|<type>"
 applyShot(string s)
 {
     list L = llParseStringKeepNulls(s, ["|"], []);
@@ -162,7 +161,17 @@ applyShot(string s)
     }
 }
 
-// built-in basic shot: a level portrait orbit around the owner, wall-checked with one ray
+// first surface found going down at (x, y) from zTop to zBottom; zBottom if none
+float surfaceAt(float x, float y, float zTop, float zBottom)
+{
+    list r = llCastRay(<x, y, zTop>, <x, y, zBottom>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+    if (llList2Integer(r, -1) != 1) return zBottom;
+    vector h = llList2Vector(r, 1);
+    return h.z;
+}
+
+// basic shot when the mode's worker script is silent:
+// scenery = high behind you looking down over your area; people = level portrait orbit
 basicShot()
 {
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
@@ -172,32 +181,43 @@ basicShot()
     F.z = 0.0;
     if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
     F = llVecNorm(F);
-    vector sz = llGetAgentSize(gOwner);
-    vector E = <P.x, P.y, P.z + 0.37 * sz.z>;
-    vector dir = F * llEuler2Rot(<0.0, 0.0, llList2Float(FB_ANG, gFb % 5) * DEG_TO_RAD>);
-    gFb++;
-    float dist = 3.0;
-    list r = llCastRay(E, E + dir * dist, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
-    if (llList2Integer(r, -1) == 1) dist = llVecDist(E, llList2Vector(r, 1)) - 0.4;
-    if (dist < 1.2) dist = 1.2;
-    vector cam = E + dir * dist;
-    cam.z = E.z - dist * 0.19245;                  // eye line on the upper third, camera level
-    if (cam.x < 1.0) cam.x = 1.0;
-    if (cam.x > 255.0) cam.x = 255.0;
-    if (cam.y < 1.0) cam.y = 1.0;
-    if (cam.y > 255.0) cam.y = 255.0;
-    applyShot((string)cam + "|" + (string)<E.x, E.y, cam.z> + "|" + (string)BASIC_HOLD + "|9|0");
+    vector cam;
+    vector foc;
+    if (gMode == "scenery")
+    {
+        cam = P - F * 15.0;
+        cam.x = clampf(cam.x, 3.0, 253.0);
+        cam.y = clampf(cam.y, 3.0, 253.0);
+        cam.z = surfaceAt(cam.x, cam.y, P.z + 80.0, P.z - 20.0) + 10.0;
+        foc = P + F * 10.0;
+        foc.z = P.z - 1.0;
+    }
+    else
+    {
+        vector sz = llGetAgentSize(gOwner);
+        vector E = <P.x, P.y, P.z + 0.37 * sz.z>;
+        vector dir = F * llEuler2Rot(<0.0, 0.0, llList2Float(FB_ANG, gFb % 5) * DEG_TO_RAD>);
+        gFb++;
+        float dist = 3.0;
+        list r = llCastRay(E, E + dir * dist, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        if (llList2Integer(r, -1) == 1) dist = llVecDist(E, llList2Vector(r, 1)) - 0.4;
+        if (dist < 1.2) dist = 1.2;
+        cam = E + dir * dist;
+        cam.z = E.z - dist * 0.19245;              // eye line on the upper third, camera level
+        foc = <E.x, E.y, cam.z>;
+    }
+    applyShot((string)cam + "|" + (string)foc + "|" + (string)BASIC_HOLD + "|9");
 }
 
-askDirector(string why)
+askWorker(string why)
 {
     gAsking = TRUE;
     gAskT = llGetTime();
-    if (gDirOK) llMessageLinked(LINK_SET, DIR_NEXT, why, "");
-    else llMessageLinked(LINK_SET, DIR_START, gSrc + "|" + (string)llGetCameraFOV(), "");
+    if (gWorkerOK) llMessageLinked(LINK_SET, NEXT, why, "");
+    else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
-// ---- lifecycle -------------------------------------------------------------------
+// ---- lifecycle ------------------------------------------------------------------
 // instant return to the user's own camera
 bail(string why)
 {
@@ -208,12 +228,12 @@ bail(string why)
     gPauseWhy = "";
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
-    llMessageLinked(LINK_SET, DIR_STOP, why, "");
+    llMessageLinked(LINK_SET, STOP, why, "");
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
 
-engage(integer manual)
+engage(string mode)
 {
     if (!gPermOK)
     {
@@ -221,19 +241,19 @@ engage(integer manual)
         llRequestPermissions(gOwner, gNeed);
         return;
     }
-    gManual = manual;
+    if (gState != ST_IDLE) llMessageLinked(LINK_SET, STOP, "switch", "");
+    gMode = mode;
     gState = ST_WAIT;
-    gDirOK = FALSE;
+    gWorkerOK = FALSE;
     gWarned = FALSE;
-    gCoolSent = FALSE;
+    gLast = "";
     gType = 0;
     gSitBase = llGetAgentInfo(gOwner) & gSitMask;
-    if (manual) gLastAct = llGetUnixTime();
-    gSrc = "afk";
-    if (manual) gSrc = "manual";
+    gLastAct = llGetUnixTime();
     gLastTick = llGetTime();
-    askDirector("start");
+    askWorker("start");
     setUi("rolling");
+    if (gTrace) llOwnerSay("[Cinema] " + mode + " camera on");
     llSetTimerEvent(0.5);
 }
 
@@ -242,7 +262,7 @@ pause(string why)
     gPauseWhy = why;
     gState = ST_PAUSE;
     gResumeAt = llGetUnixTime() + 3;
-    llMessageLinked(LINK_SET, DIR_PAUSE, why, "");
+    llMessageLinked(LINK_SET, PAUSE, why, "");
 }
 
 resume()
@@ -250,14 +270,14 @@ resume()
     string why = gPauseWhy;
     gPauseWhy = "";
     gState = ST_WAIT;
-    llMessageLinked(LINK_SET, DIR_RESUME, why, "");
+    llMessageLinked(LINK_SET, RESUME, why, "");
     if (why != "tp" && gLast != "") applyShot(gLast);
-    else if (gDirOK)
+    else if (gWorkerOK)
     {
-        gAsking = TRUE;                 // the director re-frames on DIR_RESUME by itself
+        gAsking = TRUE;                             // the worker re-frames on RESUME by itself
         gAskT = llGetTime();
     }
-    else askDirector("resume");
+    else askWorker("resume");
 }
 
 // ============================================================================
@@ -274,16 +294,16 @@ idleTick(integer now)
     if (!gAfkOn || now < gNoEngageUntil || (info & (AGENT_TYPING | AGENT_MOUSELOOK))) return;
     if (gAfkSec < 0)
     {
-        if (info & AGENT_AWAY) engage(FALSE);
+        if (info & AGENT_AWAY) engage("scenery");
     }
-    else if (now - gLastAct >= gAfkSec) engage(FALSE);
+    else if (now - gLastAct >= gAfkSec) engage("scenery");
 }
 
-activeTick(integer now, float dt)
+activeTick(float dt)
 {
     integer info = llGetAgentInfo(gOwner);
     if (info & AGENT_TYPING) { bail("typing"); return; }
-    if ((info & gSitMask) != gSitBase) { bail("sit"); return; }
+    if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -291,43 +311,59 @@ activeTick(integer now, float dt)
     }
     if (gState == ST_PAUSE)
     {
-        if (gPauseWhy == "tp" && now < gResumeAt) return;
+        if (gPauseWhy == "tp" && llGetUnixTime() < gResumeAt) return;
         resume();
     }
 
-    // director too slow / absent: cover with a basic shot so the camera never sits idle
+    // worker slow or absent: cover with a basic shot so the camera never sits idle
     if (gAsking && (gState == ST_WAIT || gState == ST_ROLL))
     {
         float wait = NEXT_WAIT;
         if (gState == ST_WAIT) wait = FIRST_WAIT;
         if (llGetTime() - gAskT > wait)
         {
-            if (!gDirOK && !gWarned)
+            if (!gWorkerOK && !gWarned)
             {
                 gWarned = TRUE;
-                llOwnerSay("[Cinema] The director script is not answering, so you get basic shots. Check that cinema_director is in this prim and Running (Build > Scripts > Set Scripts to Running in Selection), and look at the Script Errors window.");
+                llOwnerSay("[Cinema] The " + gMode + " script is not answering, so you get basic shots. Check that it is in this prim and running (Build > Scripts > Set Scripts to Running in Selection) and look at the Script Errors window.");
             }
             basicShot();
         }
     }
 
-    // Alt-cam / orbit: the viewer silently overrides scripted cameras - compare the real camera
-    if (gPeekOn && (gState == ST_ROLL || gState == ST_PEEK) && llGetTime() - gApplyT > PEEK_GRACE)
+    if ((gState == ST_ROLL || gState == ST_PEEK) && llGetTime() - gApplyT > PEEK_GRACE)
     {
-        integer dev = (llVecDist(llGetCameraPos(), gShotPos) > PEEK_TOL);
-        if (dev && gState == ST_ROLL)
+        vector cp = llGetCameraPos();
+        vector op = ownerPos();
+        float want = llVecDist(gShotPos, op);
+        if (gVerify)
         {
-            if (gPeekBail) { bail("camera"); return; }
-            gState = ST_PEEK;
-            setUi("peek");
-            llMessageLinked(LINK_SET, DIR_PAUSE, "peek", "");
+            // first check after a cut: did the viewer put the camera where we asked?
+            gVerify = FALSE;
+            if ((gType == 5 || gType == 6) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, op) < 0.8 * want)
+            {
+                llMessageLinked(LINK_SET, REACH_FAIL, (string)want, "");
+                return;
+            }
         }
-        else if (!dev && gState == ST_PEEK)
+        else if (gPeekOn)
         {
-            gState = ST_ROLL;
-            setUi("rolling");
-            llMessageLinked(LINK_SET, DIR_RESUME, "peek", "");
-            if (gPending) applyShot(gLast);
+            // Alt-cam / orbit: the viewer silently overrides scripted cameras
+            integer dev = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want);
+            if (dev && gState == ST_ROLL)
+            {
+                if (gPeekBail) { bail("camera"); return; }
+                gState = ST_PEEK;
+                setUi("peek");
+                llMessageLinked(LINK_SET, PAUSE, "peek", "");
+            }
+            else if (!dev && gState == ST_PEEK)
+            {
+                gState = ST_ROLL;
+                setUi("rolling");
+                llMessageLinked(LINK_SET, RESUME, "peek", "");
+                if (gPending) applyShot(gLast);
+            }
         }
     }
 
@@ -336,29 +372,13 @@ activeTick(integer now, float dt)
     {
         if (dt > 2.0) dt = 2.0;
         gHold -= dt;
-        if (gHold <= 0.0) askDirector("hold");
-    }
-
-    if (gCoolMin > 0 && !gCoolSent && now - gLastAct >= gCoolMin * 60)
-    {
-        gCoolSent = TRUE;
-        llMessageLinked(LINK_SET, DIR_COOLDOWN, "1", "");
+        if (gHold <= 0.0) askWorker("hold");
     }
 }
 
-// /77 grab: take the camera for 3 s without the director, report whether the viewer followed
+// /77 grab: take the camera for 3 s without any worker, report whether the viewer followed
 grabTest(float t)
 {
-    if (gHold == 0.0)
-    {
-        gHold = 1.0;
-        gFb = 0;
-        basicShot();
-        gState = ST_TEST;
-        gApplyT = t;
-        llOwnerSay("[Cinema] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
-        return;
-    }
     if (t - gApplyT < 3.0) return;
     float off = llVecDist(llGetCameraPos(), gShotPos);
     if (off < 1.0) llOwnerSay("[Cinema] grab test: the viewer FOLLOWED the script camera. Camera control works.");
@@ -375,6 +395,7 @@ default
         gNeed = PERMISSION_TAKE_CONTROLS | PERMISSION_CONTROL_CAMERA | PERMISSION_TRACK_CAMERA;
         gSitMask = AGENT_SITTING | AGENT_ON_OBJECT;
         gState = ST_IDLE;
+        gMode = "scenery";
         gLastAct = llGetUnixTime();
         gCamRot = ZERO_ROTATION;
         loadCfg();
@@ -398,7 +419,7 @@ default
         {
             gPermOK = FALSE;
             gState = ST_IDLE;
-            llMessageLinked(LINK_SET, DIR_STOP, "detach", "");
+            llMessageLinked(LINK_SET, STOP, "detach", "");
         }
     }
 
@@ -420,7 +441,7 @@ default
         if (c & CHANGED_OWNER) llResetScript();
         if (c & (CHANGED_TELEPORT | CHANGED_REGION))
         {
-            gIgnoreCtl = llGetUnixTime() + 2;          // ghost key event after teleport
+            gIgnoreCtl = llGetUnixTime() + 2;       // ghost key event after teleport
             if (gPermOK) llRequestPermissions(gOwner, gNeed);
             if (gState == ST_IDLE) return;
             if (gState == ST_TEST) { bail("tp"); return; }
@@ -430,7 +451,7 @@ default
         }
     }
 
-    // instant bail-out: keep this handler tiny
+    // instant exit: keep this handler tiny
     control(key id, integer level, integer edge)
     {
         if (!(level | edge)) return;
@@ -441,18 +462,16 @@ default
             gLastAct = now;
             return;
         }
-        if (!gManual || gState == ST_TEST)
+        if (gMode == "scenery" || gState == ST_TEST)
         {
             bail("key");
             return;
         }
-        // manual session: keep rolling, the director re-frames while you walk
-        gLastAct = now;
-        if (gManVistaEnd && gType == 4) { bail("move"); return; }
+        // personal / social: the camera follows you
         if (now != gMovSent)
         {
             gMovSent = now;
-            llMessageLinked(LINK_SET, DIR_MOVING, "", "");
+            llMessageLinked(LINK_SET, MOVING, "", "");
         }
     }
 
@@ -461,7 +480,7 @@ default
         if (llDetectedKey(0) != gOwner) return;
         gMenuShown = FALSE;
         gTouchSkip = (gState != ST_IDLE);
-        if (gTouchSkip) bail("tap");               // instant
+        if (gTouchSkip) bail("tap");                // instant
         gTouchT = llGetTime();
     }
 
@@ -479,7 +498,7 @@ default
     {
         if (llDetectedKey(0) != gOwner || gMenuShown || gTouchSkip || gState != ST_IDLE) return;
         if (llGetTime() - gTouchT > TOUCH_LONG) llMessageLinked(LINK_SET, UI_MENU, "", "");
-        else engage(TRUE);
+        else engage("scenery");
     }
 
     timer()
@@ -490,31 +509,30 @@ default
         gLastTick = t;
         if (gState == ST_IDLE) idleTick(now);
         else if (gState == ST_TEST) grabTest(t);
-        else activeTick(now, dt);
+        else activeTick(dt);
     }
 
     link_message(integer sender, integer num, string str, key id)
     {
         if (num == SHOT)
         {
-            gDirOK = TRUE;
+            gWorkerOK = TRUE;
             if (gState == ST_WAIT || gState == ST_ROLL) applyShot(str);
             else if (gState == ST_PAUSE || gState == ST_PEEK)
             {
-                gLast = str;                            // shown when the pause ends
+                gLast = str;                         // shown when the pause ends
                 gPending = TRUE;
                 gAsking = FALSE;
             }
         }
         else if (num == NO_SHOT)
         {
-            gDirOK = TRUE;
+            gWorkerOK = TRUE;
             if (gState == ST_WAIT || gState == ST_ROLL) basicShot();
         }
-        else if (num == DIR_ACK)
+        else if (num == ACK)
         {
-            gDirOK = TRUE;
-            if (gState == ST_WAIT) tsay("on - the director is choosing a shot...");
+            if (str == gMode) gWorkerOK = TRUE;
         }
         else if (num == CFG_CHANGED)
         {
@@ -523,21 +541,28 @@ default
         }
         else if (num == CMD)
         {
-            if (str == "start" && gState == ST_IDLE) engage(TRUE);
-            else if (str == "stop" && gState != ST_IDLE) bail("cmd");
-            else if (str == "grab" && gState == ST_IDLE && gPermOK)
+            if (str == "stop")
             {
-                gHold = 0.0;
-                gState = ST_TEST;
-                llSetTimerEvent(0.25);
-                grabTest(llGetTime());
+                if (gState != ST_IDLE) bail("cmd");
             }
+            else if (str == "grab")
+            {
+                if (gState == ST_IDLE && gPermOK)
+                {
+                    gMode = "personal";
+                    basicShot();
+                    gState = ST_TEST;
+                    llOwnerSay("[Cinema] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
+                    llSetTimerEvent(0.25);
+                }
+            }
+            else if (str == "scenery" || str == "personal" || str == "social") engage(str);
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/core] v" + VERSION + " state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test)"
-                + ", permissions " + (string)gPermOK + ", director answered " + (string)gDirOK
+            llOwnerSay("[Cinema/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test)"
+                + ", permissions " + (string)gPermOK + ", worker answered " + (string)gWorkerOK
                 + ", shot type " + (string)gType + ", free mem " + (string)llGetFreeMemory());
         }
     }

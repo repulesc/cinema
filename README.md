@@ -1,38 +1,42 @@
 # Cinema HUD
 
-A minimalist Second Life HUD that turns your viewer into an autonomous **static tableau cinema camera**, in the visual grammar of Ozu, Jarmusch and the French New Wave.
+A one-button Second Life HUD that turns your idle time into cinema.
 
-- **One button.** Tap to start or stop. Long-press for the menu.
-- **AFK cinema.** After 90 s idle (adjustable), it starts by itself, and any movement key brings your camera back instantly.
-- **Cuts, never glides.** The camera locks onto composed, level vantage points (rule of thirds by camera height, no keystoning) and cuts between intimate shots, ensemble tableaux, long shots and Ozu-style pillow shots.
-- **Aware of its surroundings.** A light raycast pass keeps the camera out of walls, roofs and terrain.
+- **Scenery camera (default):** when you go AFK, or tap the button, the camera leaves your avatar and finds clear, grand vantage points around you. It uses high drone views and wide eye-level views up to about 100 m away, with nothing blocking the view. It holds each still view for about a minute, then cuts. No people needed, and you are tiny in the frame or absent.
+- **Personal camera (optional):** composed shots of you that follow you as you walk.
+- **Social camera (optional):** over-the-shoulder pairs and group tableaux of you and the people around you.
+- A movement key, a tap or typing gives your camera back instantly.
 
-## Status
-Version 2.0.0. All scripts pass a real LSL compile check (`tools/lslcheck.sh`, LSL-PyOptimizer). The camera itself is proven in-world (`/77 grab`); v2 makes sure a tap always cuts to a shot, using core's basic shots if the director is not running. In-world confirmation of the smart director is the next step.
-
+## Documents
 | Document | Contents |
 |---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full spec: vector math, raycast pipeline, state machine, memory budget, link protocol, function prototypes |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Product decisions from the design quiz |
-| [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | In-world probe and calibration log (to fill in) |
+| [`docs/PRODUCT.md`](docs/PRODUCT.md) | What the HUD is: modes, controls, vibe, quiz answers (source of truth) |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases: this delivery, in-world verification, polish |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Scripts, messages, the scenery spot finder, people modes, settings |
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Text for the in-world "Cinema HUD - Read Me" notecard |
+| [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | In-world results to fill in |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
+| `docs/archive/`, `archive/` | The old v1–v2 design and code (people-centred; superseded) |
 
-## Layout
+## Scripts (all four go in the same root prim)
 ```
-src/cinema_core.lsl       permissions, controls, AFK, state machine, camera, basic shots + director watchdog
-src/cinema_director.lsl   smart views: people + space sensing, composition, raycast sweep, editing
-src/future/               full-featured director, too big for one script (not for pasting)
-src/cinema_ui.lsl         menus, Linkset Data settings, first-run, button look
+src/cinema_core.lsl      owns the camera: modes, triggers, exits, watchdog + basic shots
+src/cinema_scenery.lsl   default mode: drone / wide spot finder (rays, region-bounded, above roofs)
+src/cinema_people.lsl    optional Personal (follow-me) and Social (pairs, groups) modes
+src/cinema_ui.lsl        long-press menu, /77 commands, settings
 ```
 
 ## Building the HUD in-world
-1. Rez a prim (a flat box or a small circle works well) and name it `Cinema HUD`. This single prim is the button.
-2. **Delete any old Cinema scripts from the prim first.** Create three new scripts in it and paste in the contents of the three `src/*.lsl` files. **All three go in the same (root) prim**, so they keep running in no-script parcels. Each prints a "ready" line with its free memory when saved.
-3. With the prim selected in Build mode, use **Build > Scripts > Set Scripts to Running in Selection** (scripts that once failed to compile stay "not running").
-4. Create a notecard named exactly `Cinema HUD - Read Me`, paste in `docs/USER_GUIDE.md`, and drop it into the prim.
-5. Set the scripts to *no modify* before giving or selling the HUD. Change `PASS` (the same string at the top of each script) to your own build secret first.
-6. Attach it to a HUD point (e.g. *HUD Bottom Right*), accept the permissions, tap to test.
+1. Rez a prim (a small flat box or circle) and name it `Cinema HUD`. This single prim is the button.
+2. **Delete every old Cinema script from it first.** Then create four new scripts and paste in the four `src/*.lsl` files. Each prints a `ready` line with its free memory when saved.
+3. Select the prim in Build mode and use **Build > Scripts > Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
+4. Create a notecard named exactly `Cinema HUD - Read Me` with the text of `docs/USER_GUIDE.md` and drop it in.
+5. Before giving or selling: change `PASS` (same string at the top of every script) and set the scripts to *no modify*.
+6. Attach it to a HUD point and tap.
 
-## Checking scripts before pasting
-`tools/lslcheck.sh` fetches LSL-PyOptimizer, compile-checks `src/*.lsl` (syntax, types, undeclared names, wrong function arguments) and prints an estimated free memory per script. GitHub Actions runs the same check on every push.
+## Checks (run before every paste)
+- `tools/lslcheck.sh`: compile-checks `src/*.lsl` with LSL-PyOptimizer (syntax, types, undeclared names, wrong arguments) and estimates free memory per script.
+- `tools/sim/scenery_sim.py`: runs the scenery spot finder in test worlds (open field, region edge, inside a house, town, skybox). It checks that the camera stays inside the region, above the top surface, with an unblocked view and the pitch in range.
+- `tools/sim/people_geometry.py`: lead room, thirds, over-the-shoulder side, 180-degree rule, group side.
+
+GitHub Actions runs all three on every push.
