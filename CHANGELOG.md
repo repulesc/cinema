@@ -1,16 +1,27 @@
 # Changelog
 
-## 4.0.0: planned (spec ready, build in progress)
-- **Repo:** v3.0.0 is frozen in `legacy/v3/`, the old v1/v2 material is in `legacy/v1-v2/`, and v4 lives in `hud/`. CI checks both.
-- **Spec from the round-3 quiz:**
-  - Gestures: tap = menu, double-tap = Scenery, long press = live menu. While rolling, tap stops and double-tap skips.
-  - Menus: emoji SL dialogs.
-  - Button: pixel-art clapper, no colours, fades to 15 % while rolling.
-  - Friends mode: glide and snap.
-  - Room-aware Scenery: skyboxes stay inside.
-  - Photo hold, Favourite spots, and chat cuts in Social and Friends. Typing no longer ends Social or Friends.
-- **Docs:** `docs/PRODUCT.md`, `docs/ARCHITECTURE.md` and `docs/ROADMAP.md` rewritten for v4.
-- **Art:** `tools/art/make_icon.py` generates `hud/art/cinema_icon_256x128.png` (variants classic, rec and viewfinder).
+## 4.0.0
+**New look and controls**
+- Tap opens the menu, double-tap starts Scenery, long press opens the live menu. While rolling, tap stops and double-tap skips to the next view.
+- Emoji dialog menus with a status line (Options › Emoji switches to text only). The Hold setting is now called Pace, with named steps.
+- The button is a pixel-art clapper that claps once and then fades to 15 %. All colour feedback is gone.
+- First run shows a short welcome dialog.
+
+**New features**
+- **Friends mode**: pick up to 10 friends from the people nearby. The camera glides to keep the group framed, and cuts to a wider shot if someone is out of frame for about 1 s.
+- **Room-aware Scenery**: in a skybox or another enclosed sky build, the camera stays inside the room (corner wides, room-centre views, you small in the room). On the ground it still looks from outside, above the roof. Options › Indoors can force either.
+- **Photo hold**, **Favourite spots** (saved per region, mixed into Scenery) and **chat cuts** in Social and Friends. Typing no longer ends Social or Friends.
+
+**Fixes**
+- Reach regrows by 10 % after 20 clean cuts, and can be re-learned from the menu.
+- The version warning no longer says "four scripts".
+- The dialog listener times out after 60 s.
+
+**Under the hood**
+- Six scripts: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each has at least 15 KB free (estimated).
+- New link messages: GLIDE 7312, SPEAKER 7315, FAV 7316, UI_FRIENDS 7322. UI_STATE now carries `state|mode|nextCut`.
+- New sims in CI: `tap_test.py`, `room_sim.py`, `friends_sim.py`. The friends sim found and fixed a fit bug (people nearer the camera than the group's centre fell out of frame).
+- v3.0.0 is frozen unchanged in `legacy/v3/`.
 
 ## 3.0.0 - the scenery camera (rebuilt from scratch around the real idea)
 - **The default is now the scenery camera**, which earlier versions never had. On AFK or a tap, the camera finds clear, grand views of the place: drone views 10–30 m up and wide eye-level views, 20–100 m away. It ignores people, stays inside the region, sits above the topmost surface at its spot (outside and above the roof when you are indoors), checks the view with rays, varies direction and height, holds each view about 60 s (adjustable), and hard-cuts.

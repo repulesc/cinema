@@ -7,14 +7,15 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All five scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All six scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
 | `cinema_core.lsl` | Owns the camera: permissions, controls, AFK, modes, exits, hold timer, peek, pauses, watchdog plus basic shots, reach verification, `grab` test. **New:** FREEZE (photo hold), GLIDE, SPEAKER (owner typing), FAV forwarding, richer UI_STATE. **Touch handlers removed.** | 302 | ~350 (≥ 23 KB) |
 | `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
 | `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
-| `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts), the Friends menu page and the picker | – | ~400 (≥ 20 KB) |
+| `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
+| `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (alpha fade and clap) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
@@ -37,8 +38,8 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
-| 7321 UI_MENU | core or friends → ui | page: `main` / **`live`** / `opts` | the friends script sends `main` for "↩ Back" |
-| **7322 UI_FRIENDS** | ui → friends | `page` / `pick` | the friends script runs the Friends page and the picker itself (memory) |
+| 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |
+| **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
 | 7370 STATUS | ui → all | `?` | every script prints one line |
@@ -84,7 +85,7 @@ Reach verification (§3) applies to types 5, 6 and 7 only.
   - The exits run as for the mode: typing, sitting, and movement keys in Scenery.
   - Mouselook and teleport pause as usual. Resuming from that pause returns to FREEZE, not ROLL; keep a `gFrozen` flag.
   - **No** hold countdown, **no** peek check and **no** watchdog.
-  - Incoming SHOT or GLIDE messages are stored in `gLast` / `gPending` and not applied.
+  - Incoming SHOT or GLIDE messages are ignored while frozen (the workers are paused too), so the frozen shot never changes.
 - **CMD `fav`:**
   - In Scenery while ROLL or FREEZE: send FAV with the pos and focus of `gLast` (the first two fields), and say "⭐ saved".
   - Otherwise say "⭐ Save works in Scenery".

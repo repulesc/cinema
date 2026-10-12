@@ -15,7 +15,7 @@ A movement key, a tap or typing gives your camera back.
 ## The button
 | Look | Value |
 |---|---|
-| Icon | A **deliberately pixel-art clapperboard**: 16×16, a few colours with a dark 1 px outline, fun rather than serious. The textures are in `hud/art/`, and the design board picks the variant |
+| Icon | A **deliberately pixel-art clapperboard**: 16×16, a few colours with a dark 1 px outline, fun rather than serious. The textures are in `hud/art/`; "Rec" is the default |
 | Size and place | About 40 px, **top right** by default. You can move it like any HUD |
 | Feedback | **No colours, no glow.** While the camera is rolling the button fades to **15 % opacity**, so it is nearly invisible in your view and in snapshots, but still clickable. Idle = 100 %. On start the clapper "claps" once (two-frame swap). There is no other indicator |
 

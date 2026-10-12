@@ -1,13 +1,13 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_people.lsl  (v3)  - the optional modes
+//  Cinema HUD  -  cinema_people.lsl  (v4)  - the optional modes
 //  personal: composed static shots of you that follow you as you walk.
 //  social:   over-the-shoulder pairs and group tableaux of you and the people
 //            around you (portrait of you while nobody is near).
-//  Shot types: 0 portrait, 1 pair, 2 group. Started only from the menu / chat,
-//  never by AFK.
+//  Shot types: 0 portrait, 1 pair, 2 group, 4 speaker (chat cuts in Social).
+//  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "3.0.0";
+string VERSION = "4.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -16,6 +16,7 @@ integer NEXT       = 7303;
 integer PAUSE      = 7304;
 integer RESUME     = 7305;
 integer MOVING     = 7306;
+integer SPEAKER    = 7315;
 integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer ACK        = 7313;
@@ -31,6 +32,7 @@ float STANDOFF    = 0.4;
 float R_INT       = 4.5;     // pair radius
 float R_GRP       = 8.0;     // group radius
 float MIN_HOLD    = 6.0;
+integer SPK_COOL   = 10;      // s  the same speaker is not cut to again within this
 
 list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];
 list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
@@ -53,6 +55,11 @@ integer gScanT;
 integer gMoveUntil;
 string  gPendEvent;
 integer gToldAlone;
+integer gChatOn;
+integer gChat;               // listen handle
+key     gSpeaker;
+key     gLastSpk;
+integer gLastSpkT;
 
 vector  gOP;
 float   gOY;
@@ -132,6 +139,7 @@ loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
     gTrace    = (integer)cfg("trace", "1");
+    gChatOn   = (integer)cfg("chat_cuts", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
     float aspect = (float)cfg("aspect", "1.778");
@@ -424,9 +432,55 @@ newScene()
     if (llFrand(1.0) < 0.5) gSide = -1.0;
 }
 
+// a speaker: cut to them at the next MIN_HOLD, but not the same speaker twice within SPK_COOL
+speak(key who)
+{
+    if (!gActive || !gChatOn || gMode != "social") return;
+    if (who == gLastSpk && llGetUnixTime() - gLastSpkT < SPK_COOL) return;
+    gSpeaker = who;
+    gPendEvent = "speaker";
+}
+
+// local chat is only listened to while Social runs with chat cuts on
+chatListen()
+{
+    if (gChat) llListenRemove(gChat);
+    gChat = 0;
+    if (gActive && gChatOn && gMode == "social") gChat = llListen(0, "", NULL_KEY, "");
+}
+
+// a cut to whoever just spoke: [cam, focus, 4] or []
+list speakerShot()
+{
+    integer rv = gRev;
+    if (gSpeaker == gOwner)
+    {
+        if (!gHasN) return [];
+        gRev = TRUE;                                   // over the other person's shoulder, facing you
+    }
+    else
+    {
+        list d = llGetObjectDetails(gSpeaker, [OBJECT_POS]);
+        if (llGetListLength(d) == 0) return [];
+        gNPos = llList2Vector(d, 0);
+        vector nsz = llGetAgentSize(gSpeaker);
+        gNEye = gNPos.z + K_EYE_STAND * nsz.z;
+        gHasN = TRUE;
+        gRev = FALSE;                                  // over your shoulder, facing them
+    }
+    planA(TRUE);
+    list sh = sweep();
+    gRev = rv;
+    if (llGetListLength(sh) == 0) return [];
+    gLastSpk = gSpeaker;
+    gLastSpkT = llGetUnixTime();
+    return llListReplaceList(sh, [4], 2, 2);
+}
+
 nextShot()
 {
     if (!gActive || gPaused) return;
+    string ev = gPendEvent;
     gPendEvent = "";
     if (!refreshOwner()) return;                    // core covers and asks again
     gSweepErr = FALSE;
@@ -434,7 +488,8 @@ nextShot()
     list shot = [];
     if (gMode == "social")
     {
-        if (llGetListLength(gGrp) >= 2 && planG()) shot = sweep();
+        if (ev == "speaker" && gChatOn) shot = speakerShot();
+        if (llGetListLength(shot) == 0 && llGetListLength(gGrp) >= 2 && planG()) shot = sweep();
         if (llGetListLength(shot) == 0 && gHasN && !gSweepErr)
         {
             planA(TRUE);
@@ -463,6 +518,7 @@ nextShot()
     integer type = llList2Integer(shot, 2);
     float hold = 20.0;
     if (type == 2) hold = 25.0;
+    if (type == 4) hold = 10.0;
     hold = hold * (0.8 + 0.4 * llFrand(1.0));
     llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type, "");
     vector v = foc - cam;
@@ -473,7 +529,7 @@ nextShot()
     gHaveShot = TRUE;
     gOwnerAtShot = gOP;
     gGrpAtShot = llGetListLength(gGrp);
-    tsay(gMode + ": " + llList2String(["portrait", "pair", "group"], type) + ", camera " + (string)llRound(llVecDist(cam, gOP)) + " m from you");
+    tsay(gMode + ": " + llList2String(["portrait", "pair", "group", "friends group", "speaker"], type) + ", camera " + (string)llRound(llVecDist(cam, gOP)) + " m from you");
 }
 
 integer inFrame(vector p)
@@ -545,6 +601,7 @@ default
             llMessageLinked(LINK_SET, ACK, gMode, "");
             gFov = (float)llList2String(L, 1);
             loadCfg();
+            chatListen();
             gPaused = FALSE;
             gHaveShot = FALSE;
             gSurveyOK = FALSE;
@@ -558,11 +615,16 @@ default
         else if (num == STOP)
         {
             gActive = FALSE;
+            chatListen();
             gHaveShot = FALSE;
             gWaitFirst = FALSE;
             llSetTimerEvent(0.0);
         }
-        else if (num == CFG_CHANGED) loadCfg();
+        else if (num == CFG_CHANGED)
+        {
+            loadCfg();
+            chatListen();
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "people");
         else if (num == STATUS && str == "?")
         {
@@ -589,6 +651,15 @@ default
             if (gWaitFirst) doScan();
         }
         else if (num == MOVING) gMoveUntil = llGetUnixTime() + 3;
+        else if (num == SPEAKER && gMode == "social") speak((key)str);
+    }
+
+    listen(integer channel, string name, key id, string msg)
+    {
+        if (!gActive || gMode != "social" || id == gOwner || llGetAgentSize(id) == ZERO_VECTOR) return;
+        list d = llGetObjectDetails(id, [OBJECT_POS]);
+        if (llGetListLength(d) == 0 || !refreshOwner()) return;
+        if (llVecDist(llList2Vector(d, 0), gOP) <= R_GRP) speak(id);
     }
 
     timer()

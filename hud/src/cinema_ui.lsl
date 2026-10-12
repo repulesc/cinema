@@ -12,6 +12,7 @@ string PASS     = "cinema-1.0-build1";      // same in all scripts; change per b
 string NOTECARD = "Cinema HUD - Read Me";
 
 integer UI_STATE    = 7320;
+integer UI_MENU     = 7321;
 integer UI_FRIENDS  = 7322;
 integer CFG_CHANGED = 7330;
 integer MSG_VER     = 7360;
@@ -625,6 +626,7 @@ default
             else gUiState = "idle";
             setLook(st);
         }
+        else if (num == UI_MENU) openMenu(str);
         else if (num == MSG_VER && str != "?" && str != VERSION)
             llOwnerSay("[Cinema] WARNING: " + (string)id + " script is version " + str + ", ui is " + VERSION + ". Re-drop all Cinema scripts from the same release.");
     }

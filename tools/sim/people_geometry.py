@@ -42,4 +42,11 @@ if Nn!=(0,1): ok=False; print('group side wrong')
 for D in (2.5,3.0,8.0):
     camz=1.7-D*tanV/3; y=(1.7-camz)/D/tanV
     if abs(y-1/3)>1e-6: ok=False; print('thirds height wrong',D,y)
+# 5) speaker shots (chat cuts): the speaker AND the other person are in frame, camera behind the right shoulder
+for side in (1,-1):
+    for rev,spk,oth in ((0,(2,0),(0,0)),(1,(0,0),(2,0))):   # rev=0: camera behind owner at (0,0), partner speaks; rev=1: owner speaks
+        dc=(N[0]*side*0.819152+(1 if rev else -1)*A[0]*0.573576, N[1]*side*0.819152+(1 if rev else -1)*A[1]*0.573576); dc=norm(dc)
+        C=((0*1.5+2)/2.5,0.0); cam=(C[0]+dc[0]*3,C[1]+dc[1]*3); view=norm((C[0]-cam[0],C[1]-cam[1]))
+        for who,p in (('speaker',spk),('other',oth)):
+            if abs(screen_x(cam,view,p))>1.0: ok=False; print('speaker shot: not in frame',who,side,rev)
 print('geometry checks:', 'ALL PASS' if ok else 'FAILURES')

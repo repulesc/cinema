@@ -16,3 +16,4 @@ jobs:
           python3 tools/sim/people_geometry.py
           python3 tools/sim/room_sim.py
           python3 tools/sim/tap_test.py
+          python3 tools/sim/friends_sim.py

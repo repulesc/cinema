@@ -7,8 +7,8 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 |---|---|---|---|
 | v3.0.0 | Scenery default, Personal and Social | done | ✅ works in-world, frozen in `legacy/v3/` |
 | 4.0 · Phase A | Quiz round 3, spec, architecture, roadmap, icon art, legacy split | Opus | ✅ this commit |
-| 4.0 · Phase B | Code v4 (milestones B1–B7 below), one release | **Sonnet** | ⏳ next |
-| 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | after B |
+| 4.0 · Phase B | Code v4 (milestones B1–B7 below), one release | Sonnet | ✅ coded, checked by compile and sims |
+| 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | ⏳ next |
 | Later | Backlog at the bottom, only on request | – | – |
 
 ## Rules for Sonnet (read first)
@@ -25,8 +25,14 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 5. Don't add features that are not in PRODUCT.md. No letterbox, no fades, no window shots.
 6. One commit per milestone on `claude/sweet-noether-r09sjj`, with a clear message. Push at the end; CI must be green.
 
-## Phase B: build v4.0.0 (Sonnet)
-`hud/src/` currently holds an exact copy of v3. Edit it in place.
+## Phase B: build v4.0.0 (Sonnet), done
+All seven milestones are coded in `hud/src/`. Deviations from the plan:
+- A sixth script, `cinema_picker.lsl`, holds the Friends menu and picker, because `cinema_friends` alone came out at 10.5 KB free.
+- The favourites case in `scenery_sim.py` was **not** added (only compile-checked).
+- B6: the texture default stays "rec" until the user picks a variant on the design board.
+- The friends sim found a real fit bug, now fixed (depth-aware fit).
+
+The checklists below are kept as the record of what was specified.
 
 ### B1 · Gestures, look and menu (core + ui)
 - [ ] Core:
@@ -82,7 +88,7 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 ## Phase C: in-world test (user)
 Install:
 1. Make a fresh prim from the README.
-2. Add the five scripts from `hud/src/`.
+2. Add the six scripts from `hud/src/`.
 3. Use **Set Scripts to Running**.
 4. Upload `hud/art/cinema_icon_256x128.png` and apply it as the README says.
 
@@ -101,7 +107,7 @@ Then report:
 | 9 | A house on the ground, then Scenery | Views from outside and above the roof (as v3) |
 | 10 | 💞 Friends › ➕ Pick, add one or two people, ▶ Start | The group is framed. Walking: a slow glide. Someone runs off: a snap to a wider shot in about 1 s |
 | 11 | Social or Friends: someone talks in local chat | A cut to them within about 6 s (not more often than every 10 s). You typing gives a cut to you, and the camera keeps rolling |
-| 12 | `/77 status` | Five lines, one per script, with free memory |
+| 12 | `/77 status` | Six lines, one per script, with free memory |
 
 Send the `scenery:` / `friends:` trace lines and anything odd.
 
