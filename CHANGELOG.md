@@ -1,5 +1,17 @@
 # Changelog
 
+## 4.0.0: planned (spec ready, build in progress)
+- **Repo:** v3.0.0 is frozen in `legacy/v3/`, the old v1/v2 material is in `legacy/v1-v2/`, and v4 lives in `hud/`. CI checks both.
+- **Spec from the round-3 quiz:**
+  - Gestures: tap = menu, double-tap = Scenery, long press = live menu. While rolling, tap stops and double-tap skips.
+  - Menus: emoji SL dialogs.
+  - Button: pixel-art clapper, no colours, fades to 15 % while rolling.
+  - Friends mode: glide and snap.
+  - Room-aware Scenery: skyboxes stay inside.
+  - Photo hold, Favourite spots, and chat cuts in Social and Friends. Typing no longer ends Social or Friends.
+- **Docs:** `docs/PRODUCT.md`, `docs/ARCHITECTURE.md` and `docs/ROADMAP.md` rewritten for v4.
+- **Art:** `tools/art/make_icon.py` generates `hud/art/cinema_icon_256x128.png` (variants classic, rec and viewfinder).
+
 ## 3.0.0 - the scenery camera (rebuilt from scratch around the real idea)
 - **The default is now the scenery camera**, which earlier versions never had. On AFK or a tap, the camera finds clear, grand views of the place: drone views 10–30 m up and wide eye-level views, 20–100 m away. It ignores people, stays inside the region, sits above the topmost surface at its spot (outside and above the roof when you are indoors), checks the view with rays, varies direction and height, holds each view about 60 s (adjustable), and hard-cuts.
 - **Personal** (follows you as you walk) and **Social** (pairs and groups) are optional modes from the long-press menu or `/77`. AFK never starts them. Movement keys don't end them.

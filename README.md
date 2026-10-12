@@ -7,36 +7,40 @@ A one-button Second Life HUD that turns your idle time into cinema.
 - **Social camera (optional):** over-the-shoulder pairs and group tableaux of you and the people around you.
 - A movement key, a tap or typing gives your camera back instantly.
 
+> **Status:** v3.0.0 works in-world and is frozen in [`legacy/v3/`](legacy/v3/). **v4.0.0** is specified and being built in `hud/`. Until then, `hud/src/` holds an exact copy of v3. The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+**v4 in one line:** tap opens a tidy emoji menu, double-tap starts the scenery camera, and the colour-changing button becomes a tiny pixel-art clapper that fades out while rolling. New: **Friends** mode, **room-aware Scenery** (skyboxes), **Photo hold**, **Favourite spots** and **chat cuts** in Social.
+
+## Repository layout
+| Path | Contents |
+|---|---|
+| `hud/src/` | The v4 HUD scripts (work in progress, see the roadmap) |
+| `hud/art/` | The button texture `cinema_icon_256x128.png` (2 frames), the variants and a preview |
+| `legacy/v3/` | The frozen, working v3.0.0: scripts, docs and build steps |
+| `legacy/v1-v2/` | The old people-centred v1/v2 code and design (superseded) |
+| `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src` and `legacy/v3/src` |
+| `tools/sim/` | Python ports of the camera maths, run in CI |
+| `tools/art/make_icon.py` | Generates the pixel clapper textures |
+
 ## Documents
 | Document | Contents |
 |---|---|
-| [`docs/PRODUCT.md`](docs/PRODUCT.md) | What the HUD is: modes, controls, vibe, quiz answers (source of truth) |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases: this delivery, in-world verification, polish |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Scripts, messages, the scenery spot finder, people modes, settings |
-| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Text for the in-world "Cinema HUD - Read Me" notecard |
+| [`docs/PRODUCT.md`](docs/PRODUCT.md) | What v4 is: gestures, menus, modes, exits, quiz answers (source of truth) |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The v4 coding spec: scripts, link protocol, algorithms, settings |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phase B milestones for the build, the in-world test list, critiques, backlog |
+| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Notecard text (v3 until milestone B7) |
 | [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | In-world results to fill in |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
-| `docs/archive/`, `archive/` | The old v1–v2 design and code (people-centred; superseded) |
-
-## Scripts (all four go in the same root prim)
-```
-src/cinema_core.lsl      owns the camera: modes, triggers, exits, watchdog + basic shots
-src/cinema_scenery.lsl   default mode: drone / wide spot finder (rays, region-bounded, above roofs)
-src/cinema_people.lsl    optional Personal (follow-me) and Social (pairs, groups) modes
-src/cinema_ui.lsl        long-press menu, /77 commands, settings
-```
 
 ## Building the HUD in-world
-1. Rez a prim (a small flat box or circle) and name it `Cinema HUD`. This single prim is the button.
-2. **Delete every old Cinema script from it first.** Then create four new scripts and paste in the four `src/*.lsl` files. Each prints a `ready` line with its free memory when saved.
-3. Select the prim in Build mode and use **Build > Scripts > Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
-4. Create a notecard named exactly `Cinema HUD - Read Me` with the text of `docs/USER_GUIDE.md` and drop it in.
-5. Before giving or selling: change `PASS` (same string at the top of every script) and set the scripts to *no modify*.
-6. Attach it to a HUD point and tap.
+- **Today (v3):** follow [`legacy/v3/README.md`](legacy/v3/README.md).
+- **v4:** the steps arrive with milestone B6/B7. In short:
+  1. Make one box `<0.01, 0.04, 0.04>` and attach it to HUD Top Right.
+  2. Apply `hud/art/cinema_icon_256x128.png` to the front face (repeats 0.5 × 1, offset −0.25).
+  3. Add the five scripts from `hud/src/` and use **Set Scripts to Running**.
 
 ## Checks (run before every paste)
-- `tools/lslcheck.sh`: compile-checks `src/*.lsl` with LSL-PyOptimizer (syntax, types, undeclared names, wrong arguments) and estimates free memory per script.
-- `tools/sim/scenery_sim.py`: runs the scenery spot finder in test worlds (open field, region edge, inside a house, town, skybox). It checks that the camera stays inside the region, above the top surface, with an unblocked view and the pitch in range.
-- `tools/sim/people_geometry.py`: lead room, thirds, over-the-shoulder side, 180-degree rule, group side.
+- `tools/lslcheck.sh`: compile-checks every script and estimates its free memory (must be ≥ 15 KB).
+- `tools/sim/scenery_sim.py`, `tools/sim/people_geometry.py`, and from v4 `room_sim.py`, `friends_sim.py`, `tap_test.py`.
 
-GitHub Actions runs all three on every push.
+GitHub Actions runs all of them on every push.

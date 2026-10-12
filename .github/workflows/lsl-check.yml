@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile-check all HUD scripts
+      - name: Compile-check the v4 HUD scripts (hud/src) and the frozen v3 (legacy/v3/src)
         run: bash tools/lslcheck.sh
       - name: Simulate the scenery spot finder and the people-shot geometry
         run: |
