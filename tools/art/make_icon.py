@@ -15,7 +15,8 @@ import os, sys
 from PIL import Image, ImageDraw
 
 DEFAULT = "rec"            # chosen on the design board
-N, SCALE = 16, 8
+N, SCALE = 16, 7          # 16 px sprite x7 = 112 px, centred in a 128x128 frame (8 px clear margin all round)
+FRAME, PAD = 128, 8
 
 PAL = {
     "K": (16, 16, 20, 255),      # outline
@@ -24,7 +25,6 @@ PAL = {
     "H": (138, 144, 166, 255),   # chalk lines
     "C": (255, 90, 95, 255),     # coral accent
 }
-RIM = (244, 241, 232, 80)        # faint light halo so the dark outline still reads on dark rooms
 
 def blank():
     return [["." for _ in range(N)] for _ in range(N)]
@@ -69,21 +69,21 @@ def draw(open_, v):
     return g
 
 def frame_img(g):
-    im = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    # transparent pixels carry the OUTLINE colour (alpha 0), so smoothing/mip-mapping in the viewer never
+    # blends in black or white fringes. No halo. The sprite sits inside a clear margin so the frame edges
+    # (and the neighbouring frame) never bleed in.
+    im = Image.new("RGBA", (N, N), PAL["K"][:3] + (0,))
     for y in range(N):
         for x in range(N):
             if g[y][x] != ".":
                 im.putpixel((x, y), PAL[g[y][x]])
-            elif any(0 <= x + dx < N and 0 <= y + dy < N and g[y + dy][x + dx] != "."
-                     for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-                im.putpixel((x, y), RIM)
-    return im
+    return im.resize((N * SCALE, N * SCALE), Image.NEAREST)
 
 def sheet(v):
-    s = Image.new("RGBA", (2 * N, N), (0, 0, 0, 0))
-    s.paste(frame_img(draw(True, v)), (0, 0))
-    s.paste(frame_img(draw(False, v)), (N, 0))
-    return s.resize((2 * N * SCALE, N * SCALE), Image.NEAREST)
+    s = Image.new("RGBA", (2 * FRAME, FRAME), PAL["K"][:3] + (0,))
+    for i, o in enumerate((True, False)):
+        s.paste(frame_img(draw(o, v)), (i * FRAME + PAD, PAD))
+    return s
 
 def preview(variants, out):
     # each variant: 40 px (as on screen) over sky and over a dark room, frames x4, faded at 15 %
