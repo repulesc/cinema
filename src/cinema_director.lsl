@@ -1,13 +1,12 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_director.lsl   (lean build: must fit one 64 KB script)
-//  Scene scan, survey, composition maths, raycast sweep, fallback, small grammar.
-//  Core owns the camera and the hold timer; this script only answers with
-//  SHOT / NO_SHOT and does no work while the cinema is off.
-//  Shots: portrait or over-the-shoulder pair (0), pillow shot of the open view (4).
-//  The full-featured director (groups, long shots, styles) is in src/future/.
+//  Cinema HUD  -  cinema_director.lsl  (v2)
+//  The smart part: looks at the people around you and at the space (raycasts),
+//  then picks a composed, level, static view and tells core to cut to it.
+//  Shots: 0 portrait, 1 over-the-shoulder pair, 2 group tableau, 4 empty view.
+//  Core owns the camera and covers with basic shots if this script is silent.
 // ============================================================================
 
-string VERSION = "1.1.0";
+string VERSION = "2.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer DIR_START    = 7301;
@@ -19,35 +18,35 @@ integer DIR_MOVING   = 7306;
 integer DIR_COOLDOWN = 7307;
 integer SHOT         = 7310;
 integer NO_SHOT      = 7311;
+integer DIR_ACK      = 7313;
 integer CFG_CHANGED  = 7330;
 integer MSG_VER      = 7360;
 integer STATUS       = 7370;
 
-float K_EYE_STAND = 0.37;
+float K_EYE_STAND = 0.37;     // eye height above avatar centre, as a fraction of its height
 float K_EYE_SIT   = 0.25;
 float BODY_R      = 0.35;
 float MARGIN      = 1.15;
-float STANDOFF    = 0.4;
-float R_INT       = 4.5;
+float STANDOFF    = 0.4;      // keep the camera this far in front of a wall
+float R_INT       = 4.5;      // "with you" radius (pair shots)
+float R_GRP       = 8.0;      // group radius
 float MIN_HOLD    = 6.0;
 
-list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];
-list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
+list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];   // 0, +-25, +-50, +-80 deg
+list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];                                 // portrait angles
 
 float   gHoldMul;
 integer gCoolMin;
 float   gThetaMax;
-float   gAspect;
 float   gMaxCam;
-string  gFovAxis;
 integer gTrace;
 list    gRayOpts;
 
 float gFov;
 float tanV;
 float tanH;
-float gAlpha;
-float gHalfH;
+float gAlpha;                 // rule-of-thirds yaw
+float gHalfH;                 // half horizontal field of view
 
 key     gOwner;
 integer gActive;
@@ -62,8 +61,8 @@ integer gErrCount;
 integer gMoveUntil;
 string  gPendEvent;
 integer gPreferA;
-integer gSaidFirst;
 
+// owner and the people around
 vector  gOP;
 float   gOY;
 float   gOE;
@@ -72,17 +71,20 @@ integer gHasN;
 integer gNearCnt;
 vector  gNPos;
 float   gNEye;
+list    gGrp;                 // positions of up to 5 nearest others within R_GRP
 
+// space
 list    gClear;
 float   gMaxClear;
 float   gRoofZ;
 float   gFloorZ;
-integer gEnv;
+integer gEnv;                 // 0 open, 1 semi, 2 indoor
 integer gSurveyOK;
 vector  gSurveyPos;
 integer gLastOpen;
 
-integer gLastCat;
+// grammar
+integer gLastCat;             // 0 portrait, 1 pair, 2 group, 3 empty view
 integer gEstablish;
 integer gSincePillow;
 integer gPillowTarget;
@@ -91,6 +93,7 @@ integer gRev;
 float   gLastPhi;
 vector  gSceneAnchor;
 
+// plan for the sweep
 vector  gPFp;
 float   gPAz;
 float   gPd;
@@ -98,14 +101,17 @@ float   gPdMin;
 float   gPEye;
 float   gPTh;
 vector  gPAxis;
+integer gPCenter;
+integer gPType;
 
+// current shot
 integer gHaveShot;
 integer gShotT;
 vector  gCurCam;
-vector  gCurFocus;
 vector  gCurV;
-integer gCurArch;
+integer gCurType;
 integer gNearAtShot;
+integer gGrpAtShot;
 vector  gOwnerAtShot;
 integer gSweepErr;
 
@@ -162,28 +168,26 @@ loadCfg()
     gHoldMul  = (float)cfg("hold_mul", "1.0");
     gCoolMin  = (integer)cfg("cool_min", "10");
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
-    gAspect   = (float)cfg("aspect", "1.778");
     gMaxCam   = (float)cfg("maxcam", "45");
-    gFovAxis  = cfg("fovaxis", "v");
     gTrace    = (integer)cfg("trace", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
+    float aspect = (float)cfg("aspect", "1.778");
+    if (aspect < 0.5) aspect = 1.778;
     if (gFov < 0.1) gFov = 1.047198;
-    if (gAspect < 0.5) gAspect = 1.778;
-    float t = llTan(gFov * 0.5);
-    tanV = t;
-    tanH = t * gAspect;
-    if (gFovAxis == "h")
+    tanV = llTan(gFov * 0.5);
+    tanH = tanV * aspect;
+    if (cfg("fovaxis", "v") == "h")
     {
-        tanH = t;
-        tanV = t / gAspect;
+        tanH = tanV;
+        tanV = tanH / aspect;
     }
     gAlpha = llAtan2(tanH / 3.0, 1.0);
     gHalfH = llAtan2(tanH, 1.0);
 }
 
 // ============================================================================
-//  rays and scene
+//  sensing: rays, owner, people, space
 // ============================================================================
 // [status, distance]: 0 clear (full length), 1 hit, <0 error
 list ray(vector a, vector b)
@@ -211,16 +215,16 @@ integer refreshOwner()
     return TRUE;
 }
 
-// nearest other avatar within R_INT, and how many are within R_INT
+// people: nearest others within R_GRP (max 5), the nearest within R_INT for pair shots
 scan()
 {
     gScanT = llGetUnixTime();
     gHasN = FALSE;
     gNearCnt = 0;
     list ids = llGetAgentList(AGENT_LIST_REGION, []);
+    list tmp = [];
     integer n = llGetListLength(ids);
     integer i;
-    float best = R_INT;
     for (i = 0; i < n; i++)
     {
         key k = llList2Key(ids, i);
@@ -229,20 +233,31 @@ scan()
         {
             vector p = llList2Vector(d, 0);
             float dist = llVecDist(p, gOP);
-            if (dist <= R_INT) gNearCnt++;
-            if (dist < best)
+            if (dist <= R_GRP) tmp += [dist, k, p];
+        }
+    }
+    tmp = llListSort(tmp, 3, TRUE);
+    gGrp = [];
+    n = llGetListLength(tmp) / 3;
+    for (i = 0; i < n && i < 5; i++)
+    {
+        vector pp = llList2Vector(tmp, i * 3 + 2);
+        gGrp += [pp];
+        if (llList2Float(tmp, i * 3) <= R_INT)
+        {
+            gNearCnt++;
+            if (!gHasN)
             {
-                best = dist;
-                gNPos = p;
-                vector nsz = llGetAgentSize(k);
-                gNEye = p.z + K_EYE_STAND * nsz.z;
                 gHasN = TRUE;
+                gNPos = pp;
+                vector nsz = llGetAgentSize(llList2Key(tmp, i * 3 + 1));
+                gNEye = pp.z + K_EYE_STAND * nsz.z;
             }
         }
     }
 }
 
-// 8 horizontal rays + up + down
+// space: 8 horizontal rays + up + down from eye height
 integer survey()
 {
     vector E = <gOP.x, gOP.y, gOE>;
@@ -270,7 +285,6 @@ integer survey()
     if (roofD < 12.0 && tot < 100.0) gEnv = 2;
     gSurveyOK = TRUE;
     gSurveyPos = gOP;
-    tsay("survey done: environment " + (string)gEnv + " (0 open, 1 semi, 2 indoor), most open direction " + (string)llRound(gMaxClear) + " m");
     return TRUE;
 }
 
@@ -290,9 +304,9 @@ integer pickOpenIdx(float minClear)
 }
 
 // ============================================================================
-//  composition (spec 2.2 - 2.8)
+//  composition
 // ============================================================================
-// camera height: subject eye line on the upper third, camera stays level
+// camera height: subject's eye line on the upper third while the camera stays level
 float camZ(float eyeRef, float d)
 {
     float z = fmax(eyeRef - d * tanV / 3.0, gFloorZ + 0.35);
@@ -300,15 +314,18 @@ float camZ(float eyeRef, float d)
     return z;
 }
 
+// distance at which subjects spread +-spread across the view (and halfH tall) fill the frame
 float fitDist(float spread, float halfH, float lo, float hi)
 {
     return fclamp(fmax((spread + BODY_R) / tanH, halfH / tanV) * MARGIN, lo, hi);
 }
 
-// plan globals for a portrait (solo) or an over-the-shoulder shot (pair)
-planA()
+// portrait of the owner, or (pair = TRUE and someone is close) an over-the-shoulder shot
+planA(integer pair)
 {
     gPAxis = ZERO_VECTOR;
+    gPCenter = FALSE;
+    gPType = 0;
     gPEye = gOE;
     gPFp = <gOP.x, gOP.y, gOE>;
     gPdMin = 2.0;
@@ -316,7 +333,7 @@ planA()
     if (gOSit) gPTh = 0.0872665;
     vector ax = gNPos - gOP;
     ax.z = 0.0;
-    if (gHasN && llVecMag(ax) >= 0.3)
+    if (pair && gHasN && llVecMag(ax) >= 0.3)
     {
         vector A = llVecNorm(ax);
         vector dc = <-A.y, A.x, 0.0> * gSide * 0.819152;      // behind one shoulder, 35 deg, 180-degree-rule side
@@ -330,6 +347,7 @@ planA()
         gPAz = llAtan2(dc.y, dc.x);
         gPAxis = A;
         gPdMin = 2.5;
+        gPType = 1;
         gPd = fitDist(llFabs(ax * <-dc.y, dc.x, 0.0>), 0.9, 2.5, 5.0);
         return;
     }
@@ -340,7 +358,50 @@ planA()
     gPd = fitDist(0.0, 1.3, 2.5, 3.5);
 }
 
-// pillow shot: no avatars, lens along the most open direction. [cam, focus, 4] or []
+// group tableau: everyone within R_GRP, camera square-on to the group's long axis,
+// on the side the owner faces, distance fitted to the spread
+integer planG()
+{
+    list M = [gOP] + gGrp;
+    integer n = llGetListLength(M);
+    if (n < 3) return FALSE;
+    vector C = ZERO_VECTOR;
+    integer i;
+    integer j;
+    for (i = 0; i < n; i++) C += llList2Vector(M, i);
+    C = C / (float)n;
+    float best = 0.0;
+    vector A = <1.0, 0.0, 0.0>;
+    for (i = 0; i < n; i++)
+    {
+        for (j = i + 1; j < n; j++)
+        {
+            vector dv = llList2Vector(M, j) - llList2Vector(M, i);
+            dv.z = 0.0;
+            if (llVecMag(dv) > best)
+            {
+                best = llVecMag(dv);
+                A = llVecNorm(dv);
+            }
+        }
+    }
+    vector Nn = <-A.y, A.x, 0.0>;
+    if (dirOf(gOY) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
+    float spread = 0.0;
+    for (i = 0; i < n; i++) spread = fmax(spread, llFabs((llList2Vector(M, i) - C) * A));
+    gPEye = C.z + (gOE - gOP.z);
+    gPFp = <C.x, C.y, gPEye>;
+    gPAz = llAtan2(Nn.y, Nn.x);
+    gPd = fitDist(spread, 1.3, 4.0, 12.0);
+    gPdMin = 3.0;
+    gPAxis = ZERO_VECTOR;
+    gPTh = 0.0;
+    gPCenter = TRUE;
+    gPType = 2;
+    return TRUE;
+}
+
+// empty view (pillow shot): lens along an open direction, nobody in frame. [cam, focus, 4] or []
 list shotPillow()
 {
     float need = 25.0;
@@ -373,7 +434,7 @@ list shotPillow()
     return [];
 }
 
-// F2: camera just behind the owner's head, looking where they look. [cam, focus, 0] or []
+// last resort: camera just behind the owner's head, looking where they look
 list shoulderShot()
 {
     vector E = <gOP.x, gOP.y, gOE>;
@@ -386,9 +447,9 @@ list shoulderShot()
 }
 
 // ============================================================================
-//  raycast sweep (spec 3.2 - 3.4)
+//  raycast sweep: 7 candidate camera directions around the plan, best two verified
 // ============================================================================
-// verify one candidate camera: [cam, focus] or []
+// one candidate: [cam, focus] or []
 list tryCand(float az, float de)
 {
     vector cc = gPFp + dirOf(az) * de;
@@ -399,18 +460,21 @@ list tryCand(float az, float de)
     integer rs = llList2Integer(rr, 0);
     if (rs < 0) gSweepErr = TRUE;
     if (rs < 0 || (rs == 1 && llList2Float(rr, 1) < llVecDist(cam, gPFp) - 0.8)) return [];
-    // rule of thirds: subject sits on the side opposite to where they look
     vector V = ZERO_VECTOR - dirOf(az);
-    float fs = dirOf(gOY) * <V.y, -V.x, 0.0>;
-    float sd = gSide;
-    if (fs > 0.2) sd = 1.0;
-    else if (fs < -0.2) sd = -1.0;
-    vector foc = cam + (V * llEuler2Rot(<0.0, 0.0, -sd * gAlpha>)) * de;
+    if (!gPCenter)
+    {
+        // rule of thirds with lead room: the owner sits on the side opposite to where they look
+        float fs = dirOf(gOY) * <V.y, -V.x, 0.0>;
+        float sd = gSide;
+        if (fs > 0.2) sd = 1.0;
+        else if (fs < -0.2) sd = -1.0;
+        V = V * llEuler2Rot(<0.0, 0.0, -sd * gAlpha>);
+    }
+    vector foc = cam + V * de;
     foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
     return [cam, foc];
 }
 
-// 7 candidate azimuths around the plan; best two are verified. [cam, focus, 0] or []
 list sweep()
 {
     list C = [];
@@ -430,7 +494,7 @@ list sweep()
         }
         float de = gPd;
         if (st == 1) de = fmin(gPd, llList2Float(r, 1) - STANDOFF);
-        if (de >= 1.2)
+        if (de >= fmax(0.6 * gPdMin, 1.2))
         {
             float s = 3.0 * de / gPd + 2.0 * llCos(off);
             if (gPAxis != ZERO_VECTOR)
@@ -456,20 +520,33 @@ list sweep()
         if (b < 0) return [];
         list v = tryCand(llList2Float(C, b * 3 + 1), llList2Float(C, b * 3 + 2));
         if (gSweepErr) return [];
-        if (llGetListLength(v) > 0) return v + [0];
+        if (llGetListLength(v) > 0) return v + [gPType];
         skip = b;
     }
     return [];
 }
 
-// ============================================================================
-//  grammar and the cut
-// ============================================================================
-float holdFor(integer arch)
+// category: 0 portrait, 1 pair, 2 group, 3 empty view
+list tryCat(integer c)
 {
-    if (gHoldMul <= 0.0) return 0.0;
+    if (c == 3) return shotPillow();
+    if (c == 2)
+    {
+        if (!planG()) return [];
+    }
+    else planA(c == 1);
+    return sweep();
+}
+
+// ============================================================================
+//  editing
+// ============================================================================
+float holdFor(integer type)
+{
+    if (gHoldMul <= 0.0) return 0.0;              // hold until something happens
     float b = 20.0;
-    if (arch == 4) b = 8.0;
+    if (type == 2) b = 25.0;
+    if (type == 4) b = 9.0;
     return b * gHoldMul * (0.8 + 0.4 * llFrand(1.0));
 }
 
@@ -487,70 +564,32 @@ commit(list s)
 {
     vector cam = llList2Vector(s, 0);
     vector foc = llList2Vector(s, 1);
-    integer arch = llList2Integer(s, 2);
-    float hold = holdFor(arch);
-    llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)arch + "|0", "");
+    integer type = llList2Integer(s, 2);
+    llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)holdFor(type) + "|" + (string)type + "|0", "");
     vector v = foc - cam;
     v.z = 0.0;
     gCurV = llVecNorm(v);
     gCurCam = cam;
-    gCurFocus = foc;
-    gCurArch = arch;
+    gCurType = type;
     gShotT = llGetUnixTime();
     gHaveShot = TRUE;
     gOwnerAtShot = gOP;
     gNearAtShot = gNearCnt;
+    gGrpAtShot = llGetListLength(gGrp);
     gEstablish = FALSE;
     gPreferA = FALSE;
     gPendEvent = "";
     gErrCount = 0;
-    gLastCat = 0;
+    gLastCat = type;
     gSincePillow++;
-    if (arch == 4)
+    if (type == 4)
     {
-        gLastCat = 1;
+        gLastCat = 3;
         gSincePillow = 0;
         gPillowTarget = 4 + (integer)llFrand(3.0);
     }
-    if (!gSaidFirst)
-    {
-        gSaidFirst = TRUE;
-        say("first shot: type " + (string)arch + " (0 portrait/pair, 4 empty view), camera " + (string)llRound(llVecDist(cam, gOP)) + " m away");
-    }
-}
-
-// F4: keep the current composition and give it a fresh hold
-extendCurrent()
-{
-    llMessageLinked(LINK_SET, SHOT, (string)gCurCam + "|" + (string)gCurFocus + "|" + (string)holdFor(gCurArch) + "|" + (string)gCurArch + "|0", "");
-    gShotT = llGetUnixTime();
-    gOwnerAtShot = gOP;
-    gPendEvent = "";
-    gPreferA = FALSE;
-}
-
-// F5: nothing usable; Core hands the camera back, we retry later
-giveUp()
-{
-    llMessageLinked(LINK_SET, NO_SHOT, "15", "");
-    gHaveShot = FALSE;
-    gRetryAt = llGetUnixTime() + 15;
-    gPreferA = FALSE;
-    say("no usable shot here (environment " + (string)gEnv + ", most open direction " + (string)llRound(gMaxClear) + " m) - retrying in 15 s");
-}
-
-// ray errors: retry in 3 s; after 3 failures hold the current shot or give up
-rayFail()
-{
-    gErrCount++;
-    say("ray error " + (string)gErrCount + "/3");
-    if (gErrCount < 3) gRetryAt = llGetUnixTime() + 3;
-    else
-    {
-        gErrCount = 0;
-        if (gHaveShot) extendCurrent();
-        else giveUp();
-    }
+    tsay("cut: " + llList2String(["portrait", "pair", "group", "", "empty view"], type) + ", camera "
+        + (string)llRound(llVecDist(cam, gOP)) + " m from you");
 }
 
 nextShot(string why)
@@ -560,7 +599,6 @@ nextShot(string why)
     gRetryAt = 0;
     if (!refreshOwner())
     {
-        say("cannot read your avatar position - retrying");
         gRetryAt = llGetUnixTime() + 5;
         return;
     }
@@ -569,40 +607,60 @@ nextShot(string why)
     {
         if (!survey())
         {
-            rayFail();
+            gErrCount++;
+            gRetryAt = llGetUnixTime() + 3;
+            if (gErrCount >= 3) llMessageLinked(LINK_SET, NO_SHOT, "ray", "");
             return;
         }
     }
-    // pillow shots (empty view): every few cuts, more often after a long AFK; never the first shot
+    // weights for portrait, pair, group, empty view
+    float wP = 20.0;
+    float wR = 0.0;
+    float wG = 0.0;
+    float wV = 25.0;
+    if (gHasN) wR = 40.0;
+    if (llGetListLength(gGrp) >= 2) wG = 40.0;
+    if (gMaxClear < 15.0) wV = 0.0;
+    if (gCool) wV = wV * 3.0;
+    if (gEstablish || gPreferA) wV = 0.0;                        // a new scene starts with people
+    if (gEstablish && wR + wG > 0.0) wP = 0.0;
+    if (gLastCat == 0) wP = 0.0;                                 // no category twice in a row,
+    if (gLastCat == 2) wG = 0.0;                                 // except shot / reverse shot
+    if (gLastCat == 3) wV = 0.0;
+    if (gSincePillow >= gPillowTarget && gMaxClear >= 15.0 && !gEstablish && !gPreferA && gLastCat != 3)
+    {
+        wP = 0.0;
+        wR = 0.0;
+        wG = 0.0;
+        wV = 1.0;
+    }
+    if (wP + wR + wG + wV <= 0.0) wP = 1.0;
+    float r = llFrand(wP + wR + wG + wV);
     integer cat = 0;
-    if (!gEstablish && !gPreferA && !gHasN && gLastCat == 0)
+    if (r >= wP)
     {
-        float pp = 0.35;
-        if (gCool) pp = 0.8;
-        if (gSincePillow >= gPillowTarget || llFrand(1.0) < pp) cat = 1;
-    }
-    list shot = [];
-    integer t;
-    for (t = 0; t < 2 && llGetListLength(shot) == 0 && !gSweepErr; t++)
-    {
-        tsay("trying shot type " + (string)cat + " (0 portrait/pair, 1 empty view)");
-        if (cat == 0)
+        r -= wP;
+        cat = 1;
+        if (r >= wR)
         {
-            planA();
-            shot = sweep();
+            r -= wR;
+            cat = 2;
+            if (r >= wG) cat = 3;
         }
-        else shot = shotPillow();
-        cat = 1 - cat;
     }
-    if (!gSweepErr && llGetListLength(shot) == 0) shot = shoulderShot();
-    if (gSweepErr)
+    // the chosen shot, then a portrait, then an empty view, then over the shoulder
+    list shot = tryCat(cat);
+    if (llGetListLength(shot) == 0 && !gSweepErr && cat != 0) shot = tryCat(0);
+    if (llGetListLength(shot) == 0 && !gSweepErr && cat != 3) shot = tryCat(3);
+    if (llGetListLength(shot) == 0 && !gSweepErr) shot = shoulderShot();
+    if (llGetListLength(shot) > 0) commit(shot);
+    else
     {
-        gPreferA = FALSE;
-        rayFail();
+        // nothing usable here (or a ray error): core covers with its basic shot
+        gHaveShot = FALSE;
+        gRetryAt = llGetUnixTime() + 15;
+        llMessageLinked(LINK_SET, NO_SHOT, "none", "");
     }
-    else if (llGetListLength(shot) > 0) commit(shot);
-    else if (gHaveShot) extendCurrent();
-    else giveUp();
 }
 
 // ============================================================================
@@ -616,14 +674,15 @@ integer inFrame(vector p)
     return llAcos(fclamp(llVecNorm(to) * gCurV, -1.0, 1.0)) <= 0.85 * gHalfH;
 }
 
-onScan()
+doScan()
 {
     if (!gActive || gPaused || !refreshOwner()) return;
+    scan();
     if (gWaitFirst)
     {
-        tsay("scan done: " + (string)gNearCnt + " avatar(s) within 4.5 m");
         gWaitFirst = FALSE;
         newScene();
+        tsay("on: " + (string)llGetListLength(gGrp) + " people within " + (string)llRound(R_GRP) + " m");
         nextShot(gWaitWhy);
         return;
     }
@@ -633,15 +692,10 @@ onScan()
         newScene();
         gPendEvent = "scene";
     }
-    else if (gNearCnt > gNearAtShot) gPendEvent = "arrival";
-    else if (gCurArch != 4 && !inFrame(gOP)) gPendEvent = "frame";
+    else if (gNearCnt > gNearAtShot || llGetListLength(gGrp) > gGrpAtShot) gPendEvent = "arrival";
+    else if (gCurType != 4 && !inFrame(gOP)) gPendEvent = "frame";
     if (gNearCnt < gNearAtShot) gNearAtShot = gNearCnt;
-}
-
-doScan()
-{
-    if (refreshOwner()) scan();
-    onScan();
+    if (llGetListLength(gGrp) < gGrpAtShot) gGrpAtShot = llGetListLength(gGrp);
 }
 
 // ============================================================================
@@ -649,6 +703,7 @@ default
 {
     state_entry()
     {
+        llOwnerSay("[cinema/dir] director v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gFov = 1.047198;
         gSide = 1.0;
@@ -658,7 +713,6 @@ default
         gPillowTarget = 4;
         loadCfg();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "director");
-        say("v" + VERSION + " ready, free memory " + (string)llGetFreeMemory() + " bytes");
     }
 
     on_rez(integer p)
@@ -675,6 +729,7 @@ default
     {
         if (num == DIR_START)
         {
+            llMessageLinked(LINK_SET, DIR_ACK, VERSION, "");
             list L = llParseString2List(str, ["|"], []);
             gManual = (llList2String(L, 0) == "manual");
             gFov = (float)llList2String(L, 1);
@@ -693,7 +748,6 @@ default
             gLastOpen = -1;
             gSincePillow = 0;
             gPillowTarget = 4 + (integer)llFrand(3.0);
-            gSaidFirst = FALSE;
             gWaitFirst = TRUE;
             gWaitWhy = "start";
             llSetTimerEvent(1.0);
@@ -708,7 +762,9 @@ default
         }
         else if (num == DIR_NEXT)
         {
-            if (!gWaitFirst) nextShot(str);
+            if (!gActive) return;
+            if (gWaitFirst) doScan();
+            else nextShot(str);
         }
         else if (num == DIR_PAUSE) gPaused = TRUE;
         else if (num == DIR_RESUME)
@@ -730,8 +786,8 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "director");
         else if (num == STATUS && str == "?")
         {
-            say("v" + VERSION + " active " + (string)gActive + ", paused " + (string)gPaused + ", have shot " + (string)gHaveShot
-                + ", free mem " + (string)llGetFreeMemory());
+            say("v" + VERSION + " active " + (string)gActive + ", people near " + (string)llGetListLength(gGrp)
+                + ", environment " + (string)gEnv + ", free mem " + (string)llGetFreeMemory());
         }
     }
 
@@ -748,7 +804,7 @@ default
         if (!gHaveShot) return;
         integer since = now - gShotT;
         // manual session and the owner is walking: re-frame when they leave the shot
-        if (gManual && now < gMoveUntil && since >= 2 && gCurArch != 4 && refreshOwner())
+        if (gManual && now < gMoveUntil && since >= 2 && gCurType != 4 && refreshOwner())
         {
             if (!inFrame(gOP) || llVecDist(gOP, gOwnerAtShot) > 4.0)
             {

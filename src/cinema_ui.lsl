@@ -1,13 +1,13 @@
 // ============================================================================
 //  Cinema HUD  -  cinema_ui.lsl
 //  Settings in Linkset Data (protected), long-press dialog menu, button look,
-//  first-run welcome + notecard, owner-change reset, version check, probes.
+//  first-run welcome + notecard, owner-change reset, version check, /77 commands.
 //
 //  Lives in the ROOT prim with cinema_core and cinema_director.
 //  Design: docs/ARCHITECTURE.md  (6.3 settings, 6.4 UI)
 // ============================================================================
 
-string VERSION  = "1.1.0";
+string VERSION  = "2.0.0";
 string PASS     = "cinema-1.0-build1";      // same in all 3 scripts; change per build
 string NOTECARD = "Cinema HUD - Read Me";   // give this notecard together with the HUD
 
@@ -15,7 +15,6 @@ string NOTECARD = "Cinema HUD - Read Me";   // give this notecard together with 
 integer UI_STATE    = 7320;
 integer UI_MENU     = 7321;
 integer CFG_CHANGED = 7330;
-integer PROBE       = 7350;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
 integer CMD         = 7371;
@@ -191,23 +190,20 @@ openMenu(string page)
             + "\nCooldown after: " + cfgGet("cool_min") + " min"
             + "\nCut mode clear-first: " + onoff("cutmode")
             + "\nDebug: " + onoff("debug"),
-            ["Phantom", "Man. vista", "Alt-cam", "Cooldown", "Cut mode", "Debug", "Probe", "Reset", "< Back"]);
+            ["Phantom", "Man. vista", "Alt-cam", "Cooldown", "Cut mode", "Debug", "Test camera", "Reset", "< Back"]);
     else if (page == "altcam")
         dlg(head + "When you Alt-orbit the camera while the cinema runs:\nPeek = pause, resume after ESC\nEnds cinema = stop\nIgnore = do not watch for it",
             ["Peek", "Ends cinema", "Ignore", "< Back"]);
     else if (page == "cool")
         dlg(head + "After this long idle, favour empty sky / sea shots (lighter on the GPU)",
             ["Off", "5 min", "10 min", "20 min", "< Back"]);
-    else if (page == "probe")
-        dlg(head + "In-world tests. Stop the cinema first. Results are printed in chat; note them in docs/CALIBRATION.md.\nCut = instant cut or glide?\nCamPos = does the viewer report Alt-cam?\nDistance = how far can the camera go?",
-            ["Cut", "CamPos", "Distance", "FOV", "< Back"]);
     else if (page == "reset")
         dlg(head + "Reset ALL settings to defaults?", ["Yes, reset", "< Back"]);
 }
 
 string parentOf(string page)
 {
-    if (page == "altcam" || page == "cool" || page == "probe" || page == "reset") return "opts";
+    if (page == "altcam" || page == "cool" || page == "reset") return "opts";
     return "main";
 }
 
@@ -273,7 +269,7 @@ onChoice(string msg)
     {
         if (msg == "Alt-cam") openMenu("altcam");
         else if (msg == "Cooldown") openMenu("cool");
-        else if (msg == "Probe") openMenu("probe");
+        else if (msg == "Test camera") { closeMenu(); llMessageLinked(LINK_SET, CMD, "grab", ""); }
         else if (msg == "Reset") openMenu("reset");
         else
         {
@@ -302,16 +298,6 @@ onChoice(string msg)
         llOwnerSay("[Cinema] Cooldown after " + c + " min");
         openMenu("opts");
     }
-    else if (gPage == "probe")
-    {
-        string p = "";
-        if (msg == "Cut") p = "cut";
-        else if (msg == "CamPos") p = "campos";
-        else if (msg == "Distance") p = "dist";
-        else if (msg == "FOV") p = "fov";
-        closeMenu();
-        if (p != "") llMessageLinked(LINK_SET, PROBE, p, "");
-    }
     else if (gPage == "reset")
     {
         if (msg == "Yes, reset")
@@ -324,10 +310,10 @@ onChoice(string msg)
     }
 }
 
-// chat commands: /9 <command>   (works even if the long-press menu does not)
+// chat commands: /77 <command>   (works even if the long-press menu does not)
 help()
 {
-    llOwnerSay("[Cinema] commands: /" + (string)gCmdChan + " menu | start | stop | grab | status | debug on|off | trace on|off | maxcam <m> | chan <n> | probe cut|campos|dist|fov | reset");
+    llOwnerSay("[Cinema] commands: /" + (string)gCmdChan + " menu | start | stop | grab | status | debug on|off | trace on|off | maxcam <m> | chan <n> | reset");
 }
 
 onCommand(string msg)
@@ -381,11 +367,6 @@ onCommand(string msg)
         }
         else llOwnerSay("[Cinema] maxcam needs a number between 5 and 60.");
     }
-    else if (c == "probe")
-    {
-        if (v == "cut" || v == "campos" || v == "dist" || v == "fov") llMessageLinked(LINK_SET, PROBE, v, "");
-        else help();
-    }
     else if (c == "reset")
     {
         initDefaults(TRUE);
@@ -408,6 +389,7 @@ default
         gCmdChan = (integer)cfgGet("cmd_chan");
         if (gCmdChan <= 0) gCmdChan = 77;
         gCmdListen = llListen(gCmdChan, "", gOwner, "");
+        llOwnerSay("[Cinema] ui v" + VERSION + " ready, commands on /" + (string)gCmdChan + ", free memory " + (string)llGetFreeMemory());
         llSetTimerEvent(3.0);
     }
 

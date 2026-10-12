@@ -494,3 +494,28 @@ The v1.0.x director was ~1,500 lines. Measured free memory (core 17 KB free at ~
 | event cuts (arrival, owner leaves frame, owner walked > 3 m), director mode, cooldown | scene-signature hysteresis |
 
 Chat commands use channel **77** (setting `cmd_chan`, `/77 chan <n>` to change); channel 9 clashed with another HUD.
+
+---
+
+## 10. v2 architecture (2.0.0) - what actually ships
+**Why v2:** in-world, core and UI worked and `/77 grab` proved the camera can be taken, but the director never answered. The 1.1.0 director compiles clean under LSL-PyOptimizer, so the likely causes were runtime-only (script left "not running" after the earlier compile error, or a load failure). Those are invisible in local chat. v2 removes the single point of failure.
+
+| Script | Role | Est. free memory |
+|---|---|---|
+| `cinema_core.lsl` | permissions, controls, AFK, touch, state machine, camera apply/release, peek, hold timer, **basic composer + director watchdog**, `/77 grab` | ~27 KB |
+| `cinema_director.lsl` | people (agent list, up to 5 within 8 m) + space (10-ray survey), portrait / pair / group / empty view, 7-candidate raycast sweep, editing grammar, event cuts | ~16 KB |
+| `cinema_ui.lsl` | menu, `/77` chat commands, Linkset-Data settings, button colour | ~29 KB |
+
+**Watchdog:** core asks for a shot (`DIR_START` at start, `DIR_NEXT` when a hold ends). The director acknowledges at once (`DIR_ACK` 7313) and answers with `SHOT` or `NO_SHOT`. If no shot arrives within 1.5 s (first shot) or 2.5 s (next shot), or the answer is `NO_SHOT`, core cuts to a basic shot: a level portrait orbit at ~3 m (angles 140, -140, 40, -40, 175 degrees), shortened by one ray if a wall is in the way, with the eye line on the upper third. If the director never acknowledged, core says so once in chat and re-sends `DIR_START` at every hold, so a director started later takes over by itself.
+
+**Group tableau:** members = owner + up to 5 others within 8 m. The long axis runs between the two members farthest apart. The camera is square-on to that axis, on the side the owner faces, distance fitted to the spread (4-12 m). The framing is centred (no thirds yaw), and the camera height follows the thirds rule.
+
+**Grammar weights** (portrait / pair / group / empty view): 20 / 40 if someone within 4.5 m / 40 if 2+ people within 8 m / 25 if some direction is open 15 m or more (x3 in cooldown).
+- After a scene change: people first, no empty views.
+- No category twice in a row, except pair (shot / reverse shot).
+- A forced empty view every 4-6 cuts.
+- Fallback order: chosen → portrait → empty view → shoulder → `NO_SHOT` (core covers).
+
+**Shot types on the wire:** 0 portrait, 1 pair, 2 group, 4 empty view, 9 core basic shot.
+
+**Verification done in the container:** LSL-PyOptimizer compile check of all scripts (it also catches the earlier `changed` and `.z`-on-call bugs); a Python port of the composition maths checks lead room, thirds placement, over-the-shoulder side and the 180-degree rule, the group side and the thirds camera height (all pass).

@@ -8,7 +8,7 @@ A minimalist Second Life HUD that turns your viewer into an autonomous **static 
 - **Aware of its surroundings.** A light raycast pass keeps the camera out of walls, roofs and terrain.
 
 ## Status
-Version 1.1.0. First in-world tests showed the camera can be taken (`/77 grab`), but the original 1,500-line director did not fit in one 64 KB script, so 1.1.0 ships a lean director (portraits, over-the-shoulder pairs, pillow shots). The full director is parked in `src/future/` for a multi-script split. Still to do: in-world calibration (`docs/CALIBRATION.md`).
+Version 2.0.0. All scripts pass a real LSL compile check (`tools/lslcheck.sh`, LSL-PyOptimizer). The camera itself is proven in-world (`/77 grab`); v2 makes sure a tap always cuts to a shot, using core's basic shots if the director is not running. In-world confirmation of the smart director is the next step.
 
 | Document | Contents |
 |---|---|
@@ -20,15 +20,19 @@ Version 1.1.0. First in-world tests showed the camera can be taken (`/77 grab`),
 
 ## Layout
 ```
-src/cinema_core.lsl       permissions, controls, AFK, state machine, camera apply/clear, probes
-src/cinema_director.lsl   lean director: scan, raycasts, composition, grammar (~470 statements)
+src/cinema_core.lsl       permissions, controls, AFK, state machine, camera, basic shots + director watchdog
+src/cinema_director.lsl   smart views: people + space sensing, composition, raycast sweep, editing
 src/future/               full-featured director, too big for one script (not for pasting)
 src/cinema_ui.lsl         menus, Linkset Data settings, first-run, button look
 ```
 
 ## Building the HUD in-world
 1. Rez a prim (a flat box or a small circle works well) and name it `Cinema HUD`. This single prim is the button.
-2. Create three new scripts in it and paste in the contents of the three `src/*.lsl` files. **All three go in the same (root) prim**, so they keep running in no-script parcels.
-3. Create a notecard named exactly `Cinema HUD - Read Me`, paste in `docs/USER_GUIDE.md`, and drop it into the prim.
-4. Set the scripts to *no modify* before giving or selling the HUD. Change `PASS` (the same string at the top of each script) to your own build secret first.
-5. Attach it to a HUD point (e.g. *HUD Bottom Right*), accept the permissions, tap to test.
+2. **Delete any old Cinema scripts from the prim first.** Create three new scripts in it and paste in the contents of the three `src/*.lsl` files. **All three go in the same (root) prim**, so they keep running in no-script parcels. Each prints a "ready" line with its free memory when saved.
+3. With the prim selected in Build mode, use **Build > Scripts > Set Scripts to Running in Selection** (scripts that once failed to compile stay "not running").
+4. Create a notecard named exactly `Cinema HUD - Read Me`, paste in `docs/USER_GUIDE.md`, and drop it into the prim.
+5. Set the scripts to *no modify* before giving or selling the HUD. Change `PASS` (the same string at the top of each script) to your own build secret first.
+6. Attach it to a HUD point (e.g. *HUD Bottom Right*), accept the permissions, tap to test.
+
+## Checking scripts before pasting
+`tools/lslcheck.sh` fetches LSL-PyOptimizer, compile-checks `src/*.lsl` (syntax, types, undeclared names, wrong function arguments) and prints an estimated free memory per script. GitHub Actions runs the same check on every push.
