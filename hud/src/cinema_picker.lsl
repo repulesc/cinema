@@ -6,7 +6,7 @@
 //  the camera work is in cinema_friends.lsl.
 // ============================================================================
 
-string VERSION = "4.4.1";
+string VERSION = "4.4.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -212,7 +212,6 @@ onChoice(string msg)
             gFKeys = [];
             gFNames = [];
             saveFriends();
-            llOwnerSay("[Take 12] Friends list cleared.");
         }
         friendsPage();
     }
@@ -226,7 +225,6 @@ onChoice(string msg)
             if (j >= 0)
             {
                 integer at = gPickPg * 9 + j;
-                llOwnerSay("[Take 12] Removed " + llList2String(gFNames, at));
                 gFKeys = llDeleteSubList(gFKeys, at, at);
                 gFNames = llDeleteSubList(gFNames, at, at);
                 saveFriends();
@@ -270,7 +268,6 @@ default
     {
         gOwner = llGetOwner();
         loadFriends();
-        llOwnerSay("[Take 12] picker v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "picker");
     }
 

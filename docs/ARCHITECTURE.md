@@ -187,7 +187,8 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
 | `emoji` | 1 | |
-| `peek`, `peek_bail`, `phantom`, `cutmode`, `trace`, `cmd_chan` | as v3 | `cutmode` is now command-only |
+| `peek`, `peek_bail`, `phantom`, `cutmode`, `cmd_chan` | as v3 | `cutmode` is now command-only |
+| `trace` | **0** (4.4.2; it was 1) | "Chat text". Off: no startup lines, no per-cut lines, no echo after menu choices. Errors, warnings and the answers to typed commands always show. A one-time migration (`cfgv` = 2) turned it off on older installs |
 | `friends` | "" | written by the friends script: `key,name;key,name;…`, at most 10 |
 | `fav.<region>` | "" | written by scenery: `pos|focus;pos|focus;…`, at most 8. The region name has spaces replaced by `_` |
 | `seen_intro` | 0 | the welcome dialog has been shown |
@@ -270,7 +271,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
    - `gCapZ` = ceiling − 0.4, kept between floor + 1.6 and floor + 6. With no roof seen it is floor + 3.4.
    - `gDmax` = 12 m, or 20 m if 5 or more directions are open for 25 m or more.
 7. **Caching:** cached only when at most 3 rays were refused. Otherwise this cut uses the data, and the next cut measures again.
-8. **Trace line:** `scenery: inside, the camera stays on your floor (floor a build, in the sky, roof 3/5, walls 8/8, up to 4 m high, 12 m away)`, or `outdoors (...)` with the reason.
+8. **Trace line** (only with Chat text on): `scenery: inside, the camera stays on your floor (floor a build, in the sky, roof 3/5, walls 8/8, up to 4 m high, 12 m away)`, or `outdoors (...)` with the reason.
 
 ### 6.3 Inside shots (`localShot`, `safeShot`)
 - **`floorOK(c)`:** a ray from `c` down to `floor − 1` must hit a build (not the land) between `floor − 1` and `floor + 1.5`. Furniture is fine, and another storey is not.

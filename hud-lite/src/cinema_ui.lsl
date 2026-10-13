@@ -8,7 +8,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.4.1";
+string VERSION  = "4.4.2";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -42,7 +42,7 @@ list DEFAULTS = [
     "peek_bail", "0",
     "phantom", "0",
     "cutmode", "0",
-    "trace", "1",
+    "trace", "0",
     "cmd_chan", "77",
     "theta_max", "10",
     "aspect", "1.778"
@@ -56,7 +56,7 @@ list ITEMS = [
     "save", "⭐", "Save", "next", "⏭", "Next", "stop", "⏹", "Stop", "modes", "🎬", "Modes",
     "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
     "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
-    "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Trace", "emoji", "🔤", "Emoji",
+    "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Chat text", "emoji", "🔤", "Emoji",
     "fade", "🔆", "Fade", "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
     "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a300", "", "5 min", "a600", "", "10 min",
     "away", "", "SL Away", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
@@ -118,6 +118,7 @@ cfgSet(string k, string v)
     cfgWrite(k, v);
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
     if (k == "emoji") gEmoji = (integer)v;
+    if (k == "trace") gNote = (integer)v;
     if (k == "fade") gFadeA = (float)v / 100.0;
     if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
     if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
@@ -165,6 +166,12 @@ checkOwner()
         giveHelp();
     }
     else initDefaults(FALSE);
+    if (cfgGet("cfgv") != "2")                     // 4.4.2: chat feedback is off by default, also for older installs
+    {
+        cfgWrite("trace", "0");
+        cfgWrite("cfgv", "2");
+    }
+    gNote = (cfgGet("trace") == "1");
     gEmoji = (cfgGet("emoji") != "0");
     gLook = (integer)cfgGet("look");
     if (LITE) gLook = 0;
@@ -212,6 +219,13 @@ endClap()
 // ============================================================================
 //  menu
 // ============================================================================
+// chat feedback after menu choices: only when Options > Chat text is on (off by default, the menu itself shows the value)
+integer gNote;
+note(string s)
+{
+    if (gNote) llOwnerSay("[Take 12] " + s);
+}
+
 // features that only the full version has (the Lite build shows them with a lock)
 integer locked(string id)
 {
@@ -347,7 +361,7 @@ openMenu(string page)
     {
         text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace");
+            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace");
         b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "test", "reset", "back"];
         if (LITE) b = llListReplaceList(b, ["emoji"], 7, 7);        // Look is locked in Lite: Emoji goes here instead
     }
@@ -399,7 +413,7 @@ toggle(string k, string name)
     string v = "1";
     if (cfgGet(k) == "1") v = "0";
     cfgSet(k, v);
-    llOwnerSay("[Take 12] " + name + ": " + onoff(k));
+    note(name + ": " + onoff(k));
 }
 
 // "2 min" -> 120, "90 s" -> 90, "75 m" -> 75
@@ -450,7 +464,7 @@ onChoice(string msg)
     {
         integer i = llListFindList(PACE_IDS, [id]);
         if (i >= 0) cfgSet("hold", llList2String(PACE_SECS, i));
-        llOwnerSay("[Take 12] Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
+        note("Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
         openMenu("main");
     }
     else if (gPage == "afk")
@@ -463,7 +477,7 @@ onChoice(string msg)
             cfgSet("afk_sec", sec);
             cfgSet("afk_on", "1");
         }
-        llOwnerSay("[Take 12] AFK scenery: " + afkText());
+        note("AFK scenery: " + afkText());
         openMenu("main");
     }
     else if (gPage == "opts")
@@ -492,7 +506,7 @@ onChoice(string msg)
             if (cfgGet("fade") == "40") nf = "70";
             else if (cfgGet("fade") == "70") nf = "20";
             cfgSet("fade", nf);
-            llOwnerSay("[Take 12] Button fade while rolling: " + nf + " % visible");
+            note("Button fade while rolling: " + nf + " % visible");
             if (gUiState != "idle") setLook("rolling");
         }
         openMenu("look");
@@ -500,14 +514,14 @@ onChoice(string msg)
     else if (gPage == "indoors")
     {
         cfgSet("indoors", id);
-        llOwnerSay("[Take 12] Indoors: " + id);
+        note("Indoors: " + id);
         openMenu("opts");
     }
     else if (gPage == "chat")
     {
         if (id == "on") cfgSet("chat_cuts", "1");
         else cfgSet("chat_cuts", "0");
-        llOwnerSay("[Take 12] Chat cuts: " + onoff("chat_cuts"));
+        note("Chat cuts: " + onoff("chat_cuts"));
         openMenu("opts");
     }
     else if (gPage == "favs")
@@ -519,7 +533,7 @@ onChoice(string msg)
             integer j;
             for (j = 0; j < llGetListLength(ks); j++) llLinksetDataDeleteProtected(llList2String(ks, j), PASS);
         }
-        llOwnerSay("[Take 12] Favourite spots cleared.");
+        note("Favourite spots cleared.");
         openMenu("opts");
     }
     else if (gPage == "altcam")
@@ -542,7 +556,7 @@ onChoice(string msg)
             initDefaults(TRUE);
             gEmoji = TRUE;
             llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
-            llOwnerSay("[Take 12] Settings reset to defaults.");
+            note("Settings reset to defaults.");
         }
         openMenu("opts");
     }
@@ -645,7 +659,6 @@ default
         gCmdChan = (integer)cfgGet("cmd_chan");
         if (gCmdChan <= 0) gCmdChan = 77;
         gCmdListen = llListen(gCmdChan, "", gOwner, "");
-        llOwnerSay("[Take 12] ui v" + VERSION + " ready, commands on /" + (string)gCmdChan + ", free memory " + (string)llGetFreeMemory());
         if (gFirst)
         {
             cfgWrite("seen_intro", "1");

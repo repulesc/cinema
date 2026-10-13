@@ -7,7 +7,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.4.1";
+string VERSION = "4.4.2";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 1;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -102,7 +102,7 @@ loadCfg()
     gPeekOn   = (integer)cfg("peek", "1");
     gPeekBail = (integer)cfg("peek_bail", "0");
     gCutMode  = (integer)cfg("cutmode", "0");
-    gTrace    = (integer)cfg("trace", "1");
+    gTrace    = (integer)cfg("trace", "0");
 }
 
 setUi(string st)
@@ -439,7 +439,6 @@ default
         gLastAct = llGetUnixTime();
         gCamRot = ZERO_ROTATION;
         loadCfg();
-        llOwnerSay("[Take 12] core v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
         else llOwnerSay("[Take 12] Wear me as a HUD (right-click > Attach To HUD).");

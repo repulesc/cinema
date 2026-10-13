@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.4.1";
+string VERSION = "4.4.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -150,7 +150,7 @@ tsay(string s)
 loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
-    gTrace    = (integer)cfg("trace", "1");
+    gTrace    = (integer)cfg("trace", "0");
     gChatOn   = (integer)cfg("chat_cuts", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
@@ -618,7 +618,6 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Take 12] friends v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gFov = 1.047198;
         gSide = 1.0;

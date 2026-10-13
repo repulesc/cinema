@@ -71,6 +71,7 @@ AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 m
 INDOORS   Auto (default): inside when you stand on a build in the sky, or on a build under a roof (a house, a shop, a trailer, a mall); outdoor views on open land and on roofless decks. Inside: always inside, near you, even where the HUD cannot see the walls. Outside: always outdoor views.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
 LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds FADE (how visible the button stays while it rolls: 20, 40 or 70 percent) and EMOJI.
+CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 REACH     How far the scenery camera may go. It lowers itself if your viewer holds the camera closer, and Re-learn resets it.
 TEST CAM  A 3-second check that the HUD can move your camera.
@@ -91,7 +92,7 @@ pace <seconds>        e.g.  /77 pace 90
 reach <metres>        e.g.  /77 reach 60      (or  /77 reach relearn )
 indoors auto | inside | outside
 friend list | clear
-trace on | off        a chat line for every cut
+trace on | off        chat text: a line for every cut and after menu choices (off by default)
 emoji on | off
 face <number>         which face of the HUD carries the picture (only if the picture shows on the wrong side)
 chan <number>         change the channel
@@ -112,7 +113,7 @@ The camera stays close to me.
 Some viewers limit how far a script may place the camera. The HUD notices and shortens its distance by itself. If it ever feels too short, Options > Reach > Re-learn.
 
 It does not stay inside (a skybox, a mall, a house).
-Auto goes inside when you stand on a build that has a roof over you or no land under it for about 100 m. Some builds are made without physics (their floor, walls and roof cannot be seen by the HUD), and Auto cannot know about those. Set Options > Indoors > Inside: it then always stays inside, near you. With Options > Trace on, the chat line "scenery: ..." says what it found.
+Auto goes inside when you stand on a build that has a roof over you or no land under it for about 100 m. Some builds are made without physics (their floor, walls and roof cannot be seen by the HUD), and Auto cannot know about those. Set Options > Indoors > Inside: it then always stays inside, near you. With Options > Chat text on, the chat line "scenery: ..." says what it found.
 
 I want to take a picture.
 Hold the button, then choose Photo. Tap once to carry on.

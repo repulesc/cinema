@@ -46,6 +46,7 @@ PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default
 AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 min, 10 min, or when Second Life marks you Away.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 REACH     How far the camera may go. It lowers itself if your viewer holds the camera closer.
+CHAT TEXT The HUD is quiet in chat by default (only errors and answers to your commands). Options > Chat text > on gives a line for every cut and after menu choices.
 EMOJI     Turn off if your viewer shows boxes instead of little icons on the menu buttons.
 
 

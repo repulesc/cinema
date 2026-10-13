@@ -88,7 +88,7 @@ Ana, Bo, Kit
 ```
 [🏠 Indoors ][💬 Chat cuts][⭐ Favourites]
 [👁 Alt-cam ][🧱 Phantom ][📏 Reach   ]
-[📝 Trace   ][🎨 Look    ][🧪 Test cam]
+[📝 Chat text][🎨 Look    ][🧪 Test cam]
 [♻ Reset   ][↩ Back    ]
 ```
 | Option | Choices (default first) | What it does |
@@ -99,7 +99,7 @@ Ana, Bo, Kit
 | 👁 Alt-cam | **Pause** / End / Ignore | What happens when you Alt-orbit during a shot |
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
 | 📏 Reach | 25 / 50 / 75 / **100** m / Re-learn | The furthest Scenery camera distance. The HUD lowers it by itself if your viewer refuses far cameras |
-| 📝 Trace | **On** / Off | One chat line per cut |
+| 📝 Chat text | On / **Off** | Chat feedback. **Off by default**: the HUD says nothing in chat, except errors, warnings and the answers to commands you type. On: one line per cut (with what it found and why), and a line after each menu choice. The setting is stored as `trace` |
 | 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔆 Fade (20 / **40** / 70 %) and 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
 | ♻ Reset | – | All settings to defaults (asks first) |
@@ -194,7 +194,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - `scenery` · `personal` · `social` · `friends` · `stop` · `next` · `photo` · `fav` · `menu` · `status` · `grab`
 - `pace <s>` (the old `hold <s>` still works)
 - `reach <m>|relearn` · `indoors auto|inside|outside`
-- `friend list|clear` · `trace on|off` · `emoji on|off` · `cutmode on|off` · `chan <n>` · `reset`
+- `friend list|clear` · `trace on|off` (Chat text) · `emoji on|off` · `cutmode on|off` · `chan <n>` · `reset`
 
 ## Vibe
 Grand views, calm pacing. The feel is still, long, contemplative shots, like a film that happens to be shot from a drone, a corner of the room, or a friend's shoulder. The only motion in the whole product is Friends' slow glide, which keeps your group together.

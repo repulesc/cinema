@@ -12,7 +12,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.4.1";
+string VERSION = "4.4.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
@@ -84,7 +84,7 @@ loadCfg()
     gHold  = (float)cfg("hold", "60");
     gReach = (float)cfg("reach", "100");
     if (gReach < MIN_DIST) gReach = MIN_DIST;
-    gTrace = (integer)cfg("trace", "1");
+    gTrace = (integer)cfg("trace", "0");
     gIndoors = cfg("indoors", "auto");
     gReachOk = (integer)cfg("reach_ok", "0");
     gCtxOK = FALSE;
@@ -619,7 +619,6 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Take 12] scenery v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gLastType = -1;
         loadCfg();

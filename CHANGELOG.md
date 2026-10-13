@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.4.2
+**Quiet in chat.** The HUD no longer talks while you use it.
+- Off by default: the startup lines, the line for every cut, and the confirmation after every menu choice. The menu itself shows the new value when it reopens.
+- Still shown: errors and warnings (no permission, a script not answering, a version mismatch), the answers to commands you type, and one line when you save a spot.
+- Options › 📝 Chat text turns the detailed lines back on (it is the old Trace setting, now off by default). With it on, each cut says what it found and why, which helps when you report a problem.
+- Older installs are switched to quiet once. Friends › Clear and Remove are silent, because the picker shows the result.
+
 ## 4.4.1
 **Indoors: consistent in a trailer, and a real override for places rays cannot see.**
 - **Auto now also goes inside on a build on the ground when there is a roof over you** (house, shop, trailer, roofed mall). A plaza or deck with no roof stays outdoors. Before, ground builds always got outdoor views in Auto, and a measurement that differed from one moment to the next made the trailer flip between in and out.
