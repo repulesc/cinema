@@ -182,7 +182,8 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 |---|---|---|
 | `afk_on`, `afk_sec` | 1, 90 | as v3 |
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
-| `reach` | 100 | learned. `relearn` sets 100 and clears `reach_ok` |
+| `reach` | **150** (4.4.4; was 100) | the furthest Scenery camera in use. Learned: lowered when the viewer refuses a far camera, and grown back up to `reach_set` |
+| `reach_set` | **150** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets both to 150 and clears `reach_ok`. An old install with reach 100 is moved to 150 once (`cfgv` = 3); a custom value is kept |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
@@ -306,7 +307,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 - **Clearing:** Options › Favourites › Clear here / Clear all. The UI deletes the keys with `llLinksetDataDeleteProtected`, or for "all", by finding the keys with `llLinksetDataFindKeys("^cin\\.fav\\.", 0, 0)`.
 
 ### 6.5 Reach regrowth (fix)
-- After **20 consecutive cuts** without a REACH_FAIL (saved in `cin.reach_ok`), raise `gReach` by 10 %, up to 100 m, and save it.
+- After **20 consecutive cuts** without a REACH_FAIL (saved in `cin.reach_ok`), raise `gReach` by 10 %, up to `gReachSet` (your chosen reach), and save it.
 - REACH_FAIL resets the count.
 
 ## 7. People (`cinema_people.lsl`): chat cuts in Social

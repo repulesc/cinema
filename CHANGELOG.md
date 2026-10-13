@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.4.4
+**Scenery reaches further: 150 m by default** (it was 100 m).
+- The reach menu is 50 / 100 / **150** / 200 m, and `/77 reach <m>` takes 20–250 m. The nearest scenery camera stays at 20 m, so a view is never a close-up of you.
+- "Re-learn" now means: back to 150 m. (Some viewers refuse a script camera that is very far from you. The HUD notices, shortens its reach to 80 % of that distance and remembers it. Re-learn lets it try the far views again.)
+- A fix: the reach grew back only up to a fixed 100 m after it had been shortened. Now what you chose (`reach_set`) and what the HUD is using (`reach`) are kept apart, and it grows back up to your choice.
+- Installs that still had the old default of 100 m move to 150 m once. A reach you chose yourself is kept.
+- The scenery simulation now also runs with a 150 m reach in all five test worlds.
+
 ## 4.4.3
 **Much calmer people cameras.** Social and Friends (and Personal) cut far less often.
 - They follow your **Pace** setting now. At Calm (60 s) a shot is held about 45 s (a group about 55 s), where it was 20–25 s. Faster Paces still hold a minimum of 20 s.

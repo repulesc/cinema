@@ -13,7 +13,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.4.3";
+string VERSION = "4.4.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 1;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
@@ -38,7 +38,8 @@ list    FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0, 20.0];   // m  where the floor 
 list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>, <0.0, 0.423, 0.906>, <0.0, -0.423, 0.906>];
 
 float   gHold;               // s  average hold
-float   gReach;              // m  furthest camera spot (learned)
+float   gReach;              // m  furthest camera spot (learned: lowered if the viewer refuses far cameras)
+float   gReachSet;           // m  the furthest you chose (the learned reach grows back up to it)
 integer gTrace;
 list    gRayOpts;            // one hit
 list    gRayOpts4;           // up to 4 hits (what is under you)
@@ -83,8 +84,11 @@ string cfg(string k, string d)
 loadCfg()
 {
     gHold  = (float)cfg("hold", "60");
-    gReach = (float)cfg("reach", "100");
+    gReachSet = (float)cfg("reach_set", "150");
+    if (gReachSet < MIN_DIST) gReachSet = MIN_DIST;
+    gReach = (float)cfg("reach", "150");
     if (gReach < MIN_DIST) gReach = MIN_DIST;
+    if (gReach > gReachSet) gReach = gReachSet;
     gTrace = (integer)cfg("trace", "0");
     gIndoors = cfg("indoors", "auto");
     gReachOk = (integer)cfg("reach_ok", "0");
@@ -599,11 +603,11 @@ nextShot()
     gCuts++;
     if (type >= 5 && type <= 7)
     {
-        // reach regrowth: 20 clean cuts in a row and the reach grows by 10 % (up to 100 m)
+        // reach regrowth: 20 clean cuts in a row and the reach grows by 10 % (up to the reach you chose)
         gReachOk++;
-        if (gReachOk >= 20 && gReach < 100.0)
+        if (gReachOk >= 20 && gReach < gReachSet)
         {
-            gReach = clampf(gReach * 1.1, MIN_DIST, 100.0);
+            gReach = clampf(gReach * 1.1, MIN_DIST, gReachSet);
             gReachOk = 0;
             llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
             llLinksetDataWriteProtected("cin.reach_ok", "0", PASS);

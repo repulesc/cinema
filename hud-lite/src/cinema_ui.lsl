@@ -8,7 +8,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.4.3";
+string VERSION  = "4.4.4";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -30,7 +30,8 @@ list DEFAULTS = [
     "afk_on", "1",
     "afk_sec", "90",
     "hold", "60",
-    "reach", "100",
+    "reach", "150",
+    "reach_set", "150",
     "reach_ok", "0",
     "indoors", "auto",
     "chat_cuts", "1",
@@ -61,7 +62,7 @@ list ITEMS = [
     "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a300", "", "5 min", "a600", "", "10 min",
     "away", "", "SL Away", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
     "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
-    "r25", "", "25 m", "r50", "", "50 m", "r75", "", "75 m", "r100", "", "100 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
+    "r50", "", "50 m", "r100", "", "100 m", "r150", "", "150 m", "r200", "", "200 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
 ];
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
@@ -170,6 +171,14 @@ checkOwner()
     {
         cfgWrite("trace", "0");
         cfgWrite("cfgv", "2");
+    }
+    if (cfgGet("cfgv") != "3")                     // 4.4.4: the default reach is 150 m; your own choice is kept
+    {
+        string rr = cfgGet("reach");
+        if (rr == "" || rr == "100") rr = "150";
+        cfgWrite("reach", rr);
+        cfgWrite("reach_set", rr);
+        cfgWrite("cfgv", "3");
     }
     gNote = (cfgGet("trace") == "1");
     gEmoji = (cfgGet("emoji") != "0");
@@ -349,12 +358,12 @@ openMenu(string page)
     }
     else if (page == "pace")
     {
-        text += "How long each view is held (the people cameras a bit less).\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Still 120";
+        text += "How long each view is held.\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Still 120";
         b = ["lively", "easy", "calm", "slow", "still", "back"];
     }
     else if (page == "afk")
     {
-        text += "Start the scenery camera when you are idle.\nNow: " + afkText();
+        text += "Start scenery when idle.\nNow: " + afkText();
         b = ["off", "a60", "a90", "a120", "a300", "a600", "away", "back"];
     }
     else if (page == "opts")
@@ -372,7 +381,7 @@ openMenu(string page)
     }
     else if (page == "indoors")
     {
-        text += "Scenery inside a room, or from outside?\nNow: " + cfgGet("indoors") + " (auto: inside in the sky)";
+        text += "Inside or outside?\nNow: " + cfgGet("indoors") + " (auto: inside in the sky)";
         b = ["auto", "inside", "outside", "back"];
     }
     else if (page == "chat")
@@ -387,13 +396,13 @@ openMenu(string page)
     }
     else if (page == "altcam")
     {
-        text += "When you Alt-orbit the camera while it rolls:";
+        text += "When you Alt-orbit while it rolls:";
         b = ["pause", "end", "ignore", "back"];
     }
     else if (page == "reach")
     {
-        text += "Furthest scenery camera distance (now " + cfgGet("reach") + " m). The HUD lowers it by itself if your viewer refuses far cameras.";
-        b = ["r25", "r50", "r75", "r100", "relearn", "back"];
+        text += "Furthest scenery camera.\nChosen " + cfgGet("reach_set") + " m, using " + cfgGet("reach") + " m (lowered by itself if your viewer refuses far cameras). Re-learn: 150 m.";
+        b = ["r50", "r100", "r150", "r200", "relearn", "back"];
     }
     else if (page == "reset")
     {
@@ -414,6 +423,15 @@ toggle(string k, string name)
     if (cfgGet(k) == "1") v = "0";
     cfgSet(k, v);
     note(name + ": " + onoff(k));
+}
+
+// the furthest scenery distance you chose (reach_set) and what the HUD is using now (reach: it lowers itself if your
+// viewer refuses far cameras, and grows back up to reach_set)
+setReach(string m)
+{
+    cfgSet("reach_set", m);
+    cfgSet("reach", m);
+    cfgSet("reach_ok", "0");
 }
 
 // "2 min" -> 120, "90 s" -> 90, "75 m" -> 75
@@ -545,8 +563,8 @@ onChoice(string msg)
     }
     else if (gPage == "reach")
     {
-        if (id == "relearn") { cfgSet("reach", "100"); cfgSet("reach_ok", "0"); }
-        else cfgSet("reach", (string)toNum(msg));
+        if (id == "relearn") setReach("150");
+        else setReach((string)toNum(msg));
         openMenu("opts");
     }
     else if (gPage == "reset")
@@ -613,8 +631,8 @@ onCommand(string msg)
         llMessageLinked(LINK_SET, STATUS, "?", "");
     }
     else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { cfgSet("hold", (string)n); llOwnerSay("[Take 12] Pace: about " + v + " s per view"); }
-    else if (c == "reach" && v == "relearn") { cfgSet("reach", "100"); cfgSet("reach_ok", "0"); llOwnerSay("[Take 12] Reach reset to 100 m"); }
-    else if (c == "reach" && n >= 20 && n <= 250) { cfgSet("reach", (string)n); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
+    else if (c == "reach" && v == "relearn") { setReach("150"); llOwnerSay("[Take 12] Reach reset to 150 m"); }
+    else if (c == "reach" && n >= 20 && n <= 250) { setReach(v); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
     else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Take 12] Indoors: " + v); }
     else if (c == "face" && v != "")
     {
