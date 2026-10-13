@@ -10,6 +10,8 @@ jobs:
           python-version: "3.12"
       - name: Compile-check the v4 HUD scripts (hud/src) and the frozen v3 (legacy/v3/src)
         run: bash tools/lslcheck.sh
+      - name: Install Pillow (the sprite-sheet test reads the real texture)
+        run: python3 -m pip install --quiet pillow
       - name: Simulate the scenery spot finder, room views, people geometry and the tap decoder
         run: |
           python3 tools/sim/scenery_sim.py
