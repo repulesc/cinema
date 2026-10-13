@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Take 12 marketing graphics (Second Life Marketplace + in-world vendor board).
 
-Writes hud/marketing/adboard_square_1024.png (Marketplace main image / square vendor)
-and hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner).
+Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
+hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner) and
+hud/marketing/adboard_vendor_1024.png + adboard_vendor_512.png (a bolder, simpler square for
+in-world vendor displays such as Caspervend, where the picture is small).
 
 The four small "views" are pixel-art illustrations drawn here, NOT screenshots. For the best
 Marketplace images, swap them for real in-world snapshots (see hud/marketing/README.md).
@@ -234,7 +236,29 @@ def wide():
     d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  live menu", font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
 
+def vendor():
+    """bold, simple square for vendor displays: one big on-screen picture with the button in the corner"""
+    S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
+    for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
+    im.paste(clapper(150), (48, 34), clapper(150))
+    ptext(im, (232, 40), NAME, 11, CHALK, shadow=CORAL)
+    ptext(im, (236, 128), DESCRIPTOR, 3, CORAL)
+    d.text((236, 168), TAGLINE, font=font(38), fill=(255, 196, 120))
+    gw, gh, sc = 96, 56, 9                      # the hero: what you see on screen, with the HUD button top right
+    hero = view(scene_wide, gw, gh, sc, 31)
+    hx, hy = 80, 236
+    paste_framed(im, hero, (hx, hy), border=6)
+    btn = clapper(72); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
+    ptext(im, (hx + gw * sc - 190, hy + 98), "DOUBLE-TAP", 2, CHALK, shadow=INK)
+    looks(im, 80, 784, 96, 14)
+    ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
+    chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
+    chips(im, 870, ["Friends", "Photo hold"], 30, 420, S - 60)
+    d.text((S // 2, 990), "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
+    return im
+
 if __name__ == "__main__":
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "marketing"); os.makedirs(out, exist_ok=True)
     square().save(os.path.join(out, "adboard_square_1024.png")); wide().save(os.path.join(out, "adboard_wide_1024x512.png"))
+    v = vendor(); v.save(os.path.join(out, "adboard_vendor_1024.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, "adboard_vendor_512.png"))
     print("wrote", os.path.normpath(out))
