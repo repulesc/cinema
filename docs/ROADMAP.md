@@ -59,7 +59,7 @@ The checklists below are kept as the record of what was specified.
 ### B3 · Room-aware scenery
 - [ ] Scenery: the room classifier (§6.2) and `findRoomShot` (§6.3) with the fallback to outdoor logic. Options › Indoors (Auto / Inside / Outside) and `/77 indoors`.
 - [ ] Reach regrowth (§6.5).
-- [ ] `tools/sim/room_sim.py` with the 6 worlds from §9, and the CI step.
+- [ ] `tools/sim/room_sim.py` with the 6 worlds from §9, and the CI step. *(4.4.0: replaced by `indoor_sim.py`, see ARCHITECTURE §6.2–6.3 and §9.)*
 - **Accept:** room_sim ALL PASS, and scenery_sim still ALL PASS. Scenery ≥ 22 KB.
 
 ### B4 · Chat cuts in Social

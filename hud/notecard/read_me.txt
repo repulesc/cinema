@@ -38,7 +38,7 @@ While the camera rolls, the button fades so it stays out of your pictures. It is
 === THE FOUR CAMERAS ====================================
 
 SCENERY  (the main one, and the only one that starts by itself)
-Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. In a skybox or other closed room in the sky, it stays INSIDE the room: corner views from above, views from the middle, and you as a small figure in the space. On the ground in a house, it looks from outside, above the roof.
+Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
 
 PERSONAL
 Composed shots of you that follow you as you walk.
@@ -68,7 +68,7 @@ MODES     Switch to another camera.
 
 PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Still 120 s.
 AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 min, 10 min, or when Second Life marks you Away.
-INDOORS   Auto (default): inside the room when you are in a closed room in the sky, above the roof when you are in a house on the ground. Or force Inside (it then only needs a roof and a few walls) / Outside.
+INDOORS   Auto (default): inside when you stand on a build in the sky, above the roof when you are in a house on the ground. Inside: inside whenever you stand on a build or are under a roof. Outside: always outdoor views.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
 LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds FADE (how visible the button stays while it rolls: 20, 40 or 70 percent) and EMOJI.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
@@ -112,7 +112,7 @@ The camera stays close to me.
 Some viewers limit how far a script may place the camera. The HUD notices and shortens its distance by itself. If it ever feels too short, Options > Reach > Re-learn.
 
 It does not stay inside my skybox.
-Auto only goes inside when it finds a roof, at least 5 of 8 walls around you, and nothing but your floor below (for about 100 m). With the trace on (Options > Trace), the chat line "scenery: ..." says what it found and why. Then try Options > Indoors > Inside, which needs only a roof and 3 walls. If it still stays outside, your walls may have no physics shape (rays cannot hit them).
+Auto goes inside when you stand on a build with no land within about 100 m below you. With Options > Trace on, the chat line "scenery: ..." says what it found. A skybox lower than that, or a house on the ground: set Options > Indoors > Inside.
 
 I want to take a picture.
 Hold the button, then choose Photo. Tap once to carry on.

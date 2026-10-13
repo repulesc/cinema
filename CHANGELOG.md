@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.4.0
+**Indoor mode reworked to be reliable** (it failed at Velour Mall and in skyboxes):
+- **A bug:** 4.3.1 read Second Life's ray results with the wrong stride (3 entries per hit instead of 2), so every skybox looked like "land below" and Auto never went inside.
+- **The design:** a build is now judged by the **floor under you**, which always has physics, instead of counting walls and a roof. Walls, ceilings and windows are often built without physics, and big halls have walls more than 60 m away.
+  - Auto goes inside on any build in the sky.
+  - Inside works on any build floor or under a roof.
+- **Every inside camera** has a clear line from your eye, your floor under it, and stays within the outline of your floor and under the ceiling. That holds even where walls have no physics, and it keeps the camera on your storey.
+- **Never outside while inside:** when no spot fits, it uses closer spots, then a close shot just behind you. The old design cut to an outdoor view whenever a room shot failed. Core's own fallback shot also stays inside under a roof.
+- **Busy regions:** a refused ray drops only that spot, and the scenery script retries shortly. A place measured with many refused rays is measured again on the next cut, instead of caching a wrong answer.
+- **New `tools/sim/indoor_sim.py`** (replaces `room_sim.py`): its `llCastRay` returns Second Life's exact list layout, sees physics only, and can refuse rays. It covers 17 places, from skyboxes with glass walls or no-physics ceilings, a 120 m mall with 64 shops and a two-storey skybox, to a busy region and a trailer, from 16 standing spots each. There were 0 bad cameras.
+
 ## 4.3.1
 **Skybox rooms: Auto goes inside more reliably, and tells you why when it does not.**
 - Auto needs a roof and 5 of 8 walls (it was 6), so a balcony or a doorway no longer sends the camera outside. Indoors = Inside needs only a roof and 3 walls, and no longer needs the sky.

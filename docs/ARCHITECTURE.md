@@ -249,44 +249,46 @@ All commands are listed in PRODUCT.md.
 ### 6.1 Outdoor
 Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v3/docs/ARCHITECTURE.md` §Scenery.
 
-### 6.2 Room classifier (in `context()`, once per session or after a 10 m move)
-- Eye point `E = gOP + <0, 0, 0.6>`.
-- Rays:
-  - **8 horizontal rays** from E, 60 m long, at azimuths `i × 45°` → `gWallD[i]` (60 if not hit). Let `nHit` be the count of hits.
-  - **Up:** the existing 40 m ray → `gCovered`, and the ceiling `gCeilZ = E.z + hit distance`.
-  - **Down:** from `gOP` to `gOP − <0, 0, 30>` → `gFloorZ` (the hit z), or `gFloorless = TRUE` if nothing is hit.
-- `gEnclosed = gCovered && nHit >= need`, with `need` = 5 in Auto and 3 when Indoors is set to Inside. (Open sides: a ray that gets away through a gap is not a wall; the room centre and size come from real walls only.)
-- `sky` (in the sky): a downward ray from you, 100 m, with up to 4 hits. It is **not** the sky if any hit is the land (the null key) or more than 2 m below your floor. Furniture and thick floors stay within 2 m, so they are fine. (v4.3.1: this replaced `llGround`, which is unreliable from an attached HUD, and an earlier ray from below the floor, which starts underground for a house built on the terrain.) The limit: a room less than about 100 m above the ground or another build counts as not in the sky.
-- Decide `gInside`:
-  - `indoors == "inside"` → `gInside = gEnclosed`;
-  - `"outside"` → FALSE;
-  - `auto` → `gEnclosed && gSky`.
-- `gSpan` = the largest real wall distance (a ray under 59 m), `gCent` = the centre of the real wall hits, and `gInsideFails = 0`.
-- **Trace (once per context), always with the reason:** `scenery: inside a room (roof yes, walls 8/8, in the sky, ceiling 4 m, span 23 m)`, or `outdoors (roof no, walls 3/8, something solid below; going inside needs a roof, 5 walls and the sky)`, or `enclosed, but not in the sky: views from outside, above the roof (…)`, or `enclosed, but Indoors is set to Outside (…)`.
+### 6.2 Inside or outdoors (`context()`, once per place; v4.4.0 design)
+**Principle:** judge a build by its **floor**. Floors always have physics, because people walk on them. Walls, ceilings, windows and decor are often built without physics, and `llCastRay` only sees physics. The v4.0–4.3 design counted walls (a roof and 6, later 5, of 8 walls) and failed in exactly those builds, and in big halls whose walls are more than 60 m away.
 
-### 6.3 Room shots (when `gInside`)
-- `findRoomShot()` builds up to **6 candidates**, two of each kind, and keeps the best by score. The kinds are chosen with weights corner 0.45, centre 0.30 and small 0.25, with each candidate rolling its kind.
-- The camera height `zc` is always clamped to `[gFloorZ + 1.2, gCeilZ − 0.6]`.
+**Second Life's ray result:** `[key, position]` per hit, then the hit count (negative = refused). The land reports `NULL_KEY`. There is one hit per object. 4.3.1 read 3 entries per hit, so every skybox looked like "land below". `tools/sim/indoor_sim.py` now models this exact layout.
 
-| Kind | Camera | Focus |
-|---|---|---|
-| **Corner wide (10)** | `zc = min(gCeilZ − 0.6, gFloorZ + 6.0)`. From `<gOP.x, gOP.y, zc>` (first check that the vertical ray from E to there is clear), cast 8 diagonal-biased rays at `22.5° + i × 45°`, 60 m long. Take the 2 longest (corners in a box room) and put the camera `0.8 m` back from each hit | The point on the floor plane 1/3 of the way from the opposite corner to you (looks across the room through your area), pitch clamped to 15–45° down |
-| **Room centre (11)** | The centroid of the 8 horizontal wall-hit points from §6.2, at `gFloorZ + 1.7` | Along the direction from the centroid to the farthest wall-hit point, level (2° down) |
-| **You small (12)** | Along the longest `gWallD[i]`, `gWallD[i] − 0.8` from you, at `gFloorZ + 2.5`. Skip it if that is less than 6 m | You (`gOP`), so you are a small figure in the frame |
+1. **Under you** (essential; if refused, retry later): one ray from you, 100 m down, up to 4 hits.
+   - The first hit is your floor (`gFloorZ`).
+   - `gPrimFloor` = that hit is a build, not the land.
+   - `gSky` = none of the hits is the land.
+2. **Over you:** 5 rays, 40 m, from `floor + 1.8`: straight up and 25° off in four directions. `gRoofs` is the number that hit, and the ceiling is the lowest hit. A refused ray counts as no information.
+3. **Around you:** 8 rays at eye height (`floor + 1.6`), 60 m → `gWallD`. A refused ray counts as a wall at 4 m.
+4. **Floor outline:** in each of the 8 directions, `floorOK()` is probed at 1.5, 3, 5, 8, 12 and 20 m, stopping at a wall or at the first gap. A refused probe is skipped. The result is `gFloorD`.
+5. **Decision:**
+   - Auto: `gLocal = gPrimFloor && gSky`.
+   - Inside: `gLocal = gPrimFloor || gRoofs > 0`.
+   - Outside, and Lite: `gLocal = FALSE`.
+6. **Limits:**
+   - `gCapZ` = ceiling − 0.4, kept between floor + 1.6 and floor + 6. With no roof seen it is floor + 3.4.
+   - `gDmax` = 12 m, or 20 m if 5 or more directions are open for 25 m or more.
+7. **Caching:** cached only when at most 3 rays were refused. Otherwise this cut uses the data, and the next cut measures again.
+8. **Trace line:** `scenery: inside, the camera stays on your floor (floor a build, in the sky, roof 3/5, walls 8/8, up to 4 m high, 12 m away)`, or `outdoors (...)` with the reason.
 
-**Every candidate must pass, in this order** (stop at the first failure to save rays):
-1. Inside the region `[1, 255]`.
-2. **Same room:** `ray(E, cam)` has no hit before `|cam − E| − 0.2`.
-3. **Clearance:** 5 rays of 0.5 m from the camera (±x, ±y, +z) are all clear.
-4. **View:** `ray(cam, cam + norm(focus − cam) × 60)` is clear for at least `max(3, 0.4 × gSpan)`. For "you small": clear up to `|focus − cam| − 1`.
-
-**Score** = `3 × clear/60 + 2 × novelty(az of cam from you) + 1 if the kind differs from the last + rand(0.5)`.
-
-If nothing passes:
-- `gInsideFails++` and fall back to `findShot` (outdoor logic, which puts the camera above the roof);
-- after 3 fails in a row, trace once: "room too small for room views; using outside views here".
-
-**Hold:** `gHold × (0.75 + 0.5 × rand)`, the same as outdoors.
+### 6.3 Inside shots (`localShot`, `safeShot`)
+- **`floorOK(c)`:** a ray from `c` down to `floor − 1` must hit a build (not the land) between `floor − 1` and `floor + 1.5`. Furniture is fine, and another storey is not.
+- **`edge(i)`** = min(`gWallD[i]` − 0.8, `gFloorD[i]` − 0.5). A camera between directions i and i+1 uses the smaller of the two edges, capped at `gDmax`.
+- **Candidates:** up to 8 per cut, 45° apart from a random start (± 0.2 rad). It stops after 3 good ones, or after 6 refused rays. Each candidate:
+  - a novelty of 0.3 or more (relaxed pass: any);
+  - **high** (40 %): at `gCapZ − 0.2`, 60–100 % of the edge away, looking down 12–35° at your area (needs `gCapZ ≥ floor + 2.2`);
+  - **you small** (25 %, edge ≥ 5 m): 75–100 % of the edge away, at floor + 1.8–2.4, looking at you;
+  - otherwise **eye level**: at floor + 1.5–1.9, looking back across your area ± 40°.
+- **Checks, in order:**
+  1. A clear line from your eye to the camera, plus 0.6 m beyond it (no hit before the camera distance + 0.5).
+  2. `floorOK(c)` and `floorOK(c + 0.6 m outward)`.
+  3. Head room: 0.5 m clear above (skipped in the relaxed pass).
+  4. A view clear for min(camera distance + 1, 6) m. For "you small", it must reach you.
+- **Score:** 2 × clear/30 + 2 × novelty + 1 if the kind changed + rand(0.5).
+- **Order:** the normal pass, then the relaxed pass (≤ 6 m, eye level, no head-room check), then **`safeShot`**. That one goes behind you, behind-left or behind-right, whichever is most open, 0.8–2.2 m away, at eye height, looking where you look. A refused ray counts as no room.
+- **Inside it never falls back to an outdoor view.** If even the floor probe is refused, the scenery script retries twice (0.7 s apart), then sends NO_SHOT. Core's basic shot then checks for a roof (one ray; refused counts as roof) and uses the close portrait view, not the high outdoor one.
+- **Shot types:** 10 high, 11 eye level, 12 you small, 13 close.
+- **Measured in `indoor_sim.py`:** 17 places, plus 16 standing spots × 4 facings per inside place. The result is no bad camera, and close fallbacks at 0–10 % in ordinary rooms (100 % in a 4 × 4 m room; 43 % when a quarter of all rays are refused).
 
 ### 6.4 Favourites
 - **FAV received** (from core):
@@ -337,7 +339,7 @@ If nothing passes:
 | `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory |
 | `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
 | `tools/sim/people_geometry.py` | Composition, unchanged |
-| **`tools/sim/room_sim.py`** | Python port of §6.2–6.3 over these worlds: skybox box 20×20×5 at z 3000, sky mall 60×40×8, small room 4×4×3, ground house (must classify as enclosed-ground → outside), open field (must not be enclosed), an L-shaped room, a furnished skybox, skyboxes open on one or two sides, a room 150 m up, a room 60 m up (the limit: counts as not in the sky), and the Indoors Inside / Outside overrides. Assert: `gInside` is as expected, and the camera is inside the room's box with ≥ 0.5 m margin, in the same room as the owner and with a clear view. Seeded, 40 shots per world |
+| **`tools/sim/indoor_sim.py`** (replaces room_sim.py) | A line-by-line port of §6.2–6.3. Its `llCastRay` returns Second Life's layout (`[key, position]` per hit, then the count; the land is `NULL_KEY`; one hit per object; physics only; can refuse rays). It runs 17 places: skyboxes (plain, no-physics ceiling, glass walls, floor-only physics, furnished, two-storey, L-shaped, tiny), a 120 m mall with 64 shops, an open sky deck, a busy region refusing 25 % of rays, a ground house and a trailer (Auto and Inside), and an open field. Then a stress run: 4 standing spots × 4 facings per inside place. It asserts the classification, every camera inside the interior and not in a solid part, never an outdoor view while inside, close fallbacks ≤ 15 % in ordinary rooms, and that the old 3-per-hit stride bug is still detected |
 | **`tools/sim/friends_sim.py`** | Port of the §5 loop. Targets walk on scripted paths. Assert: a glide when the centroid moves more than 0.4 m with everyone in frame; a snap within 2 ticks when someone leaves; the fit distance ≤ 25 m; no glide through a wall box |
 | **`tools/sim/tap_test.py`** | The §4.1 decoder sequences |
 

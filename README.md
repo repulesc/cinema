@@ -50,6 +50,6 @@ Want the v3 version instead? See [`legacy/v3/README.md`](legacy/v3/README.md).
 
 ## Checks (run before every paste)
 - `tools/lslcheck.sh`: compile-checks every script and estimates its free memory (must be ≥ 15 KB).
-- `tools/sim/scenery_sim.py`, `tools/sim/people_geometry.py`, and from v4 `room_sim.py`, `friends_sim.py`, `tap_test.py`.
+- `tools/sim/scenery_sim.py`, `tools/sim/people_geometry.py`, `indoor_sim.py` (inside views, with Second Life's exact ray-result layout), `friends_sim.py`, `tap_test.py`, `sheet_test.py`, `lite_test.py`.
 
 GitHub Actions runs all of them on every push.

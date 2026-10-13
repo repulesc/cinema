@@ -119,24 +119,24 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
   - **Wide eye-level views**, 2.5–4 m up, level along the horizon.
   - Nothing may block the view. Every new spot comes from a clearly different direction.
   - The camera stays inside your region.
-- **Indoors (new):** the HUD works out where you are:
+- **Indoors (reworked in 4.4.0):** the HUD judges a place by the **floor under you**, the one surface that always has physics because people walk on it. Walls, ceilings and windows are often built without physics, and rays pass through them, so they are only used when they can be seen.
 
-  | Where you are | Auto does |
-  |---|---|
-  | **Open** (no roof, or walls on few sides) | Outdoor scenery, as above |
-  | **Enclosed in the sky:** a skybox, sky mall or sky club: a roof overhead, at least 5 of 8 directions ending at a wall (so a balcony or a doorway is fine), and nothing but your own floor for 100 m below | **Room views inside the space** |
-  | **Enclosed on the ground:** a house or a shop on the ground | Outside and above the roof, as in v3 |
+  | Where you are | Auto | Indoors = Inside | Indoors = Outside |
+  |---|---|---|---|
+  | **On a build in the sky:** skybox, sky mall, sky club, sky deck (no land within 100 m under you) | **inside** | inside | outdoor views |
+  | **On a build on the ground:** a house, a shop, a trailer | outdoor views, above the roof (as v3) | **inside** | outdoor views |
+  | **On the land:** under a roof | outdoor views | inside | outdoor views |
+  | **On the land:** in the open | outdoor views | outdoor views (nothing to be inside) | outdoor views |
 
-  - Options › Indoors forces **Inside** or **Outside** for every enclosed place.
-  - Room views are, mixed:
-    - **Corner wide:** high in a corner of the room, looking across the whole space.
-    - **Room centre:** eye level near the middle, looking toward the farthest open view.
-    - **You small in the room:** from the far side, you as a small figure in the space.
-  - Every room view is checked:
-    - it is inside the same room as you (a clear ray between you and the camera);
-    - it is at least 0.5 m from any surface;
-    - it has a clear view across the room.
-  - In a tiny room, where nothing passes the checks, it falls back to outdoor scenery and says so once.
+  - **Inside views**, mixed: **high** (under the ceiling, looking down across your area), **eye level** (looking back across your area), **you small** (from across the space).
+  - Every inside camera passes four checks:
+    1. A clear line from your eye, with 0.5 m to spare.
+    2. **Your floor under it**, and the camera within the outline of your floor. This works even where walls have no physics, and it keeps the camera on your storey.
+    3. Head room.
+    4. A view that reaches past you.
+  - The camera stays under the ceiling. If the ceiling can't be seen, it stays about 3.4 m above the floor. It also stays within 12 m of you, or 20 m in a big open hall.
+  - **Never outside while inside:** if no spot passes, it tries closer spots, then a close shot from just behind you. It never cuts to a view from outside.
+  - In a busy region that refuses some rays, it skips those spots, tries again shortly, and measures the place again on the next cut.
 - **⭐ Favourite spots (new):**
   - Long press › ⭐ Save stores the view on screen as a favourite for this region (up to 8 per region).
   - Scenery mixes one in about every 4th cut, when it is within reach and was not the last one used.

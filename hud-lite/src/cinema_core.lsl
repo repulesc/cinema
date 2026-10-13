@@ -7,7 +7,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.3.1";
+string VERSION = "4.4.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 1;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -183,7 +183,7 @@ float surfaceAt(float x, float y, float zTop, float zBottom)
 }
 
 // basic shot when the mode's worker script is silent:
-// scenery = high behind you looking down over your area; people = level portrait orbit
+// scenery = high behind you looking down over your area (outdoors only); otherwise a level portrait orbit
 basicShot()
 {
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
@@ -195,7 +195,15 @@ basicShot()
     F = llVecNorm(F);
     vector cam;
     vector foc;
+    // scenery's high view from behind would be outside any building: under a roof (or if the ray is refused) use
+    // the close view of you instead, which stays inside
+    integer roof = FALSE;
     if (gMode == "scenery")
+    {
+        list u = llCastRay(P + <0.0, 0.0, 1.0>, P + <0.0, 0.0, 40.0>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        roof = (llList2Integer(u, -1) != 0);
+    }
+    if (gMode == "scenery" && !roof)
     {
         cam = P - F * 15.0;
         cam.x = clampf(cam.x, 3.0, 253.0);
