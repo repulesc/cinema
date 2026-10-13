@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.4.2";
+string VERSION = "4.4.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -31,8 +31,9 @@ float MARGIN      = 1.15;
 float STANDOFF    = 0.4;
 float R_INT       = 4.5;     // pair radius
 float R_GRP       = 8.0;     // group radius
-float MIN_HOLD    = 6.0;
-integer SPK_COOL   = 10;      // s  the same speaker is not cut to again within this
+float gBase;                 // s  how long a shot is held (from Pace)
+float gMinHold;              // s  shortest time before an event may cut
+integer SPK_COOL   = 30;      // s  the same speaker is not cut to again within this
 
 list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];
 list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
@@ -139,6 +140,9 @@ loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
     gTrace    = (integer)cfg("trace", "0");
+    float pace = (float)cfg("hold", "60");                // the Pace setting also sets the people cameras' rhythm
+    gBase = fclamp(0.75 * pace, 20.0, 150.0);               // a shot is held about this long (Calm 60 s: 45 s)
+    gMinHold = fmax(12.0, 0.25 * pace);                     // an event (arrival, speaker, left the frame) cuts no sooner than this (Calm: 15 s)
     gChatOn   = (integer)cfg("chat_cuts", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
@@ -432,7 +436,7 @@ newScene()
     if (llFrand(1.0) < 0.5) gSide = -1.0;
 }
 
-// a speaker: cut to them at the next MIN_HOLD, but not the same speaker twice within SPK_COOL
+// a speaker: cut to them at the next gMinHold, but not the same speaker twice within SPK_COOL
 speak(key who)
 {
     if (!gActive || !gChatOn || gMode != "social") return;
@@ -516,10 +520,10 @@ nextShot()
     vector cam = llList2Vector(shot, 0);
     vector foc = llList2Vector(shot, 1);
     integer type = llList2Integer(shot, 2);
-    float hold = 20.0;
-    if (type == 2) hold = 25.0;
-    if (type == 4) hold = 10.0;
-    hold = hold * (0.8 + 0.4 * llFrand(1.0));
+    float hold = gBase;
+    if (type == 2) hold = 1.2 * gBase;                      // a group tableau is held a little longer
+    if (type == 4) hold = fmax(14.0, 0.4 * gBase);          // a speaker cut is short (Calm: 18 s)
+    hold = hold * (0.85 + 0.3 * llFrand(1.0));
     llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type, "");
     vector v = foc - cam;
     v.z = 0.0;
@@ -669,7 +673,7 @@ default
         if (!gHaveShot) return;
         integer since = now - gShotT;
         // you are walking: re-frame when you leave the shot or walk on
-        if (now < gMoveUntil && since >= 2 && refreshOwner())
+        if (now < gMoveUntil && since >= 4 && refreshOwner())
         {
             if (!inFrame(gOP) || llVecDist(gOP, gOwnerAtShot) > 4.0)
             {
@@ -677,6 +681,6 @@ default
                 return;
             }
         }
-        if (gPendEvent != "" && since >= MIN_HOLD) nextShot();
+        if (gPendEvent != "" && since >= gMinHold) nextShot();
     }
 }

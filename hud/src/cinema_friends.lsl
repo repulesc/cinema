@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.4.2";
+string VERSION = "4.4.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -33,11 +33,11 @@ float BODY_R      = 0.35;
 float MARGIN      = 1.15;
 float STANDOFF    = 0.4;
 float R_FR        = 30.0;    // friends further than this are not framed
-float MIN_HOLD    = 6.0;
-float HOLD        = 25.0;    // s  a fresh angle about this often
+float gBase;                 // s  a fresh angle about this often (from Pace)
+float gMinHold;              // s  shortest time before an event may cut
 float MAX_DIST    = 25.0;    // m  furthest camera from the group
 float GLIDE_MIN   = 0.2;     // m  the group moved this far: glide the camera along   // TUNE in-world
-integer SPK_COOL  = 10;
+integer SPK_COOL  = 30;
 
 list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];
 list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
@@ -151,6 +151,9 @@ loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
     gTrace    = (integer)cfg("trace", "0");
+    float pace = (float)cfg("hold", "60");                // the Pace setting also sets the people cameras' rhythm
+    gBase = fclamp(0.75 * pace, 20.0, 150.0);               // a shot is held about this long (Calm 60 s: 45 s)
+    gMinHold = fmax(12.0, 0.25 * pace);                     // an event (arrival, speaker, left the frame) cuts no sooner than this (Calm: 15 s)
     gChatOn   = (integer)cfg("chat_cuts", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
@@ -550,8 +553,8 @@ nextShot(float mult)
     vector cam = llList2Vector(shot, 0);
     vector foc = llList2Vector(shot, 1);
     integer type = llList2Integer(shot, 2);
-    float hold = HOLD * (0.8 + 0.4 * llFrand(1.0));
-    if (type == 4) hold = 10.0;
+    float hold = gBase * (0.85 + 0.3 * llFrand(1.0));
+    if (type == 4) hold = fmax(14.0, 0.4 * gBase);          // a speaker cut is short (Calm: 18 s)
     llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type, "");
     vector v = foc - cam;
     v.z = 0.0;
@@ -737,11 +740,11 @@ default
         {
             glideTick(since);
         }
-        else if (now < gMoveUntil && since >= 2 && (!inFrame(gOP, 0.85) || llVecDist(gOP, gOwnerAtShot) > 4.0))
+        else if (now < gMoveUntil && since >= 4 && (!inFrame(gOP, 0.85) || llVecDist(gOP, gOwnerAtShot) > 4.0))
         {
             nextShot(1.0);
             return;
         }
-        if (gPendEvent != "" && since >= MIN_HOLD) nextShot(1.0);
+        if (gPendEvent != "" && since >= gMinHold) nextShot(1.0);
     }
 }

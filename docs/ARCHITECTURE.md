@@ -213,7 +213,7 @@ All commands are listed in PRODUCT.md.
   - Distance: `fitDist(spread, 1.3, 3.0, 25.0)`.
   - If the fit wants more than 25 m, drop the target farthest from you and re-plan, until it fits or only you are left.
   - With only you left: Personal-style `planA(FALSE)` and one note.
-- **Hold:** a cut every 25 s × (0.8–1.2) for a fresh angle (type 3).
+- **Hold:** `gBase` = 0.75 × Pace (20–150 s; Calm 60 s → 45 s) × (0.85–1.15) for a fresh angle (type 3). A speaker shot (type 4) is `max(14, 0.4 × gBase)`.
 - **Glide and snap loop** (timer 0.5 s while active and not paused):
   1. Refresh the owner and target positions (no full region scan; that stays at 1 s).
   2. `allIn` = every target passes `inFrame(p)`, using `gCurCam` / `gCurV` and `0.9 × halfH`.
@@ -222,11 +222,11 @@ All commands are listed in PRODUCT.md.
      - If the centroid C has moved more than 0.4 m since the last shot or glide: the new cam = old cam + (C − C_last), with z re-derived by `camZ`, and the new focus = old focus + (C − C_last).
      - Check `ray(oldCam, newCam)` and `ray(newCam, newFocus)`. If both are clear, send GLIDE. Otherwise re-plan with a SHOT.
   4. If not `allIn`: `gOutTicks++`. At **2 ticks (1 s)**: re-plan with `MARGIN` × 1.3 → SHOT (a snap).
-  5. The **arrival** of a new friend means a pending cut at the next `MIN_HOLD` (6 s) boundary.
+  5. The **arrival** of a new friend means a pending cut at the next `gMinHold` boundary (`max(12, 0.25 × Pace)`; Calm 15 s).
 - **Chat cuts:**
   - `llListen(0, "", NULL_KEY, "")` while active and `chat_cuts` is on. Remove it on STOP.
   - A speaker must be in `gFKeys` and present, or be the owner (from SPEAKER).
-  - The speaker is not cut to again within 10 s, and at least 6 s must have passed since the last cut.
+  - The speaker is not cut to again within 30 s (`SPK_COOL`), and at least `gMinHold` must have passed since the last cut.
   - Speaker shot (type 4), held 8 s, no glide during it:
     - a friend speaks → an over-the-shoulder shot from behind you, facing the friend (`planA(TRUE)` logic with N = the speaker and `gRev = FALSE`);
     - you speak → from behind the nearest friend, facing you (`gRev = TRUE`).
@@ -313,7 +313,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 - On START `social` with `chat_cuts` on: `gChat = llListen(0, "", NULL_KEY, "")`. Remove it on STOP and on a switch.
 - `listen`:
   - Ignore non-agents (`llGetAgentSize(id) == ZERO_VECTOR`) and the owner (the owner arrives as SPEAKER).
-  - The speaker must be within `R_GRP` (8 m), and not the same speaker within 10 s.
+  - The speaker must be within `R_GRP` (8 m), and not the same speaker within 30 s.
   - Set `gSpeaker = id` and `gPendEvent = "speaker"`.
 - **SPEAKER (owner):** `gSpeaker = owner` and `gPendEvent = "speaker"`.
 - **In `nextShot`**, when the event is "speaker":
@@ -321,7 +321,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
   - You: `gNPos` = the nearest other, `gRev = TRUE`, then `planA(TRUE)` → over their shoulder, facing you.
   - Nobody else near: a portrait of you.
   - The type is 4, and the hold is 8–12 s.
-- The pending-event mechanism and MIN_HOLD 6 s are unchanged.
+- The pending-event mechanism is unchanged, but its minimum is `gMinHold` (4.4.3), and Social holds a shot `gBase` = 0.75 × Pace (group × 1.2).
 
 ## 8. Building and textures
 - **Icon (v4.2.0: one sprite sheet with every look):**

@@ -56,7 +56,7 @@ Pace: Calm (60 s) · AFK: 90 s · Indoors: auto
 - ⭐ Save shows only in Scenery.
 
 ### ⏳ Pace
-Applies to Scenery. The people modes keep their own rhythm.
+Applies to **all** cameras (4.4.3). Scenery holds a view for the full Pace time. Personal, Social and Friends hold a shot for about 75 % of it (Calm: about 45 s, a group tableau about 55 s), and they hold longer when Pace is slower.
 ```
 How long each view is held. Now: Calm, about 60 s
 
@@ -161,7 +161,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **💬 Chat cuts (new, on by default):**
   - When someone within 8 m speaks in local chat, the camera cuts to them over the shoulder of the person nearest them.
   - When **you** start typing, it cuts to you.
-  - A cut holds at least 6 s, and the same speaker is not cut to again within 10 s, so a fast chat does not flicker.
+  - A cut waits at least 15 s at Calm (a quarter of Pace, never under 12 s), and the same person is not cut to again within 30 s, so a fast chat does not flicker. A speaker shot lasts about 18 s.
 - **Exits:** tap. **Typing does not exit Social**, because you are part of the scene. Movement keys don't exit either.
 
 ### 4. 💞 Friends: optional (new)
@@ -170,7 +170,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **Motion:** the only mode that moves.
   - While everyone is in the frame, the camera **glides slowly** to keep the group well framed. It moves over about 1.5 s, and only when the group has really moved.
   - If anyone stays out of the frame for about **1 s**, it **hard-cuts** to a wider shot that holds everyone, up to 25 m away. If that is not enough, it frames the friends nearest to you.
-  - Every 25 s or so it cuts to a fresh angle, so the shot does not go stale.
+  - About every 45 s at Calm (75 % of Pace) it cuts to a fresh angle, so the shot does not go stale.
 - **💬 Chat cuts:** the same as Social, but only for you and your friends.
 - **Exits:** tap. Typing and movement keys do not exit.
 

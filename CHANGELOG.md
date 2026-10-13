@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.4.3
+**Much calmer people cameras.** Social and Friends (and Personal) cut far less often.
+- They follow your **Pace** setting now. At Calm (60 s) a shot is held about 45 s (a group about 55 s), where it was 20–25 s. Faster Paces still hold a minimum of 20 s.
+- An event (someone arrives, someone leaves the frame, a speaker) waits at least 15 s at Calm before it cuts, where it was 6 s.
+- A speaker shot lasts about 18 s (was 10 s), and the same person is not cut to again within 30 s (was 10 s).
+- The re-frame while you walk waits 4 s (was 2 s). Friends still snaps to a wider shot when someone is lost for about a second, because that one has to be fast.
+
 ## 4.4.2
 **Quiet in chat.** The HUD no longer talks while you use it.
 - Off by default: the startup lines, the line for every cut, and the confirmation after every menu choice. The menu itself shows the new value when it reopens.

@@ -66,7 +66,7 @@ MODES     Switch to another camera.
 
 === SETTINGS (tap the button > Options, Pace, AFK) =======
 
-PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Still 120 s.
+PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Still 120 s. Personal, Social and Friends hold a shot for about three quarters of it, and also wait longer before they cut to a speaker or to someone who arrives.
 AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 min, 10 min, or when Second Life marks you Away.
 INDOORS   Auto (default): inside when you stand on a build in the sky, or on a build under a roof (a house, a shop, a trailer, a mall); outdoor views on open land and on roofless decks. Inside: always inside, near you, even where the HUD cannot see the walls. Outside: always outdoor views.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.

@@ -8,7 +8,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.4.2";
+string VERSION  = "4.4.3";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -349,7 +349,7 @@ openMenu(string page)
     }
     else if (page == "pace")
     {
-        text += "How long each scenery view is held.\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Still 120";
+        text += "How long each view is held (the people cameras a bit less).\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Still 120";
         b = ["lively", "easy", "calm", "slow", "still", "back"];
     }
     else if (page == "afk")
