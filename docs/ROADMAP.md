@@ -81,7 +81,7 @@ The checklists below are kept as the record of what was specified.
 - [ ] Write the README build steps: box size, HUD Top Right, the face, repeats and offset (ARCH §8).
 
 ### B7 · Docs and release
-- [ ] Rewrite `docs/USER_GUIDE.md` for v4 (the notecard): gestures table, menu tour, the four modes, Photo, Favourites, Indoors and FAQ.
+- [ ] Rewrite the notecard (now `hud/notecard/read_me.txt`) for v4: gestures table, menu tour, the four modes, Photo, Favourites, Indoors and FAQ.
 - [ ] Update `README.md` (five scripts, `hud/`, the art), add `CHANGELOG.md` 4.0.0, and add the v4 rows to the `docs/CALIBRATION.md` table.
 - [ ] Final run of lslcheck plus all sims, push, and confirm CI is green.
 

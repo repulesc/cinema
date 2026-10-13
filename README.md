@@ -21,6 +21,7 @@ A one-button Second Life HUD that turns your idle time into cinema.
 | `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src` and `legacy/v3/src` |
 | `tools/sim/` | Python ports of the camera maths, run in CI |
 | `tools/art/make_icon.py` | Generates the pixel clapper textures |
+| `tools/art/make_adboard.py` | Generates the Marketplace and vendor ad boards in `hud/marketing/` |
 
 ## Documents
 | Document | Contents |
@@ -28,7 +29,8 @@ A one-button Second Life HUD that turns your idle time into cinema.
 | [`docs/PRODUCT.md`](docs/PRODUCT.md) | What v4 is: gestures, menus, modes, exits, quiz answers (source of truth) |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The v4 coding spec: scripts, link protocol, algorithms, settings |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phase B milestones for the build, the in-world test list, critiques, backlog |
-| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | The in-world notecard text |
+| [`hud/notecard/read_me.txt`](hud/notecard/read_me.txt) | The in-world Read Me notecard (plain text, end-user language) |
+| [`hud/marketing/`](hud/marketing/) | Marketplace listing text and the ad graphics |
 | [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | In-world results to fill in |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 
@@ -39,7 +41,7 @@ A one-button Second Life HUD that turns your idle time into cinema.
    - Colour white, no glow. The scripts set fullbright.
 3. **Delete any old Cinema scripts**, then add the six from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each prints a `ready` line with its free memory.
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
-5. Create a notecard named `Cinema HUD - Read Me` with the text of `docs/USER_GUIDE.md` and drop it in.
+5. Create a notecard named `Cinema HUD - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.
 6. Before giving or selling it: change `PASS` (the same string at the top of every script) and set the scripts to no-modify.
 7. Attach it to **HUD Top Right**, drag it into place, and accept the permission request.
 
