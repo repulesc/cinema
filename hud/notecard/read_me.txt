@@ -38,7 +38,7 @@ While the camera rolls, the button fades so it stays out of your pictures. It is
 === THE FOUR CAMERAS ====================================
 
 SCENERY  (the main one, and the only one that starts by itself)
-Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 150 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
+Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
 
 PERSONAL
 Composed shots of you that follow you as you walk.
@@ -73,7 +73,7 @@ CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
 LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds FADE (how visible the button stays while it rolls: 20, 40 or 70 percent) and EMOJI.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
-REACH     How far the scenery camera may go (50 / 100 / 150 / 200 m; 150 by default). It lowers itself if your viewer holds the camera closer, and Re-learn resets it.
+REACH     How far the scenery camera may go (50 / 100 / 150 / 200 m; 100 by default). If your viewer really holds the camera closer, it lowers itself; Re-learn goes back to your choice.
 TEST CAM  A 3-second check that the HUD can move your camera.
 RESET     Back to factory settings.
 

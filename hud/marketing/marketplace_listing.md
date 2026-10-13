@@ -20,7 +20,7 @@ Turn your idle time into a quiet film. One tiny HUD button sends your camera out
 Take 12 is a one-button camera HUD for people who love how Second Life looks. Double-tap the little pixel clapper, or just go AFK, and your view lifts off your avatar and starts cutting between still, beautifully placed views of the place you are standing in. Each view is held for about a minute, then it cuts to the next. Calm, never twitchy.
 
 **What it does**
-- **Scenery camera**: high drone views and wide eye-level views up to about 150 m away, always placed where nothing blocks the picture. You are tiny in the frame, or not in it at all.
+- **Scenery camera**: high drone views and wide eye-level views up to about 100 m away, always placed where nothing blocks the picture. You are tiny in the frame, or not in it at all.
 - **Skybox aware**: in a closed room in the sky it stays inside the room, with corner views from above, views from the middle, and you as a small figure in the space. On the ground it looks from outside, above the roof.
 - **Friends camera**: pick the friends near you, and it frames the whole group, gliding gently to keep everyone in the picture and cutting wide if someone walks away.
 - **Social camera**: over-the-shoulder shots and group shots that cut to whoever speaks in local chat.
@@ -49,7 +49,7 @@ Take 12 is a one-button camera HUD for people who love how Second Life looks. Do
 
 ## Feature bullets (for the "Features" list)
 - One-button HUD: tap, double-tap, hold
-- Drone views and wide horizon views, up to ~150 m away
+- Drone views and wide horizon views, up to ~100 m away
 - Skybox and room aware (stays inside closed rooms in the sky)
 - Friends mode with gentle glide, and a wider cut if someone leaves the frame
 - Social and Personal cameras, cuts to whoever speaks

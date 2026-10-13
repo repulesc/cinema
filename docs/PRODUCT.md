@@ -3,7 +3,7 @@
 This is the source of truth for what the v4 HUD is. v3.0.0 is frozen and working in `legacy/v3/`. The older people-centred versions are in `legacy/v1-v2/`. The quiz answers this spec is built from are at the bottom.
 
 ## The idea in one paragraph
-Take 12 is a tiny, fun-looking one-button Second Life HUD that turns your time in-world into a quiet film. Its **default job is the scenery camera**. When you go AFK, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 150 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
+Take 12 is a tiny, fun-looking one-button Second Life HUD that turns your time in-world into a quiet film. Its **default job is the scenery camera**. When you go AFK, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 100 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
 - **Personal** follows you.
 - **Social** frames you with the people around you, cutting to whoever speaks.
 - **Friends** keeps you and your chosen friends in frame, gliding gently.
@@ -98,7 +98,7 @@ Ana, Bo, Kit
 | ⭐ Favourites | Clear here / Clear all | Saved Scenery spots of this region |
 | 👁 Alt-cam | **Pause** / End / Ignore | What happens when you Alt-orbit during a shot |
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
-| 📏 Reach | 50 / 100 / **150** / 200 m / Re-learn | The furthest Scenery camera distance (the nearest is always 20 m). The HUD lowers it by itself if your viewer refuses far cameras, and grows it back up to your choice. Re-learn goes back to 150 m |
+| 📏 Reach | 50 / **100** / 150 / 200 m / Re-learn | The furthest Scenery camera distance (the nearest is always 20 m). If your viewer really holds the camera closer (it stops short at the same distance twice), the HUD lowers it by itself and slowly grows it back up to your choice. Orbiting, Alt-cam, mouselook or a minimised viewer never lower it. Re-learn goes back to your choice |
 | 📝 Chat text | On / **Off** | Chat feedback. **Off by default**: the HUD says nothing in chat, except errors, warnings and the answers to commands you type. On: one line per cut (with what it found and why), and a line after each menu choice. The setting is stored as `trace` |
 | 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔆 Fade (20 / **40** / 70 %) and 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
@@ -228,4 +228,4 @@ Grand views, calm pacing. The feel is still, long, contemplative shots, like a f
 | Delivery | Everything at once |
 
 ### Round 2 (v3, still in force)
-Landscape, you tiny or absent · mix of drone and eye-level · up to about 150 m · static then a hard cut · nothing blocking, open sky · indoors on the ground: above the roof · stay in the region · contemplative holds · AFK plus a gesture · grand views, calm pacing.
+Landscape, you tiny or absent · mix of drone and eye-level · up to about 100 m · static then a hard cut · nothing blocking, open sky · indoors on the ground: above the roof · stay in the region · contemplative holds · AFK plus a gesture · grand views, calm pacing.

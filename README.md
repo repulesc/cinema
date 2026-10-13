@@ -2,7 +2,7 @@
 
 A one-button Second Life HUD that turns your idle time into cinema. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
 
-- **Scenery camera (default):** when you go AFK, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 150 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
+- **Scenery camera (default):** when you go AFK, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 

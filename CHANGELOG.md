@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.4.5
+**Scenery reach 100 m by default, and it no longer shrinks for no reason.**
+- The default reach is **100 m** (menu 50 / **100** / 150 / 200 m). Re-learn goes back to the reach you chose.
+- **Why it could fall to 20 m:** the check after each cut counted any camera that was not where it was asked as "the viewer refused a far camera". A minimised or frozen viewer, mouselook, orbiting or Alt-cam all looked like that, and each one cut the reach by 20 %. Now a short camera counts only if it actually moved, straight out toward the planned spot, and stopped 15 m or more from you. One short view just cuts again. The reach is lowered only when it happens twice within 10 cuts at the same distance (within 10 %), which is what a real viewer limit does. It is then lowered to 90 % of that distance.
+- **Settings bug:** the settings-version check compared text, so it ran again on every rez. Each time it forced Chat text off and copied the shortened reach into your chosen reach, so the shortening became permanent. It now runs each step once. On this update, every install moves to 100 m once (a chosen 50 or 200 m is kept), which also clears a reach that was shortened by mistake.
+- While a shorter reach is learned, it counts the straight-line distance (height included).
+- New `tools/sim/reach_sim.py` (in CI) runs the learning against 16 simulated viewers and checks the settings migration. The 4.4.4 logic drops to 20 m in the same test, matching the report.
+
 ## 4.4.4
 **Scenery reaches further: 150 m by default** (it was 100 m).
 - The reach menu is 50 / 100 / **150** / 200 m, and `/77 reach <m>` takes 20–250 m. The nearest scenery camera stays at 20 m, so a view is never a close-up of you.

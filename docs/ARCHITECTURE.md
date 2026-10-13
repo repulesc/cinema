@@ -34,7 +34,7 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | 7311 NO_SHOT | worker → core | reason | core covers it with a basic shot |
 | **7312 GLIDE** | friends → core | `"<pos>|<focus>"` | a slow move, see §5 |
 | 7313 ACK | worker → core | mode | |
-| 7314 REACH_FAIL | core → scenery | distance | |
+| 7314 REACH_FAIL | core → scenery | `<asked>\|<allowed>` distances from you | |
 | **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
@@ -182,8 +182,8 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 |---|---|---|
 | `afk_on`, `afk_sec` | 1, 90 | as v3 |
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
-| `reach` | **150** (4.4.4; was 100) | the furthest Scenery camera in use. Learned: lowered when the viewer refuses a far camera, and grown back up to `reach_set` |
-| `reach_set` | **150** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets both to 150 and clears `reach_ok`. An old install with reach 100 is moved to 150 once (`cfgv` = 3); a custom value is kept |
+| `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
+| `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
@@ -306,9 +306,16 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
   Send it as type 7. If none passes, fall through to the normal finder.
 - **Clearing:** Options › Favourites › Clear here / Clear all. The UI deletes the keys with `llLinksetDataDeleteProtected`, or for "all", by finding the keys with `llLinksetDataFindKeys("^cin\\.fav\\.", 0, 0)`.
 
-### 6.5 Reach regrowth (fix)
-- After **20 consecutive cuts** without a REACH_FAIL (saved in `cin.reach_ok`), raise `gReach` by 10 %, up to `gReachSet` (your chosen reach), and save it.
-- REACH_FAIL resets the count.
+### 6.5 Reach learning (4.4.5)
+- **Core check, 2.5 s after a scenery cut** (types 5, 6, 7). `gCamBefore` is `llGetCameraPos()` just before the cut. A REACH_FAIL `"<asked>|<allowed>"` is sent only when the camera:
+  - is more than 3 m from the spot asked for;
+  - **moved** more than 1 m since before the cut (a minimised, frozen or slow viewer reports the old spot);
+  - is 15 m or more from you and closer than 0.9 × the asked distance;
+  - lies on the line from you to the spot (cos > 0.99, about 8°). A viewer limit pulls the camera straight in; orbiting, Alt-cam and mouselook put it anywhere else, which the peek check handles.
+- **Scenery:** one REACH_FAIL only cuts again. A second within 10 cuts whose allowed distance agrees within 10 % (a real limit stops at the same distance every time) sets `gReach` = 0.9 × that distance (at least 20 m, never higher than before).
+- **While learned** (`gReach` < `gReachSet`), a candidate further than `gReach` in a straight line (height included) is rejected.
+- **Regrowth:** after 20 cuts in a row without a REACH_FAIL (`cin.reach_ok`), `gReach` grows by 10 %, up to `gReachSet`.
+- **`tools/sim/reach_sim.py`** ports all of this plus the settings migration and runs 600 cuts × 8 seeds per viewer: unlimited, stale, slow, mouselook, Alt-cam, camera lifted off the land, orbiting 20 % / 50 % (reach must stay 100 m), and limits of 90 / 64 / 48 / 32 m with and without orbiting (must settle near the limit, ≤ 6 % short views afterwards). It also runs the 4.4.4 logic and asserts it collapses to 20 m, the reported bug.
 
 ## 7. People (`cinema_people.lsl`): chat cuts in Social
 - On START `social` with `chat_cuts` on: `gChat = llListen(0, "", NULL_KEY, "")`. Remove it on STOP and on a switch.

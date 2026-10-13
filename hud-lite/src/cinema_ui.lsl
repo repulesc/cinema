@@ -8,7 +8,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.4.4";
+string VERSION  = "4.4.5";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -30,8 +30,8 @@ list DEFAULTS = [
     "afk_on", "1",
     "afk_sec", "90",
     "hold", "60",
-    "reach", "150",
-    "reach_set", "150",
+    "reach", "100",
+    "reach_set", "100",
     "reach_ok", "0",
     "indoors", "auto",
     "chat_cuts", "1",
@@ -167,18 +167,14 @@ checkOwner()
         giveHelp();
     }
     else initDefaults(FALSE);
-    if (cfgGet("cfgv") != "2")                     // 4.4.2: chat feedback is off by default, also for older installs
+    integer v = (integer)cfgGet("cfgv");            // settings version: each step runs once
+    if (v < 2) cfgWrite("trace", "0");             // 4.4.2: chat feedback is off by default
+    if (v < 4)                                     // 4.4.5: reach 100 m; a reach shrunk by false alarms starts over
     {
-        cfgWrite("trace", "0");
-        cfgWrite("cfgv", "2");
-    }
-    if (cfgGet("cfgv") != "3")                     // 4.4.4: the default reach is 150 m; your own choice is kept
-    {
-        string rr = cfgGet("reach");
-        if (rr == "" || rr == "100") rr = "150";
-        cfgWrite("reach", rr);
-        cfgWrite("reach_set", rr);
-        cfgWrite("cfgv", "3");
+        string rr = cfgGet("reach_set");
+        if (rr != "50" && rr != "200") rr = "100";
+        setReach(rr);
+        cfgWrite("cfgv", "4");
     }
     gNote = (cfgGet("trace") == "1");
     gEmoji = (cfgGet("emoji") != "0");
@@ -401,7 +397,7 @@ openMenu(string page)
     }
     else if (page == "reach")
     {
-        text += "Furthest scenery camera.\nChosen " + cfgGet("reach_set") + " m, using " + cfgGet("reach") + " m (lowered by itself if your viewer refuses far cameras). Re-learn: 150 m.";
+        text += "Furthest scenery camera.\nChosen " + cfgGet("reach_set") + " m, using " + cfgGet("reach") + " m (lowered by itself if your viewer holds the camera closer). Re-learn: back to your choice.";
         b = ["r50", "r100", "r150", "r200", "relearn", "back"];
     }
     else if (page == "reset")
@@ -563,7 +559,7 @@ onChoice(string msg)
     }
     else if (gPage == "reach")
     {
-        if (id == "relearn") setReach("150");
+        if (id == "relearn") setReach(cfgGet("reach_set"));
         else setReach((string)toNum(msg));
         openMenu("opts");
     }
@@ -631,7 +627,7 @@ onCommand(string msg)
         llMessageLinked(LINK_SET, STATUS, "?", "");
     }
     else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { cfgSet("hold", (string)n); llOwnerSay("[Take 12] Pace: about " + v + " s per view"); }
-    else if (c == "reach" && v == "relearn") { setReach("150"); llOwnerSay("[Take 12] Reach reset to 150 m"); }
+    else if (c == "reach" && v == "relearn") { setReach(cfgGet("reach_set")); llOwnerSay("[Take 12] Reach re-learned from " + cfgGet("reach_set") + " m"); }
     else if (c == "reach" && n >= 20 && n <= 250) { setReach(v); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
     else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Take 12] Indoors: " + v); }
     else if (c == "face" && v != "")

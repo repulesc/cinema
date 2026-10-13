@@ -12,7 +12,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.4.4";
+string VERSION = "4.4.5";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
@@ -58,6 +58,8 @@ list    gLastAz;             // azimuths of the last two shots
 integer gLastType;
 integer gCuts;
 integer gReachOk;            // cuts since the last REACH_FAIL
+integer gFailCut;            // gCuts at the last REACH_FAIL (-99: none yet)
+float   gFailGot;            // how far the viewer let the camera go that time
 string  gLastFav;
 string  gIndoors;            // auto / inside / outside
 integer gLocal;              // inside mode: the camera stays on your floor, inside the build
@@ -83,9 +85,9 @@ string cfg(string k, string d)
 loadCfg()
 {
     gHold  = (float)cfg("hold", "60");
-    gReachSet = (float)cfg("reach_set", "150");
+    gReachSet = (float)cfg("reach_set", "100");
     if (gReachSet < MIN_DIST) gReachSet = MIN_DIST;
-    gReach = (float)cfg("reach", "150");
+    gReach = (float)cfg("reach", "100");
     if (gReach < MIN_DIST) gReach = MIN_DIST;
     if (gReach > gReachSet) gReach = gReachSet;
     gTrace = (integer)cfg("trace", "0");
@@ -333,6 +335,7 @@ list findShot(float minD, float clearMin)
                     foc = c + dirOf(az + PI + (llFrand(2.0) - 1.0) * 1.047198) * 30.0;
                     foc.z = c.z - 30.0 * llTan(pitch);
                 }
+                if (gReach < gReachSet && llVecDist(c, gOP) > gReach) need = 999.0;   // learned limit counts straight-line
                 // ray B: nothing may block the view
                 list r = ray(c, c + llVecNorm(foc - c) * 60.0);
                 if (gErr) return [];
@@ -659,6 +662,7 @@ default
             gLastAz = [];
             gLastType = -1;
             gCuts = 0;
+            gFailCut = -99;
             gRetry = 0;
             nextShot();
         }
@@ -687,13 +691,26 @@ default
         }
         else if (num == REACH_FAIL)
         {
-            // the viewer did not put the camera that far: learn a shorter reach and cut again
-            float want = (float)str;
-            gReach = clampf(0.8 * want, MIN_DIST, gReach);
+            // the viewer stopped the camera short ("<asked>|<allowed>"). Once can be a hiccup: just cut again.
+            // A real limit stops it at the same distance every time: twice within 10 cuts, within 10 % of each
+            // other, and the reach is learned a bit inside that distance.
+            list L = llParseString2List(str, ["|"], []);
+            float got = llList2Float(L, 1);
             gReachOk = 0;
-            llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
             llLinksetDataWriteProtected("cin.reach_ok", "0", PASS);
-            tsay("your viewer keeps the camera closer than " + (string)llRound(want) + " m - reach is now " + (string)llRound(gReach) + " m");
+            if (gCuts - gFailCut <= 10 && llFabs(got - gFailGot) < 0.1 * got)
+            {
+                if (gFailGot > got) got = gFailGot;
+                gReach = clampf(0.9 * got, MIN_DIST, gReach);
+                gFailCut = -99;
+                llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
+                tsay("your viewer keeps the camera within about " + (string)llRound(got) + " m - reach is now " + (string)llRound(gReach) + " m");
+            }
+            else
+            {
+                gFailCut = gCuts;
+                gFailGot = got;
+            }
             nextShot();
         }
         else if (num == FAV && !LITE) addFav(str);

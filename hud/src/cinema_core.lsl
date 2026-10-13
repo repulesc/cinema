@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.4.4";
+string VERSION = "4.4.5";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -20,7 +20,7 @@ integer SHOT       = 7310;   // worker -> core   "<pos>|<focus>|<hold>|<type>"
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;   // friends -> core  "<pos>|<focus>"
 integer ACK        = 7313;
-integer REACH_FAIL = 7314;   // core -> scenery  "<distance>"
+integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
@@ -74,6 +74,7 @@ float   gApplyT;
 float   gLastTick;
 float   gGlideUntil;
 vector  gShotPos;
+vector  gCamBefore;            // where the viewer had the camera just before the cut
 vector  gCamPos;
 rotation gCamRot;
 
@@ -132,6 +133,7 @@ float clampf(float v, float lo, float hi)
 // ---- camera ------------------------------------------------------------------
 setCam(vector p, vector f)
 {
+    gCamBefore = llGetCameraPos();
     if (gCutMode || gGlided) llClearCameraParams();
     gGlided = FALSE;
     llSetCameraParams([
@@ -377,11 +379,15 @@ activeTick(float dt)
         float want = llVecDist(gShotPos, op);
         if (gVerify)
         {
-            // first check after a cut: did the viewer put the camera where we asked?
+            // first check after a cut: did the viewer put the camera where we asked? Only a camera that moved
+            // (not a stale or minimised viewer), straight out toward the spot but stopped short counts as a reach
+            // limit; anything else is you orbiting or Alt-cam, which the peek check below handles.
             gVerify = FALSE;
-            if ((gType == 5 || gType == 6 || gType == 7) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, op) < 0.8 * want)
+            float got = llVecDist(cp, op);
+            if ((gType == 5 || gType == 6 || gType == 7) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, gCamBefore) > 1.0
+                && got > 15.0 && got < 0.9 * want && llVecNorm(cp - op) * llVecNorm(gShotPos - op) > 0.99)
             {
-                llMessageLinked(LINK_SET, REACH_FAIL, (string)want, "");
+                llMessageLinked(LINK_SET, REACH_FAIL, (string)want + "|" + (string)got, "");
                 return;
             }
         }

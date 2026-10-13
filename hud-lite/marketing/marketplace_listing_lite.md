@@ -15,7 +15,7 @@ The easy way into cinematic Second Life: one tiny HUD button sends your camera o
 Take 12 Lite is the scenery camera of Take 12, in a small, simple package. Double-tap the little pixel clapper, or just go AFK, and your view lifts off your avatar and starts cutting between still, beautifully placed views of the place you are standing in. High drone shots, wide horizon shots, each held for about a minute. Calm, never twitchy.
 
 **What is in Lite**
-- **Scenery camera:** drone views and wide eye-level views up to about 150 m away, placed where nothing blocks the picture.
+- **Scenery camera:** drone views and wide eye-level views up to about 100 m away, placed where nothing blocks the picture.
 - **Starts by itself** when you go idle (you choose how long), or with a double-tap.
 - **Photo hold:** freeze any view so you can take your snapshots in peace.
 - **Pace** from lively (30 s) to still (2 minutes).
@@ -39,7 +39,7 @@ Find it here: **(you)**: link to the full Take 12 listing.
 
 ## Feature bullets
 - One-button HUD: tap, double-tap, hold
-- Drone views and wide horizon views up to ~150 m away
+- Drone views and wide horizon views up to ~100 m away
 - Starts by itself when you are AFK
 - Photo hold
 - Adjustable pace from 30 s to 2 min per view
