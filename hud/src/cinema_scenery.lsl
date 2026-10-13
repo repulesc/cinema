@@ -10,8 +10,9 @@
 //  11 room centre, 12 room "you small".
 // ============================================================================
 
-string VERSION = "4.2.0";
+string VERSION = "4.3.0";
 string PASS    = "cinema-1.0-build1";
+integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -178,6 +179,7 @@ context()
     gInside = (gEnclosed && sky);
     if (gIndoors == "inside") gInside = gEnclosed;
     else if (gIndoors == "outside") gInside = FALSE;
+    if (LITE) gInside = FALSE;
     gSpan = 0.0;
     gCent = ZERO_VECTOR;
     list ord = [];
@@ -447,7 +449,7 @@ nextShot()
     gErr = FALSE;
     if (!gCtxOK || llVecDist(gOP, gCtxPos) > 10.0) context();
     list s = [];
-    if (!gErr && gCuts % 4 == 3) s = favShot();
+    if (!LITE && !gErr && gCuts % 4 == 3) s = favShot();
     if (llGetListLength(s) == 0 && !gErr && gInside)
     {
         s = roomShot();
@@ -565,7 +567,7 @@ default
             tsay("your viewer keeps the camera closer than " + (string)llRound(want) + " m - reach is now " + (string)llRound(gReach) + " m");
             nextShot();
         }
-        else if (num == FAV) addFav(str);
+        else if (num == FAV && !LITE) addFav(str);
         else if (num == CFG_CHANGED) loadCfg();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
         else if (num == STATUS && str == "?")

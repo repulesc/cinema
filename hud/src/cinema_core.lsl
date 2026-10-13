@@ -6,8 +6,9 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.2.0";
+string VERSION = "4.3.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
+integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
 integer START      = 7301;   // core -> workers  "<mode>|<fov>"
 integer STOP       = 7302;
@@ -562,6 +563,7 @@ default
         }
         else if (num == CMD)
         {
+            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "fav")) return;
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Take 12 marketing graphics (Second Life Marketplace + in-world vendor board).
 
+Also writes the Lite versions (a LITE ribbon, Room and Friends dimmed as full-version features) to
+hud-lite/marketing/*_lite.png.
 Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
 hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner) and
 hud/marketing/adboard_vendor_1024.png + adboard_vendor_512.png (a bolder, simpler square for
@@ -23,6 +25,8 @@ DESCRIPTOR = "CINEMATIC CAMERA HUD"
 TAGLINE = "Your idle time, on film."
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+LITE = False                      # main() runs the boards twice; True draws the Take 12 Lite versions
+FULL_ONLY = ("ROOM", "FRIENDS")   # the views Lite does not have
 
 # ---- a tiny 5x7 pixel font (caps) ------------------------------------------------------------
 ROWS = {
@@ -186,6 +190,21 @@ def paste_framed(base, im, xy, border=4, label=None, lab_scale=3):
         d.rectangle([x - border, y + h + border, x + w + border - 1, y + h + border + 6 * lab_scale + 12], fill=INK)
         ptext(base, (x + 8, y + h + border + 6), label, lab_scale, CHALK)
 
+def ribbon(base, box):
+    """the coral LITE ribbon"""
+    d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
+    d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
+    sc = max(2, (y1 - y0 - 24) // 7); ptext(base, ((x0 + x1 - pwidth("LITE", sc)) // 2, (y0 + y1 - 7 * sc) // 2), "LITE", sc, INK)
+
+def scene_img(lab, fn, gw, gh, sc, seed):
+    """one view; in Lite the views the Lite version does not have are dimmed and marked"""
+    im = view(fn, gw, gh, sc, seed)
+    if LITE and lab in FULL_ONLY:
+        im = Image.blend(im, Image.new("RGB", im.size, BG), 0.72)
+        t = 3 if im.width > 300 else 2
+        ptext(im, ((im.width - pwidth("FULL VERSION", t)) // 2, im.height // 2 - 7 * t // 2), "FULL VERSION", t, CHALK)
+    return im
+
 def chips(base, y, items, size, x_left, x_right, gap=14, fill=CORAL):
     d = ImageDraw.Draw(base); f = font(size); widths = [d.textlength(t, font=f) + 28 for t in items]
     total = sum(widths) + gap * (len(items) - 1); x = x_left + ((x_right - x_left) - total) / 2
@@ -201,14 +220,17 @@ def square():
     ptext(im, (248, 118), DESCRIPTOR, 3, CORAL)
     d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
     d.text((248, 214), "Double-tap. Walk away. Watch the world.", font=font(24), fill=(170, 176, 200))
-    looks(im, 664, 30, 96, 14)
-    ptext(im, (664, 138), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
+    if LITE:
+        ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "SCENERY CAMERA + PHOTO HOLD", 2, (170, 176, 200))
+    else:
+        looks(im, 664, 30, 96, 14)
+        ptext(im, (664, 138), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     gw, gh, sc = 64, 40, 7; px, py = 48, 262
     for i, (lab, fn) in enumerate(SCENES):
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 62)
-        paste_framed(im, view(fn, gw, gh, sc, 11 + i), (x, y), label=lab)
-    chips(im, 936, ["Drone views", "Skybox rooms", "Friends mode", "Photo hold"], 24, 40, S - 40)
-    d.text((S // 2, 996), "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS", font=font(16), fill=(120, 126, 150), anchor="mm")
+        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""))
+    chips(im, 936, ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else ["Drone views", "Skybox rooms", "Friends mode", "Photo hold"], 24, 40, S - 40)
+    d.text((S // 2, 996), "THE EASY WAY IN  -  ONE TINY BUTTON  -  NO SETUP" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS", font=font(16), fill=(120, 126, 150), anchor="mm")
     return im
 
 def wide():
@@ -218,12 +240,12 @@ def wide():
     ptext(im, (192, 34), NAME, 7, CHALK, shadow=CORAL)
     ptext(im, (196, 92), DESCRIPTOR, 2, CORAL)
     d.text((196, 120), TAGLINE, font=font(32), fill=(255, 196, 120))
-    steps = [("DOUBLE-TAP", "start the show"), ("TAP", "menu / stop"), ("HOLD", "photo, save, next")]
-    for i, (a, b) in enumerate(steps):
-        ptext(im, (44, 190 + i * 0), "", 1, CHALK)
-    looks(im, 716, 26, 80, 12)
-    ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    d.text((44, 196), "Drone views, skyboxes, your friends.", font=font(22), fill=(170, 176, 200))
+    if LITE:
+        ribbon(im, (716, 26, 980, 100)); ptext(im, (716, 114), "SCENERY + PHOTO HOLD", 2, (170, 176, 200))
+    else:
+        looks(im, 716, 26, 80, 12)
+        ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
+    d.text((44, 196), "Drone and wide views, AFK start, Photo hold." if LITE else "Drone views, skyboxes, your friends.", font=font(22), fill=(170, 176, 200))
     # film strip along the bottom
     sy, sh = 262, 232; d.rectangle([0, sy, W, sy + sh], fill=INK)
     for x in range(10, W, 36):
@@ -231,7 +253,7 @@ def wide():
     gw, gh, sc = 56, 36, 4
     for i, (lab, fn) in enumerate(SCENES):
         x = 26 + i * (gw * sc + 24); y = sy + 36
-        im.paste(view(fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
+        im.paste(scene_img(lab, fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
         ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
     d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  live menu", font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
@@ -250,15 +272,21 @@ def vendor():
     paste_framed(im, hero, (hx, hy), border=6)
     btn = clapper(72); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
     ptext(im, (hx + gw * sc - 190, hy + 98), "DOUBLE-TAP", 2, CHALK, shadow=INK)
-    looks(im, 80, 784, 96, 14)
-    ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
-    chips(im, 870, ["Friends", "Photo hold"], 30, 420, S - 60)
+    if LITE:
+        ribbon(im, (80, 784, 380, 884)); ptext(im, (80, 894), "THE EASY WAY IN", 2, (170, 176, 200))
+        chips(im, 790, ["Drone", "Wide"], 30, 420, S - 60); chips(im, 870, ["AFK start", "Photo hold"], 30, 420, S - 60)
+    else:
+        looks(im, 80, 784, 96, 14)
+        ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
+        chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
+        chips(im, 870, ["Friends", "Photo hold"], 30, 420, S - 60)
     d.text((S // 2, 990), "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
 if __name__ == "__main__":
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "marketing"); os.makedirs(out, exist_ok=True)
-    square().save(os.path.join(out, "adboard_square_1024.png")); wide().save(os.path.join(out, "adboard_wide_1024x512.png"))
-    v = vendor(); v.save(os.path.join(out, "adboard_vendor_1024.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, "adboard_vendor_512.png"))
-    print("wrote", os.path.normpath(out))
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    for lite, out, suf in ((False, os.path.join(base, "hud", "marketing"), ""), (True, os.path.join(base, "hud-lite", "marketing"), "_lite")):
+        LITE = lite; os.makedirs(out, exist_ok=True)
+        square().save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide().save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
+        v = vendor(); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
+        print("wrote", os.path.normpath(out))

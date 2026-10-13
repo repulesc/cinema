@@ -7,8 +7,10 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.2.0";
+string VERSION  = "4.3.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
+integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
+string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
 string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Read Me" also works
 
 integer UI_STATE    = 7320;
@@ -148,8 +150,8 @@ giveHelp()
         }
     }
     if (card != "") llGiveInventory(gOwner, card);
-    else llOwnerSay("[Take 12] The Read Me notecard is not in this HUD. Put a notecard with \"Read Me\" in its name into the same prim as the scripts.");
-    llOwnerSay("[Take 12] Double-tap: scenery camera. Tap: menu (while rolling: stop). Long press: live menu (photo, save, next). Commands: /" + (string)gCmdChan + " help");
+    else llOwnerSay("[Take 12] No Read Me notecard in this prim. Add one with \"Read Me\" in its name.");
+    llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: live menu. Commands: /" + (string)gCmdChan + " help");
 }
 
 // new owner (or first run): wipe whatever was configured before
@@ -164,6 +166,7 @@ checkOwner()
     else initDefaults(FALSE);
     gEmoji = (cfgGet("emoji") != "0");
     gLook = (integer)cfgGet("look");
+    if (LITE) gLook = 0;
     gFace = (integer)cfgGet("face");
     gFadeA = (float)cfgGet("fade") / 100.0;
     if (gFadeA < 0.1) gFadeA = 0.4;
@@ -208,14 +211,33 @@ endClap()
 // ============================================================================
 //  menu
 // ============================================================================
+// features that only the full version has (the Lite build shows them with a lock)
+integer locked(string id)
+{
+    if (!LITE) return FALSE;
+    return (llListFindList(["personal", "social", "friends", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
+}
+
 string label(string id)
 {
     integer i = llListFindList(ITEMS, [id]);
     if (i < 0) return id;
     string t = llList2String(ITEMS, i + 2);
     string e = llList2String(ITEMS, i + 1);
+    if (locked(id))
+    {
+        if (gEmoji) return "🔒 " + t;
+        return t + " (full)";
+    }
     if (e == "" || !gEmoji) return t;
     return e + " " + t;
+}
+
+// the Lite build: tell about the full version and open its listing
+upsell()
+{
+    llOwnerSay("[Take 12] That is in the full Take 12: Friends, Social, Personal, skybox rooms, favourites, looks.");
+    llLoadURL(gOwner, "Get the full Take 12", BUY_URL);
 }
 
 string idOf(string msg)
@@ -272,7 +294,8 @@ string modeName()
 string title()
 {
     string h = "Take 12";
-    if (gEmoji) h = "🎬 Take 12";
+    if (LITE) h = "Take 12 Lite";
+    if (gEmoji) h = "🎬 " + h;
     string s = "idle";
     if (gUiState == "rolling") s = modeName() + " rolling";
     else if (gUiState == "frozen") s = modeName() + " frozen";
@@ -325,6 +348,7 @@ openMenu(string page)
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
             + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace");
         b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "test", "reset", "back"];
+        if (LITE) b = llListReplaceList(b, ["emoji"], 7, 7);        // Look is locked in Lite: Emoji goes here instead
     }
     else if (page == "look")
     {
@@ -333,17 +357,17 @@ openMenu(string page)
     }
     else if (page == "indoors")
     {
-        text += "When you are inside a room, scenery can stay in the room or look from outside.\nNow: " + cfgGet("indoors") + " (auto = inside in the sky, outside on the ground)";
+        text += "Scenery inside a room, or from outside?\nNow: " + cfgGet("indoors") + " (auto: inside in the sky)";
         b = ["auto", "inside", "outside", "back"];
     }
     else if (page == "chat")
     {
-        text += "Social and Friends cut to whoever speaks in local chat.\nNow: " + onoff("chat_cuts");
+        text += "Cut to whoever speaks.\nNow: " + onoff("chat_cuts");
         b = ["on", "off", "back"];
     }
     else if (page == "favs")
     {
-        text += "Saved scenery spots of this region (Save is in the live menu).";
+        text += "Saved spots of this region.";
         b = ["here", "all", "back"];
     }
     else if (page == "altcam")
@@ -363,7 +387,7 @@ openMenu(string page)
     }
     else
     {
-        text = "Welcome to Take 12\nDouble-tap: scenery camera\nTap: menu (while rolling: stop)\nHold: live menu\nIdle for a while and it starts by itself.";
+        text = "Welcome to Take 12\nDouble-tap: scenery\nTap: menu (rolling: stop)\nHold: live menu";
         b = ["gotit", "help"];
     }
     llDialog(gOwner, text, order(b), gChan);
@@ -394,6 +418,7 @@ onChoice(string msg)
 {
     string id = idOf(msg);
     if (id == "close" || id == " ") { closeMenu(); return; }
+    if (locked(id)) { closeMenu(); upsell(); return; }
     if (id == "back")
     {
         if (gPage == "altcam" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
@@ -452,6 +477,7 @@ onChoice(string msg)
         {
             if (id == "phantom") toggle("phantom", "Phantom obstacles");
             else if (id == "trace") toggle("trace", "Trace lines");
+            else if (id == "emoji") toggle("emoji", "Emoji");
             openMenu("opts");
         }
     }
@@ -553,7 +579,7 @@ onLong()
 // ============================================================================
 help()
 {
-    llOwnerSay("[Take 12] commands: /" + (string)gCmdChan + " scenery | personal | social | friends | stop | next | photo | fav | menu | status | pace <s> | reach <m>|relearn | indoors auto|inside|outside | friend list|clear | trace on|off | emoji on|off | cutmode on|off | chan <n> | grab | reset");
+    llOwnerSay("[Take 12] Commands on /" + (string)gCmdChan + ": scenery personal social friends stop next photo menu status pace <s> reach <m> indoors <auto|inside|outside> face <n> chan <n> reset. All of them are explained in the Read Me notecard.");
 }
 
 onCommand(string msg)
@@ -562,7 +588,8 @@ onCommand(string msg)
     string c = llList2String(a, 0);
     string v = llList2String(a, 1);
     integer n = (integer)v;
-    if (c == "scenery" || c == "personal" || c == "social" || c == "friends" || c == "stop" || c == "next" || c == "photo" || c == "fav" || c == "grab") llMessageLinked(LINK_SET, CMD, c, "");
+    if (LITE && (c == "personal" || c == "social" || c == "friends" || c == "fav" || c == "friend" || c == "indoors")) upsell();
+    else if (c == "scenery" || c == "personal" || c == "social" || c == "friends" || c == "stop" || c == "next" || c == "photo" || c == "fav" || c == "grab") llMessageLinked(LINK_SET, CMD, c, "");
     else if (c == "menu") openMenu("main");
     else if (c == "status")
     {

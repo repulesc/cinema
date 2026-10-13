@@ -6,7 +6,7 @@ A one-button Second Life HUD that turns your idle time into cinema. The brand is
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
-> **Status:** **v4.2.0** (in `hud/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v4.3.0** (in `hud/`, and its Lite build in `hud-lite/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -15,6 +15,7 @@ A one-button Second Life HUD that turns your idle time into cinema. The brand is
 |---|---|
 | `hud/src/` | The six v4 HUD scripts |
 | `hud/art/` | The button texture `take12_icon_sheet_512x256.png` (all three looks, switchable in the menu), single-look variants and a preview |
+| `hud-lite/` | **Take 12 Lite**: the scenery camera, Photo hold and the classic look. Generated from `hud/src` (`tools/build_lite.py`), with its own notecard, listing text and ad boards |
 | `legacy/v3/` | The frozen, working v3.0.0: scripts, docs and build steps |
 | `legacy/v1-v2/` | The old people-centred v1/v2 code and design (superseded) |
 | `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src` and `legacy/v3/src` |
