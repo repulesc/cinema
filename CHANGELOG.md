@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.2.0
+**Pick the look of the button from the menu** (Options > Look: Classic, Rec, Viewfinder).
+- One texture now holds every look: `hud/art/take12_icon_sheet_512x256.png` (4 x 2 frames). The script shows the right frame, so nothing else needs to be in the HUD. Re-upload and set it on the picture face; the repeats and offset are set by the script.
+- New setting `face` (`/77 face <n>`) when the picture should only go on one face of the prim. Other faces keep their own (for example fully transparent) texture.
+- Fade and Emoji moved into the Look page. Options still has 11 buttons.
+
 ## 4.1.0
 **The product is now called Take 12** (brand 12, Marketplace title "Take 12 - Cinematic Camera HUD").
 - The clapper icon shows "12" on its slate, in three looks: classic (white), rec (red light) and viewfinder (cyan). Re-upload `hud/art/cinema_icon_256x128.png` to get it.

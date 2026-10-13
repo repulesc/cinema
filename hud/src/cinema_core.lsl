@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.1.0";
+string VERSION = "4.2.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 
 integer START      = 7301;   // core -> workers  "<mode>|<fov>"

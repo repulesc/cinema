@@ -29,7 +29,7 @@ Take 12 is a one-button camera HUD for people who love how Second Life looks. Do
 - **Favourite spots**: save a view you love, and it comes back now and then.
 
 **Easy to use**
-- The button is a pixel-art clapper with the number 12 on its slate, and you can choose the look (classic, red record light, or cyan viewfinder).
+- The button is a pixel-art clapper with the number 12 on its slate, and you choose the look from the menu: classic, red record light, or cyan viewfinder.
 - Tap = menu. Double-tap = start. Hold while it rolls = live menu (photo, save, next).
 - Starts by itself when you go idle (you choose how long).
 - Any movement key, or one tap, and your own camera is back instantly.

@@ -320,15 +320,15 @@ If nothing passes:
 - The pending-event mechanism and MIN_HOLD 6 s are unchanged.
 
 ## 8. Building and textures
-- **Icon:**
-  - The source is `tools/art/make_icon.py`, with pixel grids as strings.
-  - Its outputs:
-    - `hud/art/cinema_icon_256x128.png`: 2 frames side by side, each 16×16 scaled ×8 with nearest-neighbour, on a transparent background;
-    - previews.
+- **Icon (v4.2.0: one sprite sheet with every look):**
+  - The source is `tools/art/make_icon.py`, with the pixel grids as strings.
+  - `hud/art/take12_icon_sheet_512x256.png`: 4 columns × 2 rows of 128×128 frames, each holding a 16×16 sprite ×7 with an 8 px clear margin.
+  - **Frame k** is at column `k % 4`, row `k / 4` (row 0 is the top). **Look n** uses frame `2n` (open) and `2n + 1` (clapped). Looks: 0 classic, 1 rec (default), 2 viewfinder. Frames 6 and 7 are spare for a fourth look.
+  - **How the UI script shows frame k** (`frame()` in `cinema_ui.lsl`): repeats `<0.25, 0.5>`, offset `<(k % 4 + 0.5) / 4 − 0.5, +0.25 for the top row, −0.25 for the bottom row>`, on the face `cin.face` (default −1 = all faces; `/77 face <n>` picks one).
+  - **Settings:** `look` (0–2, default 1) and `face` (default −1). Options › 🎨 Look changes the look, the fade and the emoji.
+  - Single-look, two-frame sheets are in `hud/art/variants/`, for anyone who wants only one look.
   - **Upload settings:** no lossless needed; the alpha must be kept.
-  - **On the prim:**
-    - Texture face: the face that points at you on the HUD. In Edit, select the face, apply the texture, repeats 0.5 × 1, offset −0.25.
-    - All other faces get the default transparent texture.
+  - **On the prim:** put the sheet on the face that points at you on the HUD, and a fully transparent texture on the other faces. The script sets the repeats and offset itself.
 - **Prim:** one box, size `<0.01, 0.04, 0.04>`, which is about 40 px on a 1080 px screen. Attach it to **HUD Top Right** and drag it into place.
 
 ## 9. Checks and sims

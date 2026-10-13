@@ -88,8 +88,8 @@ Ana, Bo, Kit
 ```
 [🏠 Indoors ][💬 Chat cuts][⭐ Favourites]
 [👁 Alt-cam ][🧱 Phantom ][📏 Reach   ]
-[📝 Trace   ][🔤 Emoji   ][🔆 Fade   ]
-[🧪 Test cam][♻ Reset   ][↩ Back   ]
+[📝 Trace   ][🎨 Look    ][🧪 Test cam]
+[♻ Reset   ][↩ Back    ]
 ```
 | Option | Choices (default first) | What it does |
 |---|---|---|
@@ -100,8 +100,7 @@ Ana, Bo, Kit
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
 | 📏 Reach | 25 / 50 / 75 / **100** m / Re-learn | The furthest Scenery camera distance. The HUD lowers it by itself if your viewer refuses far cameras |
 | 📝 Trace | **On** / Off | One chat line per cut |
-| 🔤 Emoji | **On** / Off | Emoji on the menu buttons |
-| 🔆 Fade | 20 / **40** / 70 % | How visible the button stays while the camera rolls |
+| 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔆 Fade (20 / **40** / 70 %) and 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
 | ♻ Reset | – | All settings to defaults (asks first) |
 

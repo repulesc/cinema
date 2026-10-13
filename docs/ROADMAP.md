@@ -90,7 +90,7 @@ Install:
 1. Make a fresh prim from the README.
 2. Add the six scripts from `hud/src/`.
 3. Use **Set Scripts to Running**.
-4. Upload `hud/art/cinema_icon_256x128.png` and apply it as the README says.
+4. Upload `hud/art/take12_icon_sheet_512x256.png` and apply it as the README says.
 
 Then report:
 

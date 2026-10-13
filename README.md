@@ -6,7 +6,7 @@ A one-button Second Life HUD that turns your idle time into cinema. The brand is
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
-> **Status:** **v4.1.0** (in `hud/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v4.2.0** (in `hud/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -14,7 +14,7 @@ A one-button Second Life HUD that turns your idle time into cinema. The brand is
 | Path | Contents |
 |---|---|
 | `hud/src/` | The six v4 HUD scripts |
-| `hud/art/` | The button texture `cinema_icon_256x128.png` (2 frames), the variants and a preview |
+| `hud/art/` | The button texture `take12_icon_sheet_512x256.png` (all three looks, switchable in the menu), single-look variants and a preview |
 | `legacy/v3/` | The frozen, working v3.0.0: scripts, docs and build steps |
 | `legacy/v1-v2/` | The old people-centred v1/v2 code and design (superseded) |
 | `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src` and `legacy/v3/src` |
@@ -34,9 +34,10 @@ A one-button Second Life HUD that turns your idle time into cinema. The brand is
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
 
 ## Building the HUD in-world (v4)
-1. **Upload the texture** `hud/art/cinema_icon_256x128.png` (keep the alpha; no lossless needed).
+1. **Upload the texture** `hud/art/take12_icon_sheet_512x256.png` (keep the alpha; no lossless needed). It holds every look, and the menu (Options > Look) picks one.
 2. **Make the prim:** one box, size `<0.01, 0.04, 0.04>` (about 40 px). Name it `Take 12`.
-   - Put the texture on the face that points at you when it is on a HUD (try the +X face), repeats **0.5 × 1.0**, offset horizontal **-0.25**. The script sets this up itself on first run.
+   - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
+   - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
 3. **Delete any old scripts from the prim (v3 or earlier)**, then add the six from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each prints a `ready` line with its free memory.
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").

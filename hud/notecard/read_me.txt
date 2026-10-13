@@ -32,7 +32,7 @@ HOLD  (about 1 second)
    - when idle: opens the menu
    - while rolling: opens the live menu (see below)
 
-While the camera rolls, the button fades so it stays out of your pictures. It is still there to click. (Change how faint it gets: Options > Fade.)
+While the camera rolls, the button fades so it stays out of your pictures. It is still there to click. (Change how faint it gets, and the look of the button: Options > Look.)
 
 
 === THE FOUR CAMERAS ====================================
@@ -70,10 +70,9 @@ PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default
 AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 min, 10 min, or when Second Life marks you Away.
 INDOORS   Auto (default): inside the room when you are in the sky, above the roof when you are in a house on the ground. Or force Inside / Outside.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
-FADE      How visible the button stays while it rolls: 20, 40 or 70 percent.
+LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds FADE (how visible the button stays while it rolls: 20, 40 or 70 percent) and EMOJI.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 REACH     How far the scenery camera may go. It lowers itself if your viewer holds the camera closer, and Re-learn resets it.
-EMOJI     Turn off if your viewer shows boxes instead of little icons on the menu buttons.
 TEST CAM  A 3-second check that the HUD can move your camera.
 RESET     Back to factory settings.
 
@@ -94,6 +93,7 @@ indoors auto | inside | outside
 friend list | clear
 trace on | off        a chat line for every cut
 emoji on | off
+face <number>         which face of the HUD carries the picture (only if the picture shows on the wrong side)
 chan <number>         change the channel
 reset
 
@@ -106,7 +106,7 @@ Nothing happens when I double-tap.
 Tap once and use the menu to start Scenery. If that works, your double-taps may be too slow: tap twice quickly, about as fast as a double-click. Then type  /77 status  - you should see a line from every part of the HUD. If one is missing, tell the creator.
 
 The menu buttons show boxes.
-Options > Emoji > off.
+Options > Look > Emoji > off.
 
 The camera stays close to me.
 Some viewers limit how far a script may place the camera. The HUD notices and shortens its distance by itself. If it ever feels too short, Options > Reach > Re-learn.

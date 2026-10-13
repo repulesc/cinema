@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.1.0";
+string VERSION  = "4.2.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Read Me" also works
 
@@ -33,6 +33,8 @@ list DEFAULTS = [
     "chat_cuts", "1",
     "emoji", "1",
     "fade", "40",
+    "look", "1",
+    "face", "-1",
     "peek", "1",
     "peek_bail", "0",
     "phantom", "0",
@@ -52,7 +54,7 @@ list ITEMS = [
     "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
     "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
     "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Trace", "emoji", "🔤", "Emoji",
-    "fade", "🔆", "Fade", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
+    "fade", "🔆", "Fade", "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
     "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a300", "", "5 min", "a600", "", "10 min",
     "away", "", "SL Away", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
     "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
@@ -85,8 +87,19 @@ string  gUiState = "idle";    // idle / rolling / frozen
 string  gUiMode  = "scenery";
 integer gNextCut;
 integer gShownIdle = TRUE;
+integer gLook = 1;          // 0 classic, 1 rec, 2 viewfinder (frames 2n open, 2n+1 clapped on the sheet)
+integer gFace = ALL_SIDES;  // the prim face that carries the picture
 
 // ============================================================================
+// show frame k of the 4 x 2 sprite sheet (frame k: column k % 4, row k / 4, row 0 on top)
+frame(integer k)
+{
+    float oy = 0.25;
+    if (k > 3) oy = -0.25;
+    llScaleTexture(0.25, 0.5, gFace);
+    llOffsetTexture(((float)(k % 4) + 0.5) / 4.0 - 0.5, oy, gFace);
+}
+
 string cfgGet(string k)
 {
     return llLinksetDataReadProtected("cin." + k, PASS);
@@ -103,6 +116,8 @@ cfgSet(string k, string v)
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
     if (k == "emoji") gEmoji = (integer)v;
     if (k == "fade") gFadeA = (float)v / 100.0;
+    if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
+    if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
 }
 
 initDefaults(integer force)
@@ -148,6 +163,8 @@ checkOwner()
     }
     else initDefaults(FALSE);
     gEmoji = (cfgGet("emoji") != "0");
+    gLook = (integer)cfgGet("look");
+    gFace = (integer)cfgGet("face");
     gFadeA = (float)cfgGet("fade") / 100.0;
     if (gFadeA < 0.1) gFadeA = 0.4;
     gFirst = (cfgGet("seen_intro") != "1");
@@ -172,7 +189,7 @@ setLook(string st)
     if (!idle) a = gFadeA;
     if (!idle && gShownIdle)
     {
-        llOffsetTexture(0.25, 0.0, ALL_SIDES);      // frame 2: clapped
+        frame(2 * gLook + 1);                       // clapped
         gClapT = llGetTime() + 0.3;
         a = 1.0;
     }
@@ -184,7 +201,7 @@ setLook(string st)
 endClap()
 {
     gClapT = 0.0;
-    llOffsetTexture(-0.25, 0.0, ALL_SIDES);        // frame 1: open
+    frame(2 * gLook);                              // open
     if (!gShownIdle) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, gFadeA]);
 }
 
@@ -306,8 +323,13 @@ openMenu(string page)
     {
         text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace") + " · Emoji: " + onoff("emoji") + " · Button fade: " + cfgGet("fade") + " %";
-        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "emoji", "fade", "test", "reset", "back"];
+            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Trace: " + onoff("trace");
+        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "test", "reset", "back"];
+    }
+    else if (page == "look")
+    {
+        text += "Button look: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook) + "\nFade while rolling: " + cfgGet("fade") + " %\nEmoji on menus: " + onoff("emoji");
+        b = ["th0", "th1", "th2", "fade", "emoji", "back"];
     }
     else if (page == "indoors")
     {
@@ -374,7 +396,7 @@ onChoice(string msg)
     if (id == "close" || id == " ") { closeMenu(); return; }
     if (id == "back")
     {
-        if (gPage == "altcam" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs") openMenu("opts");
+        if (gPage == "altcam" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
         else openMenu("main");
         return;
     }
@@ -420,7 +442,7 @@ onChoice(string msg)
     }
     else if (gPage == "opts")
     {
-        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "reach" || id == "reset") openMenu(id);
+        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "reach" || id == "reset" || id == "look") openMenu(id);
         else if (id == "test")
         {
             closeMenu();
@@ -430,18 +452,23 @@ onChoice(string msg)
         {
             if (id == "phantom") toggle("phantom", "Phantom obstacles");
             else if (id == "trace") toggle("trace", "Trace lines");
-            else if (id == "emoji") toggle("emoji", "Emoji");
-            else if (id == "fade")
-            {
-                string nf = "40";                           // cycle 20 -> 40 -> 70 %
-                if (cfgGet("fade") == "40") nf = "70";
-                else if (cfgGet("fade") == "70") nf = "20";
-                cfgSet("fade", nf);
-                llOwnerSay("[Take 12] Button fade while rolling: " + nf + " % visible");
-                if (gUiState != "idle") setLook("rolling");
-            }
             openMenu("opts");
         }
+    }
+    else if (gPage == "look")
+    {
+        if (llGetSubString(id, 0, 1) == "th") cfgSet("look", llGetSubString(id, 2, 2));
+        else if (id == "emoji") toggle("emoji", "Emoji");
+        else if (id == "fade")
+        {
+            string nf = "40";                               // cycle 20 -> 40 -> 70 %
+            if (cfgGet("fade") == "40") nf = "70";
+            else if (cfgGet("fade") == "70") nf = "20";
+            cfgSet("fade", nf);
+            llOwnerSay("[Take 12] Button fade while rolling: " + nf + " % visible");
+            if (gUiState != "idle") setLook("rolling");
+        }
+        openMenu("look");
     }
     else if (gPage == "indoors")
     {
@@ -547,6 +574,12 @@ onCommand(string msg)
     else if (c == "reach" && v == "relearn") { cfgSet("reach", "100"); cfgSet("reach_ok", "0"); llOwnerSay("[Take 12] Reach reset to 100 m"); }
     else if (c == "reach" && n >= 20 && n <= 250) { cfgSet("reach", (string)n); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
     else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Take 12] Indoors: " + v); }
+    else if (c == "face" && v != "")
+    {
+        if (v == "all") n = -1;
+        cfgSet("face", (string)n);
+        llOwnerSay("[Take 12] Picture face: " + v);
+    }
     else if (c == "friend" && (v == "list" || v == "clear")) llMessageLinked(LINK_SET, UI_FRIENDS, v, "");
     else if (c == "trace" || c == "emoji" || c == "cutmode")
     {
@@ -579,8 +612,7 @@ default
         gOwner = llGetOwner();
         checkOwner();
         llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_GLOW, ALL_SIDES, 0.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
-        llScaleTexture(0.5, 1.0, ALL_SIDES);
-        llOffsetTexture(-0.25, 0.0, ALL_SIDES);
+        frame(2 * gLook);
         setLook("armed");
         gCmdChan = (integer)cfgGet("cmd_chan");
         if (gCmdChan <= 0) gCmdChan = 77;
