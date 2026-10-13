@@ -13,7 +13,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.4.0";
+string VERSION = "4.4.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 1;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
@@ -61,6 +61,7 @@ integer gReachOk;            // cuts since the last REACH_FAIL
 string  gLastFav;
 string  gIndoors;            // auto / inside / outside
 integer gLocal;              // inside mode: the camera stays on your floor, inside the build
+vector  gLocalAt;            // where it was last confirmed that you are inside (the decision is sticky within 30 m)
 integer gPrimFloor;          // you stand on a build, not on the land
 integer gSky;                // no land within 100 m under you
 integer gRoofs;              // how many of the 5 roof rays hit something
@@ -154,14 +155,16 @@ float surfaceAt(float x, float y, float zTop, float zBottom)
     return zTop - llList2Float(r, 1);
 }
 
-// is there floor of your level under c? (a build, not the land, within 1 m below or 1.5 m above your floor - furniture is fine)
+// is there floor of your level under c? (a build - or the land, if the land is your floor - within 1 m below or 1.5 m above
+// your floor; furniture is fine)
 // This keeps an inside camera inside the build even where its walls have no physics.
 integer floorOK(vector c)
 {
     list r = llCastRay(c, <c.x, c.y, gFloorZ - 1.0>, gRayOpts);
     integer st = llList2Integer(r, -1);
     if (st < 0) { gErr = TRUE; return FALSE; }
-    if (st == 0 || llList2Key(r, 0) == NULL_KEY) return FALSE;
+    if (st == 0) return FALSE;
+    if (llList2Key(r, 0) == NULL_KEY && gPrimFloor) return FALSE;     // the land is no floor, unless it IS your floor
     vector h = llList2Vector(r, 1);
     return (h.z >= gFloorZ - 1.0 && h.z <= gFloorZ + 1.5);
 }
@@ -240,10 +243,19 @@ context()
     gTopZ = surfaceAt(gOP.x, gOP.y, gOP.z + 80.0, gOP.z - 5.0);
     gErr = FALSE;                                        // only the floor probe above must succeed
     gWater = llWater(ZERO_VECTOR);
-    // inside or not
-    if (LITE || gIndoors == "outside") gLocal = FALSE;
-    else if (gIndoors == "inside") gLocal = (gPrimFloor || gRoofs > 0);
-    else gLocal = (gPrimFloor && gSky);
+    // inside or not. Auto: on a build floor, and (in the sky, or under a roof - 3 of 5 rays, or 1 with walls around).
+    // A plaza with no roof stays outdoors. Inside is an OVERRIDE: you asked for it, so it always stays inside, even in
+    // a place whose floor, walls and roof have no physics (it then works near you, on the land under you).
+    integer built = (gPrimFloor || gRoofs > 0);
+    integer raw;
+    if (gIndoors == "inside") raw = TRUE;
+    else raw = (gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5)));
+    // sticky: once inside, stay inside until clearly outdoors (no build floor, no roof) or 30 m away. This stops
+    // the camera flipping in and out near a door or where one ray misses.
+    if (!raw && gLocal && gIndoors != "outside" && (built || nHit >= 5) && llVecDist(gOP, gLocalAt) < 30.0) raw = TRUE;
+    if (LITE || gIndoors == "outside") raw = FALSE;
+    gLocal = raw;
+    if (raw) gLocalAt = gOP;
     // inside limits: under the ceiling (or 3.4 m up when no ceiling can be seen), 12 m away (20 m in a big open hall)
     gCapZ = gFloorZ + 3.4;
     if (gRoofs > 0) gCapZ = clampf(ceil - 0.4, gFloorZ + 1.6, gFloorZ + 6.0);
@@ -255,10 +267,10 @@ context()
     gCtxOK = (gRayErr <= 3);                             // too many refused rays: use this now, measure again next cut
     string why = "floor " + llList2String(["land", "a build"], gPrimFloor) + ", " + llList2String(["land below", "in the sky"], gSky)
         + ", roof " + (string)gRoofs + "/5, walls " + (string)nHit + "/8";
-    string t = "outdoors (" + why + "; Auto goes inside on a build floor in the sky)";
-    if (gLocal) t = "inside, the camera stays on your floor (" + why + ", up to " + (string)llRound(gCapZ - gFloorZ) + " m high, " + (string)llRound(gDmax) + " m away)";
+    string t = "outdoors (" + why + "; Auto goes inside on a build floor with a roof over you or nothing but sky below)";
+    if (gLocal && gIndoors == "inside" && !built) t = "inside (set by you), but rays see no floor or roof here: the camera stays near you (" + why + ")";
+    else if (gLocal) t = "inside, the camera stays on your floor (" + why + ", up to " + (string)llRound(gCapZ - gFloorZ) + " m high, " + (string)llRound(gDmax) + " m away)";
     else if (gIndoors == "outside") t = "outdoors: Indoors is set to Outside (" + why + ")";
-    else if (gIndoors == "inside") t = "outdoors: no build floor and no roof here (" + why + ")";
     tsay("scenery: " + t);
 }
 
@@ -641,6 +653,7 @@ default
             loadCfg();
             gPaused = FALSE;
             gCtxOK = FALSE;
+            gLocal = FALSE;
             gLastAz = [];
             gLastType = -1;
             gCuts = 0;

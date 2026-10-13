@@ -86,6 +86,7 @@ FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0, 20.0]
 class Scenery:
     def __init__(s, W, OP, indoors, rnd, yaw=0.0):
         s.W, s.gOP, s.gIndoors, s.rnd, s.yaw = W, OP, indoors, rnd, yaw
+        s.gLocal = False; s.gLocalAt = ZERO_VECTOR
         s.gErr = False; s.gCtxOK = False; s.gLastAz = []; s.gLastType = -1; s.gRetry = 0; s.gRayErr = 0
     def llFrand(s, x): return s.rnd.random() * x
     def ray(s, a, b):
@@ -117,10 +118,11 @@ class Scenery:
             if llList2Integer(u, 0) == 1:
                 s.gRoofs += 1; hz = U[2] + llList2Float(u, 1) * UP_DIRS[i][2]
                 ceil = min(ceil, hz)
-        E = (op[0], op[1], s.gFloorZ + 1.6); s.gWallD = []
+        E = (op[0], op[1], s.gFloorZ + 1.6); s.gWallD = []; nh = 0
         for i in range(8):
             r = s.ray(E, add(E, mul(dirOf(i * 0.785398), 60.0)))
             wd = llList2Float(r, 1)
+            if llList2Integer(r, 0) == 1: nh += 1
             if llList2Integer(r, 0) < 0: wd = 4.0
             s.gWallD.append(wd)
         s.gFloorD = []
@@ -134,9 +136,14 @@ class Scenery:
                 else: break
             s.gFloorD.append(fd)
         s.gErr = False
-        if s.gIndoors == "outside": s.gLocal = False
-        elif s.gIndoors == "inside": s.gLocal = s.gPrimFloor or s.gRoofs > 0
-        else: s.gLocal = s.gPrimFloor and s.gSky
+        nhit = nh
+        built = s.gPrimFloor or s.gRoofs > 0
+        if s.gIndoors == "inside": raw = True
+        else: raw = s.gPrimFloor and (s.gSky or s.gRoofs >= 3 or (s.gRoofs >= 1 and nhit >= 5))
+        if not raw and s.gLocal and s.gIndoors != "outside" and (built or nhit >= 5) and dist(s.gOP, s.gLocalAt) < 30.0: raw = True
+        if s.gIndoors == "outside": raw = False
+        s.gLocal = raw
+        if raw: s.gLocalAt = s.gOP
         s.gCapZ = s.gFloorZ + 3.4
         if s.gRoofs > 0: s.gCapZ = clampf(ceil - 0.4, s.gFloorZ + 1.6, s.gFloorZ + 6.0)
         opn = sum(1 for w in s.gWallD if w >= 25.0)
@@ -146,7 +153,8 @@ class Scenery:
         r = s.W.llCastRay(c, (c[0], c[1], s.gFloorZ - 1.0), 1)
         st = llList2Integer(r, -1)
         if st < 0: s.gErr = True; return False
-        if st == 0 or llList2Key(r, 0) == NULL_KEY: return False
+        if st == 0: return False
+        if llList2Key(r, 0) == NULL_KEY and s.gPrimFloor: return False
         h = llList2Vector(r, 1)
         return s.gFloorZ - 1.0 <= h[2] <= s.gFloorZ + 1.5
     def edge(s, i):
@@ -271,12 +279,16 @@ def worlds():
          [(100, 100, 2500, 130, 112, 2505), (100, 100, 2500, 112, 130, 2505)], True)
     add_("busy region: 25% of rays refused", 20.0, room(110, 110, 3000, 130, 130, 5), (120, 120, 3001.0), [sky], True, err_p=0.25)
     house = room(120, 120, 20.3, 136, 136, 7)
-    add_("house on the ground, Auto", 20.0, house, (128, 128, 21.3), [], False)
+    add_("house on the ground, Auto", 20.0, house, (128, 128, 21.3), [(120, 120, 20.3, 136, 136, 27.3)], True)
+    add_("plaza on the ground (floor, no roof), Auto", 20.0, room(100, 100, 20.3, 130, 130, 5, walls=False, ceil=False), (115, 115, 21.3), [], False)
+    add_("ground mall, ceiling and walls without physics: Auto", 20.0, room(66, 66, 20.3, 186, 186, 10, wall_phys=(False,) * 4, ceil_phys=False), (126, 126, 21.3), [], False)
+    add_("ground mall, ceiling and walls without physics: Inside", 20.0, room(66, 66, 20.3, 186, 186, 10, wall_phys=(False,) * 4, ceil_phys=False), (126, 126, 21.3), [(66, 66, 20.3, 186, 186, 30.3)], True, indoors="inside")
     add_("house on the ground, Indoors=Inside", 20.0, house, (128, 128, 21.3), [(120, 120, 20.3, 136, 136, 27.3)], True, indoors="inside")
+    add_("trailer on the ground, Auto", 20.0, room(120, 120, 20.4, 126, 134, 3.2), (123, 127, 21.4), [(120, 120, 20.4, 126, 134, 23.6)], True)
     add_("trailer on the ground, Indoors=Inside", 20.0, room(120, 120, 20.4, 126, 134, 3.2), (123, 127, 21.4), [(120, 120, 20.4, 126, 134, 23.6)], True, indoors="inside")
     add_("skybox, Indoors=Outside", 20.0, room(110, 110, 3000, 130, 130, 5), (120, 120, 3001.0), [], False, indoors="outside")
     add_("open field, Auto", 20.0, [], (128, 128, 21.0), [], False)
-    add_("open field, Indoors=Inside", 20.0, [], (128, 128, 21.0), [], False, indoors="inside")
+    add_("open field, Indoors=Inside (override)", 20.0, [], (128, 128, 21.0), [(0, 0, 20.0, 256, 256, 40.0)], True, indoors="inside")
     return L
 
 def main():
@@ -332,6 +344,20 @@ def main():
         print(f"   {w['name']:40s} {tot:3d} shots, close fallback {100 * share:3.0f}% (limit {100 * lim:.0f}%), bad {len(bad)}")
         if bad: ok = False; print("   FAIL", *bad[:2])
         if share > lim: ok = False; print("   FAIL too many close fallback shots")
+    # no flipping: walk through a trailer (door at the +y end, 3 m of porch), measuring after each step like the script does
+    # on a 10 m move or a refused-ray re-measure; Auto must stay inside all the way to the porch, and go outdoors on open land
+    tr = room(120, 120, 20.4, 126, 134, 3.2, walls=True, wall_phys=(True, True, True, False))   # the +y wall is the door side: open
+    porch = [Box((120, 134, 20.0, 126, 137, 20.4), nid())]                                        # the porch floor (a prim, no roof)
+    W = World(20.0, tr + porch)
+    S = Scenery(W, (123, 127, 21.4), "auto", random.Random(2), 0.0)
+    path = [(123, 127), (123, 131), (123, 133.5), (123, 135.5), (123, 136.6), (123, 140.0), (123, 150.0), (123, 170.0)]
+    seq = []
+    for (x, y) in path:
+        S.gOP = (x, y, 21.4 if y < 137 else 21.4); S.gCtxOK = False; S.context(); seq.append(S.gLocal)
+    print("walk out of a trailer (Auto):", " ".join("in " if v else "out" for v in seq), "  <- inside on the trailer and porch, outdoors once 30 m of open land away")
+    if not (all(seq[:5]) and not seq[-1]): ok = False; print("   FAIL the decision flipped or never left")
+    changes = sum(1 for i in range(1, len(seq)) if seq[i] != seq[i - 1])
+    if changes > 1: ok = False; print(f"   FAIL it flipped {changes} times (more than the one exit)")
     # the bug this file exists to catch: reading Second Life's [key, position] pairs with the wrong stride
     W = World(20.0, room(110, 110, 3000, 130, 130, 5))
     bd = W.llCastRay((120, 120, 3001.3), (120, 120, 2901.0), 4)

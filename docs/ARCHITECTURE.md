@@ -261,10 +261,11 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 2. **Over you:** 5 rays, 40 m, from `floor + 1.8`: straight up and 25° off in four directions. `gRoofs` is the number that hit, and the ceiling is the lowest hit. A refused ray counts as no information.
 3. **Around you:** 8 rays at eye height (`floor + 1.6`), 60 m → `gWallD`. A refused ray counts as a wall at 4 m.
 4. **Floor outline:** in each of the 8 directions, `floorOK()` is probed at 1.5, 3, 5, 8, 12 and 20 m, stopping at a wall or at the first gap. A refused probe is skipped. The result is `gFloorD`.
-5. **Decision:**
-   - Auto: `gLocal = gPrimFloor && gSky`.
-   - Inside: `gLocal = gPrimFloor || gRoofs > 0`.
-   - Outside, and Lite: `gLocal = FALSE`.
+5. **Decision** (v4.4.1):
+   - Auto: `gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5))`. A build floor in the sky, or on the ground under a roof. A plaza with no roof stays outdoors.
+   - Inside: always `TRUE`, an override. If nothing is detectable, the camera stays near you. `floorOK()` then accepts the land as your floor, because the land *is* your floor.
+   - Outside, and Lite: `FALSE`.
+   - **Sticky (not for Outside):** if the raw answer is "outdoors", but you were inside a moment ago, you are still on a build floor or under a roof (or 5 or more walls hit), and you are within 30 m of `gLocalAt` (where it last confirmed), you stay inside. This stops flipping near a door or where one ray misses. START clears the memory.
 6. **Limits:**
    - `gCapZ` = ceiling − 0.4, kept between floor + 1.6 and floor + 6. With no roof seen it is floor + 3.4.
    - `gDmax` = 12 m, or 20 m if 5 or more directions are open for 25 m or more.

@@ -119,15 +119,18 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
   - **Wide eye-level views**, 2.5–4 m up, level along the horizon.
   - Nothing may block the view. Every new spot comes from a clearly different direction.
   - The camera stays inside your region.
-- **Indoors (reworked in 4.4.0):** the HUD judges a place by the **floor under you**, the one surface that always has physics because people walk on it. Walls, ceilings and windows are often built without physics, and rays pass through them, so they are only used when they can be seen.
+- **Indoors (reworked in 4.4.0, rules refined in 4.4.1):** the HUD judges a place by the **floor under you**, the one surface that always has physics because people walk on it. Walls, ceilings and windows are often built without physics, and rays pass through them, so they are only used when they can be seen.
 
   | Where you are | Auto | Indoors = Inside | Indoors = Outside |
   |---|---|---|---|
   | **On a build in the sky:** skybox, sky mall, sky club, sky deck (no land within 100 m under you) | **inside** | inside | outdoor views |
-  | **On a build on the ground:** a house, a shop, a trailer | outdoor views, above the roof (as v3) | **inside** | outdoor views |
-  | **On the land:** under a roof | outdoor views | inside | outdoor views |
-  | **On the land:** in the open | outdoor views | outdoor views (nothing to be inside) | outdoor views |
+  | **On a build on the ground, with a roof over you:** a house, a shop, a trailer, a roofed mall | **inside** (4.4.1) | inside | outdoor views |
+  | **On a build on the ground, no roof:** a plaza, a deck, a pier | outdoor views | inside | outdoor views |
+  | **On the land, in the open** | outdoor views | inside, near you (an override) | outdoor views |
+  | A build whose floor, walls and roof all have **no physics** (rays see nothing) | outdoor views (nothing to detect) | inside, near you | outdoor views |
 
+  - **Auto does not flip.** Once it decides you are inside, it stays inside until you are clearly outdoors (no build floor and no roof) or 30 m away from where it last confirmed it.
+  - **Indoors = Inside is a real override.** If you choose it, it stays inside even where nothing can be detected: the camera then stays within 12–20 m of you at eye height or under the ceiling.
   - **Inside views**, mixed: **high** (under the ceiling, looking down across your area), **eye level** (looking back across your area), **you small** (from across the space).
   - Every inside camera passes four checks:
     1. A clear line from your eye, with 0.5 m to spare.

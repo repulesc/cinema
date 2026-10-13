@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.4.1
+**Indoors: consistent in a trailer, and a real override for places rays cannot see.**
+- **Auto now also goes inside on a build on the ground when there is a roof over you** (house, shop, trailer, roofed mall). A plaza or deck with no roof stays outdoors. Before, ground builds always got outdoor views in Auto, and a measurement that differed from one moment to the next made the trailer flip between in and out.
+- **No flipping:** once inside, it stays inside until you are clearly outdoors or 30 m away.
+- **Indoors = Inside always stays inside**, even where the floor, walls and roof have no physics. It then works near you, with the land as your floor.
+- The simulation gained a ground plaza, a ground mall without physics (Auto stays outdoors, Inside works), a trailer in Auto, a walk through a trailer's doorway, and the open-field override.
+
 ## 4.4.0
 **Indoor mode reworked to be reliable** (it failed at Velour Mall and in skyboxes):
 - **A bug:** 4.3.1 read Second Life's ray results with the wrong stride (3 entries per hit instead of 2), so every skybox looked like "land below" and Auto never went inside.
