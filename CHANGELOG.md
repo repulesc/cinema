@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.0
+**The product is now called Take 12** (brand 12, Marketplace title "Take 12 - Cinematic Camera HUD").
+- The clapper icon shows "12" on its slate, in three looks: classic (white), rec (red light) and viewfinder (cyan). Re-upload `hud/art/cinema_icon_256x128.png` to get it.
+- Names in chat lines, menus and the welcome dialog changed from Cinema to Take 12.
+- The Read Me notecard is `Take 12 - Read Me`, and the HUD now also accepts any notecard in its prim whose name contains "Read Me".
+- End-user Read Me notecard (`hud/notecard/read_me.txt`), Marketplace listing text, and ad boards (`hud/marketing/`) with all three clapper looks.
+
 ## 4.0.1
 - The button no longer fades so hard: 40 % visible by default (it was 15 % and got lost). Options › 🔆 Fade cycles 20 / 40 / 70 %.
 - Friends › ➖ Remove lists all saved friends (here or not) and removes just the one you tap.

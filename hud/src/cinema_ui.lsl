@@ -1,5 +1,5 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_ui.lsl  (v4)
+//  Take 12  -  cinema_ui.lsl  (v4)
 //  Touch decoding (tap / double-tap / long press), emoji dialog menus, /77 chat
 //  commands, settings in protected Linkset Data, the button look (clap + fade),
 //  first-run welcome, owner-change reset.
@@ -7,9 +7,9 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.0.1";
+string VERSION  = "4.1.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
-string NOTECARD = "Cinema HUD - Read Me";
+string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Read Me" also works
 
 integer UI_STATE    = 7320;
 integer UI_MENU     = 7321;
@@ -120,9 +120,21 @@ initDefaults(integer force)
 
 giveHelp()
 {
-    if (llGetInventoryType(NOTECARD) == INVENTORY_NOTECARD) llGiveInventory(gOwner, NOTECARD);
-    else llOwnerSay("[Cinema] The Read Me notecard is not in this HUD.");
-    llOwnerSay("[Cinema] Double-tap: scenery camera. Tap: menu (while rolling: stop). Long press: live menu (photo, save, next). Commands: /" + (string)gCmdChan + " help");
+    string card = "";
+    if (llGetInventoryType(NOTECARD) == INVENTORY_NOTECARD) card = NOTECARD;
+    else
+    {
+        // forgiving: any notecard in this prim with "Read Me" in its name
+        integer i;
+        for (i = llGetInventoryNumber(INVENTORY_NOTECARD) - 1; i >= 0; i--)
+        {
+            string nm = llGetInventoryName(INVENTORY_NOTECARD, i);
+            if (llSubStringIndex(nm, "Read Me") >= 0) card = nm;
+        }
+    }
+    if (card != "") llGiveInventory(gOwner, card);
+    else llOwnerSay("[Take 12] The Read Me notecard is not in this HUD. Put a notecard with \"Read Me\" in its name into the same prim as the scripts.");
+    llOwnerSay("[Take 12] Double-tap: scenery camera. Tap: menu (while rolling: stop). Long press: live menu (photo, save, next). Commands: /" + (string)gCmdChan + " help");
 }
 
 // new owner (or first run): wipe whatever was configured before
@@ -242,8 +254,8 @@ string modeName()
 
 string title()
 {
-    string h = "Cinema";
-    if (gEmoji) h = "🎬 Cinema";
+    string h = "Take 12";
+    if (gEmoji) h = "🎬 Take 12";
     string s = "idle";
     if (gUiState == "rolling") s = modeName() + " rolling";
     else if (gUiState == "frozen") s = modeName() + " frozen";
@@ -329,7 +341,7 @@ openMenu(string page)
     }
     else
     {
-        text = "Welcome to Cinema\nDouble-tap: scenery camera\nTap: menu (while rolling: stop)\nHold: live menu\nIdle for a while and it starts by itself.";
+        text = "Welcome to Take 12\nDouble-tap: scenery camera\nTap: menu (while rolling: stop)\nHold: live menu\nIdle for a while and it starts by itself.";
         b = ["gotit", "help"];
     }
     llDialog(gOwner, text, order(b), gChan);
@@ -340,7 +352,7 @@ toggle(string k, string name)
     string v = "1";
     if (cfgGet(k) == "1") v = "0";
     cfgSet(k, v);
-    llOwnerSay("[Cinema] " + name + ": " + onoff(k));
+    llOwnerSay("[Take 12] " + name + ": " + onoff(k));
 }
 
 // "2 min" -> 120, "90 s" -> 90, "75 m" -> 75
@@ -390,7 +402,7 @@ onChoice(string msg)
     {
         integer i = llListFindList(PACE_IDS, [id]);
         if (i >= 0) cfgSet("hold", llList2String(PACE_SECS, i));
-        llOwnerSay("[Cinema] Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
+        llOwnerSay("[Take 12] Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
         openMenu("main");
     }
     else if (gPage == "afk")
@@ -403,7 +415,7 @@ onChoice(string msg)
             cfgSet("afk_sec", sec);
             cfgSet("afk_on", "1");
         }
-        llOwnerSay("[Cinema] AFK scenery: " + afkText());
+        llOwnerSay("[Take 12] AFK scenery: " + afkText());
         openMenu("main");
     }
     else if (gPage == "opts")
@@ -425,7 +437,7 @@ onChoice(string msg)
                 if (cfgGet("fade") == "40") nf = "70";
                 else if (cfgGet("fade") == "70") nf = "20";
                 cfgSet("fade", nf);
-                llOwnerSay("[Cinema] Button fade while rolling: " + nf + " % visible");
+                llOwnerSay("[Take 12] Button fade while rolling: " + nf + " % visible");
                 if (gUiState != "idle") setLook("rolling");
             }
             openMenu("opts");
@@ -434,14 +446,14 @@ onChoice(string msg)
     else if (gPage == "indoors")
     {
         cfgSet("indoors", id);
-        llOwnerSay("[Cinema] Indoors: " + id);
+        llOwnerSay("[Take 12] Indoors: " + id);
         openMenu("opts");
     }
     else if (gPage == "chat")
     {
         if (id == "on") cfgSet("chat_cuts", "1");
         else cfgSet("chat_cuts", "0");
-        llOwnerSay("[Cinema] Chat cuts: " + onoff("chat_cuts"));
+        llOwnerSay("[Take 12] Chat cuts: " + onoff("chat_cuts"));
         openMenu("opts");
     }
     else if (gPage == "favs")
@@ -453,7 +465,7 @@ onChoice(string msg)
             integer j;
             for (j = 0; j < llGetListLength(ks); j++) llLinksetDataDeleteProtected(llList2String(ks, j), PASS);
         }
-        llOwnerSay("[Cinema] Favourite spots cleared.");
+        llOwnerSay("[Take 12] Favourite spots cleared.");
         openMenu("opts");
     }
     else if (gPage == "altcam")
@@ -476,7 +488,7 @@ onChoice(string msg)
             initDefaults(TRUE);
             gEmoji = TRUE;
             llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
-            llOwnerSay("[Cinema] Settings reset to defaults.");
+            llOwnerSay("[Take 12] Settings reset to defaults.");
         }
         openMenu("opts");
     }
@@ -514,7 +526,7 @@ onLong()
 // ============================================================================
 help()
 {
-    llOwnerSay("[Cinema] commands: /" + (string)gCmdChan + " scenery | personal | social | friends | stop | next | photo | fav | menu | status | pace <s> | reach <m>|relearn | indoors auto|inside|outside | friend list|clear | trace on|off | emoji on|off | cutmode on|off | chan <n> | grab | reset");
+    llOwnerSay("[Take 12] commands: /" + (string)gCmdChan + " scenery | personal | social | friends | stop | next | photo | fav | menu | status | pace <s> | reach <m>|relearn | indoors auto|inside|outside | friend list|clear | trace on|off | emoji on|off | cutmode on|off | chan <n> | grab | reset");
 }
 
 onCommand(string msg)
@@ -527,19 +539,19 @@ onCommand(string msg)
     else if (c == "menu") openMenu("main");
     else if (c == "status")
     {
-        llOwnerSay("[Cinema/ui] v" + VERSION + " commands on /" + (string)gCmdChan + ", AFK scenery " + afkText()
+        llOwnerSay("[Take 12/ui] v" + VERSION + " commands on /" + (string)gCmdChan + ", AFK scenery " + afkText()
             + ", pace " + paceName() + " (" + cfgGet("hold") + " s), reach " + cfgGet("reach") + " m, free mem " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, STATUS, "?", "");
     }
-    else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { cfgSet("hold", (string)n); llOwnerSay("[Cinema] Pace: about " + v + " s per view"); }
-    else if (c == "reach" && v == "relearn") { cfgSet("reach", "100"); cfgSet("reach_ok", "0"); llOwnerSay("[Cinema] Reach reset to 100 m"); }
-    else if (c == "reach" && n >= 20 && n <= 250) { cfgSet("reach", (string)n); llOwnerSay("[Cinema] Scenery reach: " + v + " m"); }
-    else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Cinema] Indoors: " + v); }
+    else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { cfgSet("hold", (string)n); llOwnerSay("[Take 12] Pace: about " + v + " s per view"); }
+    else if (c == "reach" && v == "relearn") { cfgSet("reach", "100"); cfgSet("reach_ok", "0"); llOwnerSay("[Take 12] Reach reset to 100 m"); }
+    else if (c == "reach" && n >= 20 && n <= 250) { cfgSet("reach", (string)n); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
+    else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Take 12] Indoors: " + v); }
     else if (c == "friend" && (v == "list" || v == "clear")) llMessageLinked(LINK_SET, UI_FRIENDS, v, "");
     else if (c == "trace" || c == "emoji" || c == "cutmode")
     {
         cfgSet(c, (string)(v == "on"));
-        llOwnerSay("[Cinema] " + c + ": " + onoff(c));
+        llOwnerSay("[Take 12] " + c + ": " + onoff(c));
     }
     else if (c == "chan" && n > 0 && n != 9)
     {
@@ -547,14 +559,14 @@ onCommand(string msg)
         gCmdChan = n;
         if (gCmdListen) llListenRemove(gCmdListen);
         gCmdListen = llListen(gCmdChan, "", gOwner, "");
-        llOwnerSay("[Cinema] Commands now on /" + v);
+        llOwnerSay("[Take 12] Commands now on /" + v);
     }
     else if (c == "reset")
     {
         initDefaults(TRUE);
         gEmoji = TRUE;
         llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
-        llOwnerSay("[Cinema] Settings reset to defaults.");
+        llOwnerSay("[Take 12] Settings reset to defaults.");
     }
     else help();
 }
@@ -573,7 +585,7 @@ default
         gCmdChan = (integer)cfgGet("cmd_chan");
         if (gCmdChan <= 0) gCmdChan = 77;
         gCmdListen = llListen(gCmdChan, "", gOwner, "");
-        llOwnerSay("[Cinema] ui v" + VERSION + " ready, commands on /" + (string)gCmdChan + ", free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] ui v" + VERSION + " ready, commands on /" + (string)gCmdChan + ", free memory " + (string)llGetFreeMemory());
         if (gFirst)
         {
             cfgWrite("seen_intro", "1");
@@ -641,7 +653,7 @@ default
         }
         else if (num == UI_MENU) openMenu(str);
         else if (num == MSG_VER && str != "?" && str != VERSION)
-            llOwnerSay("[Cinema] WARNING: " + (string)id + " script is version " + str + ", ui is " + VERSION + ". Re-drop all Cinema scripts from the same release.");
+            llOwnerSay("[Take 12] WARNING: " + (string)id + " script is version " + str + ", ui is " + VERSION + ". Re-drop all Take 12 scripts from the same release.");
     }
 
     listen(integer channel, string name, key id, string msg)

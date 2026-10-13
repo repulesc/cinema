@@ -1,5 +1,5 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_scenery.lsl  (v4)  - the default mode
+//  Take 12  -  cinema_scenery.lsl  (v4)  - the default mode
 //  Finds grand, unobstructed views of the place around you and has core cut to
 //  them: high drone views looking down over your area, and wide eye-level views
 //  along the horizon. People are ignored. The camera stays inside your region
@@ -10,7 +10,7 @@
 //  11 room centre, 12 room "you small".
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -90,7 +90,7 @@ loadCfg()
 
 tsay(string s)
 {
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    if (gTrace) llOwnerSay("[Take 12] " + s);
 }
 
 float clampf(float v, float lo, float hi)
@@ -393,7 +393,7 @@ addFav(string spot)
     L += [spot];
     while (llGetListLength(L) > 8) L = llDeleteSubList(L, 0, 0);
     llLinksetDataWriteProtected(favKey(), llDumpList2String(L, ";"), PASS);
-    llOwnerSay("[Cinema] ⭐ spot saved (" + (string)llGetListLength(L) + "/8 here)");
+    llOwnerSay("[Take 12] ⭐ spot saved (" + (string)llGetListLength(L) + "/8 here)");
 }
 
 // one of the saved favourites that is in reach and has a clear view: [cam, focus, 7, az] or []
@@ -502,7 +502,7 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Cinema] scenery v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] scenery v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gLastType = -1;
         loadCfg();
@@ -540,7 +540,7 @@ default
         {
             if (num == CFG_CHANGED) loadCfg();
             else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
-            else if (num == STATUS && str == "?") llOwnerSay("[Cinema/scenery] v" + VERSION + " idle, reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
+            else if (num == STATUS && str == "?") llOwnerSay("[Take 12/scenery] v" + VERSION + " idle, reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
         }
         else if (num == NEXT) nextShot();
         else if (num == PAUSE) gPaused = TRUE;
@@ -570,7 +570,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/scenery] v" + VERSION + " active, cuts " + (string)gCuts + ", under a roof " + (string)gCovered + ", inside-mode " + (string)gInside
+            llOwnerSay("[Take 12/scenery] v" + VERSION + " active, cuts " + (string)gCuts + ", under a roof " + (string)gCovered + ", inside-mode " + (string)gInside
                 + ", reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
         }
     }

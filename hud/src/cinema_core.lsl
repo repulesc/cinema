@@ -1,12 +1,12 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_core.lsl  (v4)
+//  Take 12  -  cinema_core.lsl  (v4)
 //  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social
 //  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.1.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 
 integer START      = 7301;   // core -> workers  "<mode>|<fov>"
@@ -249,7 +249,7 @@ engage(string mode)
 {
     if (!gPermOK)
     {
-        llOwnerSay("[Cinema] No camera permission yet - re-attach the HUD.");
+        llOwnerSay("[Take 12] No camera permission yet - re-attach the HUD.");
         llRequestPermissions(gOwner, gNeed);
         return;
     }
@@ -266,7 +266,7 @@ engage(string mode)
     gLastTick = llGetTime();
     askWorker("start");
     setUi("rolling");
-    if (gTrace) llOwnerSay("[Cinema] " + mode + " camera on");
+    if (gTrace) llOwnerSay("[Take 12] " + mode + " camera on");
     llSetTimerEvent(0.5);
 }
 
@@ -355,7 +355,7 @@ activeTick(float dt)
             if (!gWorkerOK && !gWarned)
             {
                 gWarned = TRUE;
-                llOwnerSay("[Cinema] The " + gMode + " script is not answering, so you get basic shots. Check that it is in this prim and running (Build > Scripts > Set Scripts to Running in Selection) and look at the Script Errors window.");
+                llOwnerSay("[Take 12] The " + gMode + " script is not answering, so you get basic shots. Check that it is in this prim and running (Build > Scripts > Set Scripts to Running in Selection) and look at the Script Errors window.");
             }
             basicShot();
         }
@@ -411,8 +411,8 @@ grabTest(float t)
 {
     if (t - gApplyT < 3.0) return;
     float off = llVecDist(llGetCameraPos(), gShotPos);
-    if (off < 1.0) llOwnerSay("[Cinema] grab test: the viewer FOLLOWED the script camera. Camera control works.");
-    else llOwnerSay("[Cinema] grab test: the viewer IGNORED the script camera (" + (string)off + " m off). Press ESC, leave Alt-cam / mouselook, try again.");
+    if (off < 1.0) llOwnerSay("[Take 12] grab test: the viewer FOLLOWED the script camera. Camera control works.");
+    else llOwnerSay("[Take 12] grab test: the viewer IGNORED the script camera (" + (string)off + " m off). Press ESC, leave Alt-cam / mouselook, try again.");
     bail("test");
 }
 
@@ -429,10 +429,10 @@ default
         gLastAct = llGetUnixTime();
         gCamRot = ZERO_ROTATION;
         loadCfg();
-        llOwnerSay("[Cinema] core v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] core v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
-        else llOwnerSay("[Cinema] Wear me as a HUD (right-click > Attach To HUD).");
+        else llOwnerSay("[Take 12] Wear me as a HUD (right-click > Attach To HUD).");
         setUi(idleUi());
         llSetTimerEvent(2.0);
     }
@@ -463,7 +463,7 @@ default
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
-        else llOwnerSay("[Cinema] Camera / control permission was not granted - re-attach the HUD.");
+        else llOwnerSay("[Take 12] Camera / control permission was not granted - re-attach the HUD.");
     }
 
     changed(integer c)
@@ -573,7 +573,7 @@ default
                     gMode = "personal";
                     basicShot();
                     gState = ST_TEST;
-                    llOwnerSay("[Cinema] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
+                    llOwnerSay("[Take 12] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
                     llSetTimerEvent(0.25);
                 }
             }
@@ -618,13 +618,13 @@ default
                     list F = llParseStringKeepNulls(gLast, ["|"], []);
                     llMessageLinked(LINK_SET, FAV, llList2String(F, 0) + "|" + llList2String(F, 1), "");
                 }
-                else llOwnerSay("[Cinema] Save spot works while the scenery camera is rolling.");
+                else llOwnerSay("[Take 12] Save spot works while the scenery camera is rolling.");
             }
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
+            llOwnerSay("[Take 12/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
                 + ", permissions " + (string)gPermOK + ", worker answered " + (string)gWorkerOK
                 + ", shot type " + (string)gType + ", free mem " + (string)llGetFreeMemory());
         }

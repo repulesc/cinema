@@ -1,5 +1,5 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_people.lsl  (v4)  - the optional modes
+//  Take 12  -  cinema_people.lsl  (v4)  - the optional modes
 //  personal: composed static shots of you that follow you as you walk.
 //  social:   over-the-shoulder pairs and group tableaux of you and the people
 //            around you (portrait of you while nobody is near).
@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -132,7 +132,7 @@ vector dirOf(float a)
 
 tsay(string s)
 {
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    if (gTrace) llOwnerSay("[Take 12] " + s);
 }
 
 loadCfg()
@@ -567,7 +567,7 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Cinema] people v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] people v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gFov = 1.047198;
         gSide = 1.0;
@@ -628,7 +628,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "people");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/people] v" + VERSION + " active " + (string)gActive + " (" + gMode + "), people near "
+            llOwnerSay("[Take 12/people] v" + VERSION + " active " + (string)gActive + " (" + gMode + "), people near "
                 + (string)llGetListLength(gGrp) + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;

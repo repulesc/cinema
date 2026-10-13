@@ -1,5 +1,5 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_friends.lsl  (v4)  - Friends mode
+//  Take 12  -  cinema_friends.lsl  (v4)  - Friends mode
 //  You plus the friends you picked (up to 10, within 30 m) in one composed shot.
 //  While everyone stays in the frame the camera glides slowly to keep the group
 //  framed; if anyone is out of frame for about 1 s it cuts to a wider shot that
@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -144,7 +144,7 @@ vector dirOf(float a)
 
 tsay(string s)
 {
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    if (gTrace) llOwnerSay("[Take 12] " + s);
 }
 
 loadCfg()
@@ -618,7 +618,7 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Cinema] friends v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] friends v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gFov = 1.047198;
         gSide = 1.0;
@@ -688,7 +688,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "friends");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/friends] v" + VERSION + " active " + (string)gActive + ", saved " + (string)llGetListLength(gFKeys) + ", here "
+            llOwnerSay("[Take 12/friends] v" + VERSION + " active " + (string)gActive + ", saved " + (string)llGetListLength(gFKeys) + ", here "
                 + (string)llGetListLength(gGrp) + ", glides " + (string)gGlides + ", snaps " + (string)gSnaps + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;

@@ -1,7 +1,7 @@
-CINEMA HUD  -  READ ME
+TAKE 12  -  READ ME
 Your idle time, on film.
 
-Cinema HUD turns Second Life into a quiet film. Your view leaves your avatar and cuts between still, grand views of the place you are in: high drone shots, wide eye-level shots, even the inside of your skybox. Each view is held for about a minute, then it cuts to the next. No effort, no fiddling.
+Take 12 turns Second Life into a quiet film. Your view leaves your avatar and cuts between still, grand views of the place you are in: high drone shots, wide eye-level shots, even the inside of your skybox. Each view is held for about a minute, then it cuts to the next. No effort, no fiddling.
 
 
 === QUICK START =========================================

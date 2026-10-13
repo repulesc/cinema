@@ -1,12 +1,12 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_picker.lsl  (v4)  - the Friends page and friend picker
+//  Take 12  -  cinema_picker.lsl  (v4)  - the Friends page and friend picker
 //  Menu page: Start / Pick / Clear. Picker: people within 20 m, one button each,
 //  tap a name to add or remove (up to 10 friends, saved in protected Linkset Data
 //  as "key,name;key,name;..."). Starting Friends mode is CMD "friends" to core;
 //  the camera work is in cinema_friends.lsl.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -112,7 +112,7 @@ integer hereNow()
 friendsPage()
 {
     loadFriends();
-    string head = "Cinema";
+    string head = "Take 12";
     if (gEmoji) head = "💞 Friends";
     string text = head + " · " + (string)llGetListLength(gFKeys) + " saved · " + (string)hereNow() + " here now\n";
     if (llGetListLength(gFKeys) == 0) text += "Nobody yet: use Pick to choose from the people near you.";
@@ -171,7 +171,7 @@ removeMenu(integer pg)
     integer n = llGetListLength(gFNames);
     if (n == 0)
     {
-        llOwnerSay("[Cinema] Your friends list is empty.");
+        llOwnerSay("[Take 12] Your friends list is empty.");
         friendsPage();
         return;
     }
@@ -212,7 +212,7 @@ onChoice(string msg)
             gFKeys = [];
             gFNames = [];
             saveFriends();
-            llOwnerSay("[Cinema] Friends list cleared.");
+            llOwnerSay("[Take 12] Friends list cleared.");
         }
         friendsPage();
     }
@@ -226,7 +226,7 @@ onChoice(string msg)
             if (j >= 0)
             {
                 integer at = gPickPg * 9 + j;
-                llOwnerSay("[Cinema] Removed " + llList2String(gFNames, at));
+                llOwnerSay("[Take 12] Removed " + llList2String(gFNames, at));
                 gFKeys = llDeleteSubList(gFKeys, at, at);
                 gFNames = llDeleteSubList(gFNames, at, at);
                 saveFriends();
@@ -250,7 +250,7 @@ onChoice(string msg)
                     gFKeys = llDeleteSubList(gFKeys, at, at);
                     gFNames = llDeleteSubList(gFNames, at, at);
                 }
-                else if (llGetListLength(gFKeys) >= MAX_F) llOwnerSay("[Cinema] Friends list is full (" + (string)MAX_F + "). Remove someone first.");
+                else if (llGetListLength(gFKeys) >= MAX_F) llOwnerSay("[Take 12] Friends list is full (" + (string)MAX_F + "). Remove someone first.");
                 else
                 {
                     gFKeys += [k];
@@ -270,7 +270,7 @@ default
     {
         gOwner = llGetOwner();
         loadFriends();
-        llOwnerSay("[Cinema] picker v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
+        llOwnerSay("[Take 12] picker v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "picker");
     }
 
@@ -293,20 +293,20 @@ default
             else if (str == "list")
             {
                 loadFriends();
-                llOwnerSay("[Cinema] Friends (" + (string)llGetListLength(gFKeys) + "/" + (string)MAX_F + "): " + llDumpList2String(gFNames, ", "));
+                llOwnerSay("[Take 12] Friends (" + (string)llGetListLength(gFKeys) + "/" + (string)MAX_F + "): " + llDumpList2String(gFNames, ", "));
             }
             else if (str == "clear")
             {
                 gFKeys = [];
                 gFNames = [];
                 saveFriends();
-                llOwnerSay("[Cinema] Friends list cleared.");
+                llOwnerSay("[Take 12] Friends list cleared.");
             }
         }
         else if (num == CFG_CHANGED) loadFriends();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "picker");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Cinema/picker] v" + VERSION + " saved friends " + (string)llGetListLength(gFKeys) + ", free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/picker] v" + VERSION + " saved friends " + (string)llGetListLength(gFKeys) + ", free mem " + (string)llGetFreeMemory());
     }
 
     listen(integer channel, string name, key id, string msg)

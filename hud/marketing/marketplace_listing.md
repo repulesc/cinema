@@ -1,23 +1,23 @@
 # Marketplace listing: copy-paste text
 
-The name below is a placeholder ("Cinema HUD"). When you pick the final name, replace it everywhere here. Check the Marketplace first for names that are already taken.
+The name is **Take 12** (brand **12**). The descriptor "Cinematic Camera HUD" does the searching, and the name does the remembering.
 
 Fields marked **(you)** need your own details (price, creator, support contact).
 
 ---
 
-## Product name (pick one)
-- **Cinema HUD: Scenery, Skybox and Friends Camera**
-- Cinema HUD - AFK Cinematic Camera (drone views, skybox rooms, friends)
+## Product name
+- **Take 12 - Cinematic Camera HUD** (Marketplace title, box and folder: use the same text everywhere, so buyers find the folder after unboxing)
+- Longer title option for search: **Take 12 - Cinematic Camera HUD: Drone Scenery, Skybox, Friends**
 
 ## Short description (the first line shows in search results; keep it first)
 Turn your idle time into a quiet film. One tiny HUD button sends your camera out to still, grand views of the place you are in: drone shots, wide horizons, even the inside of your skybox.
 
 ## Full description
 
-**Double-tap. Walk away. Watch the world.**
+**Take 12: double-tap, walk away, watch the world.**
 
-Cinema HUD is a one-button camera HUD for people who love how Second Life looks. Double-tap the little pixel clapper, or just go AFK, and your view lifts off your avatar and starts cutting between still, beautifully placed views of the place you are standing in. Each view is held for about a minute, then it cuts to the next. Calm, never twitchy.
+Take 12 is a one-button camera HUD for people who love how Second Life looks. Double-tap the little pixel clapper, or just go AFK, and your view lifts off your avatar and starts cutting between still, beautifully placed views of the place you are standing in. Each view is held for about a minute, then it cuts to the next. Calm, never twitchy.
 
 **What it does**
 - **Scenery camera**: high drone views and wide eye-level views up to about 100 m away, always placed where nothing blocks the picture. You are tiny in the frame, or not in it at all.
@@ -29,6 +29,7 @@ Cinema HUD is a one-button camera HUD for people who love how Second Life looks.
 - **Favourite spots**: save a view you love, and it comes back now and then.
 
 **Easy to use**
+- The button is a pixel-art clapper with the number 12 on its slate, and you can choose the look (classic, red record light, or cyan viewfinder).
 - Tap = menu. Double-tap = start. Hold while it rolls = live menu (photo, save, next).
 - Starts by itself when you go idle (you choose how long).
 - Any movement key, or one tap, and your own camera is back instantly.
@@ -55,25 +56,25 @@ Cinema HUD is a one-button camera HUD for people who love how Second Life looks.
 - Photo hold and favourite spots
 - Starts automatically when you are AFK
 - Adjustable pace, from 30 s to 2 min per view
-- Tiny pixel-art button that fades while rolling
+- Tiny pixel-art clapper button, in three looks, that fades while rolling
 - Read Me notecard and chat commands included
 
 ## Keywords / tags
-camera, cinematic, cinema, hud, afk, drone, scenery, photography, snapshot, skybox, machinima, screensaver, film, movie, viewer, friends, social, photo, tool
+take 12, take12, 12, camera, cinematic, cinema, hud, afk, drone, scenery, photography, snapshot, skybox, machinima, screensaver, film, movie, viewer, friends, social, photo, tool
 
 ## Short promo lines (for groups, notices, social posts)
 - Your idle time, on film. A one-button camera HUD for Second Life.
 - Go AFK. Come back to a movie of your favourite place.
 - Drone shots, skybox rooms and friends in frame: one tiny button.
-- Tap twice and walk away. Cinema HUD does the filming.
+- Tap twice and walk away. Take 12 does the filming.
 
 ## One-line "what is it?" (for a vendor board or a friend)
-A tiny HUD that films your Second Life for you: still, grand views, cut calmly, started with a double-tap.
+Take 12 is a tiny HUD that films your Second Life for you: still, grand views, cut calmly, started with a double-tap.
 
 ---
 
 ## Images
-- **`adboard_square_1024.png`**: the main Marketplace image (square).
+- **`adboard_square_1024.png`**: the main Marketplace image (square), with all three clapper looks.
 - **`adboard_wide_1024x512.png`**: an in-world vendor board or banner.
 
 Both boards use drawn pixel-art "views", **not real screenshots**. Marketplace buyers trust real pictures, so add 3 to 5 real snapshots as the extra listing images:
@@ -85,4 +86,4 @@ Both boards use drawn pixel-art "views", **not real screenshots**. Marketplace b
 
 Tips for the snapshots: use Photo hold for a steady shot, hide your UI (Ctrl+Alt+F1 in Firestorm), and use a high-quality setting. Keep the same look: square, with a little room around the subject.
 
-To rename the boards or change a line, edit the `NAME` and `TAGLINE` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`.
+To rename the boards or change a line, edit the `NAME`, `DESCRIPTOR` and `TAGLINE` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`.

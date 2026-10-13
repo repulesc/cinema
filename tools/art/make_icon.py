@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cinema HUD icon: a deliberately pixel-art clapperboard, 16x16, two frames.
+"""Take 12 icon: a deliberately pixel-art clapperboard with "12" on the slate, 16x16, two frames.
 
   frame 1 (left half)  = open   (idle look)
   frame 2 (right half) = clapped (shown for 0.3 s when the camera starts)
@@ -24,6 +24,7 @@ PAL = {
     "W": (244, 241, 232, 255),   # chalk white
     "H": (138, 144, 166, 255),   # chalk lines
     "C": (255, 90, 95, 255),     # coral accent
+    "B": (110, 214, 246, 255),   # cyan (viewfinder variant)
 }
 
 def blank():
@@ -45,19 +46,21 @@ def draw(open_, v):
                 g[y][x] = stripe(s2, s1, x + (y - 8))
             else:
                 g[y][x] = "D"
-    # chalk on the slate (rows 11..14)
-    if v == "viewfinder":
-        for (x, y) in [(3, 11), (4, 11), (3, 12), (11, 11), (12, 11), (12, 12),
-                       (3, 13), (3, 14), (4, 14), (12, 13), (12, 14), (11, 14), (7, 12), (8, 13)]:
-            g[y][x] = "W"
-    else:
-        for x in range(3, 9):
-            g[12][x] = "H"
-        for x in list(range(3, 6)) + list(range(7, 10)):
-            g[14][x] = "H"
-        if v == "rec":
-            for (x, y) in [(11, 12), (12, 12), (11, 13), (12, 13)]:
-                g[y][x] = "C"
+    # "12" chalked on the slate (rows 11..14, 3x4 pixel digits)
+    D1 = [".#.", "##.", ".#.", ".#."]
+    D2 = ["##.", "..#", ".#.", "###"]
+    x0 = 4 if v == "viewfinder" else 3   # viewfinder: digits centred
+    for r in range(4):
+        for c in range(3):
+            ink = "B" if v == "viewfinder" else "W"
+            if D1[r][c] == "#": g[11 + r][x0 + c] = ink
+            if D2[r][c] == "#": g[11 + r][x0 + 4 + c] = ink
+    if v == "rec":
+        for (x, y) in [(11, 12), (12, 12), (11, 13), (12, 13)]:
+            g[y][x] = "C"
+    elif v == "classic":
+        for x in range(11, 13):
+            g[13][x] = "H"
     # hinged stick: 4 rows thick (outline, 2 fill, outline), hinge at x=1, bottom row 7
     rise = 4 if open_ else 0
     for x in range(1, 15):

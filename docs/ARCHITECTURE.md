@@ -1,4 +1,4 @@
-# Cinema HUD: Architecture (v4)
+# Take 12: Architecture (v4)
 
 - What the product is: `docs/PRODUCT.md`.
 - The order of work: `docs/ROADMAP.md`.

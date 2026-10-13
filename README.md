@@ -1,15 +1,14 @@
-# Cinema HUD
+# Take 12
 
-A one-button Second Life HUD that turns your idle time into cinema.
+A one-button Second Life HUD that turns your idle time into cinema. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
 
-- **Scenery camera (default):** when you go AFK, or tap the button, the camera leaves your avatar and finds clear, grand vantage points around you. It uses high drone views and wide eye-level views up to about 100 m away, with nothing blocking the view. It holds each still view for about a minute, then cuts. No people needed, and you are tiny in the frame or absent.
-- **Personal camera (optional):** composed shots of you that follow you as you walk.
-- **Social camera (optional):** over-the-shoulder pairs and group tableaux of you and the people around you.
-- A movement key, a tap or typing gives your camera back instantly.
+- **Scenery camera (default):** when you go AFK, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
+- **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
+- Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
-> **Status:** v3.0.0 works in-world and is frozen in [`legacy/v3/`](legacy/v3/). **v4.0.0** is coded in `hud/` and compile-checked and simulated, but **not yet tested in-world**. The in-world test list is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v4.1.0** (in `hud/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-**v4 in one line:** tap opens a tidy emoji menu, double-tap starts the scenery camera, and the colour-changing button becomes a tiny pixel-art clapper that fades out while rolling. New: **Friends** mode, **room-aware Scenery** (skyboxes), **Photo hold**, **Favourite spots** and **chat cuts** in Social.
+**Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
 ## Repository layout
 | Path | Contents |
@@ -36,12 +35,12 @@ A one-button Second Life HUD that turns your idle time into cinema.
 
 ## Building the HUD in-world (v4)
 1. **Upload the texture** `hud/art/cinema_icon_256x128.png` (keep the alpha; no lossless needed).
-2. **Make the prim:** one box, size `<0.01, 0.04, 0.04>` (about 40 px). Name it `Cinema HUD`.
+2. **Make the prim:** one box, size `<0.01, 0.04, 0.04>` (about 40 px). Name it `Take 12`.
    - Put the texture on the face that points at you when it is on a HUD (try the +X face), repeats **0.5 × 1.0**, offset horizontal **-0.25**. The script sets this up itself on first run.
    - Colour white, no glow. The scripts set fullbright.
-3. **Delete any old Cinema scripts**, then add the six from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each prints a `ready` line with its free memory.
+3. **Delete any old scripts from the prim (v3 or earlier)**, then add the six from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each prints a `ready` line with its free memory.
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
-5. Create a notecard named `Cinema HUD - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.
+5. Create a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.
 6. Before giving or selling it: change `PASS` (the same string at the top of every script) and set the scripts to no-modify.
 7. Attach it to **HUD Top Right**, drag it into place, and accept the permission request.
 
