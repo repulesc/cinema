@@ -13,6 +13,9 @@ The Lite scripts are **generated** from the full ones, so they cannot drift: `py
 6. **Before selling:** change `PASS` (the same string at the top of every script; **use a different one from the full version**), and set the scripts to no-modify.
 7. **Box and folder name:** `Take 12 Lite - Cinematic Camera HUD`.
 
+## Ad boards
+`hud-lite/marketing/*_lite.png` (square, 3:4 portrait, 4:3 landscape, wide, vendor), made by `tools/art/make_adboard.py`.
+
 ## Listing
 `hud-lite/marketing/marketplace_listing_lite.md`. Suggested price: **about L$99**, with the full version at about L$299.
 

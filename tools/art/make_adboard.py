@@ -3,6 +3,7 @@
 
 Also writes the Lite versions (a LITE ribbon, Room and Friends dimmed as full-version features) to
 hud-lite/marketing/*_lite.png.
+Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor (1024 and 512).
 Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
 hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner) and
 hud/marketing/adboard_vendor_1024.png + adboard_vendor_512.png (a bolder, simpler square for
@@ -283,10 +284,59 @@ def vendor():
     d.text((S // 2, 990), "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
+def _base(W, H):
+    im = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(im)
+    for yy in range(0, H, 4): d.line([(0, yy), (W, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
+    return im, d
+
+def _chip_list():
+    return ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else ["Drone views", "Skybox rooms", "Friends mode", "Photo hold"]
+
+def portrait():
+    """3:4 portrait (768 x 1024): header, one big view, three small views, chips"""
+    W, H = 768, 1024; im, d = _base(W, H)
+    im.paste(clapper(150), (40, 30), clapper(150))
+    ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
+    ptext(im, (220, 112), DESCRIPTOR, 3, CORAL)
+    d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
+    d.text((220, 200), "Double-tap. Walk away. Watch the world.", font=font(20), fill=(170, 176, 200))
+    gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
+    paste_framed(im, scene_img("WIDE", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="WIDE")
+    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("FRIENDS", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
+    for i, (lab, fn) in enumerate(small):
+        x = 48 + i * (gw2 * sc2 + 24)
+        paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
+    if LITE:
+        ribbon(im, (48, 884, 200, 930)); ptext(im, (216, 898), "SCENERY + PHOTO HOLD", 2, (170, 176, 200))
+    else:
+        looks(im, 48, 876, 54, 10); ptext(im, (232, 898), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
+    chips(im, 944, _chip_list(), 20, 30, W - 30, gap=10)
+    d.text((W // 2, 1004), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS"), font=font(14), fill=(120, 126, 150), anchor="mm")
+    return im
+
+def landscape43():
+    """4:3 landscape (1024 x 768): header row and four views"""
+    W, H = 1024, 768; im, d = _base(W, H)
+    im.paste(clapper(110), (40, 22), clapper(110))
+    ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
+    ptext(im, (182, 90), DESCRIPTOR, 2, CORAL)
+    d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
+    if LITE: ribbon(im, (760, 26, 984, 96))
+    else:
+        looks(im, 700, 20, 82, 12)
+        ptext(im, (700, 108), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
+    gw, gh, sc = 56, 34, 7; px, py = 100, 156
+    for i, (lab, fn) in enumerate(SCENES):
+        x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 48)
+        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
+    chips(im, 720, _chip_list(), 20, 30, W - 30, gap=12)
+    return im
+
 if __name__ == "__main__":
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
     for lite, out, suf in ((False, os.path.join(base, "hud", "marketing"), ""), (True, os.path.join(base, "hud-lite", "marketing"), "_lite")):
         LITE = lite; os.makedirs(out, exist_ok=True)
         square().save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide().save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
+        portrait().save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43().save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
         v = vendor(); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
         print("wrote", os.path.normpath(out))

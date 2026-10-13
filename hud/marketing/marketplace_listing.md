@@ -75,6 +75,7 @@ Take 12 is a tiny HUD that films your Second Life for you: still, grand views, c
 
 ## Images
 - **`adboard_square_1024.png`**: the main Marketplace image (square), with all three clapper looks.
+- **`adboard_portrait_3x4_768x1024.png`** (3:4) and **`adboard_landscape_4x3_1024x768.png`** (4:3): the same ad in the two other ratios.
 - **`adboard_wide_1024x512.png`**: an in-world vendor board or banner.
 - **`adboard_vendor_1024.png`** and **`adboard_vendor_512.png`**: a simpler, bolder square for vendor displays, where the picture shows small. Use the 512 for vendors that want a smaller texture.
 
