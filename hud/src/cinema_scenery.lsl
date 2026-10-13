@@ -10,7 +10,7 @@
 //  11 room centre, 12 room "you small".
 // ============================================================================
 
-string VERSION = "4.3.0";
+string VERSION = "4.3.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
@@ -174,21 +174,45 @@ context()
     integer floorless = (llList2Integer(fd, 0) == 0);
     gFloorZ = gOP.z + 0.3 - llList2Float(fd, 1);
     if (floorless) gFloorZ = gOP.z - 1.0;
-    gEnclosed = (gCovered && nHit >= 6);
-    integer sky = (floorless || gOP.z - llGround(ZERO_VECTOR) > 50.0);
+    // "in the sky": nothing but your own floor under you for 100 m. A ray with several hits is reliable from a HUD
+    // (llGround is not); the land reports the null key, and furniture or a thick floor stays within 2 m of your floor
+    integer sky = TRUE;
+    list bd = llCastRay(<gOP.x, gOP.y, gOP.z + 0.3>, <gOP.x, gOP.y, gOP.z - 100.0>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 4]);
+    integer nb = llList2Integer(bd, -1);
+    if (nb < 0) sky = FALSE;
+    for (i = 0; i < nb; i++)
+    {
+        vector bh = llList2Vector(bd, i * 3 + 2);
+        if (llList2Key(bd, i * 3) == NULL_KEY || bh.z < gFloorZ - 2.0) sky = FALSE;
+    }
+    // Auto goes inside with a roof and 5 of 8 walls, in the sky; the Inside setting only needs a roof and 3 walls
+    integer need = 5;
+    if (gIndoors == "inside") need = 3;
+    gEnclosed = (gCovered && nHit >= need);
     gInside = (gEnclosed && sky);
     if (gIndoors == "inside") gInside = gEnclosed;
     else if (gIndoors == "outside") gInside = FALSE;
     if (LITE) gInside = FALSE;
     gSpan = 0.0;
-    gCent = ZERO_VECTOR;
+    vector cs = ZERO_VECTOR;
+    integer ch = 0;
     list ord = [];
     for (i = 0; i < 8; i++)
     {
         float wd = llList2Float(gWallD, i);
-        if (wd > gSpan) gSpan = wd;
-        gCent += llList2Vector(gWallP, i) / 8.0;
+        if (wd < 59.0)                                   // a real wall; a ray that got away through a gap is not
+        {
+            if (wd > gSpan) gSpan = wd;
+            cs += llList2Vector(gWallP, i);
+            ch++;
+        }
         ord += [wd, i];
+    }
+    if (ch > 0) gCent = cs / (float)ch;
+    else
+    {
+        gCent = E;
+        gSpan = 60.0;
     }
     ord = llListSort(ord, 2, FALSE);
     gOrd = [];
@@ -201,9 +225,11 @@ context()
     }
     gRoomZc = clampf(gCeilZ - 0.6, gFloorZ + 1.2, gFloorZ + 6.0);
     gInsideFails = 0;
-    string t = "outdoors";
-    if (gInside) t = "inside a room (" + (string)nHit + "/8 walls, ceiling " + (string)llRound(gCeilZ - gFloorZ) + " m, span " + (string)llRound(gSpan) + " m)";
-    else if (gEnclosed) t = "enclosed on the ground: views from outside, above the roof";
+    string why = "roof " + llList2String(["no", "yes"], gCovered) + ", walls " + (string)nHit + "/8, " + llList2String(["something solid below", "in the sky"], sky);
+    string t = "outdoors (" + why + "; going inside needs a roof, " + (string)need + " walls and the sky)";
+    if (gInside) t = "inside a room (" + why + ", ceiling " + (string)llRound(gCeilZ - gFloorZ) + " m, span " + (string)llRound(gSpan) + " m)";
+    else if (gIndoors == "outside" && gEnclosed) t = "enclosed, but Indoors is set to Outside (" + why + ")";
+    else if (gEnclosed) t = "enclosed, but not in the sky: views from outside, above the roof (" + why + ")";
     tsay("scenery: " + t);
 }
 
@@ -326,7 +352,7 @@ list roomShot()
             // high in a corner, looking across the room through your area
             integer di = llList2Integer(gDiag, (integer)llFrand(2.0));
             float d = llList2Float(gWallD, di);
-            if (d >= 3.0)
+            if (d >= 3.0 && d < 59.0)
             {
                 c = <gOP.x, gOP.y, gRoomZc> + dirOf(di * 0.785398) * (d - 0.8);
                 vector opp = llList2Vector(gWallP, (di + 4) % 8);
@@ -353,7 +379,7 @@ list roomShot()
             // from the far side of the room: you, small in the space
             integer wi = llList2Integer(gOrd, (integer)llFrand(2.0));
             float d = llList2Float(gWallD, wi);
-            if (d >= 6.0)
+            if (d >= 6.0 && d < 59.0)
             {
                 c = <gOP.x, gOP.y, gFloorZ + 2.5> + dirOf(wi * 0.785398) * (d - 0.8);
                 foc = gOP;

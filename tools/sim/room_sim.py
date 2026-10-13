@@ -53,12 +53,21 @@ def context(world, OP, mode="auto"):
     st, d = ray(world, (OP[0], OP[1], OP[2] + 0.3), (OP[0], OP[1], OP[2] - 30))
     floorless = st == 0
     c.floor = OP[2] - 1.0 if floorless else OP[2] + 0.3 - d
-    c.enclosed = c.covered and nhit >= 6
-    sky = floorless or OP[2] - ground > 50
+    # in the sky = nothing but your own floor under you for 100 m (a multi-hit ray; land reports the null key;
+    # furniture or a thick floor stays within 2 m of your floor)
+    gnd = world[0]; top = OP[2] + 0.3
+    land_below = gnd <= top and gnd >= top - 100.0                       # the terrain is somewhere in the 100 m
+    deep = ray(world, (OP[0], OP[1], c.floor - 2.0), (OP[0], OP[1], top - 100.0))[0] == 1 if c.floor - 2.0 > top - 100.0 else False
+    sky = floorless or not (land_below or deep)
+    need = 3 if mode == "inside" else 5
+    c.enclosed = c.covered and nhit >= need
+    c.nhit, c.sky = nhit, sky
     c.inside = c.enclosed and sky
     if mode == "inside": c.inside = c.enclosed
     elif mode == "outside": c.inside = False
-    c.span = max(c.wd); c.cent = tuple(sum(p[k] for p in c.wp) / 8 for k in range(2))
+    real = [i for i in range(8) if c.wd[i] < 59.0]            # a ray that got away through a gap is not a wall
+    c.span = max([c.wd[i] for i in real]) if real else 60.0
+    c.cent = tuple(sum(c.wp[i][k] for i in real) / len(real) for k in range(2)) if real else (OP[0], OP[1])
     ordr = sorted(range(8), key=lambda i: -c.wd[i]); c.ord = ordr
     c.diag = [i for i in ordr if i % 2 == 1][:2]
     c.zc = clampf(c.ceil - 0.6, c.floor + 1.2, c.floor + 6.0)
@@ -86,7 +95,7 @@ def roomShot(world, c, last, lasttype, n_room=5):
         cam = foc = None; need = max(3.0, c.span * 0.4)
         if typ == 10:
             di = c.diag[int(random.random() * 2)] if len(c.diag) == 2 else None
-            if di is not None and c.wd[di] >= 3:
+            if di is not None and 3 <= c.wd[di] < 59:
                 d = c.wd[di]; dv = dirOf(di * 0.785398)
                 cam = (OP[0] + dv[0] * (d - 0.8), OP[1] + dv[1] * (d - 0.8), c.zc)
                 opp = c.wp[(di + 4) % 8]; T = tuple(opp[k] + ((OP[k] if k < 2 else c.floor) - opp[k]) / 3 for k in range(3))
@@ -100,7 +109,7 @@ def roomShot(world, c, last, lasttype, n_room=5):
             foc = (cam[0] + hv[0] / hl * 30, cam[1] + hv[1] / hl * 30, cam[2] - 30 * 0.0349)
         else:
             wi = c.ord[int(random.random() * 2)]; d = c.wd[wi]
-            if d >= 6:
+            if 6 <= d < 59:
                 dv = dirOf(wi * 0.785398); cam = (OP[0] + dv[0] * (d - 0.8), OP[1] + dv[1] * (d - 0.8), c.floor + 2.5)
                 foc = OP; need = math.dist(cam, foc) - 1
         if cam is None: continue
@@ -112,39 +121,64 @@ def roomShot(world, c, last, lasttype, n_room=5):
             if s > bs: bs = s; best = (cam, foc, typ, az, cl, need)
     return best
 
-random.seed(11)
-# (name, world, owner, expect inside?, air boxes (x0,y0,z0,x1,y1,z1) the camera must stay in)
-sky_box = room(110, 110, 3000, 130, 130, 5)
-mall = room(60, 80, 2000, 120, 120, 8)
-tiny = room(126, 126, 1500, 130, 130, 3)
-house = room(120, 120, 20, 136, 136, 7)
-L1 = room(100, 100, 2500, 130, 112, 5); L2 = room(100, 100, 2500, 112, 130, 5)  # overlapping arms of an L
-worlds = [
-    ("skybox 20x20x5 at 3000 m", (20.0, sky_box), (120, 120, 3001.0), True, [(110, 110, 3000, 130, 130, 3005)]),
-    ("sky mall 60x40x8",         (20.0, mall),    (90, 100, 2001.0), True, [(60, 80, 2000, 120, 120, 2008)]),
-    ("tiny sky room 4x4x3",      (20.0, tiny),    (128, 128, 1501.0), True, [(126, 126, 1500, 130, 130, 1503)]),
-    ("house on the ground",      (20.0, house),   (128, 128, 21.0), False, []),
-    ("open field",               (20.0, []),      (128, 128, 21.0), False, []),
+def furnished():
+    f = [(112, 114, 3000, 116, 117, 3000.9), (118, 118, 3000, 121, 120.5, 3000.8), (110.3, 122, 3000, 111, 129, 3002.2), (124, 110.3, 3000, 129, 111.2, 3002.4),
+         (123, 123, 3000, 127, 126, 3000.7), (115, 125, 3000, 115.6, 125.6, 3001.8), (127, 114, 3000, 128, 115, 3001.5), (112, 127, 3000, 113, 128, 3000.4)]
+    return room(110, 110, 3000, 130, 130, 5) + f
+def terrace(sides):
+    r = room(110, 110, 3000, 130, 130, 5)       # 0 floor, 1 ceiling, 2 -x wall, 3 +x wall, 4 -y wall, 5 +y wall
+    return [b for i, b in enumerate(r) if i not in sides]
+
+def main():
+    global ok
+    random.seed(11)
+    # (name, world, owner, expect inside?, air boxes (x0,y0,z0,x1,y1,z1) the camera must stay in)
+    sky_box = room(110, 110, 3000, 130, 130, 5)
+    mall = room(60, 80, 2000, 120, 120, 8)
+    tiny = room(126, 126, 1500, 130, 130, 3)
+    house = room(120, 120, 20, 136, 136, 7)
+    L1 = room(100, 100, 2500, 130, 112, 5); L2 = room(100, 100, 2500, 112, 130, 5)  # overlapping arms of an L
+    worlds = [
+        ("skybox 20x20x5 at 3000 m", (20.0, sky_box), (120, 120, 3001.0), True, [(110, 110, 3000, 130, 130, 3005)]),
+        ("sky mall 60x40x8",         (20.0, mall),    (90, 100, 2001.0), True, [(60, 80, 2000, 120, 120, 2008)]),
+        ("tiny sky room 4x4x3",      (20.0, tiny),    (128, 128, 1501.0), True, [(126, 126, 1500, 130, 130, 1503)]),
+        ("house on the ground",      (20.0, house),   (128, 128, 21.0), False, []),
+        ("open field",               (20.0, []),      (128, 128, 21.0), False, []),
+        ("furnished skybox",        (20.0, furnished()), (120, 119, 3001.0), True, [(110, 110, 3000, 130, 130, 3005)]),
+    ("skybox, +x wall missing", (20.0, terrace([3])), (120, 120, 3001.0), True, [(110, 110, 3000, 200, 130, 3005)]),
+    ("terrace: +x and +y open", (20.0, terrace([3, 5])), (118, 118, 3001.0), True, [(110, 110, 3000, 200, 200, 3005)]),
+    ("room 150 m above ground", (20.0, room(110, 110, 170, 130, 130, 5)), (120, 120, 171.0), True, [(110, 110, 170, 130, 130, 175)]),
+        ("room 60 m up (limit)",    (20.0, room(110, 110, 80, 130, 130, 5)), (120, 120, 81.0), False, []),
     ("L-shaped sky room",        (20.0, L1 + L2), (105, 105, 2501.0), True, [(100, 100, 2500, 130, 112, 2505), (100, 100, 2500, 112, 130, 2505)]),
-]
-ok = True
-for name, world, OP, want_inside, air in worlds:
-    c = context(world, OP)
-    if c.inside != want_inside: ok = False; print(f"FAIL {name}: inside={c.inside}, expected {want_inside}")
-    shots = fails = 0; last = []; lt = -1
-    if c.inside:
-        for _ in range(40):
-            s = roomShot(world, c, last, lt)
-            if s is None: fails += 1; last = []; continue
-            cam, foc, typ, az, cl, need = s; shots += 1; problems = []
-            if not any(a[0] + 0.3 <= cam[0] <= a[3] - 0.3 and a[1] + 0.3 <= cam[1] <= a[4] - 0.3 and a[2] + 1.1 <= cam[2] <= a[5] - 0.3 for a in air): problems.append("camera not in the room's air")
-            E = (OP[0], OP[1], OP[2] + 0.6); st, d = ray(world, E, cam)
-            if st == 1 and d < math.dist(E, cam) - 0.25: problems.append("different room")
-            if cl < need: problems.append("view blocked")
-            if typ == 10 and not (c.floor + 1.2 - 1e-6 <= cam[2] <= c.floor + 6 + 1e-6): problems.append("corner height")
-            if problems: ok = False; print(f"FAIL {name}: type {typ} {problems} {tuple(round(x, 1) for x in cam)}")
-            last = [az] + last[:1]; lt = typ
-    print(f"{name:26s} inside={c.inside!s:5s} enclosed={c.enclosed!s:5s} room shots {shots:2d}/40" + ("" if c.inside else "  (outdoor logic)"))
-    if name.startswith(("skybox", "sky mall", "L-shaped")) and shots < 30: ok = False; print(f"FAIL {name}: too few room shots ({shots})")
-print("room checks:", "ALL PASS" if ok else "FAILURES")
-raise SystemExit(0 if ok else 1)
+    ]
+    ok = True
+    for name, world, OP, want_inside, air in worlds:
+        c = context(world, OP)
+        if c.inside != want_inside: ok = False; print(f"FAIL {name}: inside={c.inside}, expected {want_inside}")
+        shots = fails = 0; last = []; lt = -1
+        if c.inside:
+            for _ in range(40):
+                s = roomShot(world, c, last, lt)
+                if s is None: fails += 1; last = []; continue
+                cam, foc, typ, az, cl, need = s; shots += 1; problems = []
+                if not any(a[0] + 0.3 <= cam[0] <= a[3] - 0.3 and a[1] + 0.3 <= cam[1] <= a[4] - 0.3 and a[2] + 1.1 <= cam[2] <= a[5] - 0.3 for a in air): problems.append("camera not in the room's air")
+                E = (OP[0], OP[1], OP[2] + 0.6); st, d = ray(world, E, cam)
+                if st == 1 and d < math.dist(E, cam) - 0.25: problems.append("different room")
+                if cl < need: problems.append("view blocked")
+                if typ == 10 and not (c.floor + 1.2 - 1e-6 <= cam[2] <= c.floor + 6 + 1e-6): problems.append("corner height")
+                if problems: ok = False; print(f"FAIL {name}: type {typ} {problems} {tuple(round(x, 1) for x in cam)}")
+                last = [az] + last[:1]; lt = typ
+        print(f"{name:26s} inside={c.inside!s:5s} enclosed={c.enclosed!s:5s} room shots {shots:2d}/40" + ("" if c.inside else "  (outdoor logic)"))
+        if name.startswith(("skybox", "sky mall", "L-shaped")) and shots < 30: ok = False; print(f"FAIL {name}: too few room shots ({shots})")
+    # the Indoors setting: Inside forces a room (a roof and 3 walls are enough, the sky is not needed); Outside forces the outside view
+    h = context((20.0, room(120, 120, 20, 136, 136, 7)), (128, 128, 21.0), "inside")
+    if not h.inside: ok = False; print("FAIL Indoors=Inside should force the room on a ground house")
+    o = context((20.0, sky_box), (120, 120, 3001.0), "outside")
+    if o.inside: ok = False; print("FAIL Indoors=Outside should force the outside view in a skybox")
+    t3 = context((20.0, terrace([3, 5, 4])), (118, 118, 3001.0), "inside")      # three walls gone: one wall and the roof left
+    print(f"Indoors=Inside, only one wall left: walls {t3.nhit}/8, inside={t3.inside}")
+    print("room checks:", "ALL PASS" if ok else "FAILURES")
+    return ok
+
+if __name__ == "__main__":
+    raise SystemExit(0 if main() else 1)

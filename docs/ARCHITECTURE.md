@@ -255,14 +255,14 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
   - **8 horizontal rays** from E, 60 m long, at azimuths `i × 45°` → `gWallD[i]` (60 if not hit). Let `nHit` be the count of hits.
   - **Up:** the existing 40 m ray → `gCovered`, and the ceiling `gCeilZ = E.z + hit distance`.
   - **Down:** from `gOP` to `gOP − <0, 0, 30>` → `gFloorZ` (the hit z), or `gFloorless = TRUE` if nothing is hit.
-- `gEnclosed = gCovered && nHit >= 6`.
-- `gSky = gFloorless || (gOP.z − llGround(ZERO_VECTOR) > 50.0)`.
+- `gEnclosed = gCovered && nHit >= need`, with `need` = 5 in Auto and 3 when Indoors is set to Inside. (Open sides: a ray that gets away through a gap is not a wall; the room centre and size come from real walls only.)
+- `sky` (in the sky): a downward ray from you, 100 m, with up to 4 hits. It is **not** the sky if any hit is the land (the null key) or more than 2 m below your floor. Furniture and thick floors stay within 2 m, so they are fine. (v4.3.1: this replaced `llGround`, which is unreliable from an attached HUD, and an earlier ray from below the floor, which starts underground for a house built on the terrain.) The limit: a room less than about 100 m above the ground or another build counts as not in the sky.
 - Decide `gInside`:
   - `indoors == "inside"` → `gInside = gEnclosed`;
   - `"outside"` → FALSE;
   - `auto` → `gEnclosed && gSky`.
-- `gSpan` = the largest `gWallD`, and `gInsideFails = 0`.
-- **Trace (once per context):** `scenery: inside a room (8/8 walls, ceiling 4 m, span 23 m)`, or `outdoors`, or `enclosed on the ground → above the roof`.
+- `gSpan` = the largest real wall distance (a ray under 59 m), `gCent` = the centre of the real wall hits, and `gInsideFails = 0`.
+- **Trace (once per context), always with the reason:** `scenery: inside a room (roof yes, walls 8/8, in the sky, ceiling 4 m, span 23 m)`, or `outdoors (roof no, walls 3/8, something solid below; going inside needs a roof, 5 walls and the sky)`, or `enclosed, but not in the sky: views from outside, above the roof (…)`, or `enclosed, but Indoors is set to Outside (…)`.
 
 ### 6.3 Room shots (when `gInside`)
 - `findRoomShot()` builds up to **6 candidates**, two of each kind, and keeps the best by score. The kinds are chosen with weights corner 0.45, centre 0.30 and small 0.25, with each candidate rolling its kind.
@@ -337,7 +337,7 @@ If nothing passes:
 | `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory |
 | `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
 | `tools/sim/people_geometry.py` | Composition, unchanged |
-| **`tools/sim/room_sim.py`** | Python port of §6.2–6.3 over these worlds: skybox box 20×20×5 at z 3000, sky mall 60×40×8, small room 4×4×3, ground house (must classify as enclosed-ground → outside), open field (must not be enclosed), and an L-shaped room. Assert: `gInside` is as expected, and the camera is inside the room's box with ≥ 0.5 m margin, in the same room as the owner and with a clear view. Seeded, 40 shots per world |
+| **`tools/sim/room_sim.py`** | Python port of §6.2–6.3 over these worlds: skybox box 20×20×5 at z 3000, sky mall 60×40×8, small room 4×4×3, ground house (must classify as enclosed-ground → outside), open field (must not be enclosed), an L-shaped room, a furnished skybox, skyboxes open on one or two sides, a room 150 m up, a room 60 m up (the limit: counts as not in the sky), and the Indoors Inside / Outside overrides. Assert: `gInside` is as expected, and the camera is inside the room's box with ≥ 0.5 m margin, in the same room as the owner and with a clear view. Seeded, 40 shots per world |
 | **`tools/sim/friends_sim.py`** | Port of the §5 loop. Targets walk on scripted paths. Assert: a glide when the centroid moves more than 0.4 m with everyone in frame; a snap within 2 ticks when someone leaves; the fit distance ≤ 25 m; no glide through a wall box |
 | **`tools/sim/tap_test.py`** | The §4.1 decoder sequences |
 

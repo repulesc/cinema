@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.3.1
+**Skybox rooms: Auto goes inside more reliably, and tells you why when it does not.**
+- Auto needs a roof and 5 of 8 walls (it was 6), so a balcony or a doorway no longer sends the camera outside. Indoors = Inside needs only a roof and 3 walls, and no longer needs the sky.
+- A sturdier "in the sky" test: a multi-hit ray under you instead of `llGround`, which is unreliable from an attached HUD. The simulation caught that a ray starting under the floor would put a house on the terrain "in the sky", so the test starts at you and treats the land or anything more than 2 m below your floor as not the sky.
+- Rays that escape through a gap are no longer counted as walls, so they cannot skew the room's centre, size or corner views.
+- The trace line now states the reason: roof yes or no, walls n/8, in the sky or something solid below, and what it needs to go inside.
+- New room tests: a furnished skybox, a skybox open on one or two sides, a room 150 m up, the 60 m limit, and the Inside and Outside overrides.
+
 ## 4.3.0
 **Take 12 Lite**, a lower-priced entry (about L$99; the full version about L$299). Same code: `hud-lite/src` is generated from `hud/src` by `tools/build_lite.py` (CI checks it is up to date).
 - Lite has the scenery camera (outdoor views), AFK start, the gestures, Pace, Photo hold and the classic look. Personal, Social, Friends, skybox rooms, favourites, look choice and chat cuts are full-version only, shown as locked buttons that open the listing (`BUY_URL` in `cinema_ui.lsl`).

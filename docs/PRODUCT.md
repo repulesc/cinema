@@ -124,7 +124,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
   | Where you are | Auto does |
   |---|---|
   | **Open** (no roof, or walls on few sides) | Outdoor scenery, as above |
-  | **Enclosed in the sky:** a skybox, sky mall or sky club (roof plus walls around, high above the ground or nothing below the floor) | **Room views inside the space** |
+  | **Enclosed in the sky:** a skybox, sky mall or sky club: a roof overhead, at least 5 of 8 directions ending at a wall (so a balcony or a doorway is fine), and nothing but your own floor for 100 m below | **Room views inside the space** |
   | **Enclosed on the ground:** a house or a shop on the ground | Outside and above the roof, as in v3 |
 
   - Options › Indoors forces **Inside** or **Outside** for every enclosed place.
