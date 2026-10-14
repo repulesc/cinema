@@ -3,7 +3,7 @@
 This is the source of truth for what the v4 HUD is. v3.0.0 is frozen and working in `legacy/v3/`. The older people-centred versions are in `legacy/v1-v2/`. The quiz answers this spec is built from are at the bottom.
 
 ## The idea in one paragraph
-Take 12 is a tiny, fun-looking one-button Second Life HUD that turns your time in-world into a quiet film. Its **default job is the scenery camera**. When you go AFK, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 100 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
+Take 12 is a tiny, fun-looking one-button Second Life camera HUD that shows you your world from beyond your avatar's back. It moves the camera by itself to where a camera operator would put it, and gives it back with any movement key; it records nothing. Its **default job is the scenery camera**. When you go idle, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 100 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
 - **Personal** follows you.
 - **Social** frames you with the people around you, cutting to whoever speaks.
 - **Friends** keeps you and your chosen friends in frame, gliding gently.
@@ -197,7 +197,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - `friend list|clear` · `trace on|off` (Chat text) · `emoji on|off` · `cutmode on|off` · `chan <n>` · `reset`
 
 ## Vibe
-Grand views, calm pacing. The feel is still, long, contemplative shots, like a film that happens to be shot from a drone, a corner of the room, or a friend's shoulder. The only motion in the whole product is Friends' slow glide, which keeps your group together.
+Grand views, calm pacing. The feel is still, long, contemplative views, as if a calm camera operator placed your camera on a drone, in a corner of the room, or over a friend's shoulder. The only motion in the whole product is Friends' slow glide, which keeps your group together.
 
 ## Explicitly not doing (by choice)
 - Letterbox bars and dip-to-black. Tested in the quiz: not wanted.

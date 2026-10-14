@@ -211,8 +211,9 @@ All commands are listed in PRODUCT.md.
   - `gTargets = [you] + their positions`, with eye heights from `llGetAgentSize`.
 - **Planning:**
   - `planF()` = `planG` over `gTargets`. It already works for two people (you plus 1 friend, a two-shot square-on to your axis).
-  - Distance: `fitDist(spread, 1.3, 3.0, 25.0)`.
+  - Distance: `needAt()` (§7.1), 3–25 m.
   - If the fit wants more than 25 m, drop the target farthest from you and re-plan, until it fits or only you are left.
+  - If no side has room (walls closer than the fit, 4.4.6), re-plan with one friend fewer, nearest first, up to 3 times, before the portrait.
   - With only you left: Personal-style `planA(FALSE)` and one note.
 - **Hold:** `gBase` = 0.75 × Pace (20–150 s; Calm 60 s → 45 s) × (0.85–1.15) for a fresh angle (type 3). A speaker shot (type 4) is `max(14, 0.4 × gBase)`.
 - **Glide and snap loop** (timer 0.5 s while active and not paused):
@@ -223,7 +224,8 @@ All commands are listed in PRODUCT.md.
      - If the centroid C has moved more than 0.4 m since the last shot or glide: the new cam = old cam + (C − C_last), with z re-derived by `camZ`, and the new focus = old focus + (C − C_last).
      - Check `ray(oldCam, newCam)` and `ray(newCam, newFocus)`. If both are clear, send GLIDE. Otherwise re-plan with a SHOT.
   4. If not `allIn`: `gOutTicks++`. At **2 ticks (1 s)**: re-plan with `MARGIN` × 1.3 → SHOT (a snap).
-  5. The **arrival** of a new friend means a pending cut at the next `gMinHold` boundary (`max(12, 0.25 × Pace)`; Calm 15 s).
+  5. **Pull-back (4.4.6):** everyone is in, but someone is past 80 % of the half-width: GLIDE the camera (and focus) straight back along the view until everyone is within 60 % again. No cut. If the camera would end more than 25 m from the group, or a ray says there is a wall behind it, cut to a wider shot instead. (In 4.4.6 `allIn` uses 97 %, and the glide threshold is 0.2 m.)
+  6. The **arrival** of a new friend means a pending cut at the next `gMinHold` boundary (`max(12, 0.25 × Pace)`; Calm 15 s).
 - **Chat cuts:**
   - `llListen(0, "", NULL_KEY, "")` while active and `chat_cuts` is on. Remove it on STOP.
   - A speaker must be in `gFKeys` and present, or be the owner (from SPEAKER).
@@ -331,6 +333,34 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
   - The type is 4, and the hold is 8–12 s.
 - The pending-event mechanism is unchanged, but its minimum is `gMinHold` (4.4.3), and Social holds a shot `gBase` = 0.75 × Pace (group × 1.2).
 
+### 7.1 Framing people (4.4.6, both scripts)
+`tools/sim/framing_sim.py` measured the 4.4.5 planning. **14.7 % of Social/Friends shots cut someone off, and 52 % left someone within 10 % of the screen edge.** It was worst in chat circles and small rooms. There were three causes:
+- Social's group fit ignored depth.
+- `sweep()` swung up to ±80° around a distance sized for the straight-on view.
+- At a wall it moved the camera closer without re-fitting.
+
+The fix:
+- **`gMeas`:** who must be fully in the picture.
+  - Group: everyone. Friends: you plus the friends used.
+  - Pair or speaker: the person facing the camera. The over-the-shoulder foreground is left out on purpose.
+  - Portrait: you.
+- **`needAt(az)`:** the distance a camera on side `az` needs, for its real view direction (`viewDir`, including the rule-of-thirds turn). For each person, with `o` = offset from the focus point, `V` = view, `P` = its left, `u` = the side and `k = tanH / MARGIN`:
+  - `need ≥ (o·P + BODY_R − k·o·V) / (k·(−u·V) + u·P)`;
+  - and the same with `−o·P` and `−u·P`.
+  - The result is at least `gVNeed` (the height of the shot).
+- **`sweep()`:** each side gets `max(needAt(az), gPLo)`. A side is skipped if that is beyond `gPHi`, or if a wall is closer than it (`hit − STANDOFF`). It is never squeezed. Limits:
+  - pair 2.5–6.5 m;
+  - group 4–12 m;
+  - Friends 3–25 m;
+  - portrait 2.5–3.5 m.
+- **`MARGIN` 1.3** (was 1.15). The fit assumes a window no wider than 16:10 (`tanH = tanV × min(aspect, 1.6)`). The outermost body then ends at least about 12 % of the screen width from the edge on 16:10, and about 16 % on 16:9. The rule-of-thirds turn still uses your real aspect.
+- **Drift:**
+  - **Social:** `framed()` checks everyone who should be in (group: all; pair: the facing person) against 80 % of the half-width on each scan. Anyone outside it means a re-frame at the next calm cut (`gMinHold`).
+  - **Friends:** pulls back (§5).
+- **Result in the sim:** 0 % cut and 0 % under a 10 % margin over 15,000 shots. Some group shots in 6 × 6 m rooms fall back:
+  - Social to a pair;
+  - Friends to fewer friends.
+
 ## 8. Building and textures
 - **Icon (v4.2.0: one sprite sheet with every look):**
   - The source is `tools/art/make_icon.py`, with the pixel grids as strings.
@@ -346,9 +376,11 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 ## 9. Checks and sims
 | Tool | Covers |
 |---|---|
-| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory |
+| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory (Lite is paused) |
 | `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
 | `tools/sim/people_geometry.py` | Composition, unchanged |
+| **`tools/sim/framing_sim.py`** | §7.1: ports the people/friends planning (old and new) and measures every person's margin to the screen edge over pairs, lines, circles, clusters, open space, 10 × 8 and 6 × 6 rooms, 16:9 and 16:10. It asserts that nobody is cut and that at most 1 % of shots are under a 10 % margin; the old planning must show the problem |
+| **`tools/sim/reach_sim.py`** | §6.5 reach learning against 16 simulated viewers, plus the settings migration |
 | **`tools/sim/indoor_sim.py`** (replaces room_sim.py) | A line-by-line port of §6.2–6.3. Its `llCastRay` returns Second Life's layout (`[key, position]` per hit, then the count; the land is `NULL_KEY`; one hit per object; physics only; can refuse rays). It runs 17 places: skyboxes (plain, no-physics ceiling, glass walls, floor-only physics, furnished, two-storey, L-shaped, tiny), a 120 m mall with 64 shops, an open sky deck, a busy region refusing 25 % of rays, a ground house and a trailer (Auto and Inside), and an open field. Then a stress run: 4 standing spots × 4 facings per inside place. It asserts the classification, every camera inside the interior and not in a solid part, never an outdoor view while inside, close fallbacks ≤ 15 % in ordinary rooms, and that the old 3-per-hit stride bug is still detected |
 | **`tools/sim/friends_sim.py`** | Port of the §5 loop. Targets walk on scripted paths. Assert: a glide when the centroid moves more than 0.4 m with everyone in frame; a snap within 2 ticks when someone leaves; the fit distance ≤ 25 m; no glide through a wall box |
 | **`tools/sim/tap_test.py`** | The §4.1 decoder sequences |

@@ -1,5 +1,10 @@
 # Take 12 Lite
 
+> **PAUSED.** Lite is frozen at 4.4.5 until the full version leaves beta, so no effort goes into two products at once.
+> Nothing here is updated meanwhile (scripts, notecard, listing, boards). To resume: run `python3 tools/build_lite.py`,
+> bring back the two CI steps (`build_lite.py --check` and `tools/sim/lite_test.py`), add `hud-lite/src/*.lsl` back to
+> `tools/lslcheck.sh`, then refresh the notecard and the listing text from the full version.
+
 The Lite product: the scenery camera, AFK start, the tap / double-tap / hold gestures, Pace, Photo hold and the classic clapper. Everything else is in the full Take 12 (locked buttons in the menu open the listing).
 
 The Lite scripts are **generated** from the full ones, so they cannot drift: `python3 tools/build_lite.py` copies `hud/src/cinema_core.lsl`, `cinema_ui.lsl` and `cinema_scenery.lsl` into `hud-lite/src/` with `integer LITE = 1;`. CI fails if the committed files are out of date. **Do not edit `hud-lite/src/` by hand.**

@@ -1,75 +1,102 @@
 # Marketplace listing: copy-paste text
 
-The name is **Take 12** (brand **12**). The descriptor "Cinematic Camera HUD" does the searching, and the name does the remembering.
+The Marketplace description is plain text. Copy each block below as it is: no bold, no headings, only "-" lists.
+Fields marked (you) need your own details (price, creator, support contact).
 
-Fields marked **(you)** need your own details (price, creator, support contact).
+The earlier wording ("your idle time, on film", "walk away") is kept in `legacy/` in case we want it back. It was
+replaced because "film" and "filming" made people think the HUD records video, which it does not.
 
 ---
 
 ## Product name
-- **Take 12 - Cinematic Camera HUD** (Marketplace title, box and folder: use the same text everywhere, so buyers find the folder after unboxing)
-- Longer title option for search: **Take 12 - Cinematic Camera HUD: Drone Scenery, Skybox, Friends**
+Use the same text for the Marketplace title, the box and the folder, so buyers find the folder after unboxing:
+```
+Take 12 - Cinematic Camera HUD
+```
+Longer title, if you want more search words in it:
+```
+Take 12 - Cinematic Camera HUD: Drone Views, Skybox Rooms, Friends in Frame
+```
 
-## Short description (the first line shows in search results; keep it first)
-Turn your idle time into a quiet film. One tiny HUD button sends your camera out to still, grand views of the place you are in: drone shots, wide horizons, even the inside of your skybox.
+## Short description (the line search results show; keep it first)
+```
+A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically, a new one every minute. One button. Any movement key brings your camera back.
+```
 
 ## Full description
+```
+See your Second Life from somewhere other than behind your own back.
 
-**Take 12: double-tap, walk away, watch the world.**
+Take 12 lifts your camera off your avatar and places it where a camera operator would: high above the region, out across the horizon, in a corner of your skybox, or around you and your friends. It chooses each view by itself, holds it for about a minute, then cuts to the next one.
 
-Take 12 is a one-button camera HUD for people who love how Second Life looks. Double-tap the little pixel clapper, or just go AFK, and your view lifts off your avatar and starts cutting between still, beautifully placed views of the place you are standing in. Each view is held for about a minute, then it cuts to the next. Calm, never twitchy.
+You stay in control. A double-tap on the button starts it or skips to the next view, a single tap stops it, and any movement key gives your normal camera back instantly.
 
-**What it does**
-- **Scenery camera**: high drone views and wide eye-level views up to about 100 m away, always placed where nothing blocks the picture. You are tiny in the frame, or not in it at all.
-- **Skybox aware**: in a closed room in the sky it stays inside the room, with corner views from above, views from the middle, and you as a small figure in the space. On the ground it looks from outside, above the roof.
-- **Friends camera**: pick the friends near you, and it frames the whole group, gliding gently to keep everyone in the picture and cutting wide if someone walks away.
-- **Social camera**: over-the-shoulder shots and group shots that cut to whoever speaks in local chat.
-- **Personal camera**: composed shots of you that follow you as you walk.
-- **Photo hold**: freeze any view so you can take your snapshots in peace.
-- **Favourite spots**: save a view you love, and it comes back now and then.
+FOUR CAMERAS
 
-**Easy to use**
-- The button is a pixel-art clapper with the number 12 on its slate, and you choose the look from the menu: classic, red record light, or cyan viewfinder.
-- Tap = menu. Double-tap = start. Hold while it rolls = live menu (photo, save, next).
-- Starts by itself when you go idle (you choose how long).
-- Any movement key, or one tap, and your own camera is back instantly.
-- A tiny button that fades while it rolls, so it stays out of your pictures.
-- Pace from lively (30 s per view) to still (2 minutes).
-- A Read Me notecard is inside.
+Scenery (the default) shows the place itself. Drone views 10 to 30 m up look down over your area, and wide eye-level views run along the horizon, up to 100 m away. Every spot is checked so that nothing blocks the picture. You are a small figure in the frame, or not in it at all. In a skybox or another closed room in the sky, it stays inside: views from the corners, from the middle of the room, and of you, small in the space. In a house on the ground, it looks from outside, above the roof. Scenery starts with a double-tap, or by itself when you are idle.
 
-**Good to know**
-- Wear it on a HUD point (Top Right is the usual one) and accept the camera permission once.
-- Stays inside the region you are in. Nothing is recorded or sent anywhere.
-- Needs a recent viewer for the menu icons (they can be switched off).
-- Modify/copy/transfer permissions: **(you)**
+Personal shows you. Composed shots from different sides, with room in front of you in the direction you face. When you walk, it re-frames.
 
-**Support:** **(you)**: your name or group, and how to reach you in-world.
+Social is for when you are with people. Over-the-shoulder shots between you and the person nearest to you, group shots of everyone within 8 m, and a cut to whoever speaks in local chat.
 
----
+Friends keeps you and your friends together. Choose up to 10 friends from the people near you. The camera holds you and those friends in one frame, glides slowly as the group moves, and widens when someone wanders toward the edge.
 
-## Feature bullets (for the "Features" list)
-- One-button HUD: tap, double-tap, hold
-- Drone views and wide horizon views, up to ~100 m away
-- Skybox and room aware (stays inside closed rooms in the sky)
-- Friends mode with gentle glide, and a wider cut if someone leaves the frame
-- Social and Personal cameras, cuts to whoever speaks
-- Photo hold and favourite spots
-- Starts automatically when you are AFK
-- Adjustable pace, from 30 s to 2 min per view
-- Tiny pixel-art clapper button, in three looks, that fades while rolling
-- Read Me notecard and chat commands included
+Personal, Social and Friends are chosen from the menu. Going idle only ever starts Scenery.
 
-## Keywords / tags
-take 12, take12, 12, camera, cinematic, cinema, hud, afk, drone, scenery, photography, snapshot, skybox, machinima, screensaver, film, movie, viewer, friends, social, photo, tool
+ALSO
+- Photo hold: freeze the current view while you take snapshots.
+- Favourite spots: save a view you like, and it comes back now and then.
+- Pace: from 30 seconds to 2 minutes per view.
+- Idle start after 90 seconds (adjustable, or off).
+- Typing in chat does not stop Social or Friends.
 
-## Short promo lines (for groups, notices, social posts)
-- Your idle time, on film. A one-button camera HUD for Second Life.
-- Go AFK. Come back to a movie of your favourite place.
-- Drone shots, skybox rooms and friends in frame: one tiny button.
-- Tap twice and walk away. Take 12 does the filming.
+CONTROLS
+- Tap: open the menu. While the camera runs, a tap stops it.
+- Double-tap: start Scenery, or skip to the next view.
+- Hold: the live menu (photo hold, save spot, next, stop).
+- Any movement key: your normal camera, instantly.
 
-## One-line "what is it?" (for a vendor board or a friend)
-Take 12 is a tiny HUD that films your Second Life for you: still, grand views, cut calmly, started with a double-tap.
+WHO IT IS FOR
+- Explorers who want to see a region from above and from afar.
+- Photographers looking for angles they would not find by hand.
+- Anyone who likes to sit back in a beautiful place and simply watch it.
+- Couples and groups who want to see themselves together, not the back of their own head.
+
+GOOD TO KNOW
+- One small button, a pixel-art clapper in three looks. It fades while the camera runs, so it stays out of your snapshots.
+- Wear it on a HUD point (Top Right is usual) and allow camera control once.
+- It only moves your view, inside the region you are in. Nothing is recorded or sent anywhere.
+- The menu icons need a recent viewer. They can be switched off.
+- Read Me notecard included.
+- Permissions: (you)
+- Support: (you)
+```
+
+## Features (the Marketplace "Features" list takes 5)
+```
+Automatic camera views from beyond your avatar's back
+Scenery: drone and horizon views up to 100 m, skybox aware
+Personal, Social and Friends cameras that frame people well
+One button: tap, double-tap, hold; any movement key to return
+Photo hold, favourite spots, adjustable pace
+```
+
+## Keywords
+```
+take 12, take12, camera, camera hud, cinematic camera, auto camera, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud
+```
+
+## Short promo lines (group notices, social posts)
+```
+Your camera, off your avatar's back.
+See your region from the sky, the horizon and the corner of the room. Automatically.
+One button: drone views, skybox rooms, friends in one frame.
+```
+
+## One line "what is it?" (for a vendor or a friend)
+```
+Take 12 is a one-button HUD that moves your camera off your avatar to drone views, wide horizons and skybox corners by itself, and gives it back with any movement key.
+```
 
 ---
 
@@ -79,8 +106,8 @@ Take 12 is a tiny HUD that films your Second Life for you: still, grand views, c
 - **`adboard_wide_1024x512.png`**: an in-world vendor board or banner.
 - **`adboard_vendor_1024.png`** and **`adboard_vendor_512.png`**: a simpler, bolder square for vendor displays, where the picture shows small. Use the 512 for vendors that want a smaller texture.
 
-Both boards use drawn pixel-art "views", **not real screenshots**. Marketplace buyers trust real pictures, so add 3 to 5 real snapshots as the extra listing images:
-1. A drone view over your favourite sim (Scenery).
+The boards use drawn pixel-art "views", **not real screenshots**. Marketplace buyers trust real pictures, so add 3 to 5 real snapshots as extra listing images:
+1. A drone view over your favourite region (Scenery).
 2. A wide horizon view at sunrise or sunset (Scenery).
 3. A corner view inside a skybox (Scenery, room mode).
 4. A group of friends framed together (Friends).
@@ -88,4 +115,4 @@ Both boards use drawn pixel-art "views", **not real screenshots**. Marketplace b
 
 Tips for the snapshots: use Photo hold for a steady shot, hide your UI (Ctrl+Alt+F1 in Firestorm), and use a high-quality setting. Keep the same look: square, with a little room around the subject.
 
-To rename the boards or change a line, edit the `NAME`, `DESCRIPTOR` and `TAGLINE` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`.
+To rename the boards or change a line, edit the `NAME`, `DESCRIPTOR` and `TAGLINE` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. (The board taglines still use the old wording; they were left as they are on purpose.)

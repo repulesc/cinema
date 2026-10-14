@@ -8,13 +8,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: The Lite scripts are up to date with the full ones
-        run: python3 tools/build_lite.py --check
-      - name: Compile-check the full (hud/src), Lite (hud-lite/src) and frozen v3 (legacy/v3/src) scripts
+      # Lite is paused (frozen at 4.4.5) until the full version leaves beta. To resume, bring back:
+      #   python3 tools/build_lite.py --check   and   python3 tools/sim/lite_test.py
+      - name: Compile-check the full (hud/src) and frozen v3 (legacy/v3/src) scripts
         run: bash tools/lslcheck.sh
       - name: Install Pillow (the sprite-sheet test reads the real texture)
         run: python3 -m pip install --quiet pillow
-      - name: Simulate the scenery spot finder, room views, people geometry and the tap decoder
+      - name: Simulate the scenery spot finder, room views, people framing, reach learning and the tap decoder
         run: |
           python3 tools/sim/scenery_sim.py
           python3 tools/sim/people_geometry.py
@@ -22,5 +22,5 @@ jobs:
           python3 tools/sim/tap_test.py
           python3 tools/sim/friends_sim.py
           python3 tools/sim/sheet_test.py
-          python3 tools/sim/lite_test.py
           python3 tools/sim/reach_sim.py
+          python3 tools/sim/framing_sim.py

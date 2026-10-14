@@ -1,12 +1,12 @@
 # Take 12
 
-A one-button Second Life HUD that turns your idle time into cinema. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
+A one-button Second Life camera HUD that takes your view off your avatar's back and places it, by itself, where a camera operator would. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
 
-- **Scenery camera (default):** when you go AFK, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
+- **Scenery camera (default):** when you go idle, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
-> **Status:** **v4.3.0** (in `hud/`, and its Lite build in `hud-lite/`) works in-world in the tests so far. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v4.4.6** (in `hud/`) works in-world in the tests so far (beta). The Lite build in `hud-lite/` is paused, frozen at 4.4.5. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 

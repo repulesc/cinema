@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.4.6
+**People stay clear of the screen edges in Social and Friends.** The report was right. A new test, `tools/sim/framing_sim.py`, measures where every person lands on screen. With 4.4.5, 15 % of group and pair shots cut someone off, and half of them left someone right at the edge. Chat circles and small rooms were the worst.
+- **The shot is now sized for the side it is taken from.** The camera tries several sides around the group. Each side now gets the distance it needs so that everyone fits, counting that people nearer the camera look wider. Before, the distance was worked out for the straight-on view only, and Social ignored depth altogether.
+- **A wall closer than that distance means that side is skipped.** It used to push the camera in closer, which cut people off.
+- **More breathing room:** the outermost person now ends at least about 12 % of the screen width from the edge (16 % on a 16:9 window). Before it was about 7 %.
+- **Friends glides back gently** when someone wanders toward the edge, with no cut. It still cuts wider if someone is lost or there is a wall behind the camera. If walls leave no room for the whole group, it frames fewer friends (nearest first) instead of falling back to a shot of you alone.
+- **Social** now also notices when someone other than you drifts to the edge, and re-frames at the next calm moment.
+- In the test: 0 % cut and 0 % at the edge, over 15,000 planned shots. The over-the-shoulder shot still puts the near person's shoulder at the edge; that is the composition.
+
+**Clearer texts.** The Marketplace listing, the Read Me intro and the README now say plainly what happens: your camera leaves your avatar's back and goes, by itself, where a camera operator would put it. Words like "film" and "walk away" are gone, because they made it sound like the HUD records video. The old texts are kept in `hud/marketing/legacy/`.
+
+**Lite is paused,** frozen at 4.4.5 until the full version leaves beta. It is no longer built or checked in CI. `hud-lite/README.md` lists how to resume it.
+
 ## 4.4.5
 **Scenery reach 100 m by default, and it no longer shrinks for no reason.**
 - The default reach is **100 m** (menu 50 / **100** / 150 / 200 m). Re-learn goes back to the reach you chose.

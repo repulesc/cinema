@@ -1,7 +1,7 @@
 TAKE 12  -  READ ME
-Your idle time, on film.
+A new view of Second Life, from beyond your avatar's back.
 
-Take 12 turns Second Life into a quiet film. Your view leaves your avatar and cuts between still, grand views of the place you are in: high drone shots, wide eye-level shots, even the inside of your skybox. Each view is held for about a minute, then it cuts to the next. No effort, no fiddling.
+Take 12 moves your camera off your avatar to the places a camera operator would choose: high drone views over the area, wide views across the horizon, the corners of your skybox, or a frame around you and your friends. It changes the view by itself about once a minute. Any movement key brings your normal camera back. It only moves your view: nothing is recorded.
 
 
 === QUICK START =========================================
@@ -12,7 +12,7 @@ Take 12 turns Second Life into a quiet film. Your view leaves your avatar and cu
 
 That is it. Your camera lifts off and starts showing you the place. Press any movement key, or tap the button once, and your own camera is right back.
 
-You can also just walk away: after a short idle time (90 seconds by default) the scenery camera starts by itself.
+Or simply stay idle: after 90 seconds (adjustable in the menu) the scenery camera starts by itself.
 
 
 === THE BUTTON ==========================================

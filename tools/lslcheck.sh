@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Compile-check LSL scripts with LSL-PyOptimizer (a full LSL parser + type checker),
 # then print a rough Mono memory estimate per script.
-#   usage: tools/lslcheck.sh [files...]      (default: hud/src, hud-lite/src and legacy/v3/src)
+#   usage: tools/lslcheck.sh [files...]      (default: hud/src and legacy/v3/src; Lite is paused)
 set -u
 DIR="${LSLOPT_DIR:-$HOME/.cache/lsl-pyoptimizer}"
 if [ ! -f "$DIR/main.py" ]; then
     git clone -q --depth 1 https://github.com/Sei-Lisa/LSL-PyOptimizer "$DIR" || { echo "cannot fetch LSL-PyOptimizer"; exit 2; }
 fi
 files=("$@")
-[ ${#files[@]} -eq 0 ] && files=(hud/src/*.lsl hud-lite/src/*.lsl legacy/v3/src/*.lsl)
+[ ${#files[@]} -eq 0 ] && files=(hud/src/*.lsl legacy/v3/src/*.lsl)
 rc=0
 for f in "${files[@]}"; do
     if python3 "$DIR/main.py" -O clear -o /dev/null "$f"; then
