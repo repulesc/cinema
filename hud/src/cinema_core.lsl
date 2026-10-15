@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.7.0";
+string VERSION = "4.7.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -653,7 +653,13 @@ default
                     llMessageLinked(LINK_SET, RESUME, "photo", "");
                     setUi("rolling");
                 }
-                if (gState == ST_ROLL || gState == ST_PEEK) askWorker("skip");
+                if (gState == ST_PEEK)
+                {
+                    gState = ST_ROLL;                   // you asked for the next shot: the peek pause ends
+                    setUi("rolling");
+                    llMessageLinked(LINK_SET, RESUME, "peek", "");
+                }
+                if (gState == ST_ROLL) askWorker("skip");
             }
             else if (str == "fav")
             {

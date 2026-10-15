@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.7.0";
+string VERSION = "4.7.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -104,6 +104,7 @@ vector  gCurV;
 integer gGrpAtShot;
 vector  gOwnerAtShot;
 integer gSweepErr;
+integer gSkip;               // this shot was asked for with "next": it must differ from the one on screen
 
 // ============================================================================
 string cfg(string k, string d)
@@ -383,7 +384,8 @@ list shoulderShot()
 {
     vector E = <gOP.x, gOP.y, gOE>;
     vector F0 = dirOf(gOY);
-    vector cam = E - F0 * 0.9 + <F0.y, -F0.x, 0.0> * 0.25;
+    gSide = -gSide;                                     // the other shoulder each time
+    vector cam = E - F0 * 0.9 + <F0.y, -F0.x, 0.0> * 0.25 * gSide;
     list r = ray(E, cam);
     if (llList2Integer(r, 0) != 0) return [];
     return [cam, cam + F0 * 10.0, 0];
@@ -434,7 +436,8 @@ list sweep()
                 if (lat * gSide > 0.0) s += 1.0;
                 else s -= 2.0;
             }
-            C += [s, az, de];
+            // "next" asked by you: never the spot already on screen
+            if (!gSkip || llVecDist(<cc.x, cc.y, 0.0>, <gCurCam.x, gCurCam.y, 0.0>) > 1.5) C += [s, az, de];
         }
     }
     integer n = llGetListLength(C) / 3;
@@ -542,6 +545,12 @@ nextShot()
     {
         planA(FALSE);
         shot = sweep();
+        if (llGetListLength(shot) == 0 && !gSweepErr)
+        {
+            gVNeed = 0.9 / tanV * MARGIN;               // a tight space: a closer, half-length view of you
+            gPLo = 1.5;
+            shot = sweep();
+        }
     }
     if (llGetListLength(shot) == 0 && !gSweepErr) shot = shoulderShot();
     if (llGetListLength(shot) == 0)
@@ -690,7 +699,12 @@ default
         else if (num == NEXT)
         {
             if (gWaitFirst) doScan();
-            else nextShot();
+            else
+            {
+                gSkip = (str == "skip");
+                nextShot();
+                gSkip = FALSE;
+            }
         }
         else if (num == PAUSE) gPaused = TRUE;
         else if (num == RESUME)
