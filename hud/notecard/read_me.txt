@@ -32,7 +32,7 @@ HOLD  (about 1 second)
    - when idle: opens the menu
    - while rolling: opens the live menu (see below)
 
-While the camera rolls, the clapper on the button stays shut; when it is idle, it is open. (The look of the button: Options > Look.)
+The button always looks the same, idle or rolling. (Its look: Options > Look.)
 
 
 === THE CAMERAS ========================================

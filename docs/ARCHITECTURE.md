@@ -17,7 +17,7 @@ All seven scripts go in the **root prim** of a one-prim HUD. Each must compile c
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
 | `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
-| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (clapper open when idle, shut while rolling) | 173 | ~300 (≥ 17 KB) |
+| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
 

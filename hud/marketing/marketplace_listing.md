@@ -65,7 +65,7 @@ WHO IT IS FOR
 - Couples and groups who want to see themselves together, not the back of their own head.
 
 GOOD TO KNOW
-- One small button, a pixel-art clapper in three looks. Its clapper closes while the camera runs. (Second Life leaves HUDs out of snapshots unless you ask for them.)
+- One small button, a pixel-art clapper in three looks. It stays the same while the camera runs. (Second Life leaves HUDs out of snapshots unless you ask for them.)
 - Wear it on a HUD point (Top Right is usual) and allow camera control once.
 - It only moves your view, inside the region you are in. Nothing is recorded or sent anywhere.
 - The menu icons need a recent viewer. They can be switched off.

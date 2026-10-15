@@ -1,7 +1,7 @@
 // ============================================================================
 //  Take 12  -  cinema_ui.lsl  (v4)
 //  Touch decoding (tap / double-tap / long press), emoji dialog menus, /77 chat
-//  commands, settings in protected Linkset Data, the button look (open idle, closed while rolling),
+//  commands, settings in protected Linkset Data, the button look (the plain logo, always the same),
 //  first-run welcome, owner-change reset.
 //  Lives in the ROOT prim with cinema_core, cinema_scenery, cinema_people and
 //  cinema_friends.
@@ -117,8 +117,8 @@ cfgSet(string k, string v)
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
     if (k == "emoji") gEmoji = (integer)v;
     if (k == "trace") gNote = (integer)v;
-    if (k == "look") { gLook = (integer)v; frame(2 * gLook + !gShownIdle); }
-    if (k == "face") { gFace = (integer)v; frame(2 * gLook + !gShownIdle); }
+    if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
+    if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
 }
 
 initDefaults(integer force)
@@ -188,7 +188,7 @@ checkOwner()
 }
 
 // ============================================================================
-//  the button: no colours, always at full strength. Idle = the clapper open; while the camera rolls it is shut.
+//  the button: the plain logo, always at full strength, the same idle or rolling (the screen shows the state).
 // ============================================================================
 nextTimer()
 {
@@ -201,7 +201,7 @@ nextTimer()
 setLook(string st)
 {
     gShownIdle = (st == "off" || st == "armed");
-    frame(2 * gLook + !gShownIdle);                // open when idle, shut while the camera rolls
+    frame(2 * gLook);
     llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, 1.0]);
     nextTimer();
 }

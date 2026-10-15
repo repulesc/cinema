@@ -4,7 +4,7 @@
 **Idle start that also respects the mouse, and a clearer button.**
 - **Idle start:** after **3 minutes** (new default; 1 min, 90 s, 2, 5 and 10 min stay) with no keys, no typing and no camera moves, **and**, with the new **Mouse check** (on by default), only once your viewer reports you Away. A script cannot see the mouse, but the viewer clears its Away status on any mouse movement, so mouse-only use (menus, inventory, the web) no longer counts as idle. Set the viewer's own Away timer short, or turn the mouse check off if your viewer never sets you Away. The old "SL Away" choice and the old 90 s default move to 3 min + mouse check once.
 - **Once the scenery camera runs** nothing changes: moving the mouse does not end it; a movement key, typing or a tap does.
-- **The button no longer fades.** It stays at full strength: the clapper is open when idle and shut while the camera rolls, in all three looks. Options › Look › Fade is gone.
+- **The button no longer fades or changes.** It is the plain logo at full strength, idle or rolling: the screen already shows that the camera runs, and the old fade only made the small icon hard to find. The clap on start is gone too. Options › Look › Fade is gone.
 
 ## Ad boards (marketing only, no script change)
 - **New wording on all six boards:** "Your idle time, framed." (the calm tone of the old line, without "film", which suggested recording) and "Double-tap to start. Any key brings you back." (in place of "walk away"). The footer line is unchanged.
