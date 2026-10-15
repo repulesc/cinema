@@ -24,4 +24,4 @@ jobs:
           python3 tools/sim/sheet_test.py
           python3 tools/sim/reach_sim.py
           python3 tools/sim/framing_sim.py
-          python3 tools/sim/photographer_sim.py
+          python3 tools/sim/frame_sim.py

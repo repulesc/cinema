@@ -15,7 +15,7 @@ All seven scripts go in the **root prim** of a one-prim HUD. Each must compile c
 | `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
 | `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
-| `cinema_photo.lsl` | **New in 4.5.** Photographer mode: framings A–E for you, a picked person, a group and the landscape, the solver, obstacle tries, key nudges, the status line, its own menu and person picker. See `docs/PHOTOGRAPHER.md` | – | 446 (18.7 KB est.) |
+| `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (alpha fade and clap) | 173 | ~300 (≥ 17 KB) |
 
@@ -26,28 +26,27 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 
 | num | from → to | string | notes |
 |---|---|---|---|
-| 7301 START | core → all | `"<mode>|<fov>"` | mode = `scenery` / `personal` / `social` / **`friends`** / **`photographer`**. Only the owner of that mode takes it |
+| 7301 START | core → all | `"<mode>|<fov>"` | mode = `scenery` / `personal` / `social` / **`friends`** / **`frame`**. Only the owner of that mode takes it |
 | 7302 STOP | core → all | reason | |
 | 7303 NEXT | core → active | why: `hold` / `retry` / **`skip`** | |
 | 7304 PAUSE / 7305 RESUME | core → active | `ml` / `tp` / `peek` / **`photo`** | |
 | 7306 MOVING | core → active | – | movement key in a following mode |
 | 7310 SHOT | worker → core | `"<pos>|<focus>|<hold>|<type>"` | a hard cut |
 | 7311 NO_SHOT | worker → core | reason | core covers it with a basic shot |
-| **7312 GLIDE** | friends, photo → core | `"<pos>|<focus>"` or `"<pos>|<focus>|<lag>"` | a slow move, see §5 (photographer: 0.35 s for nudges and lens changes) |
+| **7312 GLIDE** | friends, frame → core | `"<pos>|<focus>"` or `"<pos>|<focus>|<lag>"` | a slow move, see §5 (Frame: 0.35 s for nudges and zoom changes) |
 | 7313 ACK | worker → core | mode | |
 | 7314 REACH_FAIL | core → scenery | `<asked>\|<allowed>` distances from you | |
 | **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
-| **7317 NUDGE** | core → photo | control level bits | Photographer: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
-| **7318 FOVMSG** | core → photo | radians | Photographer: the viewer's field of view changed (checked every 0.5 s) |
+| **7317 NUDGE** | core → frame | control level bits | Frame: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
+| **7318 FOVMSG** | core → frame | radians | Frame: the viewer's field of view changed (checked every 0.5 s) |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
 | 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |
 | **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
-| **7323 UI_PHOTO** | ui → photo | `page` | the Photographer menu (main menu entry, or a long press while it runs) |
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
 | 7370 STATUS | ui → all | `?` | every script prints one line |
-| 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / **`photographer`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |
+| 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / **`frame`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |
 
 **Shot types**
 | Group | Type | Meaning |

@@ -10,7 +10,8 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 | 4.0 · Phase B | Code v4 (milestones B1–B7 below), one release | Sonnet | ✅ coded, checked by compile and sims |
 | 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | ⏳ next |
 | 4.4.x | Beta polish from in-world tests: indoor mode, quiet chat, calm people cameras, reach learning, people framing, clearer texts | Opus | ⏳ ongoing |
-| Photographer | A fifth mode for composed, held portraits, groups and landscapes. Built in 4.5.0 (`cinema_photo.lsl`). Next: in-world tests, body calibration, composition tuning | Opus | ⏳ in-world test |
+| Frame | A slim, held picture of you (or you and the people with you): Full length, Half length, Close. 4.6.0 (`cinema_frame.lsl`). Next: in-world test, body calibration | Opus | ⏳ in-world test |
+| Composition tool (later) | A fuller, more serious version, starting from `lab/frame-full-4.5.0/` (subjects, landscapes, photo shapes, lens guidance). Only after Take 12 is out of beta | – | 💤 later |
 | Lite | Paused, frozen at 4.4.5. **Resume** once the full version leaves beta: steps in `hud-lite/README.md` | – | ⏸ paused |
 | Later | Backlog at the bottom, only on request | – | – |
 

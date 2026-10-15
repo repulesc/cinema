@@ -12,6 +12,16 @@ A movement key, a tap or typing gives your camera back.
 
 **Design rules for every decision:** static, contemplative, minimal, nothing gimmicky, and nothing the user has to babysit.
 
+## Principles
+A guide for every feature, not ad copy.
+1. **It decides; you accept or skip.** Take 12 chooses the view. Your part is a double-tap at most.
+2. **Calm.** Long holds, few cuts, a quiet chat, a button that fades.
+3. **No settings on screen.** No numbers, no jargon. Details live in the Read Me.
+4. **One button.** Everything else is optional.
+5. **Restraint.** A feature earns its place by making the experience easier, not by being a feature.
+
+The tone of every text follows the product: plain, understated, no slogans. Think of a good point-and-shoot camera: it works well and says little.
+
 ## The button
 | Look | Value |
 |---|---|
@@ -174,8 +184,8 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **💬 Chat cuts:** the same as Social, but only for you and your friends.
 - **Exits:** tap. Typing and movement keys do not exit.
 
-### 5. 📸 Photographer: optional (4.5)
-Held, composed framings for your own snapshots: of you, a person you pick, the group around you, or the landscape. Five framings A–E (double-tap = next), the movement keys nudge, the lens is your viewer zoom (shown next to the button). Full spec: `docs/PHOTOGRAPHER.md`.
+### 5. 🖼 Frame: optional (4.6)
+A held, well-composed view for your own snapshots: of you, or of you and whoever stands within about 3 m (chosen automatically). Three framings, Full length → Half length → Close (double-tap = next). The movement keys nudge it; the camera never moves by itself. The framing's name shows for 3 s, then the screen is clean. Spec: `docs/FRAME.md`. A fuller version (more subjects, landscapes, photo shapes, lens guidance) is kept in `lab/` for a possible later composition tool.
 
 ## 📷 Photo hold (all modes)
 - Long press › 📷 Photo freezes the current shot **indefinitely**. No cuts and no re-framing; Friends stops gliding.

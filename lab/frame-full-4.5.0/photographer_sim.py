@@ -175,7 +175,7 @@ for l in LANDSCAPE:
 
 # ---- the script must carry exactly these presets and constants ---------------------------------------------------
 import os, re
-LSL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "src", "cinema_photo.lsl")).read()
+LSL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "cinema_photo.lsl")).read()
 def lsl_list(name):
     body = re.search(r"list\s+" + name + r"\s*=\s*\[(.*?)\];", LSL, re.S).group(1)
     out = []

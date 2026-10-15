@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.5.0";
+string VERSION  = "4.6.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -16,7 +16,6 @@ string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Re
 integer UI_STATE    = 7320;
 integer UI_MENU     = 7321;
 integer UI_FRIENDS  = 7322;
-integer UI_PHOTO    = 7323;
 integer CFG_CHANGED = 7330;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
@@ -52,7 +51,7 @@ list DEFAULTS = [
 // menu items: id, emoji, title
 list ITEMS = [
     "scenery", "🏞", "Scenery", "personal", "🚶", "Personal", "social", "👥", "Social", "friends", "💞", "Friends",
-    "photog", "📸", "Photographer", "pace", "⏳", "Pace", "afk", "💤", "AFK", "opts", "⚙", "Options", "help", "❔", "Help",
+    "frame", "🖼", "Frame", "pace", "⏳", "Pace", "afk", "💤", "AFK", "opts", "⚙", "Options", "help", "❔", "Help",
     "close", "✖", "Close", "back", "↩", "Back", "photo", "📷", "Photo", "resume", "▶", "Resume",
     "save", "⭐", "Save", "next", "⏭", "Next", "stop", "⏹", "Stop", "modes", "🎬", "Modes",
     "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
@@ -235,7 +234,7 @@ note(string s)
 integer locked(string id)
 {
     if (!LITE) return FALSE;
-    return (llListFindList(["personal", "social", "friends", "photog", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
+    return (llListFindList(["personal", "social", "friends", "frame", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
 }
 
 string label(string id)
@@ -342,7 +341,7 @@ openMenu(string page)
     if (page == "main")
     {
         text += "Pace: " + paceName() + " (" + cfgGet("hold") + " s) · AFK: " + afkText() + " · Indoors: " + cfgGet("indoors");
-        b = ["scenery", "personal", "social", "friends", "photog", "pace", "afk", "opts", "help", "close"];
+        b = ["scenery", "personal", "social", "friends", "frame", "pace", "afk", "opts", "help", "close"];
     }
     else if (page == "live")
     {
@@ -456,13 +455,12 @@ onChoice(string msg)
     }
     if (gPage == "main")
     {
-        if (id == "scenery" || id == "personal" || id == "social")
+        if (id == "scenery" || id == "personal" || id == "social" || id == "frame")
         {
             closeMenu();
             llMessageLinked(LINK_SET, CMD, id, "");
         }
         else if (id == "friends") { closeMenu(); llMessageLinked(LINK_SET, UI_FRIENDS, "page", ""); }
-        else if (id == "photog") { closeMenu(); llMessageLinked(LINK_SET, UI_PHOTO, "page", ""); }
         else if (id == "pace" || id == "afk") openMenu(id);
         else if (id == "opts") openMenu("opts");
         else if (id == "help") { giveHelp(); closeMenu(); }
@@ -601,7 +599,6 @@ onDouble()
 onLong()
 {
     if (gUiState == "idle") openMenu("main");
-    else if (gUiMode == "photographer") llMessageLinked(LINK_SET, UI_PHOTO, "page", "");
     else openMenu("live");
 }
 
@@ -610,7 +607,7 @@ onLong()
 // ============================================================================
 help()
 {
-    llOwnerSay("[Take 12] Commands on /" + (string)gCmdChan + ": scenery personal social friends photographer stop next photo menu status pace reach indoors face chan reset (details: Read Me).");
+    llOwnerSay("[Take 12] Commands on /" + (string)gCmdChan + ": scenery personal social friends frame stop next photo menu status pace reach indoors face chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -619,8 +616,8 @@ onCommand(string msg)
     string c = llList2String(a, 0);
     string v = llList2String(a, 1);
     integer n = (integer)v;
-    if (LITE && (c == "personal" || c == "social" || c == "friends" || c == "photographer" || c == "fav" || c == "friend" || c == "indoors")) upsell();
-    else if (c == "scenery" || c == "personal" || c == "social" || c == "friends" || c == "photographer" || c == "stop" || c == "next" || c == "photo" || c == "fav" || c == "grab") llMessageLinked(LINK_SET, CMD, c, "");
+    if (LITE && (c == "personal" || c == "social" || c == "friends" || c == "frame" || c == "fav" || c == "friend" || c == "indoors")) upsell();
+    else if (c == "scenery" || c == "personal" || c == "social" || c == "friends" || c == "frame" || c == "stop" || c == "next" || c == "photo" || c == "fav" || c == "grab") llMessageLinked(LINK_SET, CMD, c, "");
     else if (c == "menu") openMenu("main");
     else if (c == "status")
     {

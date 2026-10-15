@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.6.0
+**Frame replaces Photographer, much slimmer.** Take 12 stays the calm, automatic camera; Frame is a small extra for when you want a picture of yourself.
+- **Frame** (main menu, or `/77 frame`) holds a well-composed view of you, or of you and whoever stands right next to you (chosen automatically). Three framings: **Full length, Half length, Close**. Double-tap for the next one.
+- The movement keys adjust it (closer or further, round, up or down) while you stand still. Tap to leave. The camera never moves by itself.
+- **No settings on screen:** the framing's name shows for 3 seconds, then the screen is clean. The zoom is followed silently.
+- **Gone from the shipped mode:** the person picker, landscapes, photo shapes, the lens line and Photographer's own menus. The full 4.5.0 version is kept, not shipped, in `lab/frame-full-4.5.0/` as the start of a possible later composition tool.
+- The script is now `cinema_frame.lsl` (still seven scripts in all; remove `cinema_photo` if you added it). It is about half the size.
+- **Product principles** are written down in `docs/PRODUCT.md`: it decides and you accept or skip; calm; no settings on screen; one button; restraint.
+- New `tools/sim/frame_sim.py` in CI.
+
 ## 4.5.0
 **New: Photographer**, a fifth camera for taking your own pictures. It places the camera by classic photo rules and holds it: no cuts, and it never moves by itself.
 - **Subjects:** you, a person you pick (within 20 m), the group around you (within 8 m), or the landscape where you face.
