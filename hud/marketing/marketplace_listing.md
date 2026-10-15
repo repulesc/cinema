@@ -90,6 +90,7 @@ take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, ca
 
 ## Short promo lines (group notices, social posts)
 ```
+Your idle time, framed.
 Your camera, off your avatar's back.
 See your region from the sky, the horizon and the corner of the room. Automatically.
 One button: drone views, skybox rooms, friends in one frame.
@@ -117,4 +118,4 @@ The boards use drawn pixel-art "views", **not real screenshots**. Marketplace bu
 
 Tips for the snapshots: use Photo hold for a steady shot, hide your UI (Ctrl+Alt+F1 in Firestorm), and use a high-quality setting. Keep the same look: square, with a little room around the subject.
 
-To rename the boards or change a line, edit the `NAME`, `DESCRIPTOR` and `TAGLINE` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. (The board taglines still use the old wording; they were left as they are on purpose.)
+The boards say "Your idle time, framed." and "Double-tap to start. Any key brings you back." To change a line, edit the `NAME`, `DESCRIPTOR`, `TAGLINE` and `HOWTO` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. Frame is not on the boards on purpose: they sell the automatic camera. (Lite's boards are paused with Lite; add `--lite` to rebuild them.)

@@ -23,7 +23,8 @@ import make_icon as icon
 
 NAME = "TAKE 12"
 DESCRIPTOR = "CINEMATIC CAMERA HUD"
-TAGLINE = "Your idle time, on film."
+TAGLINE = "Your idle time, framed."
+HOWTO = "Double-tap to start. Any key brings you back."
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 LITE = False                      # main() runs the boards twice; True draws the Take 12 Lite versions
@@ -220,7 +221,7 @@ def square():
     ptext(im, (244, 44), NAME, 9, CHALK, shadow=CORAL)
     ptext(im, (248, 118), DESCRIPTOR, 3, CORAL)
     d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
-    d.text((248, 214), "Double-tap. Walk away. Watch the world.", font=font(24), fill=(170, 176, 200))
+    d.text((248, 214), HOWTO, font=font(24), fill=(170, 176, 200))
     if LITE:
         ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "SCENERY CAMERA + PHOTO HOLD", 2, (170, 176, 200))
     else:
@@ -299,7 +300,7 @@ def portrait():
     ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
     ptext(im, (220, 112), DESCRIPTOR, 3, CORAL)
     d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
-    d.text((220, 200), "Double-tap. Walk away. Watch the world.", font=font(20), fill=(170, 176, 200))
+    d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
     gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
     paste_framed(im, scene_img("WIDE", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="WIDE")
     small = [("DRONE", scene_drone), ("ROOM", scene_room), ("FRIENDS", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
@@ -321,20 +322,25 @@ def landscape43():
     ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
     ptext(im, (182, 90), DESCRIPTOR, 2, CORAL)
     d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
+    d.text((182, 148), HOWTO, font=font(18), fill=(170, 176, 200))
     if LITE: ribbon(im, (760, 26, 984, 96))
     else:
         looks(im, 700, 20, 82, 12)
         ptext(im, (700, 108), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
-    gw, gh, sc = 56, 34, 7; px, py = 100, 156
+    gw, gh, sc = 56, 34, 6; px, py = 156, 186
     for i, (lab, fn) in enumerate(SCENES):
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 48)
         paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
-    chips(im, 720, _chip_list(), 20, 30, W - 30, gap=12)
+    chips(im, 690, _chip_list(), 20, 30, W - 30, gap=12)
+    d.text((W // 2, 748), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS"), font=font(14), fill=(120, 126, 150), anchor="mm")
     return im
 
 if __name__ == "__main__":
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-    for lite, out, suf in ((False, os.path.join(base, "hud", "marketing"), ""), (True, os.path.join(base, "hud-lite", "marketing"), "_lite")):
+    builds = [(False, os.path.join(base, "hud", "marketing"), "")]
+    if "--lite" in sys.argv:                     # Lite is paused (frozen at 4.4.5): its boards are only rebuilt on request
+        builds.append((True, os.path.join(base, "hud-lite", "marketing"), "_lite"))
+    for lite, out, suf in builds:
         LITE = lite; os.makedirs(out, exist_ok=True)
         square().save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide().save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
         portrait().save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43().save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))

@@ -1,5 +1,10 @@
 # Changelog
 
+## Ad boards (marketing only, no script change)
+- **New wording on all six boards:** "Your idle time, framed." (the calm tone of the old line, without "film", which suggested recording) and "Double-tap to start. Any key brings you back." (in place of "walk away"). The footer line is unchanged.
+- The 4:3 board now has the second line and the footer as well, with its views a little smaller to make room.
+- Frame is deliberately not on the boards: they sell the automatic camera. Lite's boards stay frozen with Lite (`--lite` rebuilds them).
+
 ## 4.6.0
 **Frame replaces Photographer, much slimmer.** Take 12 stays the calm, automatic camera; Frame is a small extra for when you want a picture of yourself.
 - **Frame** (main menu, or `/77 frame`) holds a well-composed view of you, or of you and whoever stands right next to you (chosen automatically). Three framings: **Full length, Half length, Close**. Double-tap for the next one.
