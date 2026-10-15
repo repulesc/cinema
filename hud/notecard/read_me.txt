@@ -35,7 +35,7 @@ HOLD  (about 1 second)
 While the camera rolls, the button fades so it stays out of your pictures. It is still there to click. (Change how faint it gets, and the look of the button: Options > Look.)
 
 
-=== THE FOUR CAMERAS ====================================
+=== THE FIVE CAMERAS ====================================
 
 SCENERY  (the main one, and the only one that starts by itself)
 Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
@@ -52,7 +52,16 @@ You and the friends you picked, framed together. While your group stays in the p
  - Friends > Remove lists everyone you saved (even if they are not here), so you can remove just one person.
  - You can save up to 10 friends.
 
-Personal, Social and Friends only start when YOU choose them in the menu.
+PHOTOGRAPHER
+A camera for taking your own photos. It places the camera by classic photo rules and HOLDS it: no cuts, and it never moves by itself. Tap the button > Photographer, choose who to photograph, then Start.
+ - Subjects: You, Pick (anyone within 20 m), Group (you and everyone within 8 m), Land (the view where you face).
+ - Five framings, A to E. DOUBLE-TAP for the next one. For a person: A Environment, B Full length, C Three-quarter, D Half body, E Head and shoulders.
+ - Fine-tune with the movement keys: W / S closer / further, A / D round the subject, E / C camera higher / lower (the framing is kept). Your avatar stands still meanwhile. Reset in the Photographer menu puts it back.
+ - The line next to the button shows the framing and its lens, e.g. "C · Three-quarter · 50 mm (now 21) Ctrl+0". The lens is your viewer's zoom: press Ctrl+0 to zoom in (longer lens) or Ctrl+8 to zoom out, until it shows a check mark. The camera re-frames by itself when you change the zoom, so the picture stays the same size and only the perspective changes. Ctrl+9 sets the viewer back to normal. (Portraits look best with a long lens: 85 mm.)
+ - Photo shape: 16:9 (your screen), 4:3 (also the shape of Second Life profile pictures) or 3:2 (the classic photo shape). Choose it in the Photographer menu, then crop your snapshot to it.
+ - Hold the button to open the Photographer menu while it runs. Tap once to leave.
+
+Personal, Social, Friends and Photographer only start when YOU choose them in the menu.
 
 
 === THE LIVE MENU (hold the button while it rolls) =======
@@ -89,6 +98,7 @@ Everything above is in the menu. If you like typing, these work on channel 77 (f
 
 scenery  personal  social  friends  stop  next  photo  fav  menu  status
 pace <seconds>        e.g.  /77 pace 90
+photographer          the Photographer camera (subject and shape: in its menu)
 reach <metres>        e.g.  /77 reach 60      (or  /77 reach relearn )
 indoors auto | inside | outside
 friend list | clear

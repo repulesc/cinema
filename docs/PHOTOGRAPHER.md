@@ -1,4 +1,4 @@
-# Photographer mode: spec (design stage, nothing coded yet)
+# Photographer mode: spec (built in 4.5.0; composition to be tuned after in-world tests)
 
 A fifth mode in Take 12 (Full only). It puts the camera where a portrait photographer would, by clear rules, and
 **holds** it: it never cuts on a timer and never moves on its own. You cycle through five framings with a

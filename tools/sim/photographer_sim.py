@@ -173,6 +173,40 @@ for l in LANDSCAPE:
     phi = math.atan(l["horizon"] * math.tan(fov / 2))       # tilt down that puts the horizon at y
     check(abs(math.tan(phi) / math.tan(fov / 2) - l["horizon"]) < 1e-9, f"landscape {l['id']}: horizon misplaced")
 
+# ---- the script must carry exactly these presets and constants ---------------------------------------------------
+import os, re
+LSL = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "src", "cinema_photo.lsl")).read()
+def lsl_list(name):
+    body = re.search(r"list\s+" + name + r"\s*=\s*\[(.*?)\];", LSL, re.S).group(1)
+    out = []
+    for tok in re.findall(r'"[^"]*"|-?\d+(?:\.\d+)?', re.sub(r"//[^\n]*", "", body)):
+        out.append(tok.strip('"') if tok.startswith('"') else float(tok))
+    return out
+FEAT = ["top", "eyes", "shoulders", "chest", "belt", "midthigh", "feet"]
+body = lsl_list("BODY")
+check([round(BODY[f], 4) for f in FEAT] == [round(v, 4) for v in body], f"BODY in the script {body} differs from the sim")
+port = lsl_list("PORT")
+for i, pr in enumerate(PORTRAIT):
+    r = port[i * 9:(i + 1) * 9]
+    (f1, y1), (f2, y2) = pr["anchors"]
+    want = [pr["name"], pr["mm"], pr["cam"], pr["side"], round(pr["x"], 3), FEAT.index(f1), round(y1, 4), FEAT.index(f2), round(y2, 4)]
+    got = [r[0]] + [round(v, 4) if isinstance(v, float) else v for v in r[1:]]
+    got[4] = round(got[4], 3)
+    check(got == want, f"portrait {pr['id']}: script {got} != sim {want}")
+grp = lsl_list("GRP")
+for i, g in enumerate(GROUP):
+    r = grp[i * 8:(i + 1) * 8]
+    (f1, y1), (f2, y2) = g["anchors"]
+    want = [g["name"], g["mm"], g["cam"], g.get("rise", 0.0), FEAT.index(f1), round(y1, 4), FEAT.index(f2), round(y2, 4)]
+    check([r[0]] + [round(v, 4) for v in r[1:]] == want, f"group {g['id']}: script {r} != sim {want}")
+land = lsl_list("LAND")
+for i, l in enumerate(LANDSCAPE):
+    r = land[i * 4:(i + 1) * 4]
+    check(r[0] == l["name"] and r[1] == l["mm"] and abs(r[3] - l["horizon"]) < 1e-3, f"landscape {l['id']}: script {r} != sim")
+for const, val in (("DMIN", DMIN), ("TOPMAX", TOP_MAX)):
+    m = re.search(r"float\s+" + const + r"\s*=\s*([\d.]+);", LSL)
+    check(m and abs(float(m.group(1)) - val) < 1e-9, f"{const} in the script differs from the sim ({val})")
+
 print("Photographer presets (a 1.95 m avatar, 16:9): lens -> camera distance and tilt")
 for p, dists in report:
     row = "  ".join(f"{mm:>3} mm {D:5.2f} m {ph:+5.1f}{'*' if sh else ' '}" for mm, D, ph, sh in dists)

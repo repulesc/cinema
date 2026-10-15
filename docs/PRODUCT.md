@@ -174,6 +174,9 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **💬 Chat cuts:** the same as Social, but only for you and your friends.
 - **Exits:** tap. Typing and movement keys do not exit.
 
+### 5. 📸 Photographer: optional (4.5)
+Held, composed framings for your own snapshots: of you, a person you pick, the group around you, or the landscape. Five framings A–E (double-tap = next), the movement keys nudge, the lens is your viewer zoom (shown next to the button). Full spec: `docs/PHOTOGRAPHER.md`.
+
 ## 📷 Photo hold (all modes)
 - Long press › 📷 Photo freezes the current shot **indefinitely**. No cuts and no re-framing; Friends stops gliding.
 - Take your snapshots in peace.

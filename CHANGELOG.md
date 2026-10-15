@@ -1,5 +1,18 @@
 # Changelog
 
+## 4.5.0
+**New: Photographer**, a fifth camera for taking your own pictures. It places the camera by classic photo rules and holds it: no cuts, and it never moves by itself.
+- **Subjects:** you, a person you pick (within 20 m), the group around you (within 8 m), or the landscape where you face.
+- **Five framings, A to E.** Double-tap for the next one. For a person: Environment (35 mm), Full length (50 mm), Three-quarter (50 mm), Half body (85 mm), Head and shoulders (85 mm). Groups and landscapes have their own five.
+- **Framed for each avatar's height,** worked out every time. Mixed-height groups never cut the tallest head and keep side room. Someone sitting gets seated framings.
+- **The lens is your viewer zoom.** The camera distance follows your field of view, so the picture stays the same size and only the perspective changes. A line next to the button shows each framing's lens and whether yours matches, e.g. `C · Three-quarter · 50 mm (now 21) Ctrl+0`. The camera never goes closer than 1.2 m; with too wide a lens it frames a little looser and says so.
+- **Fine-tune with the movement keys:** W/S closer or further, A/D round the subject, E/C higher or lower with the framing kept. Your avatar stands still meanwhile. Tap to leave.
+- **Photo shapes:** 16:9, 4:3 (also the Second Life profile picture shape) and 3:2.
+- **Obstacles:** a blocked spot is tried 15° and 30° to either side, then from the other side; the status line says when.
+- New script `cinema_photo.lsl`. The HUD now has **seven** scripts; re-drop them all. Core forwards the keys and lens changes; the UI has a menu entry, a long press while it runs, and `/77 photographer`.
+- `tools/sim/photographer_sim.py` checks the framing maths over avatar heights 1.55–2.35 m, lenses 21–105 mm and the three shapes. It also checks that the script's preset tables match the tested ones.
+- **To be tuned in-world:** the body proportions (where the eyes, chest and belt are, as a fraction of the avatar height) and the framings themselves. See "Calibration" in `docs/PHOTOGRAPHER.md`.
+
 ## 4.4.6
 **People stay clear of the screen edges in Social and Friends.** The report was right. A new test, `tools/sim/framing_sim.py`, measures where every person lands on screen. With 4.4.5, 15 % of group and pair shots cut someone off, and half of them left someone right at the edge. Chat circles and small rooms were the worst.
 - **The shot is now sized for the side it is taken from.** The camera tries several sides around the group. Each side now gets the distance it needs so that everyone fits, counting that people nearer the camera look wider. Before, the distance was worked out for the straight-on view only, and Social ignored depth altogether.

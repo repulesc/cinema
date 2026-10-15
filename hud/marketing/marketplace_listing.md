@@ -31,7 +31,7 @@ Take 12 lifts your camera off your avatar and places it where a camera operator 
 
 You stay in control. A double-tap on the button starts it or skips to the next view, a single tap stops it, and any movement key gives your normal camera back instantly.
 
-FOUR CAMERAS
+FIVE CAMERAS
 
 Scenery (the default) shows the place itself. Drone views 10 to 30 m up look down over your area, and wide eye-level views run along the horizon, up to 100 m away. Every spot is checked so that nothing blocks the picture. You are a small figure in the frame, or not in it at all. In a skybox or another closed room in the sky, it stays inside: views from the corners, from the middle of the room, and of you, small in the space. In a house on the ground, it looks from outside, above the roof. Scenery starts with a double-tap, or by itself when you are idle.
 
@@ -41,7 +41,9 @@ Social is for when you are with people. Over-the-shoulder shots between you and 
 
 Friends keeps you and your friends together. Choose up to 10 friends from the people near you. The camera holds you and those friends in one frame, glides slowly as the group moves, and widens when someone wanders toward the edge.
 
-Personal, Social and Friends are chosen from the menu. Going idle only ever starts Scenery.
+Photographer is for taking your own pictures. It places the camera by classic photo rules and holds it still: five framings from a full-length view to head and shoulders, of you, of a person you pick, of your group, or of the landscape. Double-tap for the next framing, fine-tune with your movement keys, and a small line next to the button tells you which lens (viewer zoom) the framing is made for. Photo shapes: 16:9, 4:3 (the Second Life profile picture shape) and 3:2.
+
+Personal, Social, Friends and Photographer are chosen from the menu. Going idle only ever starts Scenery.
 
 ALSO
 - Photo hold: freeze the current view while you take snapshots.
@@ -76,14 +78,14 @@ GOOD TO KNOW
 ```
 Automatic camera views from beyond your avatar's back
 Scenery: drone and horizon views up to 100 m, skybox aware
-Personal, Social and Friends cameras that frame people well
+Photographer: held portrait, group and landscape framings, A to E
 One button: tap, double-tap, hold; any movement key to return
-Photo hold, favourite spots, adjustable pace
+Personal, Social and Friends cameras; photo hold; favourite spots
 ```
 
 ## Keywords
 ```
-take 12, take12, camera, camera hud, cinematic camera, auto camera, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud
+take 12, take12, camera, camera hud, cinematic camera, auto camera, photographer, portrait, composition, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud
 ```
 
 ## Short promo lines (group notices, social posts)

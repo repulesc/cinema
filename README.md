@@ -4,9 +4,10 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 
 - **Scenery camera (default):** when you go idle, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
+- **Photographer (optional):** held, composed framings A–E of you, a person you pick, a group or the landscape, for your own snapshots; the movement keys fine-tune it (`docs/PHOTOGRAPHER.md`).
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
-> **Status:** **v4.4.6** (in `hud/`) works in-world in the tests so far (beta). The Lite build in `hud-lite/` is paused, frozen at 4.4.5. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v4.5.0** (in `hud/`) works in-world in the tests so far (beta). The Lite build in `hud-lite/` is paused, frozen at 4.4.5. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -40,7 +41,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
    - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
-3. **Delete any old scripts from the prim (v3 or earlier)**, then add the six from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`. Each prints a `ready` line with its free memory.
+3. **Delete any old scripts from the prim (v3 or earlier)**, then add the seven from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`, `cinema_photo`. Each prints a `ready` line with its free memory.
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
 5. Create a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.
 6. Before giving or selling it: change `PASS` (the same string at the top of every script) and set the scripts to no-modify.

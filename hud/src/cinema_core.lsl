@@ -1,12 +1,12 @@
 // ============================================================================
 //  Take 12  -  cinema_core.lsl  (v4)
-//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social
+//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social, friends, photographer
 //  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.4.6";
+string VERSION = "4.5.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -23,11 +23,14 @@ integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
+integer NUDGE      = 7317;   // core -> photo    movement keys held now (control level bits)
+integer FOVMSG     = 7318;   // core -> photo    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / stop / next / photo / fav / grab
+integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / photographer / stop / next / photo / fav / grab
+integer CTL = 831;           // CONTROL_FWD | BACK | LEFT | RIGHT | ROT_LEFT | ROT_RIGHT | UP | DOWN
 
 float FIRST_WAIT  = 1.5;     // s  wait for the first shot, then cut to a basic shot
 float NEXT_WAIT   = 2.5;     // s  wait for the next shot
@@ -48,7 +51,8 @@ integer gNeed;
 integer gSitMask;
 integer gPermOK;
 integer gState;
-string  gMode;                // "scenery" / "personal" / "social" / "friends"
+string  gMode;                // "scenery" / "personal" / "social" / "friends" / "photographer"
+float   gFovSent;             // photographer: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gLastAct;
@@ -238,6 +242,12 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
+// the movement keys: passed on to your avatar, except in Photographer, where they nudge the camera and you stand still
+takeCtl(integer pass)
+{
+    llTakeControls(CTL, TRUE, pass);
+}
+
 // ---- lifecycle ------------------------------------------------------------------
 // instant return to the user's own camera
 bail(string why)
@@ -252,6 +262,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
+    if (gPermOK && gMode == "photographer") takeCtl(TRUE);
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
@@ -275,6 +286,8 @@ engage(string mode)
     gSitBase = llGetAgentInfo(gOwner) & gSitMask;
     gLastAct = llGetUnixTime();
     gLastTick = llGetTime();
+    gFovSent = llGetCameraFOV();
+    takeCtl(mode != "photographer");
     askWorker("start");
     setUi("rolling");
     if (gTrace) llOwnerSay("[Take 12] " + mode + " camera on");
@@ -355,6 +368,15 @@ activeTick(float dt)
         resume();
     }
     if (gState == ST_FREEZE) return;                // photo hold: no cuts, no checks
+    if (gMode == "photographer")
+    {
+        float fv = llGetCameraFOV();                // the lens: the photo script shows the match and re-frames
+        if (llFabs(fv - gFovSent) > 0.004)
+        {
+            gFovSent = fv;
+            llMessageLinked(LINK_SET, FOVMSG, (string)fv, "");
+        }
+    }
 
     // worker slow or absent: cover with a basic shot so the camera never sits idle
     if (gAsking && (gState == ST_WAIT || gState == ST_ROLL))
@@ -472,8 +494,7 @@ default
         gPermOK = ((p & gNeed) == gNeed);
         if (gPermOK)
         {
-            llTakeControls(CONTROL_FWD | CONTROL_BACK | CONTROL_LEFT | CONTROL_RIGHT
-                | CONTROL_ROT_LEFT | CONTROL_ROT_RIGHT | CONTROL_UP | CONTROL_DOWN, TRUE, TRUE);
+            takeCtl(gState == ST_IDLE || gMode != "photographer");
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
@@ -511,6 +532,11 @@ default
             bail("key");
             return;
         }
+        if (gMode == "photographer")
+        {
+            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level, "");     // photo steps while held
+            return;
+        }
         // personal / social: the camera follows you
         if (now != gMovSent)
         {
@@ -546,13 +572,16 @@ default
         }
         else if (num == GLIDE)
         {
-            // friends: slowly move the camera to keep the group framed (the viewer eases it using the lag)
-            if (gState == ST_ROLL && gMode == "friends")
+            // friends: slowly move the camera to keep the group framed; photographer: nudges and lens changes.
+            // The viewer eases it using the lag ("<pos>|<focus>" or "<pos>|<focus>|<lag>").
+            if (gState == ST_ROLL && (gMode == "friends" || gMode == "photographer"))
             {
                 list L = llParseStringKeepNulls(str, ["|"], []);
                 vector gp = (vector)llList2String(L, 0);
                 vector gf = (vector)llList2String(L, 1);
-                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, 1.5, CAMERA_FOCUS_LAG, 1.5]);
+                float lag = 1.5;
+                if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
+                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
@@ -576,7 +605,7 @@ default
         }
         else if (num == CMD)
         {
-            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "fav")) return;
+            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "photographer" || str == "fav")) return;
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
@@ -592,7 +621,7 @@ default
                     llSetTimerEvent(0.25);
                 }
             }
-            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends") engage(str);
+            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "photographer") engage(str);
             else if (str == "photo")
             {
                 if ((gState == ST_ROLL || gState == ST_PEEK) && gLast != "")
