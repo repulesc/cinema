@@ -80,11 +80,12 @@ worlds={
  'skybox at 3000 m':  ((20.0,[(110,110,2999,146,146,3000)]), (128,128,3001.0)),
 }
 allok=True
-for name,(world,OP) in worlds.items():
+for name,(world,OP) in [(n+(' @150' if R==150 else ''),v) for R in (100,150) for n,v in worlds.items()]:
+    REACH=150 if name.endswith(' @150') else 100
     last=[];lt=-1;cuts=0;fails=0
     for k in range(40):
-        s=findShot(world,OP,100,last,lt,20,25)
-        if s is None: s=findShot(world,OP,100,last,lt,15,12)
+        s=findShot(world,OP,REACH,last,lt,20,25)
+        if s is None: s=findShot(world,OP,REACH,last,lt,15,12)
         if s is None: fails+=1; last=[]; continue
         c,foc,typ,az,pitch,clear,need,covered,topZ=s; cuts+=1
         problems=[]

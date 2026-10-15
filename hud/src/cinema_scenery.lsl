@@ -1,17 +1,20 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_scenery.lsl  (v4)  - the default mode
+//  Take 12  -  cinema_scenery.lsl  (v4)  - the default mode
 //  Finds grand, unobstructed views of the place around you and has core cut to
 //  them: high drone views looking down over your area, and wide eye-level views
 //  along the horizon. People are ignored. The camera stays inside your region
 //  and is always placed ABOVE the topmost surface at its spot (never inside a
-//  building). Enclosed in the sky (a skybox)? It stays inside the room instead:
-//  corner wides, room-centre views, you small in the room. Saved favourite spots
-//  are mixed in. Shot types: 5 drone, 6 wide, 7 favourite, 10 room corner,
-//  11 room centre, 12 room "you small".
+//  building). Inside a build (Auto: on a build floor in the sky; Indoors=Inside:
+//  on any build floor or under a roof) it keeps the camera INSIDE, on your own
+//  floor: high views, eye-level views, you small in the space, and a close shot
+//  as the last resort - never a view from outside. Saved favourite spots are
+//  mixed in. Shot types: 5 drone, 6 wide, 7 favourite, 10 inside high,
+//  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.6.0";
 string PASS    = "cinema-1.0-build1";
+integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -29,18 +32,22 @@ integer STATUS     = 7370;
 
 float   MIN_DIST   = 20.0;   // m  nearest camera spot
 integer N_CAND     = 10;     // candidates per cut (about 2 rays each)
-integer N_ROOM     = 5;      // room-view candidates per cut (about 7 rays each)
-list    CLEAR_DIRS = [<1.0, 0.0, 0.0>, <-1.0, 0.0, 0.0>, <0.0, 1.0, 0.0>, <0.0, -1.0, 0.0>, <0.0, 0.0, 1.0>];
+integer N_LOCAL    = 8;      // inside: candidates per cut (about 4 rays each; it stops after 3 good ones)
+list    FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0, 20.0];   // m  where the floor is probed in each direction
+list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>, <0.0, 0.423, 0.906>, <0.0, -0.423, 0.906>];
 
 float   gHold;               // s  average hold
-float   gReach;              // m  furthest camera spot (learned)
+float   gReach;              // m  furthest camera spot (learned: lowered if the viewer refuses far cameras)
+float   gReachSet;           // m  the furthest you chose (the learned reach grows back up to it)
 integer gTrace;
-list    gRayOpts;
+list    gRayOpts;            // one hit
+list    gRayOpts4;           // up to 4 hits (what is under you)
 
 key     gOwner;
 integer gActive;
 integer gPaused;
 integer gErr;
+integer gRayErr;             // rays refused during this cut (busy region)
 vector  gOP;                 // owner position
 float   gTopZ;               // topmost surface above/at the owner (roof top when covered)
 integer gCovered;            // owner is under a roof
@@ -51,21 +58,21 @@ list    gLastAz;             // azimuths of the last two shots
 integer gLastType;
 integer gCuts;
 integer gReachOk;            // cuts since the last REACH_FAIL
+integer gFailCut;            // gCuts at the last REACH_FAIL (-99: none yet)
+float   gFailGot;            // how far the viewer let the camera go that time
 string  gLastFav;
 string  gIndoors;            // auto / inside / outside
-integer gEnclosed;           // roof and walls around you
-integer gInside;             // stay inside the room
-float   gFloorZ;
-float   gCeilZ;
-float   gSpan;               // the longest wall distance
-float   gRoomZc;             // height of corner views
-vector  gCent;               // centre of the room (from the wall hits)
-list    gWallD;              // 8 wall distances, every 45 degrees from +x
-list    gWallP;              // the 8 wall hit points
-list    gOrd;                // wall indices, longest first
-list    gDiag;               // the two longest diagonal wall indices
-integer gInsideFails;
-integer gToldRoom;
+integer gLocal;              // inside mode: the camera stays on your floor, inside the build
+vector  gLocalAt;            // where it was last confirmed that you are inside (the decision is sticky within 30 m)
+integer gPrimFloor;          // you stand on a build, not on the land
+integer gSky;                // no land within 100 m under you
+integer gRoofs;              // how many of the 5 roof rays hit something
+float   gFloorZ;             // your floor
+float   gCapZ;               // highest camera allowed inside (under the ceiling)
+float   gDmax;               // furthest inside camera from you
+list    gWallD;              // 8 wall distances at eye height, every 45 degrees from +x
+list    gFloorD;             // how far your floor reaches in those 8 directions
+integer gRetry;              // ray-limit retries for this cut
 
 // ============================================================================
 string cfg(string k, string d)
@@ -78,19 +85,27 @@ string cfg(string k, string d)
 loadCfg()
 {
     gHold  = (float)cfg("hold", "60");
+    gReachSet = (float)cfg("reach_set", "100");
+    if (gReachSet < MIN_DIST) gReachSet = MIN_DIST;
     gReach = (float)cfg("reach", "100");
     if (gReach < MIN_DIST) gReach = MIN_DIST;
-    gTrace = (integer)cfg("trace", "1");
+    if (gReach > gReachSet) gReach = gReachSet;
+    gTrace = (integer)cfg("trace", "0");
     gIndoors = cfg("indoors", "auto");
     gReachOk = (integer)cfg("reach_ok", "0");
     gCtxOK = FALSE;
     gRayOpts = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
-    if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
+    gRayOpts4 = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 4];
+    if ((integer)cfg("phantom", "0"))
+    {
+        gRayOpts += [RC_DETECT_PHANTOM, TRUE];
+        gRayOpts4 += [RC_DETECT_PHANTOM, TRUE];
+    }
 }
 
 tsay(string s)
 {
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    if (gTrace) llOwnerSay("[Take 12] " + s);
 }
 
 float clampf(float v, float lo, float hi)
@@ -130,6 +145,7 @@ list ray(vector a, vector b)
     if (st < 0)
     {
         gErr = TRUE;
+        gRayErr++;
         return [st, 0.0];
     }
     if (st == 0) return [0, llVecDist(a, b)];
@@ -144,64 +160,122 @@ float surfaceAt(float x, float y, float zTop, float zBottom)
     return zTop - llList2Float(r, 1);
 }
 
-// where are we: under a roof? how high is the top of whatever we are in? a room?
+// is there floor of your level under c? (a build - or the land, if the land is your floor - within 1 m below or 1.5 m above
+// your floor; furniture is fine)
+// This keeps an inside camera inside the build even where its walls have no physics.
+integer floorOK(vector c)
+{
+    list r = llCastRay(c, <c.x, c.y, gFloorZ - 1.0>, gRayOpts);
+    integer st = llList2Integer(r, -1);
+    if (st < 0) { gErr = TRUE; return FALSE; }
+    if (st == 0) return FALSE;
+    if (llList2Key(r, 0) == NULL_KEY && gPrimFloor) return FALSE;     // the land is no floor, unless it IS your floor
+    vector h = llList2Vector(r, 1);
+    return (h.z >= gFloorZ - 1.0 && h.z <= gFloorZ + 1.5);
+}
+
+// where are we? Builds are judged by their FLOOR - the one surface that always has physics, because people walk
+// on it - not by walls and ceilings, which are often built without physics (rays pass through them).
+// Sets gErr and leaves gCtxOK FALSE if Second Life refused a ray (busy region): the next try starts again.
 context()
 {
-    vector E = <gOP.x, gOP.y, gOP.z + 0.6>;
-    list u = ray(gOP + <0.0, 0.0, 1.0>, gOP + <0.0, 0.0, 41.0>);
-    gCovered = (llList2Integer(u, 0) == 1);
-    gCeilZ = gOP.z + 1.0 + llList2Float(u, 1);
-    gTopZ = surfaceAt(gOP.x, gOP.y, gOP.z + 80.0, gOP.z - 5.0);
-    gWater = llWater(ZERO_VECTOR);
-    gCtxPos = gOP;
-    gCtxOK = TRUE;
-    // the room: 8 walls around you and the floor under you
-    gWallD = [];
-    gWallP = [];
-    integer nHit = 0;
+    gCtxOK = FALSE;
+    gRayErr = 0;
     integer i;
+    // under you: [key, position] per hit, then the hit count (LSL's layout). The land reports the null key.
+    list bd = llCastRay(<gOP.x, gOP.y, gOP.z + 0.3>, <gOP.x, gOP.y, gOP.z - 100.0>, gRayOpts4);
+    integer nb = llList2Integer(bd, -1);
+    if (nb < 0) { gErr = TRUE; return; }
+    gPrimFloor = FALSE;
+    gSky = TRUE;
+    gFloorZ = gOP.z - 1.0;
+    if (nb > 0)
+    {
+        vector fh = llList2Vector(bd, 1);
+        gFloorZ = fh.z;
+        gPrimFloor = (llList2Key(bd, 0) != NULL_KEY);
+    }
+    for (i = 0; i < nb; i++)
+    {
+        if (llList2Key(bd, i * 2) == NULL_KEY) gSky = FALSE;     // the land is within 100 m: not in the sky
+    }
+    // over you: 5 rays (straight up and 25 degrees off in four directions), 40 m
+    vector U = <gOP.x, gOP.y, gFloorZ + 1.8>;
+    gRoofs = 0;
+    float ceil = 1.0e6;
+    for (i = 0; i < 5; i++)
+    {
+        list u = ray(U, U + llList2Vector(UP_DIRS, i) * 40.0);   // refused: no information, like a miss
+        if (llList2Integer(u, 0) == 1)
+        {
+            gRoofs++;
+            float hz = U.z + llList2Float(u, 1) * llList2Vector(UP_DIRS, i) * <0.0, 0.0, 1.0>;
+            if (hz < ceil) ceil = hz;
+            if (i == 0) gCovered = TRUE;
+        }
+        else if (i == 0) gCovered = FALSE;
+    }
+    // around you: 8 rays at eye height, 60 m (how far the camera may go in each direction)
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    gWallD = [];
+    integer nHit = 0;
     for (i = 0; i < 8; i++)
     {
-        vector dv = dirOf(i * 0.785398);
-        list r = ray(E, E + dv * 60.0);
-        float d = llList2Float(r, 1);
+        list r = ray(E, E + dirOf(i * 0.785398) * 60.0);
+        float wd = llList2Float(r, 1);
+        if (llList2Integer(r, 0) < 0) wd = 4.0;          // refused: assume a near wall (keeps the camera close)
         if (llList2Integer(r, 0) == 1) nHit++;
-        gWallD += [d];
-        gWallP += [<E.x + dv.x * d, E.y + dv.y * d, E.z>];
+        gWallD += [wd];
     }
-    list fd = ray(<gOP.x, gOP.y, gOP.z + 0.3>, <gOP.x, gOP.y, gOP.z - 30.0>);
-    integer floorless = (llList2Integer(fd, 0) == 0);
-    gFloorZ = gOP.z + 0.3 - llList2Float(fd, 1);
-    if (floorless) gFloorZ = gOP.z - 1.0;
-    gEnclosed = (gCovered && nHit >= 6);
-    integer sky = (floorless || gOP.z - llGround(ZERO_VECTOR) > 50.0);
-    gInside = (gEnclosed && sky);
-    if (gIndoors == "inside") gInside = gEnclosed;
-    else if (gIndoors == "outside") gInside = FALSE;
-    gSpan = 0.0;
-    gCent = ZERO_VECTOR;
-    list ord = [];
+    // how far your floor reaches in each direction (stops at the first gap or wall; a refused ray counts as a gap).
+    // The floor always has physics, so this outline holds the camera even where walls have none.
+    gFloorD = [];
     for (i = 0; i < 8; i++)
     {
-        float wd = llList2Float(gWallD, i);
-        if (wd > gSpan) gSpan = wd;
-        gCent += llList2Vector(gWallP, i) / 8.0;
-        ord += [wd, i];
+        float fd = 0.0;
+        integer j;
+        for (j = 0; j < 6; j++)
+        {
+            float sd = llList2Float(FLOOR_STEPS, j);
+            gErr = FALSE;
+            if (sd > llList2Float(gWallD, i)) j = 6;
+            else if (floorOK(<gOP.x, gOP.y, gFloorZ + 1.0> + dirOf(i * 0.785398) * sd)) fd = sd;
+            else if (gErr) gRayErr++;                    // refused: skip this step (each camera still checks its own floor)
+            else j = 6;                                  // a real gap: the floor ends here
+        }
+        gFloorD += [fd];
     }
-    ord = llListSort(ord, 2, FALSE);
-    gOrd = [];
-    gDiag = [];
-    for (i = 0; i < 8; i++)
-    {
-        integer wi = llList2Integer(ord, i * 2 + 1);
-        gOrd += [wi];
-        if ((wi % 2) == 1 && llGetListLength(gDiag) < 2) gDiag += [wi];
-    }
-    gRoomZc = clampf(gCeilZ - 0.6, gFloorZ + 1.2, gFloorZ + 6.0);
-    gInsideFails = 0;
-    string t = "outdoors";
-    if (gInside) t = "inside a room (" + (string)nHit + "/8 walls, ceiling " + (string)llRound(gCeilZ - gFloorZ) + " m, span " + (string)llRound(gSpan) + " m)";
-    else if (gEnclosed) t = "enclosed on the ground: views from outside, above the roof";
+    gTopZ = surfaceAt(gOP.x, gOP.y, gOP.z + 80.0, gOP.z - 5.0);
+    gErr = FALSE;                                        // only the floor probe above must succeed
+    gWater = llWater(ZERO_VECTOR);
+    // inside or not. Auto: on a build floor, and (in the sky, or under a roof - 3 of 5 rays, or 1 with walls around).
+    // A plaza with no roof stays outdoors. Inside is an OVERRIDE: you asked for it, so it always stays inside, even in
+    // a place whose floor, walls and roof have no physics (it then works near you, on the land under you).
+    integer built = (gPrimFloor || gRoofs > 0);
+    integer raw;
+    if (gIndoors == "inside") raw = TRUE;
+    else raw = (gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5)));
+    // sticky: once inside, stay inside until clearly outdoors (no build floor, no roof) or 30 m away. This stops
+    // the camera flipping in and out near a door or where one ray misses.
+    if (!raw && gLocal && gIndoors != "outside" && (built || nHit >= 5) && llVecDist(gOP, gLocalAt) < 30.0) raw = TRUE;
+    if (LITE || gIndoors == "outside") raw = FALSE;
+    gLocal = raw;
+    if (raw) gLocalAt = gOP;
+    // inside limits: under the ceiling (or 3.4 m up when no ceiling can be seen), 12 m away (20 m in a big open hall)
+    gCapZ = gFloorZ + 3.4;
+    if (gRoofs > 0) gCapZ = clampf(ceil - 0.4, gFloorZ + 1.6, gFloorZ + 6.0);
+    integer open = 0;
+    for (i = 0; i < 8; i++) if (llList2Float(gWallD, i) >= 25.0) open++;
+    gDmax = 12.0;
+    if (open >= 5) gDmax = 20.0;
+    gCtxPos = gOP;
+    gCtxOK = (gRayErr <= 3);                             // too many refused rays: use this now, measure again next cut
+    string why = "floor " + llList2String(["land", "a build"], gPrimFloor) + ", " + llList2String(["land below", "in the sky"], gSky)
+        + ", roof " + (string)gRoofs + "/5, walls " + (string)nHit + "/8";
+    string t = "outdoors (" + why + "; Auto goes inside on a build floor with a roof over you or nothing but sky below)";
+    if (gLocal && gIndoors == "inside" && !built) t = "inside (set by you), but rays see no floor or roof here: the camera stays near you (" + why + ")";
+    else if (gLocal) t = "inside, the camera stays on your floor (" + why + ", up to " + (string)llRound(gCapZ - gFloorZ) + " m high, " + (string)llRound(gDmax) + " m away)";
+    else if (gIndoors == "outside") t = "outdoors: Indoors is set to Outside (" + why + ")";
     tsay("scenery: " + t);
 }
 
@@ -261,6 +335,7 @@ list findShot(float minD, float clearMin)
                     foc = c + dirOf(az + PI + (llFrand(2.0) - 1.0) * 1.047198) * 30.0;
                     foc.z = c.z - 30.0 * llTan(pitch);
                 }
+                if (gReach < gReachSet && llVecDist(c, gOP) > gReach) need = 999.0;   // learned limit counts straight-line
                 // ray B: nothing may block the view
                 list r = ray(c, c + llVecNorm(foc - c) * 60.0);
                 if (gErr) return [];
@@ -282,104 +357,146 @@ list findShot(float minD, float clearMin)
     return best;
 }
 
-// clear view distance of a room camera, or -1 if it fails a check: in the region, same room as you,
-// 0.5 m clearance on 5 sides, and a clear view of at least `need` metres
-float roomClear(vector c, vector foc, float need)
+// how far an inside camera may go in direction i: before the wall, and inside your floor's outline
+float edge(integer i)
 {
-    if (c.x < 1.0 || c.x > 255.0 || c.y < 1.0 || c.y > 255.0) return -1.0;
-    vector E = <gOP.x, gOP.y, gOP.z + 0.6>;
-    if (llVecDist(E, c) < 0.5) return -1.0;
-    list r = ray(E, c);
-    if (llList2Integer(r, 0) == 1 && llList2Float(r, 1) < llVecDist(E, c) - 0.2) return -1.0;
-    integer i;
-    for (i = 0; i < 5; i++)
-    {
-        r = ray(c, c + llList2Vector(CLEAR_DIRS, i) * 0.5);
-        if (llList2Integer(r, 0) != 0) return -1.0;
-    }
-    r = ray(c, c + llVecNorm(foc - c) * 60.0);
-    if (gErr || llList2Float(r, 1) < need) return -1.0;
-    return llList2Float(r, 1);
+    i = i % 8;
+    float w = llList2Float(gWallD, i) - 0.8;
+    float f = llList2Float(gFloorD, i) - 0.5;
+    if (f < w) return f;
+    return w;
 }
 
-// inside a room: [cam, focus, type, az] or []
-list roomShot()
+// inside: [cam, focus, type, az] of the best of up to N_LOCAL candidates, or []. Every camera has a clear line from
+// your eye, your floor under it, head room, and a view; relaxed = closer, eye level only, fewer checks.
+list localShot(float dmax, integer relaxed)
 {
     list best = [];
     float bestS = -1000.0;
+    integer found = 0;
+    gRayErr = 0;
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    vector O = <gOP.x, gOP.y, gFloorZ + 1.0>;
+    float base = llFrand(TWO_PI);
     integer k;
-    for (k = 0; k < N_ROOM; k++)
+    for (k = 0; k < N_LOCAL && found < 3 && gRayErr < 6; k++)     // a refused ray only drops that spot
     {
-        float roll = llFrand(1.0);
-        integer type = 12;
-        if (roll < 0.45) type = 10;
-        else if (roll < 0.75) type = 11;
-        vector c = ZERO_VECTOR;
-        vector foc = ZERO_VECTOR;
-        float need = llFabs(gSpan * 0.4);
-        if (need < 3.0) need = 3.0;
-        vector hv;
-        if (type == 10)
+        float az = base + k * 0.785398 + llFrand(0.4) - 0.2;
+        integer wi = (integer)(az / 0.785398);              // between direction wi and wi + 1: the nearer limit counts
+        float lim = edge(wi);
+        if (edge(wi + 1) < lim) lim = edge(wi + 1);
+        if (lim > dmax) lim = dmax;
+        float nov = novelty(az);
+        if (lim >= 2.5 && (relaxed || nov >= 0.3))
         {
-            // high in a corner, looking across the room through your area
-            integer di = llList2Integer(gDiag, (integer)llFrand(2.0));
-            float d = llList2Float(gWallD, di);
-            if (d >= 3.0)
+            float roll = llFrand(1.0);
+            integer type = 11;
+            if (!relaxed && roll < 0.4) type = 10;
+            else if (!relaxed && roll >= 0.75 && lim >= 5.0) type = 12;
+            float d = 2.5 + llFrand(lim - 2.5);
+            float z = gFloorZ + 1.5 + llFrand(0.4);
+            if (type == 10)
             {
-                c = <gOP.x, gOP.y, gRoomZc> + dirOf(di * 0.785398) * (d - 0.8);
-                vector opp = llList2Vector(gWallP, (di + 4) % 8);
-                vector T = opp + (<gOP.x, gOP.y, gFloorZ> - opp) / 3.0;
-                hv = T - c;
-                hv.z = 0.0;
-                float pitch = clampf(llAtan2(c.z - gFloorZ, llVecMag(hv)), 0.2618, 0.7854);
-                foc = c + llVecNorm(hv) * 30.0;
-                foc.z = c.z - 30.0 * llTan(pitch);
+                d = lim * (0.6 + 0.4 * llFrand(1.0));
+                z = gCapZ - 0.2;
+                if (z < gFloorZ + 2.2) type = 11;             // too low a ceiling for a high view
             }
-        }
-        else if (type == 11)
-        {
-            // eye level near the middle, looking toward one of the far walls
-            c = <gCent.x, gCent.y, gFloorZ + 1.7>;
-            hv = llList2Vector(gWallP, llList2Integer(gOrd, (integer)llFrand(3.0))) - c;
-            hv.z = 0.0;
-            if (llVecMag(hv) < 1.0) hv = dirOf(llFrand(TWO_PI));
-            foc = c + llVecNorm(hv) * 30.0;
-            foc.z = c.z - 30.0 * 0.0349;
-        }
-        else
-        {
-            // from the far side of the room: you, small in the space
-            integer wi = llList2Integer(gOrd, (integer)llFrand(2.0));
-            float d = llList2Float(gWallD, wi);
-            if (d >= 6.0)
+            else if (type == 12)
             {
-                c = <gOP.x, gOP.y, gFloorZ + 2.5> + dirOf(wi * 0.785398) * (d - 0.8);
-                foc = gOP;
-                need = llVecDist(c, foc) - 1.0;
+                d = lim * (0.75 + 0.25 * llFrand(1.0));
+                z = gFloorZ + 1.8 + llFrand(0.6);
             }
-        }
-        if (c != ZERO_VECTOR)
-        {
-            float clear = roomClear(c, foc, need);
-            if (gErr) return [];
-            if (clear >= 0.0)
+            if (z > gCapZ) z = gCapZ;
+            vector c = <gOP.x, gOP.y, z> + dirOf(az) * d;
+            vector foc;
+            if (type == 10)
             {
-                hv = c - gOP;
+                // high, looking down across your area
+                vector T = O + <llFrand(4.0) - 2.0, llFrand(4.0) - 2.0, -0.2>;
+                vector hv = T - c;
                 hv.z = 0.0;
-                float az = llAtan2(hv.y, hv.x);
-                float nov = 1.0;
-                if (llVecMag(hv) >= 1.0) nov = novelty(az);
-                float s = 3.0 * clear / 60.0 + 2.0 * nov + llFrand(0.5);
-                if (type != gLastType) s += 1.0;
-                if (s > bestS)
+                float pitch = clampf(llAtan2(c.z - T.z, llVecMag(hv)), 0.21, 0.61);
+                foc = c + llVecNorm(hv) * 10.0;
+                foc.z = c.z - 10.0 * llTan(pitch);
+            }
+            else if (type == 12) foc = O + <0.0, 0.0, 0.2>;          // you, small in the space
+            else
+            {
+                foc = c + dirOf(az + PI + (llFrand(1.4) - 0.7)) * 10.0;   // eye level, back across your area
+                foc.z = c.z - 0.5;
+            }
+            // the view must at least reach past you (you small: reach you), at most 6 m - a small room is fine
+            float need = d + 1.0;
+            if (need > 6.0) need = 6.0;
+            if (type == 12) need = llVecDist(c, foc) - 1.0;
+            if (c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0)
+            {
+                float dEc = llVecDist(E, c);
+                list r = ray(E, E + llVecNorm(c - E) * (dEc + 0.6));    // 1. a clear line from your eye, 0.5 m to spare
+                if (llList2Integer(r, 0) == 0 || (llList2Integer(r, 0) == 1 && llList2Float(r, 1) >= dEc + 0.5))
                 {
-                    bestS = s;
-                    best = [c, foc, type, az];
+                    if (floorOK(c) && floorOK(c + dirOf(az) * 0.6))     // 2. your floor under it, and a little beyond
+                    {
+                        integer room = TRUE;
+                        if (!relaxed)                            // 3. head room
+                        {
+                            r = ray(c, c + <0.0, 0.0, 0.5>);
+                            room = (llList2Integer(r, 0) == 0);           // (a refused ray is not "clear")
+                        }
+                        if (room)
+                        {
+                            r = ray(c, c + llVecNorm(foc - c) * 30.0);   // 4. a view
+                            float clear = llList2Float(r, 1);
+                            if (llList2Integer(r, 0) >= 0 && clear >= need)
+                            {
+                                found++;
+                                float sc = 2.0 * clear / 30.0 + 2.0 * nov + llFrand(0.5);
+                                if (type != gLastType) sc += 1.0;
+                                if (sc > bestS)
+                                {
+                                    bestS = sc;
+                                    best = [c, foc, type, az];
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
     return best;
+}
+
+// the last resort inside: just behind you at eye height (or behind-left / behind-right, whichever has the most
+// room), looking where you look. A refused ray counts as no room. Never outside.
+list safeShot()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_ROT]);
+    vector F = llRot2Fwd(llList2Rot(d, 0));
+    F.z = 0.0;
+    if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
+    F = llVecNorm(F);
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    float fa = llAtan2(F.y, F.x);
+    float bestD = 0.8;
+    vector B = ZERO_VECTOR - F;
+    integer i;
+    for (i = 0; i < 3; i++)
+    {
+        vector b = dirOf(fa + PI + (i - 1) * 0.785398);
+        list r = ray(E, E + b * 2.5);
+        float dd = 2.2;
+        if (llList2Integer(r, 0) == 1) dd = llList2Float(r, 1) - 0.3;
+        else if (llList2Integer(r, 0) < 0) dd = 0.8;
+        if (dd > 2.2) dd = 2.2;
+        if (dd > bestD + 0.1)
+        {
+            bestD = dd;
+            B = b;
+        }
+    }
+    vector c = E + B * bestD + <0.0, 0.0, 0.3>;
+    return [c, c + F * 10.0 - <0.0, 0.0, 0.6>, 13, llAtan2(B.y, B.x)];
 }
 
 string favKey()
@@ -393,7 +510,7 @@ addFav(string spot)
     L += [spot];
     while (llGetListLength(L) > 8) L = llDeleteSubList(L, 0, 0);
     llLinksetDataWriteProtected(favKey(), llDumpList2String(L, ";"), PASS);
-    llOwnerSay("[Cinema] ⭐ spot saved (" + (string)llGetListLength(L) + "/8 here)");
+    llOwnerSay("[Take 12] ⭐ spot saved (" + (string)llGetListLength(L) + "/8 here)");
 }
 
 // one of the saved favourites that is in reach and has a clear view: [cam, focus, 7, az] or []
@@ -413,7 +530,8 @@ list favShot()
             vector foc = (vector)llList2String(P, 1);
             vector h = c - gOP;
             h.z = 0.0;
-            if (llVecMag(h) <= gReach + 20.0 && c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0 && c != foc)
+            if (llVecMag(h) <= gReach + 20.0 && c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0 && c != foc
+                && (!gLocal || floorOK(c)))
             {
                 list r = ray(c, c + llVecNorm(foc - c) * 10.0);
                 if (gErr) return [];
@@ -433,9 +551,10 @@ string kindName(integer t)
     if (t == 5) return "drone";
     if (t == 6) return "wide";
     if (t == 7) return "favourite";
-    if (t == 10) return "room corner";
-    if (t == 11) return "room centre";
-    return "room, you small";
+    if (t == 10) return "inside, high";
+    if (t == 11) return "inside, eye level";
+    if (t == 12) return "inside, you small";
+    return "inside, close (no clear spot further away)";
 }
 
 nextShot()
@@ -447,31 +566,36 @@ nextShot()
     gErr = FALSE;
     if (!gCtxOK || llVecDist(gOP, gCtxPos) > 10.0) context();
     list s = [];
-    if (!gErr && gCuts % 4 == 3) s = favShot();
-    if (llGetListLength(s) == 0 && !gErr && gInside)
+    if (!gErr && !LITE && gCuts % 4 == 3) s = favShot();
+    if (llGetListLength(s) == 0 && !gErr && gLocal)
     {
-        s = roomShot();
-        if (llGetListLength(s) == 0)
-        {
-            gInsideFails++;
-            if (gInsideFails == 3 && !gToldRoom)
-            {
-                gToldRoom = TRUE;
-                tsay("scenery: this room is too small for room views, using views from outside");
-            }
-        }
-        else gInsideFails = 0;
+        // inside: never a view from outside. Best spot, then a closer relaxed one, then the close shot.
+        s = localShot(gDmax, FALSE);
+        if (llGetListLength(s) == 0) s = localShot(6.0, TRUE);
+        if (llGetListLength(s) == 0) s = safeShot();
     }
-    if (llGetListLength(s) == 0 && !gErr) s = findShot(MIN_DIST, 25.0);
-    if (llGetListLength(s) == 0 && !gErr) s = findShot(15.0, 12.0);   // relaxed second pass
+    if (llGetListLength(s) == 0 && !gErr && !gLocal)
+    {
+        s = findShot(MIN_DIST, 25.0);
+        if (llGetListLength(s) == 0 && !gErr) s = findShot(15.0, 12.0);   // relaxed second pass
+    }
+    if (llGetListLength(s) > 0) gErr = FALSE;           // a good shot found before a ray was refused is still good
     if (llGetListLength(s) == 0)
     {
-        if (gErr) tsay("scenery: ray error, basic shot for now");
+        if (gErr && gRetry < 2)
+        {
+            gRetry++;                                    // Second Life limits rays in busy places: try again shortly
+            llSetTimerEvent(0.7);
+            return;
+        }
+        gRetry = 0;
+        if (gErr) tsay("scenery: Second Life is busy and refused the rays, basic shot for now");
         else tsay("scenery: no clear view found here, basic shot for now");
         gLastAz = [];
         llMessageLinked(LINK_SET, NO_SHOT, "none", "");
         return;
     }
+    gRetry = 0;
     vector cam = llList2Vector(s, 0);
     integer type = llList2Integer(s, 2);
     float hold = gHold * (0.75 + 0.5 * llFrand(1.0));
@@ -481,11 +605,11 @@ nextShot()
     gCuts++;
     if (type >= 5 && type <= 7)
     {
-        // reach regrowth: 20 clean cuts in a row and the reach grows by 10 % (up to 100 m)
+        // reach regrowth: 20 clean cuts in a row and the reach grows by 10 % (up to the reach you chose)
         gReachOk++;
-        if (gReachOk >= 20 && gReach < 100.0)
+        if (gReachOk >= 20 && gReach < gReachSet)
         {
-            gReach = clampf(gReach * 1.1, MIN_DIST, 100.0);
+            gReach = clampf(gReach * 1.1, MIN_DIST, gReachSet);
             gReachOk = 0;
             llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
             llLinksetDataWriteProtected("cin.reach_ok", "0", PASS);
@@ -502,7 +626,6 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Cinema] scenery v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gLastType = -1;
         loadCfg();
@@ -519,6 +642,12 @@ default
         if (c & CHANGED_OWNER) llResetScript();
     }
 
+    timer()
+    {
+        llSetTimerEvent(0.0);                            // a retry after Second Life refused rays
+        nextShot();
+    }
+
     link_message(integer sender, integer num, string str, key id)
     {
         if (num == START)
@@ -529,18 +658,24 @@ default
             loadCfg();
             gPaused = FALSE;
             gCtxOK = FALSE;
+            gLocal = FALSE;
             gLastAz = [];
             gLastType = -1;
             gCuts = 0;
-            gToldRoom = FALSE;
+            gFailCut = -99;
+            gRetry = 0;
             nextShot();
         }
-        else if (num == STOP) gActive = FALSE;
+        else if (num == STOP)
+        {
+            gActive = FALSE;
+            llSetTimerEvent(0.0);
+        }
         else if (!gActive)
         {
             if (num == CFG_CHANGED) loadCfg();
             else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
-            else if (num == STATUS && str == "?") llOwnerSay("[Cinema/scenery] v" + VERSION + " idle, reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
+            else if (num == STATUS && str == "?") llOwnerSay("[Take 12/scenery] v" + VERSION + " idle, reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
         }
         else if (num == NEXT) nextShot();
         else if (num == PAUSE) gPaused = TRUE;
@@ -556,21 +691,34 @@ default
         }
         else if (num == REACH_FAIL)
         {
-            // the viewer did not put the camera that far: learn a shorter reach and cut again
-            float want = (float)str;
-            gReach = clampf(0.8 * want, MIN_DIST, gReach);
+            // the viewer stopped the camera short ("<asked>|<allowed>"). Once can be a hiccup: just cut again.
+            // A real limit stops it at the same distance every time: twice within 10 cuts, within 10 % of each
+            // other, and the reach is learned a bit inside that distance.
+            list L = llParseString2List(str, ["|"], []);
+            float got = llList2Float(L, 1);
             gReachOk = 0;
-            llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
             llLinksetDataWriteProtected("cin.reach_ok", "0", PASS);
-            tsay("your viewer keeps the camera closer than " + (string)llRound(want) + " m - reach is now " + (string)llRound(gReach) + " m");
+            if (gCuts - gFailCut <= 10 && llFabs(got - gFailGot) < 0.1 * got)
+            {
+                if (gFailGot > got) got = gFailGot;
+                gReach = clampf(0.9 * got, MIN_DIST, gReach);
+                gFailCut = -99;
+                llLinksetDataWriteProtected("cin.reach", (string)llRound(gReach), PASS);
+                tsay("your viewer keeps the camera within about " + (string)llRound(got) + " m - reach is now " + (string)llRound(gReach) + " m");
+            }
+            else
+            {
+                gFailCut = gCuts;
+                gFailGot = got;
+            }
             nextShot();
         }
-        else if (num == FAV) addFav(str);
+        else if (num == FAV && !LITE) addFav(str);
         else if (num == CFG_CHANGED) loadCfg();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/scenery] v" + VERSION + " active, cuts " + (string)gCuts + ", under a roof " + (string)gCovered + ", inside-mode " + (string)gInside
+            llOwnerSay("[Take 12/scenery] v" + VERSION + " active, cuts " + (string)gCuts + ", under a roof " + (string)gCovered + ", inside-mode " + (string)gLocal
                 + ", reach " + (string)llRound(gReach) + " m, hold " + (string)llRound(gHold) + " s, free mem " + (string)llGetFreeMemory());
         }
     }

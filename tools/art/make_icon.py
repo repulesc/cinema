@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Cinema HUD icon: a deliberately pixel-art clapperboard, 16x16, two frames.
+"""Take 12 icon: a deliberately pixel-art clapperboard with "12" on the slate, 16x16, two frames.
 
   frame 1 (left half)  = open   (idle look)
   frame 2 (right half) = clapped (shown for 0.3 s when the camera starts)
 
-Writes hud/art/cinema_icon_256x128.png (the chosen variant, upload this one),
-hud/art/variants/<name>_256x128.png and hud/art/preview.png.
+Writes hud/art/take12_icon_sheet_512x256.png (upload this one: ALL looks, switchable from the
+menu), hud/art/variants/<look>_256x128.png (single-look, two frames) and hud/art/preview.png.
 Pixels are scaled x8 with nearest-neighbour; the background is transparent.
 Edit the palette or the drawing below, re-run, re-upload.
 
-    python3 tools/art/make_icon.py [variant]     (default: DEFAULT below)
+    python3 tools/art/make_icon.py
 """
 import os, sys
 from PIL import Image, ImageDraw
@@ -24,6 +24,7 @@ PAL = {
     "W": (244, 241, 232, 255),   # chalk white
     "H": (138, 144, 166, 255),   # chalk lines
     "C": (255, 90, 95, 255),     # coral accent
+    "B": (110, 214, 246, 255),   # cyan (viewfinder variant)
 }
 
 def blank():
@@ -45,19 +46,21 @@ def draw(open_, v):
                 g[y][x] = stripe(s2, s1, x + (y - 8))
             else:
                 g[y][x] = "D"
-    # chalk on the slate (rows 11..14)
-    if v == "viewfinder":
-        for (x, y) in [(3, 11), (4, 11), (3, 12), (11, 11), (12, 11), (12, 12),
-                       (3, 13), (3, 14), (4, 14), (12, 13), (12, 14), (11, 14), (7, 12), (8, 13)]:
-            g[y][x] = "W"
-    else:
-        for x in range(3, 9):
-            g[12][x] = "H"
-        for x in list(range(3, 6)) + list(range(7, 10)):
-            g[14][x] = "H"
-        if v == "rec":
-            for (x, y) in [(11, 12), (12, 12), (11, 13), (12, 13)]:
-                g[y][x] = "C"
+    # "12" chalked on the slate (rows 11..14, 3x4 pixel digits)
+    D1 = [".#.", "##.", ".#.", ".#."]
+    D2 = ["##.", "..#", ".#.", "###"]
+    x0 = 4 if v == "viewfinder" else 3   # viewfinder: digits centred
+    for r in range(4):
+        for c in range(3):
+            ink = "B" if v == "viewfinder" else "W"
+            if D1[r][c] == "#": g[11 + r][x0 + c] = ink
+            if D2[r][c] == "#": g[11 + r][x0 + 4 + c] = ink
+    if v == "rec":
+        for (x, y) in [(11, 12), (12, 12), (11, 13), (12, 13)]:
+            g[y][x] = "C"
+    elif v == "classic":
+        for x in range(11, 13):
+            g[13][x] = "H"
     # hinged stick: 4 rows thick (outline, 2 fill, outline), hinge at x=1, bottom row 7
     rise = 4 if open_ else 0
     for x in range(1, 15):
@@ -112,13 +115,27 @@ def preview(variants, out):
         img.paste(r, (0, 150 * i))
     img.save(out)
 
+LOOKS = ["classic", "rec", "viewfinder"]       # look number 0, 1, 2 (menu: Options > Look); 3 is spare
+SHEET_COLS, SHEET_ROWS = 4, 2
+
+def look_sheet():
+    """ONE 512x256 texture with every look: 4 columns x 2 rows of 128x128 frames.
+    Frame k sits at column k % 4, row k // 4 (row 0 = top). Look n uses frame 2n (open) and
+    2n + 1 (clapped); frames 6 and 7 are spare for a fourth look.
+    The script shows frame k with repeats <0.25, 0.5> and offset
+    <(k % 4 + 0.5) / 4 - 0.5, +0.25 for the top row / -0.25 for the bottom row>."""
+    s = Image.new("RGBA", (SHEET_COLS * FRAME, SHEET_ROWS * FRAME), PAL["K"][:3] + (0,))
+    for n, v in enumerate(LOOKS):
+        for j, o in enumerate((True, False)):
+            k = 2 * n + j
+            s.paste(frame_img(draw(o, v)), ((k % SHEET_COLS) * FRAME + PAD, (k // SHEET_COLS) * FRAME + PAD))
+    return s
+
 if __name__ == "__main__":
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "art")
     os.makedirs(os.path.join(root, "variants"), exist_ok=True)
-    variants = ["classic", "rec", "viewfinder"]
-    choice = sys.argv[1] if len(sys.argv) > 1 else DEFAULT
-    for v in variants:
+    for v in LOOKS:                                 # single-look sheets (2 frames), if you want only one look
         sheet(v).save(os.path.join(root, "variants", v + "_256x128.png"))
-    sheet(choice).save(os.path.join(root, "cinema_icon_256x128.png"))
-    preview(variants, os.path.join(root, "preview.png"))
-    print("icon:", choice, "->", os.path.normpath(os.path.join(root, "cinema_icon_256x128.png")))
+    look_sheet().save(os.path.join(root, "take12_icon_sheet_512x256.png"))
+    preview(LOOKS, os.path.join(root, "preview.png"))
+    print("wrote", os.path.normpath(os.path.join(root, "take12_icon_sheet_512x256.png")))

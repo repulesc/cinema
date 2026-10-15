@@ -1,13 +1,14 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_core.lsl  (v4)
-//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social
+//  Take 12  -  cinema_core.lsl  (v4)
+//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social, friends, frame
 //  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.6.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
+integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
 integer START      = 7301;   // core -> workers  "<mode>|<fov>"
 integer STOP       = 7302;
@@ -19,14 +20,17 @@ integer SHOT       = 7310;   // worker -> core   "<pos>|<focus>|<hold>|<type>"
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;   // friends -> core  "<pos>|<focus>"
 integer ACK        = 7313;
-integer REACH_FAIL = 7314;   // core -> scenery  "<distance>"
+integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
+integer NUDGE      = 7317;   // core -> frame    movement keys held now (control level bits)
+integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / stop / next / photo / fav / grab
+integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / frame / stop / next / photo / fav / grab
+integer CTL = 831;           // CONTROL_FWD | BACK | LEFT | RIGHT | ROT_LEFT | ROT_RIGHT | UP | DOWN
 
 float FIRST_WAIT  = 1.5;     // s  wait for the first shot, then cut to a basic shot
 float NEXT_WAIT   = 2.5;     // s  wait for the next shot
@@ -47,7 +51,8 @@ integer gNeed;
 integer gSitMask;
 integer gPermOK;
 integer gState;
-string  gMode;                // "scenery" / "personal" / "social" / "friends"
+string  gMode;                // "scenery" / "personal" / "social" / "friends" / "frame"
+float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gLastAct;
@@ -73,6 +78,7 @@ float   gApplyT;
 float   gLastTick;
 float   gGlideUntil;
 vector  gShotPos;
+vector  gCamBefore;            // where the viewer had the camera just before the cut
 vector  gCamPos;
 rotation gCamRot;
 
@@ -100,7 +106,7 @@ loadCfg()
     gPeekOn   = (integer)cfg("peek", "1");
     gPeekBail = (integer)cfg("peek_bail", "0");
     gCutMode  = (integer)cfg("cutmode", "0");
-    gTrace    = (integer)cfg("trace", "1");
+    gTrace    = (integer)cfg("trace", "0");
 }
 
 setUi(string st)
@@ -131,6 +137,7 @@ float clampf(float v, float lo, float hi)
 // ---- camera ------------------------------------------------------------------
 setCam(vector p, vector f)
 {
+    gCamBefore = llGetCameraPos();
     if (gCutMode || gGlided) llClearCameraParams();
     gGlided = FALSE;
     llSetCameraParams([
@@ -181,7 +188,7 @@ float surfaceAt(float x, float y, float zTop, float zBottom)
 }
 
 // basic shot when the mode's worker script is silent:
-// scenery = high behind you looking down over your area; people = level portrait orbit
+// scenery = high behind you looking down over your area (outdoors only); otherwise a level portrait orbit
 basicShot()
 {
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
@@ -193,7 +200,15 @@ basicShot()
     F = llVecNorm(F);
     vector cam;
     vector foc;
+    // scenery's high view from behind would be outside any building: under a roof (or if the ray is refused) use
+    // the close view of you instead, which stays inside
+    integer roof = FALSE;
     if (gMode == "scenery")
+    {
+        list u = llCastRay(P + <0.0, 0.0, 1.0>, P + <0.0, 0.0, 40.0>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        roof = (llList2Integer(u, -1) != 0);
+    }
+    if (gMode == "scenery" && !roof)
     {
         cam = P - F * 15.0;
         cam.x = clampf(cam.x, 3.0, 253.0);
@@ -227,6 +242,12 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
+// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still
+takeCtl(integer pass)
+{
+    llTakeControls(CTL, TRUE, pass);
+}
+
 // ---- lifecycle ------------------------------------------------------------------
 // instant return to the user's own camera
 bail(string why)
@@ -241,6 +262,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
+    if (gPermOK && gMode == "frame") takeCtl(TRUE);
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
@@ -249,7 +271,7 @@ engage(string mode)
 {
     if (!gPermOK)
     {
-        llOwnerSay("[Cinema] No camera permission yet - re-attach the HUD.");
+        llOwnerSay("[Take 12] No camera permission yet - re-attach the HUD.");
         llRequestPermissions(gOwner, gNeed);
         return;
     }
@@ -264,9 +286,11 @@ engage(string mode)
     gSitBase = llGetAgentInfo(gOwner) & gSitMask;
     gLastAct = llGetUnixTime();
     gLastTick = llGetTime();
+    gFovSent = llGetCameraFOV();
+    takeCtl(mode != "frame");
     askWorker("start");
     setUi("rolling");
-    if (gTrace) llOwnerSay("[Cinema] " + mode + " camera on");
+    if (gTrace) llOwnerSay("[Take 12] " + mode + " camera on");
     llSetTimerEvent(0.5);
 }
 
@@ -344,6 +368,15 @@ activeTick(float dt)
         resume();
     }
     if (gState == ST_FREEZE) return;                // photo hold: no cuts, no checks
+    if (gMode == "frame")
+    {
+        float fv = llGetCameraFOV();                // the zoom: Frame re-places the shot for it
+        if (llFabs(fv - gFovSent) > 0.004)
+        {
+            gFovSent = fv;
+            llMessageLinked(LINK_SET, FOVMSG, (string)fv, "");
+        }
+    }
 
     // worker slow or absent: cover with a basic shot so the camera never sits idle
     if (gAsking && (gState == ST_WAIT || gState == ST_ROLL))
@@ -355,7 +388,7 @@ activeTick(float dt)
             if (!gWorkerOK && !gWarned)
             {
                 gWarned = TRUE;
-                llOwnerSay("[Cinema] The " + gMode + " script is not answering, so you get basic shots. Check that it is in this prim and running (Build > Scripts > Set Scripts to Running in Selection) and look at the Script Errors window.");
+                llOwnerSay("[Take 12] The " + gMode + " script is not answering, so you get basic shots. Check that it is in this prim and running (Build > Scripts > Set Scripts to Running in Selection) and look at the Script Errors window.");
             }
             basicShot();
         }
@@ -368,11 +401,15 @@ activeTick(float dt)
         float want = llVecDist(gShotPos, op);
         if (gVerify)
         {
-            // first check after a cut: did the viewer put the camera where we asked?
+            // first check after a cut: did the viewer put the camera where we asked? Only a camera that moved
+            // (not a stale or minimised viewer), straight out toward the spot but stopped short counts as a reach
+            // limit; anything else is you orbiting or Alt-cam, which the peek check below handles.
             gVerify = FALSE;
-            if ((gType == 5 || gType == 6 || gType == 7) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, op) < 0.8 * want)
+            float got = llVecDist(cp, op);
+            if ((gType == 5 || gType == 6 || gType == 7) && llVecDist(cp, gShotPos) > 3.0 && llVecDist(cp, gCamBefore) > 1.0
+                && got > 15.0 && got < 0.9 * want && llVecNorm(cp - op) * llVecNorm(gShotPos - op) > 0.99)
             {
-                llMessageLinked(LINK_SET, REACH_FAIL, (string)want, "");
+                llMessageLinked(LINK_SET, REACH_FAIL, (string)want + "|" + (string)got, "");
                 return;
             }
         }
@@ -411,8 +448,8 @@ grabTest(float t)
 {
     if (t - gApplyT < 3.0) return;
     float off = llVecDist(llGetCameraPos(), gShotPos);
-    if (off < 1.0) llOwnerSay("[Cinema] grab test: the viewer FOLLOWED the script camera. Camera control works.");
-    else llOwnerSay("[Cinema] grab test: the viewer IGNORED the script camera (" + (string)off + " m off). Press ESC, leave Alt-cam / mouselook, try again.");
+    if (off < 1.0) llOwnerSay("[Take 12] grab test: the viewer FOLLOWED the script camera. Camera control works.");
+    else llOwnerSay("[Take 12] grab test: the viewer IGNORED the script camera (" + (string)off + " m off). Press ESC, leave Alt-cam / mouselook, try again.");
     bail("test");
 }
 
@@ -429,10 +466,9 @@ default
         gLastAct = llGetUnixTime();
         gCamRot = ZERO_ROTATION;
         loadCfg();
-        llOwnerSay("[Cinema] core v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
-        else llOwnerSay("[Cinema] Wear me as a HUD (right-click > Attach To HUD).");
+        else llOwnerSay("[Take 12] Wear me as a HUD (right-click > Attach To HUD).");
         setUi(idleUi());
         llSetTimerEvent(2.0);
     }
@@ -458,12 +494,11 @@ default
         gPermOK = ((p & gNeed) == gNeed);
         if (gPermOK)
         {
-            llTakeControls(CONTROL_FWD | CONTROL_BACK | CONTROL_LEFT | CONTROL_RIGHT
-                | CONTROL_ROT_LEFT | CONTROL_ROT_RIGHT | CONTROL_UP | CONTROL_DOWN, TRUE, TRUE);
+            takeCtl(gState == ST_IDLE || gMode != "frame");
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
-        else llOwnerSay("[Cinema] Camera / control permission was not granted - re-attach the HUD.");
+        else llOwnerSay("[Take 12] Camera / control permission was not granted - re-attach the HUD.");
     }
 
     changed(integer c)
@@ -495,6 +530,11 @@ default
         if (gMode == "scenery" || gState == ST_TEST)
         {
             bail("key");
+            return;
+        }
+        if (gMode == "frame")
+        {
+            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level, "");     // Frame steps while held
             return;
         }
         // personal / social: the camera follows you
@@ -532,13 +572,16 @@ default
         }
         else if (num == GLIDE)
         {
-            // friends: slowly move the camera to keep the group framed (the viewer eases it using the lag)
-            if (gState == ST_ROLL && gMode == "friends")
+            // friends: slowly move the camera to keep the group framed; frame: nudges and zoom changes.
+            // The viewer eases it using the lag ("<pos>|<focus>" or "<pos>|<focus>|<lag>").
+            if (gState == ST_ROLL && (gMode == "friends" || gMode == "frame"))
             {
                 list L = llParseStringKeepNulls(str, ["|"], []);
                 vector gp = (vector)llList2String(L, 0);
                 vector gf = (vector)llList2String(L, 1);
-                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, 1.5, CAMERA_FOCUS_LAG, 1.5]);
+                float lag = 1.5;
+                if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
+                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
@@ -562,6 +605,7 @@ default
         }
         else if (num == CMD)
         {
+            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "fav")) return;
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
@@ -573,11 +617,11 @@ default
                     gMode = "personal";
                     basicShot();
                     gState = ST_TEST;
-                    llOwnerSay("[Cinema] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
+                    llOwnerSay("[Take 12] grab test: permissions " + (string)llGetPermissions() + " of " + (string)gNeed + ", camera sent - watch your view.");
                     llSetTimerEvent(0.25);
                 }
             }
-            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends") engage(str);
+            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame") engage(str);
             else if (str == "photo")
             {
                 if ((gState == ST_ROLL || gState == ST_PEEK) && gLast != "")
@@ -618,13 +662,13 @@ default
                     list F = llParseStringKeepNulls(gLast, ["|"], []);
                     llMessageLinked(LINK_SET, FAV, llList2String(F, 0) + "|" + llList2String(F, 1), "");
                 }
-                else llOwnerSay("[Cinema] Save spot works while the scenery camera is rolling.");
+                else llOwnerSay("[Take 12] Save spot works while the scenery camera is rolling.");
             }
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
+            llOwnerSay("[Take 12/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
                 + ", permissions " + (string)gPermOK + ", worker answered " + (string)gWorkerOK
                 + ", shot type " + (string)gType + ", free mem " + (string)llGetFreeMemory());
         }

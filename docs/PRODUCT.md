@@ -1,9 +1,9 @@
-# Cinema HUD: Product Spec (v4)
+# Take 12: Product Spec (v4)
 
 This is the source of truth for what the v4 HUD is. v3.0.0 is frozen and working in `legacy/v3/`. The older people-centred versions are in `legacy/v1-v2/`. The quiz answers this spec is built from are at the bottom.
 
 ## The idea in one paragraph
-Cinema HUD is a tiny, fun-looking one-button Second Life HUD that turns your time in-world into a quiet film. Its **default job is the scenery camera**. When you go AFK, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 100 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
+Take 12 is a tiny, fun-looking one-button Second Life camera HUD that shows you your world from beyond your avatar's back. It moves the camera by itself to where a camera operator would put it, and gives it back with any movement key; it records nothing. Its **default job is the scenery camera**. When you go idle, or double-tap the button, your view leaves your avatar and cuts between still, grand views of the place you are in. Those are high drone views and wide eye-level views, up to about 100 m away, with nothing blocking the view, held long and calm. In a skybox or another enclosed sky build, it can stay **inside the room** instead. Three optional cameras are a tap away in a clean emoji menu, and AFK never starts them:
 - **Personal** follows you.
 - **Social** frames you with the people around you, cutting to whoever speaks.
 - **Friends** keeps you and your chosen friends in frame, gliding gently.
@@ -11,6 +11,16 @@ Cinema HUD is a tiny, fun-looking one-button Second Life HUD that turns your tim
 A movement key, a tap or typing gives your camera back.
 
 **Design rules for every decision:** static, contemplative, minimal, nothing gimmicky, and nothing the user has to babysit.
+
+## Principles
+A guide for every feature, not ad copy.
+1. **It decides; you accept or skip.** Take 12 chooses the view. Your part is a double-tap at most.
+2. **Calm.** Long holds, few cuts, a quiet chat, a button that fades.
+3. **No settings on screen.** No numbers, no jargon. Details live in the Read Me.
+4. **One button.** Everything else is optional.
+5. **Restraint.** A feature earns its place by making the experience easier, not by being a feature.
+
+The tone of every text follows the product: plain, understated, no slogans. Think of a good point-and-shoot camera: it works well and says little.
 
 ## The button
 | Look | Value |
@@ -56,7 +66,7 @@ Pace: Calm (60 s) · AFK: 90 s · Indoors: auto
 - ⭐ Save shows only in Scenery.
 
 ### ⏳ Pace
-Applies to Scenery. The people modes keep their own rhythm.
+Applies to **all** cameras (4.4.3). Scenery holds a view for the full Pace time. Personal, Social and Friends hold a shot for about 75 % of it (Calm: about 45 s, a group tableau about 55 s), and they hold longer when Pace is slower.
 ```
 How long each view is held. Now: Calm, about 60 s
 
@@ -88,8 +98,8 @@ Ana, Bo, Kit
 ```
 [🏠 Indoors ][💬 Chat cuts][⭐ Favourites]
 [👁 Alt-cam ][🧱 Phantom ][📏 Reach   ]
-[📝 Trace   ][🔤 Emoji   ][🔆 Fade   ]
-[🧪 Test cam][♻ Reset   ][↩ Back   ]
+[📝 Chat text][🎨 Look    ][🧪 Test cam]
+[♻ Reset   ][↩ Back    ]
 ```
 | Option | Choices (default first) | What it does |
 |---|---|---|
@@ -98,10 +108,9 @@ Ana, Bo, Kit
 | ⭐ Favourites | Clear here / Clear all | Saved Scenery spots of this region |
 | 👁 Alt-cam | **Pause** / End / Ignore | What happens when you Alt-orbit during a shot |
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
-| 📏 Reach | 25 / 50 / 75 / **100** m / Re-learn | The furthest Scenery camera distance. The HUD lowers it by itself if your viewer refuses far cameras |
-| 📝 Trace | **On** / Off | One chat line per cut |
-| 🔤 Emoji | **On** / Off | Emoji on the menu buttons |
-| 🔆 Fade | 20 / **40** / 70 % | How visible the button stays while the camera rolls |
+| 📏 Reach | 50 / **100** / 150 / 200 m / Re-learn | The furthest Scenery camera distance (the nearest is always 20 m). If your viewer really holds the camera closer (it stops short at the same distance twice), the HUD lowers it by itself and slowly grows it back up to your choice. Orbiting, Alt-cam, mouselook or a minimised viewer never lower it. Re-learn goes back to your choice |
+| 📝 Chat text | On / **Off** | Chat feedback. **Off by default**: the HUD says nothing in chat, except errors, warnings and the answers to commands you type. On: one line per cut (with what it found and why), and a line after each menu choice. The setting is stored as `trace` |
+| 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔆 Fade (20 / **40** / 70 %) and 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
 | ♻ Reset | – | All settings to defaults (asks first) |
 
@@ -120,24 +129,27 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
   - **Wide eye-level views**, 2.5–4 m up, level along the horizon.
   - Nothing may block the view. Every new spot comes from a clearly different direction.
   - The camera stays inside your region.
-- **Indoors (new):** the HUD works out where you are:
+- **Indoors (reworked in 4.4.0, rules refined in 4.4.1):** the HUD judges a place by the **floor under you**, the one surface that always has physics because people walk on it. Walls, ceilings and windows are often built without physics, and rays pass through them, so they are only used when they can be seen.
 
-  | Where you are | Auto does |
-  |---|---|
-  | **Open** (no roof, or walls on few sides) | Outdoor scenery, as above |
-  | **Enclosed in the sky:** a skybox, sky mall or sky club (roof plus walls around, high above the ground or nothing below the floor) | **Room views inside the space** |
-  | **Enclosed on the ground:** a house or a shop on the ground | Outside and above the roof, as in v3 |
+  | Where you are | Auto | Indoors = Inside | Indoors = Outside |
+  |---|---|---|---|
+  | **On a build in the sky:** skybox, sky mall, sky club, sky deck (no land within 100 m under you) | **inside** | inside | outdoor views |
+  | **On a build on the ground, with a roof over you:** a house, a shop, a trailer, a roofed mall | **inside** (4.4.1) | inside | outdoor views |
+  | **On a build on the ground, no roof:** a plaza, a deck, a pier | outdoor views | inside | outdoor views |
+  | **On the land, in the open** | outdoor views | inside, near you (an override) | outdoor views |
+  | A build whose floor, walls and roof all have **no physics** (rays see nothing) | outdoor views (nothing to detect) | inside, near you | outdoor views |
 
-  - Options › Indoors forces **Inside** or **Outside** for every enclosed place.
-  - Room views are, mixed:
-    - **Corner wide:** high in a corner of the room, looking across the whole space.
-    - **Room centre:** eye level near the middle, looking toward the farthest open view.
-    - **You small in the room:** from the far side, you as a small figure in the space.
-  - Every room view is checked:
-    - it is inside the same room as you (a clear ray between you and the camera);
-    - it is at least 0.5 m from any surface;
-    - it has a clear view across the room.
-  - In a tiny room, where nothing passes the checks, it falls back to outdoor scenery and says so once.
+  - **Auto does not flip.** Once it decides you are inside, it stays inside until you are clearly outdoors (no build floor and no roof) or 30 m away from where it last confirmed it.
+  - **Indoors = Inside is a real override.** If you choose it, it stays inside even where nothing can be detected: the camera then stays within 12–20 m of you at eye height or under the ceiling.
+  - **Inside views**, mixed: **high** (under the ceiling, looking down across your area), **eye level** (looking back across your area), **you small** (from across the space).
+  - Every inside camera passes four checks:
+    1. A clear line from your eye, with 0.5 m to spare.
+    2. **Your floor under it**, and the camera within the outline of your floor. This works even where walls have no physics, and it keeps the camera on your storey.
+    3. Head room.
+    4. A view that reaches past you.
+  - The camera stays under the ceiling. If the ceiling can't be seen, it stays about 3.4 m above the floor. It also stays within 12 m of you, or 20 m in a big open hall.
+  - **Never outside while inside:** if no spot passes, it tries closer spots, then a close shot from just behind you. It never cuts to a view from outside.
+  - In a busy region that refuses some rays, it skips those spots, tries again shortly, and measures the place again on the next cut.
 - **⭐ Favourite spots (new):**
   - Long press › ⭐ Save stores the view on screen as a favourite for this region (up to 8 per region).
   - Scenery mixes one in about every 4th cut, when it is within reach and was not the last one used.
@@ -159,7 +171,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **💬 Chat cuts (new, on by default):**
   - When someone within 8 m speaks in local chat, the camera cuts to them over the shoulder of the person nearest them.
   - When **you** start typing, it cuts to you.
-  - A cut holds at least 6 s, and the same speaker is not cut to again within 10 s, so a fast chat does not flicker.
+  - A cut waits at least 15 s at Calm (a quarter of Pace, never under 12 s), and the same person is not cut to again within 30 s, so a fast chat does not flicker. A speaker shot lasts about 18 s.
 - **Exits:** tap. **Typing does not exit Social**, because you are part of the scene. Movement keys don't exit either.
 
 ### 4. 💞 Friends: optional (new)
@@ -168,9 +180,12 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - **Motion:** the only mode that moves.
   - While everyone is in the frame, the camera **glides slowly** to keep the group well framed. It moves over about 1.5 s, and only when the group has really moved.
   - If anyone stays out of the frame for about **1 s**, it **hard-cuts** to a wider shot that holds everyone, up to 25 m away. If that is not enough, it frames the friends nearest to you.
-  - Every 25 s or so it cuts to a fresh angle, so the shot does not go stale.
+  - About every 45 s at Calm (75 % of Pace) it cuts to a fresh angle, so the shot does not go stale.
 - **💬 Chat cuts:** the same as Social, but only for you and your friends.
 - **Exits:** tap. Typing and movement keys do not exit.
+
+### 5. 🖼 Frame: optional (4.6)
+A held, well-composed view for your own snapshots: of you, or of you and whoever stands within about 3 m (chosen automatically). Three framings, Full length → Half length → Close (double-tap = next). The movement keys nudge it; the camera never moves by itself. The framing's name shows for 3 s, then the screen is clean. Spec: `docs/FRAME.md`. A fuller version (more subjects, landscapes, photo shapes, lens guidance) is kept in `lab/` for a possible later composition tool.
 
 ## 📷 Photo hold (all modes)
 - Long press › 📷 Photo freezes the current shot **indefinitely**. No cuts and no re-framing; Friends stops gliding.
@@ -192,10 +207,10 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 - `scenery` · `personal` · `social` · `friends` · `stop` · `next` · `photo` · `fav` · `menu` · `status` · `grab`
 - `pace <s>` (the old `hold <s>` still works)
 - `reach <m>|relearn` · `indoors auto|inside|outside`
-- `friend list|clear` · `trace on|off` · `emoji on|off` · `cutmode on|off` · `chan <n>` · `reset`
+- `friend list|clear` · `trace on|off` (Chat text) · `emoji on|off` · `cutmode on|off` · `chan <n>` · `reset`
 
 ## Vibe
-Grand views, calm pacing. The feel is still, long, contemplative shots, like a film that happens to be shot from a drone, a corner of the room, or a friend's shoulder. The only motion in the whole product is Friends' slow glide, which keeps your group together.
+Grand views, calm pacing. The feel is still, long, contemplative views, as if a calm camera operator placed your camera on a drone, in a corner of the room, or over a friend's shoulder. The only motion in the whole product is Friends' slow glide, which keeps your group together.
 
 ## Explicitly not doing (by choice)
 - Letterbox bars and dip-to-black. Tested in the quiz: not wanted.

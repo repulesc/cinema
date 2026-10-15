@@ -1,16 +1,17 @@
 # Python port of the Friends mode loop in hud/src/cinema_friends.lsl (planF, inFrame, glideTick).
 # Scripted walks: checks that a slow walk glides (no snaps, everyone stays in frame), that someone leaving
 # the frame triggers a snap within 2 half-second ticks (1 s) to a wider shot that holds everyone, that the
-# camera never ends further than 25 m, and that a glide into a wall becomes a cut.
+# camera never ends further than 25 m, that a glide into a wall becomes a cut, and (4.4.6) that a friend drifting
+# toward the edge makes the camera glide back gently instead of cutting.
 import math
-tanV = math.tan(1.047198 / 2); tanH = tanV * 1.778; halfH = math.atan2(tanH, 1.0)
-BODY_R, MARGIN, MAXD = 0.35, 1.15, 25.0
+tanV = math.tan(1.047198 / 2); tanH = tanV * 1.6     # people are fitted for a 16:10 window
+BODY_R, MARGIN, MAXD = 0.35, 1.3, 25.0
 def norm(v): m = math.hypot(*v); return (v[0] / m, v[1] / m)
 def dot(a, b): return a[0] * b[0] + a[1] * b[1]
 
 class Sim:
     def __init__(s, wall=None):
-        s.cam = s.foc = s.V = s.center = None; s.used = 0; s.out = 0; s.glides = s.snaps = s.cuts = 0; s.wall = wall
+        s.cam = s.foc = s.V = s.center = None; s.used = 0; s.out = s.edge = 0; s.glides = s.snaps = s.cuts = s.pulls = 0; s.wall = wall
     def plan(s, owner, friends, mult):
         # friends: positions nearest first; drop the farthest until it fits MAXD
         cnt = len(friends)
@@ -48,6 +49,16 @@ class Sim:
             if s.out >= 2 and since >= 1: s.snaps += 1; s.plan(owner, friends, 1.3); return "snap"
             return "out"
         s.out = 0
+        back = max(abs((p[0] - s.cam[0]) * s.V[1] - (p[1] - s.cam[1]) * s.V[0]) / (0.6 * tanH) - dot((p[0] - s.cam[0], p[1] - s.cam[1]), s.V) for p in pts)
+        s.edge = s.edge + 1 if back > 0.3 and not all(s.in_frame(p, 0.8) for p in pts) else 0
+        if s.edge >= 1:
+            s.edge = 0
+            bc = (s.cam[0] - s.V[0] * back, s.cam[1] - s.V[1] * back)
+            if math.hypot(bc[0] - s.center[0], bc[1] - s.center[1]) > MAXD: s.snaps += 1; s.plan(owner, friends, 1.3); return "snap"
+            if s.wall and s.wall[0] <= bc[0] <= s.wall[2] and s.wall[1] <= bc[1] <= s.wall[3]:
+                s.snaps += 1; s.plan(owner, friends, 1.3); return "cut"     # no room behind the camera
+            s.cam, s.foc = bc, (s.foc[0] - s.V[0] * back, s.foc[1] - s.V[1] * back); s.pulls += 1
+            return "pull"
         n = len(pts); C = tuple(sum(p[k] for p in pts) / n for k in range(2))
         dl = (C[0] - s.center[0], C[1] - s.center[1])
         if math.hypot(*dl) <= 0.2: return "still"
@@ -93,5 +104,17 @@ s = Sim(wall=(-100, -100, 100, 100)); s.plan((0, 0), [(3.0, 2.0)], 1.0)
 res = s.tick((0.5, 0), [(3.5, 2.0)])
 check(res == "cut", f"wall: expected a cut, got {res}")
 print(f"glide into wall -> {res}")
+# 5) a friend drifts slowly sideways, away from the group: gentle pull-backs, no cut, never near the edge for long
+s = Sim(); me = (0.0, 0.0); f1 = [2.0, 1.5]; f2 = (-1.5, 2.0)
+s.plan(me, [tuple(f1), f2], 1.0)
+near = 0
+for t in range(60):                                    # 0.3 m/s for 30 s, mostly across the view
+    f1[1] += 0.15
+    r = s.tick(me, [tuple(f1), f2])
+    pts = [me, tuple(f1), f2][:s.used + 1]
+    near += not all(s.in_frame(p, 0.85) for p in pts)
+check(s.snaps == 0 and s.pulls >= 1, f"drift: pulls {s.pulls}, snaps {s.snaps}")
+check(near <= 4, f"drift: someone sat past 85 % of the half-width for {near} ticks")
+print(f"friend drifts   gentle pull-backs {s.pulls}, glides {s.glides}, snaps {s.snaps}, ticks near the edge {near}")
 print("friends checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

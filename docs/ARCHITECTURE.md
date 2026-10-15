@@ -1,4 +1,4 @@
-# Cinema HUD: Architecture (v4)
+# Take 12: Architecture (v4)
 
 - What the product is: `docs/PRODUCT.md`.
 - The order of work: `docs/ROADMAP.md`.
@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All six scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All seven scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -15,6 +15,7 @@ All six scripts go in the **root prim** of a one-prim HUD. Each must compile cle
 | `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
 | `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
+| `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (alpha fade and clap) | 173 | ~300 (≥ 17 KB) |
 
@@ -25,25 +26,27 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 
 | num | from → to | string | notes |
 |---|---|---|---|
-| 7301 START | core → all | `"<mode>|<fov>"` | mode = `scenery` / `personal` / `social` / **`friends`**. Only the owner of that mode takes it |
+| 7301 START | core → all | `"<mode>|<fov>"` | mode = `scenery` / `personal` / `social` / **`friends`** / **`frame`**. Only the owner of that mode takes it |
 | 7302 STOP | core → all | reason | |
 | 7303 NEXT | core → active | why: `hold` / `retry` / **`skip`** | |
 | 7304 PAUSE / 7305 RESUME | core → active | `ml` / `tp` / `peek` / **`photo`** | |
 | 7306 MOVING | core → active | – | movement key in a following mode |
 | 7310 SHOT | worker → core | `"<pos>|<focus>|<hold>|<type>"` | a hard cut |
 | 7311 NO_SHOT | worker → core | reason | core covers it with a basic shot |
-| **7312 GLIDE** | friends → core | `"<pos>|<focus>"` | a slow move, see §5 |
+| **7312 GLIDE** | friends, frame → core | `"<pos>|<focus>"` or `"<pos>|<focus>|<lag>"` | a slow move, see §5 (Frame: 0.35 s for nudges and zoom changes) |
 | 7313 ACK | worker → core | mode | |
-| 7314 REACH_FAIL | core → scenery | distance | |
+| 7314 REACH_FAIL | core → scenery | `<asked>\|<allowed>` distances from you | |
 | **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
+| **7317 NUDGE** | core → frame | control level bits | Frame: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
+| **7318 FOVMSG** | core → frame | radians | Frame: the viewer's field of view changed (checked every 0.5 s) |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
 | 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |
 | **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
 | 7370 STATUS | ui → all | `?` | every script prints one line |
-| 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |
+| 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / **`frame`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |
 
 **Shot types**
 | Group | Type | Meaning |
@@ -182,12 +185,14 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 |---|---|---|
 | `afk_on`, `afk_sec` | 1, 90 | as v3 |
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
-| `reach` | 100 | learned. `relearn` sets 100 and clears `reach_ok` |
+| `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
+| `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
 | `emoji` | 1 | |
-| `peek`, `peek_bail`, `phantom`, `cutmode`, `trace`, `cmd_chan` | as v3 | `cutmode` is now command-only |
+| `peek`, `peek_bail`, `phantom`, `cutmode`, `cmd_chan` | as v3 | `cutmode` is now command-only |
+| `trace` | **0** (4.4.2; it was 1) | "Chat text". Off: no startup lines, no per-cut lines, no echo after menu choices. Errors, warnings and the answers to typed commands always show. A one-time migration (`cfgv` = 2) turned it off on older installs |
 | `friends` | "" | written by the friends script: `key,name;key,name;…`, at most 10 |
 | `fav.<region>` | "" | written by scenery: `pos|focus;pos|focus;…`, at most 8. The region name has spaces replaced by `_` |
 | `seen_intro` | 0 | the welcome dialog has been shown |
@@ -209,10 +214,11 @@ All commands are listed in PRODUCT.md.
   - `gTargets = [you] + their positions`, with eye heights from `llGetAgentSize`.
 - **Planning:**
   - `planF()` = `planG` over `gTargets`. It already works for two people (you plus 1 friend, a two-shot square-on to your axis).
-  - Distance: `fitDist(spread, 1.3, 3.0, 25.0)`.
+  - Distance: `needAt()` (§7.1), 3–25 m.
   - If the fit wants more than 25 m, drop the target farthest from you and re-plan, until it fits or only you are left.
+  - If no side has room (walls closer than the fit, 4.4.6), re-plan with one friend fewer, nearest first, up to 3 times, before the portrait.
   - With only you left: Personal-style `planA(FALSE)` and one note.
-- **Hold:** a cut every 25 s × (0.8–1.2) for a fresh angle (type 3).
+- **Hold:** `gBase` = 0.75 × Pace (20–150 s; Calm 60 s → 45 s) × (0.85–1.15) for a fresh angle (type 3). A speaker shot (type 4) is `max(14, 0.4 × gBase)`.
 - **Glide and snap loop** (timer 0.5 s while active and not paused):
   1. Refresh the owner and target positions (no full region scan; that stays at 1 s).
   2. `allIn` = every target passes `inFrame(p)`, using `gCurCam` / `gCurV` and `0.9 × halfH`.
@@ -221,11 +227,12 @@ All commands are listed in PRODUCT.md.
      - If the centroid C has moved more than 0.4 m since the last shot or glide: the new cam = old cam + (C − C_last), with z re-derived by `camZ`, and the new focus = old focus + (C − C_last).
      - Check `ray(oldCam, newCam)` and `ray(newCam, newFocus)`. If both are clear, send GLIDE. Otherwise re-plan with a SHOT.
   4. If not `allIn`: `gOutTicks++`. At **2 ticks (1 s)**: re-plan with `MARGIN` × 1.3 → SHOT (a snap).
-  5. The **arrival** of a new friend means a pending cut at the next `MIN_HOLD` (6 s) boundary.
+  5. **Pull-back (4.4.6):** everyone is in, but someone is past 80 % of the half-width: GLIDE the camera (and focus) straight back along the view until everyone is within 60 % again. No cut. If the camera would end more than 25 m from the group, or a ray says there is a wall behind it, cut to a wider shot instead. (In 4.4.6 `allIn` uses 97 %, and the glide threshold is 0.2 m.)
+  6. The **arrival** of a new friend means a pending cut at the next `gMinHold` boundary (`max(12, 0.25 × Pace)`; Calm 15 s).
 - **Chat cuts:**
   - `llListen(0, "", NULL_KEY, "")` while active and `chat_cuts` is on. Remove it on STOP.
   - A speaker must be in `gFKeys` and present, or be the owner (from SPEAKER).
-  - The speaker is not cut to again within 10 s, and at least 6 s must have passed since the last cut.
+  - The speaker is not cut to again within 30 s (`SPK_COOL`), and at least `gMinHold` must have passed since the last cut.
   - Speaker shot (type 4), held 8 s, no glide during it:
     - a friend speaks → an over-the-shoulder shot from behind you, facing the friend (`planA(TRUE)` logic with N = the speaker and `gRev = FALSE`);
     - you speak → from behind the nearest friend, facing you (`gRev = TRUE`).
@@ -249,44 +256,47 @@ All commands are listed in PRODUCT.md.
 ### 6.1 Outdoor
 Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v3/docs/ARCHITECTURE.md` §Scenery.
 
-### 6.2 Room classifier (in `context()`, once per session or after a 10 m move)
-- Eye point `E = gOP + <0, 0, 0.6>`.
-- Rays:
-  - **8 horizontal rays** from E, 60 m long, at azimuths `i × 45°` → `gWallD[i]` (60 if not hit). Let `nHit` be the count of hits.
-  - **Up:** the existing 40 m ray → `gCovered`, and the ceiling `gCeilZ = E.z + hit distance`.
-  - **Down:** from `gOP` to `gOP − <0, 0, 30>` → `gFloorZ` (the hit z), or `gFloorless = TRUE` if nothing is hit.
-- `gEnclosed = gCovered && nHit >= 6`.
-- `gSky = gFloorless || (gOP.z − llGround(ZERO_VECTOR) > 50.0)`.
-- Decide `gInside`:
-  - `indoors == "inside"` → `gInside = gEnclosed`;
-  - `"outside"` → FALSE;
-  - `auto` → `gEnclosed && gSky`.
-- `gSpan` = the largest `gWallD`, and `gInsideFails = 0`.
-- **Trace (once per context):** `scenery: inside a room (8/8 walls, ceiling 4 m, span 23 m)`, or `outdoors`, or `enclosed on the ground → above the roof`.
+### 6.2 Inside or outdoors (`context()`, once per place; v4.4.0 design)
+**Principle:** judge a build by its **floor**. Floors always have physics, because people walk on them. Walls, ceilings, windows and decor are often built without physics, and `llCastRay` only sees physics. The v4.0–4.3 design counted walls (a roof and 6, later 5, of 8 walls) and failed in exactly those builds, and in big halls whose walls are more than 60 m away.
 
-### 6.3 Room shots (when `gInside`)
-- `findRoomShot()` builds up to **6 candidates**, two of each kind, and keeps the best by score. The kinds are chosen with weights corner 0.45, centre 0.30 and small 0.25, with each candidate rolling its kind.
-- The camera height `zc` is always clamped to `[gFloorZ + 1.2, gCeilZ − 0.6]`.
+**Second Life's ray result:** `[key, position]` per hit, then the hit count (negative = refused). The land reports `NULL_KEY`. There is one hit per object. 4.3.1 read 3 entries per hit, so every skybox looked like "land below". `tools/sim/indoor_sim.py` now models this exact layout.
 
-| Kind | Camera | Focus |
-|---|---|---|
-| **Corner wide (10)** | `zc = min(gCeilZ − 0.6, gFloorZ + 6.0)`. From `<gOP.x, gOP.y, zc>` (first check that the vertical ray from E to there is clear), cast 8 diagonal-biased rays at `22.5° + i × 45°`, 60 m long. Take the 2 longest (corners in a box room) and put the camera `0.8 m` back from each hit | The point on the floor plane 1/3 of the way from the opposite corner to you (looks across the room through your area), pitch clamped to 15–45° down |
-| **Room centre (11)** | The centroid of the 8 horizontal wall-hit points from §6.2, at `gFloorZ + 1.7` | Along the direction from the centroid to the farthest wall-hit point, level (2° down) |
-| **You small (12)** | Along the longest `gWallD[i]`, `gWallD[i] − 0.8` from you, at `gFloorZ + 2.5`. Skip it if that is less than 6 m | You (`gOP`), so you are a small figure in the frame |
+1. **Under you** (essential; if refused, retry later): one ray from you, 100 m down, up to 4 hits.
+   - The first hit is your floor (`gFloorZ`).
+   - `gPrimFloor` = that hit is a build, not the land.
+   - `gSky` = none of the hits is the land.
+2. **Over you:** 5 rays, 40 m, from `floor + 1.8`: straight up and 25° off in four directions. `gRoofs` is the number that hit, and the ceiling is the lowest hit. A refused ray counts as no information.
+3. **Around you:** 8 rays at eye height (`floor + 1.6`), 60 m → `gWallD`. A refused ray counts as a wall at 4 m.
+4. **Floor outline:** in each of the 8 directions, `floorOK()` is probed at 1.5, 3, 5, 8, 12 and 20 m, stopping at a wall or at the first gap. A refused probe is skipped. The result is `gFloorD`.
+5. **Decision** (v4.4.1):
+   - Auto: `gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5))`. A build floor in the sky, or on the ground under a roof. A plaza with no roof stays outdoors.
+   - Inside: always `TRUE`, an override. If nothing is detectable, the camera stays near you. `floorOK()` then accepts the land as your floor, because the land *is* your floor.
+   - Outside, and Lite: `FALSE`.
+   - **Sticky (not for Outside):** if the raw answer is "outdoors", but you were inside a moment ago, you are still on a build floor or under a roof (or 5 or more walls hit), and you are within 30 m of `gLocalAt` (where it last confirmed), you stay inside. This stops flipping near a door or where one ray misses. START clears the memory.
+6. **Limits:**
+   - `gCapZ` = ceiling − 0.4, kept between floor + 1.6 and floor + 6. With no roof seen it is floor + 3.4.
+   - `gDmax` = 12 m, or 20 m if 5 or more directions are open for 25 m or more.
+7. **Caching:** cached only when at most 3 rays were refused. Otherwise this cut uses the data, and the next cut measures again.
+8. **Trace line** (only with Chat text on): `scenery: inside, the camera stays on your floor (floor a build, in the sky, roof 3/5, walls 8/8, up to 4 m high, 12 m away)`, or `outdoors (...)` with the reason.
 
-**Every candidate must pass, in this order** (stop at the first failure to save rays):
-1. Inside the region `[1, 255]`.
-2. **Same room:** `ray(E, cam)` has no hit before `|cam − E| − 0.2`.
-3. **Clearance:** 5 rays of 0.5 m from the camera (±x, ±y, +z) are all clear.
-4. **View:** `ray(cam, cam + norm(focus − cam) × 60)` is clear for at least `max(3, 0.4 × gSpan)`. For "you small": clear up to `|focus − cam| − 1`.
-
-**Score** = `3 × clear/60 + 2 × novelty(az of cam from you) + 1 if the kind differs from the last + rand(0.5)`.
-
-If nothing passes:
-- `gInsideFails++` and fall back to `findShot` (outdoor logic, which puts the camera above the roof);
-- after 3 fails in a row, trace once: "room too small for room views; using outside views here".
-
-**Hold:** `gHold × (0.75 + 0.5 × rand)`, the same as outdoors.
+### 6.3 Inside shots (`localShot`, `safeShot`)
+- **`floorOK(c)`:** a ray from `c` down to `floor − 1` must hit a build (not the land) between `floor − 1` and `floor + 1.5`. Furniture is fine, and another storey is not.
+- **`edge(i)`** = min(`gWallD[i]` − 0.8, `gFloorD[i]` − 0.5). A camera between directions i and i+1 uses the smaller of the two edges, capped at `gDmax`.
+- **Candidates:** up to 8 per cut, 45° apart from a random start (± 0.2 rad). It stops after 3 good ones, or after 6 refused rays. Each candidate:
+  - a novelty of 0.3 or more (relaxed pass: any);
+  - **high** (40 %): at `gCapZ − 0.2`, 60–100 % of the edge away, looking down 12–35° at your area (needs `gCapZ ≥ floor + 2.2`);
+  - **you small** (25 %, edge ≥ 5 m): 75–100 % of the edge away, at floor + 1.8–2.4, looking at you;
+  - otherwise **eye level**: at floor + 1.5–1.9, looking back across your area ± 40°.
+- **Checks, in order:**
+  1. A clear line from your eye to the camera, plus 0.6 m beyond it (no hit before the camera distance + 0.5).
+  2. `floorOK(c)` and `floorOK(c + 0.6 m outward)`.
+  3. Head room: 0.5 m clear above (skipped in the relaxed pass).
+  4. A view clear for min(camera distance + 1, 6) m. For "you small", it must reach you.
+- **Score:** 2 × clear/30 + 2 × novelty + 1 if the kind changed + rand(0.5).
+- **Order:** the normal pass, then the relaxed pass (≤ 6 m, eye level, no head-room check), then **`safeShot`**. That one goes behind you, behind-left or behind-right, whichever is most open, 0.8–2.2 m away, at eye height, looking where you look. A refused ray counts as no room.
+- **Inside it never falls back to an outdoor view.** If even the floor probe is refused, the scenery script retries twice (0.7 s apart), then sends NO_SHOT. Core's basic shot then checks for a roof (one ray; refused counts as roof) and uses the close portrait view, not the high outdoor one.
+- **Shot types:** 10 high, 11 eye level, 12 you small, 13 close.
+- **Measured in `indoor_sim.py`:** 17 places, plus 16 standing spots × 4 facings per inside place. The result is no bad camera, and close fallbacks at 0–10 % in ordinary rooms (100 % in a 4 × 4 m room; 43 % when a quarter of all rays are refused).
 
 ### 6.4 Favourites
 - **FAV received** (from core):
@@ -301,15 +311,22 @@ If nothing passes:
   Send it as type 7. If none passes, fall through to the normal finder.
 - **Clearing:** Options › Favourites › Clear here / Clear all. The UI deletes the keys with `llLinksetDataDeleteProtected`, or for "all", by finding the keys with `llLinksetDataFindKeys("^cin\\.fav\\.", 0, 0)`.
 
-### 6.5 Reach regrowth (fix)
-- After **20 consecutive cuts** without a REACH_FAIL (saved in `cin.reach_ok`), raise `gReach` by 10 %, up to 100 m, and save it.
-- REACH_FAIL resets the count.
+### 6.5 Reach learning (4.4.5)
+- **Core check, 2.5 s after a scenery cut** (types 5, 6, 7). `gCamBefore` is `llGetCameraPos()` just before the cut. A REACH_FAIL `"<asked>|<allowed>"` is sent only when the camera:
+  - is more than 3 m from the spot asked for;
+  - **moved** more than 1 m since before the cut (a minimised, frozen or slow viewer reports the old spot);
+  - is 15 m or more from you and closer than 0.9 × the asked distance;
+  - lies on the line from you to the spot (cos > 0.99, about 8°). A viewer limit pulls the camera straight in; orbiting, Alt-cam and mouselook put it anywhere else, which the peek check handles.
+- **Scenery:** one REACH_FAIL only cuts again. A second within 10 cuts whose allowed distance agrees within 10 % (a real limit stops at the same distance every time) sets `gReach` = 0.9 × that distance (at least 20 m, never higher than before).
+- **While learned** (`gReach` < `gReachSet`), a candidate further than `gReach` in a straight line (height included) is rejected.
+- **Regrowth:** after 20 cuts in a row without a REACH_FAIL (`cin.reach_ok`), `gReach` grows by 10 %, up to `gReachSet`.
+- **`tools/sim/reach_sim.py`** ports all of this plus the settings migration and runs 600 cuts × 8 seeds per viewer: unlimited, stale, slow, mouselook, Alt-cam, camera lifted off the land, orbiting 20 % / 50 % (reach must stay 100 m), and limits of 90 / 64 / 48 / 32 m with and without orbiting (must settle near the limit, ≤ 6 % short views afterwards). It also runs the 4.4.4 logic and asserts it collapses to 20 m, the reported bug.
 
 ## 7. People (`cinema_people.lsl`): chat cuts in Social
 - On START `social` with `chat_cuts` on: `gChat = llListen(0, "", NULL_KEY, "")`. Remove it on STOP and on a switch.
 - `listen`:
   - Ignore non-agents (`llGetAgentSize(id) == ZERO_VECTOR`) and the owner (the owner arrives as SPEAKER).
-  - The speaker must be within `R_GRP` (8 m), and not the same speaker within 10 s.
+  - The speaker must be within `R_GRP` (8 m), and not the same speaker within 30 s.
   - Set `gSpeaker = id` and `gPendEvent = "speaker"`.
 - **SPEAKER (owner):** `gSpeaker = owner` and `gPendEvent = "speaker"`.
 - **In `nextShot`**, when the event is "speaker":
@@ -317,27 +334,57 @@ If nothing passes:
   - You: `gNPos` = the nearest other, `gRev = TRUE`, then `planA(TRUE)` → over their shoulder, facing you.
   - Nobody else near: a portrait of you.
   - The type is 4, and the hold is 8–12 s.
-- The pending-event mechanism and MIN_HOLD 6 s are unchanged.
+- The pending-event mechanism is unchanged, but its minimum is `gMinHold` (4.4.3), and Social holds a shot `gBase` = 0.75 × Pace (group × 1.2).
+
+### 7.1 Framing people (4.4.6, both scripts)
+`tools/sim/framing_sim.py` measured the 4.4.5 planning. **14.7 % of Social/Friends shots cut someone off, and 52 % left someone within 10 % of the screen edge.** It was worst in chat circles and small rooms. There were three causes:
+- Social's group fit ignored depth.
+- `sweep()` swung up to ±80° around a distance sized for the straight-on view.
+- At a wall it moved the camera closer without re-fitting.
+
+The fix:
+- **`gMeas`:** who must be fully in the picture.
+  - Group: everyone. Friends: you plus the friends used.
+  - Pair or speaker: the person facing the camera. The over-the-shoulder foreground is left out on purpose.
+  - Portrait: you.
+- **`needAt(az)`:** the distance a camera on side `az` needs, for its real view direction (`viewDir`, including the rule-of-thirds turn). For each person, with `o` = offset from the focus point, `V` = view, `P` = its left, `u` = the side and `k = tanH / MARGIN`:
+  - `need ≥ (o·P + BODY_R − k·o·V) / (k·(−u·V) + u·P)`;
+  - and the same with `−o·P` and `−u·P`.
+  - The result is at least `gVNeed` (the height of the shot).
+- **`sweep()`:** each side gets `max(needAt(az), gPLo)`. A side is skipped if that is beyond `gPHi`, or if a wall is closer than it (`hit − STANDOFF`). It is never squeezed. Limits:
+  - pair 2.5–6.5 m;
+  - group 4–12 m;
+  - Friends 3–25 m;
+  - portrait 2.5–3.5 m.
+- **`MARGIN` 1.3** (was 1.15). The fit assumes a window no wider than 16:10 (`tanH = tanV × min(aspect, 1.6)`). The outermost body then ends at least about 12 % of the screen width from the edge on 16:10, and about 16 % on 16:9. The rule-of-thirds turn still uses your real aspect.
+- **Drift:**
+  - **Social:** `framed()` checks everyone who should be in (group: all; pair: the facing person) against 80 % of the half-width on each scan. Anyone outside it means a re-frame at the next calm cut (`gMinHold`).
+  - **Friends:** pulls back (§5).
+- **Result in the sim:** 0 % cut and 0 % under a 10 % margin over 15,000 shots. Some group shots in 6 × 6 m rooms fall back:
+  - Social to a pair;
+  - Friends to fewer friends.
 
 ## 8. Building and textures
-- **Icon:**
-  - The source is `tools/art/make_icon.py`, with pixel grids as strings.
-  - Its outputs:
-    - `hud/art/cinema_icon_256x128.png`: 2 frames side by side, each 16×16 scaled ×8 with nearest-neighbour, on a transparent background;
-    - previews.
+- **Icon (v4.2.0: one sprite sheet with every look):**
+  - The source is `tools/art/make_icon.py`, with the pixel grids as strings.
+  - `hud/art/take12_icon_sheet_512x256.png`: 4 columns × 2 rows of 128×128 frames, each holding a 16×16 sprite ×7 with an 8 px clear margin.
+  - **Frame k** is at column `k % 4`, row `k / 4` (row 0 is the top). **Look n** uses frame `2n` (open) and `2n + 1` (clapped). Looks: 0 classic, 1 rec (default), 2 viewfinder. Frames 6 and 7 are spare for a fourth look.
+  - **How the UI script shows frame k** (`frame()` in `cinema_ui.lsl`): repeats `<0.25, 0.5>`, offset `<(k % 4 + 0.5) / 4 − 0.5, +0.25 for the top row, −0.25 for the bottom row>`, on the face `cin.face` (default −1 = all faces; `/77 face <n>` picks one).
+  - **Settings:** `look` (0–2, default 1) and `face` (default −1). Options › 🎨 Look changes the look, the fade and the emoji.
+  - Single-look, two-frame sheets are in `hud/art/variants/`, for anyone who wants only one look.
   - **Upload settings:** no lossless needed; the alpha must be kept.
-  - **On the prim:**
-    - Texture face: the face that points at you on the HUD. In Edit, select the face, apply the texture, repeats 0.5 × 1, offset −0.25.
-    - All other faces get the default transparent texture.
+  - **On the prim:** put the sheet on the face that points at you on the HUD, and a fully transparent texture on the other faces. The script sets the repeats and offset itself.
 - **Prim:** one box, size `<0.01, 0.04, 0.04>`, which is about 40 px on a 1080 px screen. Attach it to **HUD Top Right** and drag it into place.
 
 ## 9. Checks and sims
 | Tool | Covers |
 |---|---|
-| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory |
+| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory (Lite is paused) |
 | `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
 | `tools/sim/people_geometry.py` | Composition, unchanged |
-| **`tools/sim/room_sim.py`** | Python port of §6.2–6.3 over these worlds: skybox box 20×20×5 at z 3000, sky mall 60×40×8, small room 4×4×3, ground house (must classify as enclosed-ground → outside), open field (must not be enclosed), and an L-shaped room. Assert: `gInside` is as expected, and the camera is inside the room's box with ≥ 0.5 m margin, in the same room as the owner and with a clear view. Seeded, 40 shots per world |
+| **`tools/sim/framing_sim.py`** | §7.1: ports the people/friends planning (old and new) and measures every person's margin to the screen edge over pairs, lines, circles, clusters, open space, 10 × 8 and 6 × 6 rooms, 16:9 and 16:10. It asserts that nobody is cut and that at most 1 % of shots are under a 10 % margin; the old planning must show the problem |
+| **`tools/sim/reach_sim.py`** | §6.5 reach learning against 16 simulated viewers, plus the settings migration |
+| **`tools/sim/indoor_sim.py`** (replaces room_sim.py) | A line-by-line port of §6.2–6.3. Its `llCastRay` returns Second Life's layout (`[key, position]` per hit, then the count; the land is `NULL_KEY`; one hit per object; physics only; can refuse rays). It runs 17 places: skyboxes (plain, no-physics ceiling, glass walls, floor-only physics, furnished, two-storey, L-shaped, tiny), a 120 m mall with 64 shops, an open sky deck, a busy region refusing 25 % of rays, a ground house and a trailer (Auto and Inside), and an open field. Then a stress run: 4 standing spots × 4 facings per inside place. It asserts the classification, every camera inside the interior and not in a solid part, never an outdoor view while inside, close fallbacks ≤ 15 % in ordinary rooms, and that the old 3-per-hit stride bug is still detected |
 | **`tools/sim/friends_sim.py`** | Port of the §5 loop. Targets walk on scripted paths. Assert: a glide when the centroid moves more than 0.4 m with everyone in frame; a snap within 2 ticks when someone leaves; the fit distance ≤ 25 m; no glide through a wall box |
 | **`tools/sim/tap_test.py`** | The §4.1 decoder sequences |
 

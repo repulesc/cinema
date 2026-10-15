@@ -1,4 +1,4 @@
-# Cinema HUD: Roadmap (v4)
+# Take 12: Roadmap (v4)
 
 What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and working in `legacy/v3/`.
 
@@ -9,6 +9,10 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 | 4.0 · Phase A | Quiz round 3, spec, architecture, roadmap, icon art, legacy split | Opus | ✅ this commit |
 | 4.0 · Phase B | Code v4 (milestones B1–B7 below), one release | Sonnet | ✅ coded, checked by compile and sims |
 | 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | ⏳ next |
+| 4.4.x | Beta polish from in-world tests: indoor mode, quiet chat, calm people cameras, reach learning, people framing, clearer texts | Opus | ⏳ ongoing |
+| Frame | A slim, held picture of you (or you and the people with you): Full length, Half length, Close. 4.6.0 (`cinema_frame.lsl`). Next: in-world test, body calibration | Opus | ⏳ in-world test |
+| Composition tool (later) | A fuller, more serious version, starting from `lab/frame-full-4.5.0/` (subjects, landscapes, photo shapes, lens guidance). Only after Take 12 is out of beta | – | 💤 later |
+| Lite | Paused, frozen at 4.4.5. **Resume** once the full version leaves beta: steps in `hud-lite/README.md` | – | ⏸ paused |
 | Later | Backlog at the bottom, only on request | – | – |
 
 ## Rules for Sonnet (read first)
@@ -59,7 +63,7 @@ The checklists below are kept as the record of what was specified.
 ### B3 · Room-aware scenery
 - [ ] Scenery: the room classifier (§6.2) and `findRoomShot` (§6.3) with the fallback to outdoor logic. Options › Indoors (Auto / Inside / Outside) and `/77 indoors`.
 - [ ] Reach regrowth (§6.5).
-- [ ] `tools/sim/room_sim.py` with the 6 worlds from §9, and the CI step.
+- [ ] `tools/sim/room_sim.py` with the 6 worlds from §9, and the CI step. *(4.4.0: replaced by `indoor_sim.py`, see ARCHITECTURE §6.2–6.3 and §9.)*
 - **Accept:** room_sim ALL PASS, and scenery_sim still ALL PASS. Scenery ≥ 22 KB.
 
 ### B4 · Chat cuts in Social
@@ -81,7 +85,7 @@ The checklists below are kept as the record of what was specified.
 - [ ] Write the README build steps: box size, HUD Top Right, the face, repeats and offset (ARCH §8).
 
 ### B7 · Docs and release
-- [ ] Rewrite `docs/USER_GUIDE.md` for v4 (the notecard): gestures table, menu tour, the four modes, Photo, Favourites, Indoors and FAQ.
+- [ ] Rewrite the notecard (now `hud/notecard/read_me.txt`) for v4: gestures table, menu tour, the four modes, Photo, Favourites, Indoors and FAQ.
 - [ ] Update `README.md` (five scripts, `hud/`, the art), add `CHANGELOG.md` 4.0.0, and add the v4 rows to the `docs/CALIBRATION.md` table.
 - [ ] Final run of lslcheck plus all sims, push, and confirm CI is green.
 
@@ -90,7 +94,7 @@ Install:
 1. Make a fresh prim from the README.
 2. Add the six scripts from `hud/src/`.
 3. Use **Set Scripts to Running**.
-4. Upload `hud/art/cinema_icon_256x128.png` and apply it as the README says.
+4. Upload `hud/art/take12_icon_sheet_512x256.png` and apply it as the README says.
 
 Then report:
 

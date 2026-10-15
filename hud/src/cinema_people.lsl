@@ -1,5 +1,5 @@
 // ============================================================================
-//  Cinema HUD  -  cinema_people.lsl  (v4)  - the optional modes
+//  Take 12  -  cinema_people.lsl  (v4)  - the optional modes
 //  personal: composed static shots of you that follow you as you walk.
 //  social:   over-the-shoulder pairs and group tableaux of you and the people
 //            around you (portrait of you while nobody is near).
@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.0.1";
+string VERSION = "4.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -27,12 +27,13 @@ integer STATUS     = 7370;
 float K_EYE_STAND = 0.37;
 float K_EYE_SIT   = 0.25;
 float BODY_R      = 0.35;
-float MARGIN      = 1.15;
+float MARGIN      = 1.3;     // the outermost person ends about 12 % of the screen width from the edge
 float STANDOFF    = 0.4;
 float R_INT       = 4.5;     // pair radius
 float R_GRP       = 8.0;     // group radius
-float MIN_HOLD    = 6.0;
-integer SPK_COOL   = 10;      // s  the same speaker is not cut to again within this
+float gBase;                 // s  how long a shot is held (from Pace)
+float gMinHold;              // s  shortest time before an event may cut
+integer SPK_COOL   = 30;      // s  the same speaker is not cut to again within this
 
 list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263];
 list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
@@ -44,7 +45,6 @@ float   gFov;
 float   tanV;
 float   tanH;
 float   gAlpha;
-float   gHalfH;
 
 key     gOwner;
 string  gMode;               // "personal" / "social"
@@ -85,14 +85,19 @@ vector  gSceneAnchor;
 vector  gPFp;
 float   gPAz;
 float   gPd;
-float   gPdMin;
 float   gPEye;
 float   gPTh;
+float   gPLo;                // nearest and furthest camera for this plan
+float   gPHi;
+float   gVNeed;              // distance the height of the shot needs
+list    gMeas;               // who must be fully in the picture (not the over-the-shoulder foreground)
 vector  gPAxis;
 integer gPCenter;
 integer gPType;
 
 integer gHaveShot;
+integer gCurType;
+integer gFaceOwner;          // you face the camera in this shot (not the over-the-shoulder foreground)
 integer gShotT;
 vector  gCurCam;
 vector  gCurV;
@@ -132,13 +137,16 @@ vector dirOf(float a)
 
 tsay(string s)
 {
-    if (gTrace) llOwnerSay("[Cinema] " + s);
+    if (gTrace) llOwnerSay("[Take 12] " + s);
 }
 
 loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
-    gTrace    = (integer)cfg("trace", "1");
+    gTrace    = (integer)cfg("trace", "0");
+    float pace = (float)cfg("hold", "60");                // the Pace setting also sets the people cameras' rhythm
+    gBase = fclamp(0.75 * pace, 20.0, 150.0);               // a shot is held about this long (Calm 60 s: 45 s)
+    gMinHold = fmax(12.0, 0.25 * pace);                     // an event (arrival, speaker, left the frame) cuts no sooner than this (Calm: 15 s)
     gChatOn   = (integer)cfg("chat_cuts", "1");
     gRayOpts  = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
     if ((integer)cfg("phantom", "0")) gRayOpts += [RC_DETECT_PHANTOM, TRUE];
@@ -146,9 +154,8 @@ loadCfg()
     if (aspect < 0.5) aspect = 1.778;
     if (gFov < 0.1) gFov = 1.047198;
     tanV = llTan(gFov * 0.5);
-    tanH = tanV * aspect;
-    gAlpha = llAtan2(tanH / 3.0, 1.0);
-    gHalfH = llAtan2(tanH, 1.0);
+    gAlpha = llAtan2(tanV * aspect / 3.0, 1.0);             // rule of thirds on your window
+    tanH = tanV * fmin(aspect, 1.6);                        // people are fitted for a 16:10 window: 16:9 has room to spare
 }
 
 // [status, distance]: 0 clear (full length), 1 hit, <0 error
@@ -247,9 +254,39 @@ float camZ(float eyeRef, float d)
     return z;
 }
 
-float fitDist(float spread, float halfH, float lo, float hi)
+// the view direction of a camera on side az (rule of thirds with lead room unless the plan is centred)
+vector viewDir(float az)
 {
-    return fclamp(fmax((spread + BODY_R) / tanH, halfH / tanV) * MARGIN, lo, hi);
+    vector V = ZERO_VECTOR - dirOf(az);
+    if (gPCenter) return V;
+    float fs = dirOf(gOY) * <V.y, -V.x, 0.0>;
+    float sd = gSide;
+    if (fs > 0.2) sd = 1.0;
+    else if (fs < -0.2) sd = -1.0;
+    return V * llEuler2Rot(<0.0, 0.0, -sd * gAlpha>);
+}
+
+// how far back a camera on side az must be so that everyone in gMeas is fully in the picture with the margin,
+// each at their real depth (someone nearer the camera looks wider)
+float needAt(float az)
+{
+    vector u = dirOf(az);
+    vector V = viewDir(az);
+    vector P = <-V.y, V.x, 0.0>;
+    float k = tanH / MARGIN;
+    float c = k * (ZERO_VECTOR - u) * V;
+    float sn = u * P;
+    float need = gVNeed;
+    integer i;
+    for (i = 0; i < llGetListLength(gMeas); i++)
+    {
+        vector o = llList2Vector(gMeas, i) - gPFp;
+        o.z = 0.0;
+        float a = o * P;
+        float b = BODY_R - k * (o * V);
+        need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));
+    }
+    return need;
 }
 
 // portrait of you, or (pair = TRUE and someone is close) an over-the-shoulder shot
@@ -260,17 +297,24 @@ planA(integer pair)
     gPType = 0;
     gPEye = gOE;
     gPFp = <gOP.x, gOP.y, gOE>;
-    gPdMin = 2.0;
     gPTh = 0.0;
     if (gOSit) gPTh = 0.0872665;
+    gMeas = [gOP];
+    gVNeed = 1.3 / tanV * MARGIN;
+    gPLo = 2.5;
+    gPHi = 3.5;
     vector ax = gNPos - gOP;
     ax.z = 0.0;
     if (pair && gHasN && llVecMag(ax) >= 0.3)
     {
         vector A = llVecNorm(ax);
         vector dc = <-A.y, A.x, 0.0> * gSide * 0.819152;      // behind one shoulder, 35 deg, 180-degree-rule side
-        if (gRev) dc = dc + A * 0.573576;                    // reverse shot: other shoulder, same side
-        else dc = dc - A * 0.573576;
+        if (gRev) dc = dc + A * 0.573576;                    // reverse shot: other shoulder, same side, facing you
+        else
+        {
+            dc = dc - A * 0.573576;
+            gMeas = [gNPos];                                 // over your shoulder: they face the camera
+        }
         gRev = !gRev;
         dc = llVecNorm(dc);
         gPEye = (gOE + gNEye) * 0.5;
@@ -278,16 +322,17 @@ planA(integer pair)
         gPFp = <cw.x, cw.y, gPEye>;
         gPAz = llAtan2(dc.y, dc.x);
         gPAxis = A;
-        gPdMin = 2.5;
         gPType = 1;
-        gPd = fitDist(llFabs(ax * <-dc.y, dc.x, 0.0>), 0.9, 2.5, 5.0);
+        gVNeed = 0.9 / tanV * MARGIN;
+        gPHi = 6.5;
+        gPd = fclamp(needAt(gPAz), gPLo, gPHi);
         return;
     }
     integer i = (integer)llFrand(6.0);
     if (llFabs(llList2Float(PHI, i) - gLastPhi) < 0.5) i = (i + 1) % 6;
     gLastPhi = llList2Float(PHI, i);
     gPAz = gOY + gLastPhi * DEG_TO_RAD;
-    gPd = fitDist(0.0, 1.3, 2.5, 3.5);
+    gPd = fclamp(gVNeed, gPLo, gPHi);
 }
 
 // group tableau: camera square-on to the group's long axis, on the side you face
@@ -318,17 +363,18 @@ integer planG()
     }
     vector Nn = <-A.y, A.x, 0.0>;
     if (dirOf(gOY) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
-    float spread = 0.0;
-    for (i = 0; i < n; i++) spread = fmax(spread, llFabs((llList2Vector(M, i) - C) * A));
     gPEye = C.z + (gOE - gOP.z);
     gPFp = <C.x, C.y, gPEye>;
     gPAz = llAtan2(Nn.y, Nn.x);
-    gPd = fitDist(spread, 1.3, 4.0, 12.0);
-    gPdMin = 3.0;
     gPAxis = ZERO_VECTOR;
     gPTh = 0.0;
     gPCenter = TRUE;
     gPType = 2;
+    gMeas = M;
+    gVNeed = 1.3 / tanV * MARGIN;
+    gPLo = 4.0;
+    gPHi = 12.0;
+    gPd = fclamp(needAt(gPAz), gPLo, gPHi);
     return TRUE;
 }
 
@@ -353,22 +399,13 @@ list tryCand(float az, float de)
     integer rs = llList2Integer(rr, 0);
     if (rs < 0) gSweepErr = TRUE;
     if (rs < 0 || (rs == 1 && llList2Float(rr, 1) < llVecDist(cam, gPFp) - 0.8)) return [];
-    vector V = ZERO_VECTOR - dirOf(az);
-    if (!gPCenter)
-    {
-        // rule of thirds with lead room: you sit on the side opposite to where you look
-        float fs = dirOf(gOY) * <V.y, -V.x, 0.0>;
-        float sd = gSide;
-        if (fs > 0.2) sd = 1.0;
-        else if (fs < -0.2) sd = -1.0;
-        V = V * llEuler2Rot(<0.0, 0.0, -sd * gAlpha>);
-    }
-    vector foc = cam + V * de;
+    vector foc = cam + viewDir(az) * de;
     foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
     return [cam, foc];
 }
 
-// 7 candidate directions around the plan, the best two verified: [cam, focus, type] or []
+// 7 candidate directions around the plan, the best two verified: [cam, focus, type] or []. Each side gets the
+// distance that fits everyone from that side; a side where a wall is closer than that is skipped, never squeezed.
 list sweep()
 {
     list C = [];
@@ -377,20 +414,20 @@ list sweep()
     {
         float off = llList2Float(OFFS, i);
         float az = gPAz + off;
-        vector cc = gPFp + dirOf(az) * gPd;
-        cc.z = camZ(gPEye, gPd);
-        list r = ray(gPFp, cc);
+        float de = fmax(needAt(az), gPLo);
+        vector cc = gPFp + dirOf(az) * de;
+        cc.z = camZ(gPEye, de);
+        list r = [0, 0.0];
+        if (de <= gPHi) r = ray(gPFp, cc);
         integer st = llList2Integer(r, 0);
         if (st < 0)
         {
             gSweepErr = TRUE;
             return [];
         }
-        float de = gPd;
-        if (st == 1) de = fmin(gPd, llList2Float(r, 1) - STANDOFF);
-        if (de >= fmax(0.6 * gPdMin, 1.2))
+        if (de <= gPHi && (st == 0 || llList2Float(r, 1) - STANDOFF >= de))
         {
-            float s = 3.0 * de / gPd + 2.0 * llCos(off);
+            float s = 3.0 * fmin(1.0, gPd / de) + 2.0 * llCos(off);
             if (gPAxis != ZERO_VECTOR)
             {
                 float lat = dirOf(az) * <-gPAxis.y, gPAxis.x, 0.0>;
@@ -432,7 +469,7 @@ newScene()
     if (llFrand(1.0) < 0.5) gSide = -1.0;
 }
 
-// a speaker: cut to them at the next MIN_HOLD, but not the same speaker twice within SPK_COOL
+// a speaker: cut to them at the next gMinHold, but not the same speaker twice within SPK_COOL
 speak(key who)
 {
     if (!gActive || !gChatOn || gMode != "social") return;
@@ -516,10 +553,10 @@ nextShot()
     vector cam = llList2Vector(shot, 0);
     vector foc = llList2Vector(shot, 1);
     integer type = llList2Integer(shot, 2);
-    float hold = 20.0;
-    if (type == 2) hold = 25.0;
-    if (type == 4) hold = 10.0;
-    hold = hold * (0.8 + 0.4 * llFrand(1.0));
+    float hold = gBase;
+    if (type == 2) hold = 1.2 * gBase;                      // a group tableau is held a little longer
+    if (type == 4) hold = fmax(14.0, 0.4 * gBase);          // a speaker cut is short (Calm: 18 s)
+    hold = hold * (0.85 + 0.3 * llFrand(1.0));
     llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type, "");
     vector v = foc - cam;
     v.z = 0.0;
@@ -527,17 +564,36 @@ nextShot()
     gCurCam = cam;
     gShotT = llGetUnixTime();
     gHaveShot = TRUE;
+    gCurType = type;
+    gFaceOwner = (llList2Vector(gMeas, 0) == gOP);
     gOwnerAtShot = gOP;
     gGrpAtShot = llGetListLength(gGrp);
     tsay(gMode + ": " + llList2String(["portrait", "pair", "group", "friends group", "speaker"], type) + ", camera " + (string)llRound(llVecDist(cam, gOP)) + " m from you");
 }
 
-integer inFrame(vector p)
+// is p inside the picture? lateral offset against the frame half-width at p's depth; k = how much of the half-width counts
+integer inFrame(vector p, float k)
 {
     vector to = p - gCurCam;
     to.z = 0.0;
     if (llVecMag(to) < 0.1) return TRUE;
-    return llAcos(fclamp(llVecNorm(to) * gCurV, -1.0, 1.0)) <= 0.85 * gHalfH;
+    float fwd = to * gCurV;
+    return (fwd > 0.3 && llFabs(to.x * gCurV.y - to.y * gCurV.x) <= k * tanH * fwd);
+}
+
+// is everyone who should be in the picture still clear of the edges? (not the over-the-shoulder foreground)
+integer framed()
+{
+    list L = [];
+    if (gCurType == 2) L = gGrp;
+    if (gCurType == 0 || gCurType == 2 || gFaceOwner) L += [gOP];
+    else if (gHasN) L += [gNPos];
+    integer i;
+    for (i = 0; i < llGetListLength(L); i++)
+    {
+        if (!inFrame(llList2Vector(L, i), 0.8)) return FALSE;
+    }
+    return TRUE;
 }
 
 doScan()
@@ -558,7 +614,7 @@ doScan()
         gPendEvent = "scene";
     }
     else if (gMode == "social" && llGetListLength(gGrp) > gGrpAtShot) gPendEvent = "arrival";
-    else if (!inFrame(gOP)) gPendEvent = "frame";
+    else if (!framed()) gPendEvent = "frame";          // someone drifted near the edge: re-frame at the next calm moment
     if (llGetListLength(gGrp) < gGrpAtShot) gGrpAtShot = llGetListLength(gGrp);
 }
 
@@ -567,7 +623,6 @@ default
 {
     state_entry()
     {
-        llOwnerSay("[Cinema] people v" + VERSION + " ready, free memory " + (string)llGetFreeMemory());
         gOwner = llGetOwner();
         gFov = 1.047198;
         gSide = 1.0;
@@ -628,7 +683,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "people");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Cinema/people] v" + VERSION + " active " + (string)gActive + " (" + gMode + "), people near "
+            llOwnerSay("[Take 12/people] v" + VERSION + " active " + (string)gActive + " (" + gMode + "), people near "
                 + (string)llGetListLength(gGrp) + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;
@@ -670,14 +725,14 @@ default
         if (!gHaveShot) return;
         integer since = now - gShotT;
         // you are walking: re-frame when you leave the shot or walk on
-        if (now < gMoveUntil && since >= 2 && refreshOwner())
+        if (now < gMoveUntil && since >= 4 && refreshOwner())
         {
-            if (!inFrame(gOP) || llVecDist(gOP, gOwnerAtShot) > 4.0)
+            if (!inFrame(gOP, 0.85) || llVecDist(gOP, gOwnerAtShot) > 4.0)
             {
                 nextShot();
                 return;
             }
         }
-        if (gPendEvent != "" && since >= MIN_HOLD) nextShot();
+        if (gPendEvent != "" && since >= gMinHold) nextShot();
     }
 }
