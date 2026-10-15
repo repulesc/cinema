@@ -1,13 +1,13 @@
 // ============================================================================
 //  Take 12  -  cinema_ui.lsl  (v4)
 //  Touch decoding (tap / double-tap / long press), emoji dialog menus, /77 chat
-//  commands, settings in protected Linkset Data, the button look (clap + fade),
+//  commands, settings in protected Linkset Data, the button look (open idle, closed while rolling),
 //  first-run welcome, owner-change reset.
 //  Lives in the ROOT prim with cinema_core, cinema_scenery, cinema_people and
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.6.0";
+string VERSION  = "4.7.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -23,11 +23,11 @@ integer CMD         = 7371;
 
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
-float gFadeA    = 0.4;      // button opacity while the camera rolls (Options > Fade)
 
 list DEFAULTS = [
     "afk_on", "1",
-    "afk_sec", "90",
+    "afk_sec", "180",
+    "afk_away", "1",
     "hold", "60",
     "reach", "100",
     "reach_set", "100",
@@ -35,7 +35,6 @@ list DEFAULTS = [
     "indoors", "auto",
     "chat_cuts", "1",
     "emoji", "1",
-    "fade", "40",
     "look", "1",
     "face", "-1",
     "peek", "1",
@@ -57,9 +56,9 @@ list ITEMS = [
     "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
     "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
     "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Chat text", "emoji", "🔤", "Emoji",
-    "fade", "🔆", "Fade", "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
-    "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a300", "", "5 min", "a600", "", "10 min",
-    "away", "", "SL Away", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
+    "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
+    "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a180", "", "3 min", "a300", "", "5 min", "a600", "", "10 min",
+    "mcheck", "", "Mouse check", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
     "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
     "r50", "", "50 m", "r100", "", "100 m", "r150", "", "150 m", "r200", "", "200 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
 ];
@@ -80,7 +79,6 @@ string  gPage;
 // touch decoder
 float   gDown;
 float   gTapT;
-float   gClapT;
 integer gHeld;
 integer gLongDone;
 integer gTapN;
@@ -119,9 +117,8 @@ cfgSet(string k, string v)
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
     if (k == "emoji") gEmoji = (integer)v;
     if (k == "trace") gNote = (integer)v;
-    if (k == "fade") gFadeA = (float)v / 100.0;
-    if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
-    if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
+    if (k == "look") { gLook = (integer)v; frame(2 * gLook + !gShownIdle); }
+    if (k == "face") { gFace = (integer)v; frame(2 * gLook + !gShownIdle); }
 }
 
 initDefaults(integer force)
@@ -173,25 +170,29 @@ checkOwner()
         string rr = cfgGet("reach_set");
         if (rr != "50" && rr != "200") rr = "100";
         setReach(rr);
-        cfgWrite("cfgv", "4");
+    }
+    if (v < 5)                                     // 4.7.0: idle start 3 min + mouse check by default
+    {
+        string a = cfgGet("afk_sec");
+        if (a == "away" || a == "90" || a == "") cfgWrite("afk_sec", "180");
+        cfgWrite("afk_away", "1");
+        cfgWrite("cfgv", "5");
     }
     gNote = (cfgGet("trace") == "1");
     gEmoji = (cfgGet("emoji") != "0");
     gLook = (integer)cfgGet("look");
     if (LITE) gLook = 0;
     gFace = (integer)cfgGet("face");
-    gFadeA = (float)cfgGet("fade") / 100.0;
-    if (gFadeA < 0.1) gFadeA = 0.4;
     gFirst = (cfgGet("seen_intro") != "1");
     llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
 }
 
 // ============================================================================
-//  the button: no colours. Idle = solid; while the camera rolls it claps once, then fades.
+//  the button: no colours, always at full strength. Idle = the clapper open; while the camera rolls it is shut.
 // ============================================================================
 nextTimer()
 {
-    if (gHeld || gTapN || gClapT > 0.0) llSetTimerEvent(0.1);
+    if (gHeld || gTapN) llSetTimerEvent(0.1);
     else if (gListen) llSetTimerEvent(5.0);
     else if (!gVerAsked) llSetTimerEvent(3.0);
     else llSetTimerEvent(0.0);
@@ -199,25 +200,10 @@ nextTimer()
 
 setLook(string st)
 {
-    integer idle = (st == "off" || st == "armed");
-    float a = 1.0;
-    if (!idle) a = gFadeA;
-    if (!idle && gShownIdle)
-    {
-        frame(2 * gLook + 1);                       // clapped
-        gClapT = llGetTime() + 0.3;
-        a = 1.0;
-    }
-    gShownIdle = idle;
-    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, a]);
+    gShownIdle = (st == "off" || st == "armed");
+    frame(2 * gLook + !gShownIdle);                // open when idle, shut while the camera rolls
+    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, 1.0]);
     nextTimer();
-}
-
-endClap()
-{
-    gClapT = 0.0;
-    frame(2 * gLook);                              // open
-    if (!gShownIdle) llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, gFadeA]);
 }
 
 // ============================================================================
@@ -294,8 +280,11 @@ string afkText()
 {
     if (cfgGet("afk_on") != "1") return "off";
     string a = cfgGet("afk_sec");
-    if (a == "away") return "SL Away";
-    return a + " s";
+    integer n = (integer)a;
+    string t = (string)n + " s";
+    if (n % 60 == 0) t = (string)(n / 60) + " min";
+    if (cfgGet("afk_away") == "1") t += " + mouse check";
+    return t;
 }
 
 string paceName()
@@ -358,8 +347,8 @@ openMenu(string page)
     }
     else if (page == "afk")
     {
-        text += "Start scenery when idle.\nNow: " + afkText();
-        b = ["off", "a60", "a90", "a120", "a300", "a600", "away", "back"];
+        text += "Start scenery after this long with no keys.\nNow: " + afkText() + "\nMouse check: also wait until your viewer sets you Away (it notices the mouse).";
+        b = ["off", "a60", "a90", "a120", "a180", "a300", "a600", "mcheck", "back"];
     }
     else if (page == "opts")
     {
@@ -371,8 +360,8 @@ openMenu(string page)
     }
     else if (page == "look")
     {
-        text += "Button look: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook) + "\nFade while rolling: " + cfgGet("fade") + " %\nEmoji on menus: " + onoff("emoji");
-        b = ["th0", "th1", "th2", "fade", "emoji", "back"];
+        text += "Button look: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook) + "\nEmoji on menus: " + onoff("emoji");
+        b = ["th0", "th1", "th2", "emoji", "back"];
     }
     else if (page == "indoors")
     {
@@ -482,12 +471,11 @@ onChoice(string msg)
     }
     else if (gPage == "afk")
     {
+        if (id == "mcheck") { toggle("afk_away", "Mouse check"); openMenu("afk"); return; }
         if (id == "off") cfgSet("afk_on", "0");
         else
         {
-            string sec = (string)toNum(msg);
-            if (id == "away") sec = "away";
-            cfgSet("afk_sec", sec);
+            cfgSet("afk_sec", (string)toNum(msg));
             cfgSet("afk_on", "1");
         }
         note("AFK scenery: " + afkText());
@@ -513,15 +501,6 @@ onChoice(string msg)
     {
         if (llGetSubString(id, 0, 1) == "th") cfgSet("look", llGetSubString(id, 2, 2));
         else if (id == "emoji") toggle("emoji", "Emoji");
-        else if (id == "fade")
-        {
-            string nf = "40";                               // cycle 20 -> 40 -> 70 %
-            if (cfgGet("fade") == "40") nf = "70";
-            else if (cfgGet("fade") == "70") nf = "20";
-            cfgSet("fade", nf);
-            note("Button fade while rolling: " + nf + " % visible");
-            if (gUiState != "idle") setLook("rolling");
-        }
         openMenu("look");
     }
     else if (gPage == "indoors")
@@ -761,7 +740,6 @@ default
             gVerAsked = TRUE;
             llMessageLinked(LINK_SET, MSG_VER, "?", "ui");
         }
-        if (gClapT > 0.0 && now >= gClapT) endClap();
         if (gHeld && !gLongDone && !gDbl && now - gDown >= LONG_HOLD)
         {
             gLongDone = TRUE;

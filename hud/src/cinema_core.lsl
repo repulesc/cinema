@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.6.0";
+string VERSION = "4.7.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -84,6 +84,7 @@ rotation gCamRot;
 
 integer gAfkOn;
 integer gAfkSec;
+integer gAfkAway;             // mouse check: also wait for the viewer's Away (it notices the mouse)
 integer gPeekOn;
 integer gPeekBail;
 integer gCutMode;
@@ -100,9 +101,10 @@ string cfg(string k, string d)
 loadCfg()
 {
     gAfkOn    = (integer)cfg("afk_on", "1");
-    string a  = cfg("afk_sec", "90");
+    string a  = cfg("afk_sec", "180");
     gAfkSec   = (integer)a;
-    if (a == "away") gAfkSec = -1;
+    if (gAfkSec < 30) gAfkSec = 180;
+    gAfkAway  = (integer)cfg("afk_away", "1");
     gPeekOn   = (integer)cfg("peek", "1");
     gPeekBail = (integer)cfg("peek_bail", "0");
     gCutMode  = (integer)cfg("cutmode", "0");
@@ -336,11 +338,9 @@ idleTick(integer now)
     gCamPos = cp;
     gCamRot = cr;
     if (!gAfkOn || now < gNoEngageUntil || (info & (AGENT_TYPING | AGENT_MOUSELOOK))) return;
-    if (gAfkSec < 0)
-    {
-        if (info & AGENT_AWAY) engage("scenery");
-    }
-    else if (now - gLastAct >= gAfkSec) engage("scenery");
+    // no keys, no typing, no camera moved for the chosen time; with the mouse check also the viewer's own Away
+    // status, which the viewer clears on any mouse movement (a script cannot see the mouse itself)
+    if (now - gLastAct >= gAfkSec && (!gAfkAway || (info & AGENT_AWAY))) engage("scenery");
 }
 
 activeTick(float dt)
