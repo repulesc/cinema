@@ -12,7 +12,7 @@ Take 12 moves your camera off your avatar to the places a camera operator would 
 
 That is it. Your camera lifts off and starts showing you the place. Press any movement key, or tap the button once, and your own camera is right back.
 
-Or simply stay idle: after 90 seconds (adjustable in the menu) the scenery camera starts by itself.
+Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in the menu) the scenery camera starts by itself. See AFK below for the mouse check.
 
 
 === THE BUTTON ==========================================
@@ -32,7 +32,7 @@ HOLD  (about 1 second)
    - when idle: opens the menu
    - while rolling: opens the live menu (see below)
 
-While the camera rolls, the button fades so it stays out of your pictures. It is still there to click. (Change how faint it gets, and the look of the button: Options > Look.)
+The button always looks the same, idle or rolling. (Its look: Options > Look.)
 
 
 === THE CAMERAS ========================================
@@ -74,10 +74,12 @@ MODES     Switch to another camera.
 === SETTINGS (tap the button > Options, Pace, AFK) =======
 
 PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Still 120 s. Personal, Social and Friends hold a shot for about three quarters of it, and also wait longer before they cut to a speaker or to someone who arrives.
-AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 5 min, 10 min, or when Second Life marks you Away.
+AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 3 min (default), 5 min or 10 min with no keys, no typing and no camera moves.
+          MOUSE CHECK (on by default): it also waits until your viewer marks you Away. A script cannot see the mouse, but the viewer can: any mouse movement keeps you from going Away. Set your viewer's own "Away" timer short (in its Preferences, e.g. 2 or 3 minutes), or the scenery camera waits for it. If your viewer never sets you Away, turn the mouse check off.
+          Once the scenery camera runs, moving the mouse does not stop it: a movement key, typing in chat, or a tap on the button does.
 INDOORS   Auto (default): inside when you stand on a build in the sky, or on a build under a roof (a house, a shop, a trailer, a mall); outdoor views on open land and on roofless decks. Inside: always inside, near you, even where the HUD cannot see the walls. Outside: always outdoor views.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
-LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds FADE (how visible the button stays while it rolls: 20, 40 or 70 percent) and EMOJI.
+LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds EMOJI.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 REACH     How far the scenery camera may go (50 / 100 / 150 / 200 m; 100 by default). If your viewer really holds the camera closer, it lowers itself; Re-learn goes back to your choice.

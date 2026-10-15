@@ -17,7 +17,7 @@ All seven scripts go in the **root prim** of a one-prim HUD. Each must compile c
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
 | `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
-| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (alpha fade and clap) | 173 | ~300 (≥ 17 KB) |
+| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
 
@@ -183,7 +183,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 ### 4.4 Settings (`cin.*`, protected Linkset Data)
 | Key | Default | Notes |
 |---|---|---|
-| `afk_on`, `afk_sec` | 1, 90 | as v3 |
+| `afk_on`, `afk_sec`, `afk_away` | 1, 180, 1 | idle start after `afk_sec` with no keys, typing or camera moves; with `afk_away` also only while the viewer reports AGENT_AWAY (the viewer clears it on mouse movement). Settings step 5 (4.7.0) moves 90 s and the old "away" to 180 + mouse check |
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
 | `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
 | `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
@@ -370,7 +370,7 @@ The fix:
   - `hud/art/take12_icon_sheet_512x256.png`: 4 columns × 2 rows of 128×128 frames, each holding a 16×16 sprite ×7 with an 8 px clear margin.
   - **Frame k** is at column `k % 4`, row `k / 4` (row 0 is the top). **Look n** uses frame `2n` (open) and `2n + 1` (clapped). Looks: 0 classic, 1 rec (default), 2 viewfinder. Frames 6 and 7 are spare for a fourth look.
   - **How the UI script shows frame k** (`frame()` in `cinema_ui.lsl`): repeats `<0.25, 0.5>`, offset `<(k % 4 + 0.5) / 4 − 0.5, +0.25 for the top row, −0.25 for the bottom row>`, on the face `cin.face` (default −1 = all faces; `/77 face <n>` picks one).
-  - **Settings:** `look` (0–2, default 1) and `face` (default −1). Options › 🎨 Look changes the look, the fade and the emoji.
+  - **Settings:** `look` (0–2, default 1) and `face` (default −1). Options › 🎨 Look changes the look and the emoji (the fade is gone in 4.7).
   - Single-look, two-frame sheets are in `hud/art/variants/`, for anyone who wants only one look.
   - **Upload settings:** no lossless needed; the alpha must be kept.
   - **On the prim:** put the sheet on the face that points at you on the HUD, and a fully transparent texture on the other faces. The script sets the repeats and offset itself.

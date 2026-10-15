@@ -15,7 +15,7 @@ A movement key, a tap or typing gives your camera back.
 ## Principles
 A guide for every feature, not ad copy.
 1. **It decides; you accept or skip.** Take 12 chooses the view. Your part is a double-tap at most.
-2. **Calm.** Long holds, few cuts, a quiet chat, a button that fades.
+2. **Calm.** Long holds, few cuts, a quiet chat, a small button that stays the same.
 3. **No settings on screen.** No numbers, no jargon. Details live in the Read Me.
 4. **One button.** Everything else is optional.
 5. **Restraint.** A feature earns its place by making the experience easier, not by being a feature.
@@ -27,7 +27,7 @@ The tone of every text follows the product: plain, understated, no slogans. Thin
 |---|---|
 | Icon | A **deliberately pixel-art clapperboard**: 16×16, a few colours with a dark 1 px outline, fun rather than serious. The textures are in `hud/art/`; "Rec" is the default |
 | Size and place | About 40 px, **top right** by default. You can move it like any HUD |
-| Feedback | **No colours, no glow.** While the camera is rolling the button fades to **40 % opacity** (Options › 🔆 Fade cycles 20 / 40 / 70 %), so it is nearly invisible in your view and in snapshots, but still clickable. Idle = 100 %. On start the clapper "claps" once (two-frame swap). There is no other indicator |
+| Feedback | **None on the button (4.7).** The button is the plain logo at full strength, the same idle or rolling: the screen itself shows that the camera runs. (The old 40 % fade washed the small icon out on busy scenes, and HUDs are not in snapshots anyway.) |
 
 ## Gestures
 | Gesture | Idle | Rolling | Photo hold |
@@ -47,7 +47,7 @@ The tone of every text follows the product: plain, understated, no slogans. Thin
 ### Main (tap while idle, or 🎬 Modes from the live menu)
 ```
 🎬 Cinema · idle                     ← or "Scenery rolling", "Friends rolling", …
-Pace: Calm (60 s) · AFK: 90 s · Indoors: auto
+Pace: Calm (60 s) · AFK: 3 min + mouse check · Indoors: auto
 
 [🏞 Scenery ][🚶 Personal][👥 Social ]
 [💞 Friends ][⏳ Pace    ][💤 AFK    ]
@@ -77,7 +77,7 @@ How long each view is held. Now: Calm, about 60 s
 - The current choice is marked with ✓ in the text line.
 
 ### 💤 AFK
-`[Off][1 min][90 s] [2 min][5 min][10 min] [SL Away][↩ Back]`. The default is 90 s. AFK starts Scenery only.
+`[Off][1 min][90 s] [2 min][3 min][5 min] [10 min][Mouse check][↩ Back]`. The default is 3 min with the mouse check on: no keys, typing or camera moves for that long, **and** the viewer reports you Away (the viewer clears Away on any mouse movement; a script cannot see the mouse). Once Scenery runs, only a movement key, typing or a tap ends it. AFK starts Scenery only.
 
 ### 💞 Friends
 ```
@@ -110,7 +110,7 @@ Ana, Bo, Kit
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
 | 📏 Reach | 50 / **100** / 150 / 200 m / Re-learn | The furthest Scenery camera distance (the nearest is always 20 m). If your viewer really holds the camera closer (it stops short at the same distance twice), the HUD lowers it by itself and slowly grows it back up to your choice. Orbiting, Alt-cam, mouselook or a minimised viewer never lower it. Re-learn goes back to your choice |
 | 📝 Chat text | On / **Off** | Chat feedback. **Off by default**: the HUD says nothing in chat, except errors, warnings and the answers to commands you type. On: one line per cut (with what it found and why), and a line after each menu choice. The setting is stored as `trace` |
-| 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔆 Fade (20 / **40** / 70 %) and 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
+| 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
 | 🧪 Test cam | – | 3 s camera test (the old `grab`) |
 | ♻ Reset | – | All settings to defaults (asks first) |
 
@@ -122,7 +122,7 @@ Gives the Read Me notecard and prints a 4-line gesture summary in chat.
 ## Modes
 
 ### 1. 🏞 Scenery: the default
-- **Starts:** AFK (default 90 s), a **double-tap**, the menu, or `/77 scenery`.
+- **Starts:** AFK (default 3 min + mouse check), a **double-tap**, the menu, or `/77 scenery`.
 - **Looks at:** the place, mostly landscape, sky and horizon. You may be tiny in the frame or absent. People are ignored.
 - **Outdoors (unchanged from v3):**
   - A mix of **high drone views**, 10–30 m above the topmost surface, 20 m up to the reach away, tilted 10–40° down over your area.

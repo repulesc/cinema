@@ -49,7 +49,7 @@ ALSO
 - Photo hold: freeze the current view while you take snapshots.
 - Favourite spots: save a view you like, and it comes back now and then.
 - Pace: from 30 seconds to 2 minutes per view.
-- Idle start after 90 seconds (adjustable, or off).
+- Idle start after 3 minutes with no keys and no mouse (adjustable, or off).
 - Typing in chat does not stop Social or Friends.
 
 CONTROLS
@@ -65,7 +65,7 @@ WHO IT IS FOR
 - Couples and groups who want to see themselves together, not the back of their own head.
 
 GOOD TO KNOW
-- One small button, a pixel-art clapper in three looks. It fades while the camera runs, so it stays out of your snapshots.
+- One small button, a pixel-art clapper in three looks. It stays the same while the camera runs. (Second Life leaves HUDs out of snapshots unless you ask for them.)
 - Wear it on a HUD point (Top Right is usual) and allow camera control once.
 - It only moves your view, inside the region you are in. Nothing is recorded or sent anywhere.
 - The menu icons need a recent viewer. They can be switched off.
