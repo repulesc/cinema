@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.7.0";
+string VERSION = "4.7.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -111,6 +111,7 @@ vector  gCenter;             // centre of the group at the last shot or glide
 integer gPresAtShot;
 vector  gOwnerAtShot;
 integer gSweepErr;
+integer gSkip;               // this shot was asked for with "next": it must differ from the one on screen
 integer gOut;                // half-second ticks someone has been out of frame
 integer gGlides;
 integer gSnaps;
@@ -341,7 +342,8 @@ list sweep()
                 if (lat * gSide > 0.0) s += 1.0;
                 else s -= 2.0;
             }
-            C += [s, az, de];
+            // "next" asked by you: never the spot already on screen
+            if (!gSkip || llVecDist(<cc.x, cc.y, 0.0>, <gCurCam.x, gCurCam.y, 0.0>) > 1.5) C += [s, az, de];
         }
     }
     integer n = llGetListLength(C) / 3;
@@ -580,6 +582,12 @@ nextShot(float mult)
         gUsedN = 0;
         planA(FALSE);
         shot = sweep();
+        if (llGetListLength(shot) == 0 && !gSweepErr)
+        {
+            gVNeed = 0.9 / tanV * MARGIN;               // a tight space: a closer, half-length view of you
+            gPLo = 1.5;
+            shot = sweep();
+        }
     }
     if (llGetListLength(shot) == 0)
     {
@@ -763,7 +771,12 @@ default
                 + (string)llGetListLength(gGrp) + ", glides " + (string)gGlides + ", snaps " + (string)gSnaps + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;
-        else if (num == NEXT) nextShot(1.0);
+        else if (num == NEXT)
+        {
+            gSkip = (str == "skip");
+            nextShot(1.0);
+            gSkip = FALSE;
+        }
         else if (num == PAUSE) gPaused = TRUE;
         else if (num == RESUME)
         {

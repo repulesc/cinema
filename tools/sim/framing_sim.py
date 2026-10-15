@@ -55,6 +55,7 @@ class Planner:
         P = NEW if new else OLD
         s.M = P["margin"]; s.tanH = tanV * P["fit_aspect"]; s.alpha = math.atan2(tanV * 1.778 / 3.0, 1.0)
         s.side, s.rev, s.lastPhi = 1.0, False, 999.0
+        s.skip_from = None                                          # "next": the camera on screen, to move away from
     # ---- shared: tryCand's view direction (rule of thirds for a non-centred shot) ----
     def view(s, az):
         V = mul(d2(az), -1.0)
@@ -165,6 +166,7 @@ class Planner:
             if s.axis:
                 lat = dot(d2(az), (-s.axis[1], s.axis[0]))
                 sc += 1.0 if lat * s.side > 0 else -2.0
+            if s.new and s.skip_from is not None and mag(sub(add(s.F, mul(d2(az), de)), s.skip_from)) <= 1.5: continue
             C.append((sc, az, de))
         C.sort(key=lambda c: -c[0])
         for sc, az, de in C[:2]:
@@ -281,5 +283,27 @@ if __name__ == "__main__":
         print(f"ALL {'new (4.4.6)' if new else 'old (4.4.5)'}: {t['n']} shots, cut {100 * t['cut'] / t['n']:.1f} %, "
               f"under 10 % margin {100 * t['e10'] / t['n']:.1f} %")
     check(totals[False]["e10"] > 0.05 * totals[False]["n"], "the old planning should show the reported edge problem")
+    # "next" (double-tap): the group shot is planned from where people stand, so without the skip rule it comes out
+    # identical; with it, the next camera must stand somewhere else (and still frame everyone)
+    for s_, what in ((people, "people"), (friends, "friends")):
+        check('if (!gSkip || llVecDist(<cc.x, cc.y, 0.0>, <gCurCam.x, gCurCam.y, 0.0>) > 1.5) C += [s, az, de];' in s_,
+              f"{what}: the next-shot rule is missing")
+    rng = random.Random(11); same = moved = 0
+    for t in range(300):
+        pts = scene(rng, rng.choice(("line", "circle", "cluster")))
+        for use_skip in (False, True):
+            pl = Planner(World(None), True, rng); pl.op, pl.oy = pts[0], rng.uniform(0, 2 * math.pi)
+            pl.grp = sorted(pts[1:], key=lambda p: mag(sub(p, pts[0])))[:5]
+            if len(pl.grp) < 2 or not pl.planG(): continue
+            a = pl.sweep()
+            if use_skip: pl.skip_from = a[0]
+            b = pl.sweep()
+            if a is None or b is None: continue
+            if use_skip:
+                moved += mag(sub(a[0], b[0])) > 1.5
+                check(min(margins(b[0], b[1], pl.meas, 1.778)) >= 0, "next: the new shot cuts someone")
+            else: same += mag(sub(a[0], b[0])) < 0.01
+    print(f"next: without the rule {same} of 300 group shots repeat exactly; with it {moved} move to a new spot")
+    check(moved >= 290, f"next: only {moved} of 300 group shots moved")
     print("framing checks:", "ALL PASS" if ok else "FAILURES")
     raise SystemExit(0 if ok else 1)

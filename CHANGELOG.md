@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.7.1
+**Fix: "next" (double-tap, or Next in the live menu) did nothing visible in Social, Personal and Friends.** Only Scenery changed the view. Three causes, all fixed:
+- **Group shots never varied.** Social's group shot and Friends' shot are planned from where people stand, so "next" planned exactly the same camera again (the framing test showed it: 300 of 300 repeated). Now a shot asked for with "next" must come from a spot at least 1.5 m from the camera on screen, and it still frames everyone.
+- **Tight spaces fell back to one fixed shot.** Since 4.4.6 a side with too little room is skipped (so nobody is cut), and in a trailer or small room every side could be skipped, leaving the same "behind your head" shot each time. Now there is first a closer, half-length view of you, and the last-resort shot alternates shoulders.
+- **"Next" was swallowed during a peek pause.** When the HUD thought you were moving the camera yourself, it paused the mode and ignored "next". Now "next" ends the pause and cuts.
+
 ## 4.7.0
 **Idle start that also respects the mouse, and a clearer button.**
 - **Idle start:** after **3 minutes** (new default; 1 min, 90 s, 2, 5 and 10 min stay) with no keys, no typing and no camera moves, **and**, with the new **Mouse check** (on by default), only once your viewer reports you Away. A script cannot see the mouse, but the viewer clears its Away status on any mouse movement, so mouse-only use (menus, inventory, the web) no longer counts as idle. Set the viewer's own Away timer short, or turn the mouse check off if your viewer never sets you Away. The old "SL Away" choice and the old 90 s default move to 3 min + mouse check once.
