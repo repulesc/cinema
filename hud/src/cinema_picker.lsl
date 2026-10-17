@@ -6,7 +6,7 @@
 //  the camera work is in cinema_friends.lsl.
 // ============================================================================
 
-string VERSION = "4.9.1";
+string VERSION = "4.9.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;

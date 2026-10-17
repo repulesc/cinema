@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.9.1";
+string VERSION = "4.9.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -73,6 +73,7 @@ float   gOY;
 float   gOE;
 integer gOSit;
 integer gSitAtShot;
+float   gSeatR;                 // extra body radius for a close view of someone lying down
 integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
 vector  gNPos;
@@ -251,10 +252,31 @@ float needAt(float az)
         vector o = llList2Vector(gMeas, i) - gPFp;
         o.z = 0.0;
         float a = o * P;
-        float b = BODY_R - k * (o * V);
+        float b = BODY_R + gSeatR - k * (o * V);
         need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));
     }
     return need;
+}
+
+// people close together: now and then a close view of faces and shoulders (the caller remembers it, so two in a row never happen)
+integer closeView(float spread)
+{
+    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;   // seated: more often
+    gVNeed = 0.75 / tanV * MARGIN;
+    gPLo = 1.2;
+    gPEye += 0.15;                                      // a little headroom for a taller neighbour
+    if (gOSit) gSeatR = 0.45;                           // lying down, a head can be 0.8 m from where the avatar stands
+    return TRUE;
+}
+
+// the camera hangs above the shot when you are seated, so a picture's distance is the slant: stand that much closer
+float seatD(float S)
+{
+    if (!gOSit || gSeatEl <= 0.0) return S;
+    float d = S * llCos(gSeatEl);
+    float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);
+    if (gIndoor && d * llTan(gSeatEl) > R) d = llSqrt(S * S - R * R);   // a low ceiling caps the rise
+    return d;
 }
 
 planA(integer pair)
@@ -329,7 +351,7 @@ list sweep()
     {
         float off = llList2Float(OFFS, i);
         float az = gPAz + off;
-        float de = fmax(needAt(az) * gMult, gPLo);
+        float de = seatD(fmax(needAt(az) * gMult, gPLo));
         vector cc = gPFp + dirOf(az) * de;
         cc.z = camZ(gPEye, de);
         list r = [0, 0.0];
@@ -493,13 +515,8 @@ integer planF(float mult, integer cnt)
         gPLo = 3.0;
         gPHi = MAX_DIST;
         gMult = mult;
-        integer cl = (best < 3.5 && mult == 1.0 && !gLastClose && llFrand(1.0) < 0.55);   // friends standing close: now and then a close, half-length view
-        if (cl)
-        {
-            gVNeed = 0.75 / tanV * MARGIN;              // heads and shoulders, faces large
-            gPLo = 1.2;
-            gPEye += 0.15;                              // a little headroom for a taller neighbour
-        }
+        integer cl = FALSE;
+        if (mult == 1.0) cl = closeView(best);
         float need = needAt(gPAz) * mult;               // everyone fits, those nearer the camera counted wider
         if (need <= MAX_DIST || cnt == 1)
         {
@@ -574,6 +591,7 @@ nextShot(float mult)
     gPendEvent = "";
     if (!refreshOwner()) return;                    // core covers and asks again
     gSweepErr = FALSE;
+    gSeatR = 0.0;
     if (!gSurveyOK || llVecDist(gOP, gSurveyPos) > 2.0) survey();
     list shot = [];
     gUsedN = 0;

@@ -15,6 +15,10 @@ for name in ("people", "friends"):
     check("if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src, f"{name}: camZ lacks the seated rise")
     check("r > de * 0.176" in src and "llAtan2(tanV, 3.0)" in src, f"{name}: tryCand lacks the seated look-down")
     check('gOSit != gSitAtShot) gPendEvent = "seat"' in src, f"{name}: no re-frame when you sit or stand")
+    check("float de = seatD(fmax(needAt(az)" in src, f"{name}: the sweep does not use the slant distance")
+    check("float d = S * llCos(gSeatEl);" in src and "float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);" in src
+          and "d = llSqrt(S * S - R * R);" in src, f"{name}: seatD changed")
+    check("if (gOSit) gSeatR = 0.45;" in src and "closeView(" in src, f"{name}: close view for lying people changed")
 ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
 check('seat_deg=45' in ui, "ui: default seat angle missing")
 check('"look", "seat", "test", "reset", "back"' in ui, "ui: the Seated view button is not on the Options page")
@@ -57,6 +61,22 @@ cz, fz, pitch = shot(45, 4, 0.6, roof=1.6)
 check(pitch == 0.0, "a very low roof should leave the shot level")
 check(math.degrees(shot(30, 6, 0.6)[2]) > 30 and math.degrees(shot(60, 6, 0.6)[2]) < 80, "pitch out of range")
 
+# the distance a seated camera stands at: the slant to the subject must equal what the framing needs
+def seat_d(S, el, R=None):
+    d = S * math.cos(math.radians(el))
+    if R is not None and d * math.tan(math.radians(el)) > max(R, 0.0): d = math.sqrt(S * S - max(R, 0.0) ** 2)
+    return d
+worst = 0.0
+for el in (30, 45, 60):
+    for S in (1.7, 2.5, 4.0, 8.0):
+        for R in (None, 6.0, 3.0, 1.5, 0.5, -0.5):
+            d = seat_d(S, el, R)
+            r = d * math.tan(math.radians(el))
+            if R is not None and r > max(R, 0.0): r = max(R, 0.0)
+            worst = max(worst, abs(math.hypot(d, r) - S))
+            check(d <= S + 1e-9 and d > 0, f"seat_d({S}, {el}, {R}) = {d}")
+check(worst < 1e-6, f"the slant distance is off by {worst}")
+print(f"seated: the slant distance equals the framing distance within {worst:.1e} m, a level shot at 45 deg stands {100 * (1 - math.cos(math.radians(45))):.0f} % nearer")
 print(f"seated: 3 angles x 5 distances, {n} people points checked")
 print("seated checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

@@ -55,6 +55,7 @@ class Planner:
         P = NEW if new else OLD
         s.M = P["margin"]; s.tanH = tanV * P["fit_aspect"]; s.alpha = math.atan2(tanV * 1.778 / 3.0, 1.0)
         s.side, s.rev, s.lastPhi = 1.0, False, 999.0
+        s.seatr = 0.0                                               # 4.9.2: extra radius, a close view of someone lying down
         s.close = False                                             # 4.9.0: a close, half-length group view
         s.skip_from = None                                          # "next": the camera on screen, to move away from
     # ---- shared: tryCand's view direction (rule of thirds for a non-centred shot) ----
@@ -73,7 +74,7 @@ class Planner:
         need = s.vneed
         for p in s.meas:
             o = sub(p, s.F); a, b = dot(o, P), dot(o, V)
-            need = max(need, (a + BODY_R - k * b) / (k * c + sn), (-a + BODY_R - k * b) / (k * c - sn))
+            need = max(need, (a + BODY_R + s.seatr - k * b) / (k * c + sn), (-a + BODY_R + s.seatr - k * b) / (k * c - sn))
         return need
     def fitDist(s, spread, halfH, lo, hi):
         return min(hi, max(lo, max((spread + BODY_R) / s.tanH, halfH / tanV) * s.M))
@@ -260,7 +261,7 @@ if __name__ == "__main__":
     people, friends = src("cinema_people.lsl"), src("cinema_friends.lsl")
     for s, name in ((people, "people"), (friends, "friends")):     # the port must match the scripts it claims to
         for what in ("float MARGIN      = 1.3;", "tanH = tanV * fmin(aspect, 1.6);", "gAlpha = llAtan2(tanV * aspect / 3.0, 1.0);",
-                     "need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));", "float b = BODY_R - k * (o * V);",
+                     "need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));", "float b = BODY_R + gSeatR - k * (o * V);",
                      "float c = k * (ZERO_VECTOR - u) * V;", "if (de <= gPHi && (st == 0 || llList2Float(r, 1) - STANDOFF >= de))",
                      "float s = 3.0 * fmin(1.0, gPd / de) + 2.0 * llCos(off);", "gPHi = 6.5;", "gMeas = [gNPos];"):
             check(what in s, f"{name}: source changed, port is stale: {what}")
@@ -311,8 +312,8 @@ if __name__ == "__main__":
     # close views (4.9.0): people standing within 3.5 m of each other get, now and then, a half-length view from about
     # half the distance; they must fit as well as the wide ones, and the camera must come out closer
     for s_, what in ((people, "people"), (friends, "friends")):
-        check("(best < 3.5 &&" in s_ and "gPLo = 1.2;" in s_ and "gVNeed = 0.75 / tanV * MARGIN;" in s_
-              and "gPEye += 0.15;" in s_ and "llFrand(1.0) < 0.55" in s_ and "!gLastClose" in s_, f"{what}: the close-view rule changed")
+        check("if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;" in s_ and "gPLo = 1.2;" in s_
+              and "gVNeed = 0.75 / tanV * MARGIN;" in s_ and "gPEye += 0.15;" in s_ and "closeView(best)" in s_, f"{what}: the close-view rule changed")
     rng = random.Random(21); wide_d = []; close_d = []; tight_d = []; worst = 99.0; nclose = 0; head_n = head_cut = 0
     for t in range(600):
         pts = scene(rng, rng.choice(("pair", "line", "cluster")))

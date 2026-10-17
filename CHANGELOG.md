@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.9.2
+**Fix: seated and lying shots were far too far away; close views now reach pairs and lying people.** A screenshot of two people lying on a bed showed the whole bed.
+- **Cause 1:** the raised seated camera was placed as if it were level. At 45° the real distance to the people is about 40 % longer than the distance the framing had worked out, so every seated shot came out too far. The camera now stands so that its true distance, along the line of sight, is what the framing needs: seated shots are about 30 % closer, wide ones included. A low ceiling is accounted for.
+- **Cause 2:** the close view only applied to groups of three or more. A pair (you and one person, over the shoulder in Social) never got it. Now it does.
+- **Lying down:** an avatar lying on a bed is about 1.8 m long, not the 0.7 m width the framing assumes, and a head can be 0.8 m from where the avatar is. A close view of seated people therefore keeps a wider body allowance, so the faces stay in the picture. While you are seated it is chosen more often (about every other cut).
+- Friends is tight on memory again (13.2 KB by the stricter estimate): please send `/77 status` if anything misbehaves.
+
 ## 4.9.1
 **The close views are now intimate: heads and shoulders, much closer.** 4.9.0's close view (about 2 m, down to the thighs) was still too far for people sitting together.
 - A close view now frames **heads and shoulders**, with faces large. The camera comes in to about **1.7 m** for a tight group (under 2 m across; 2.2 m on average over all compact groups, against 3.3 m for the wide views), and it stays clear of the screen edges as before.
