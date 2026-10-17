@@ -1,0 +1,20 @@
+newmtl f0_hull_planks
+Kd 1 1 1
+map_Kd textures/hull_d.png
+
+newmtl f1_interior
+Kd 1 1 1
+map_Kd textures/interior_d.png
+
+newmtl f2_hull_end
+Kd 1 1 1
+map_Kd textures/hull_end_d.png
+
+newmtl f3_wood
+Kd 1 1 1
+map_Kd textures/wood_d.png
+
+newmtl f4_metal
+Kd 1 1 1
+map_Kd textures/metal_d.png
+
