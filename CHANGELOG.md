@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.8.0
+**Seated view: when you sit or lie down, the camera looks down on you.** Meant for a beach blanket, a bed, a sofa with friends.
+- **Automatic** in Social, Personal and Friends: while you are seated (anything you sit on, including a pose bed), the camera rises and looks down at about **45 degrees**, with the same fitting of everyone as before, so people no longer hide behind each other. Indoors the ceiling caps the rise (under about 10 degrees it stays level). Scenery and Frame are unchanged.
+- **Adjustable:** Options › **Seated view**: Auto (45°), Higher (60°), Lower (30°) or Off. Stored as `seat_deg`.
+- **Sitting or standing up** brings a calm re-frame at the next quiet moment (no sooner than the usual minimum hold), never an abrupt jump.
+- A script can tell seated from standing but not sitting upright from lying down (a pose bed uses its own animation), so one elevated view serves both.
+- New `tools/sim/seated_sim.py` in CI.
+
 ## 4.7.1
 **Fix: "next" (double-tap, or Next in the live menu) did nothing visible in Social, Personal and Friends.** Only Scenery changed the view. Three causes, all fixed:
 - **Group shots never varied.** Social's group shot and Friends' shot are planned from where people stand, so "next" planned exactly the same camera again (the framing test showed it: 300 of 300 repeated). Now a shot asked for with "next" must come from a spot at least 1.5 m from the camera on screen, and it still frames everyone.

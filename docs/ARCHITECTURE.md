@@ -163,7 +163,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
   - The text-only fallback uses `Cinema - ` in place of the emoji.
   - Keep each dialog under 512 bytes.
 - **Pages:**
-  - `main`, `live`, `pace`, `afk`, `opts`, `indoors`, `chat`, `favs`, `altcam`, `reach` and `reset`.
+  - `main`, `live`, `pace`, `afk`, `opts`, `indoors`, `chat`, `favs`, `altcam`, `seat`, `reach` and `reset`.
   - `friends` and `pick` belong to the friends script: the UI sends UI_FRIENDS `page`, and the friends script answers "↩ Back" with UI_MENU `main`.
 - **Live page:**
   - 📷 Photo shows as ▶ Resume when frozen.
@@ -187,6 +187,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
 | `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
 | `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
+| `seat_deg` | **45** (4.8.0) | seated view: degrees above your eye line (0 off, 30 / 45 / 60). Read by people and friends (`gSeatEl`); `camZ` raises the camera while `gOSit`, `tryCand` pitches it down by that angle plus the rule-of-thirds offset; a change of sit state sets the `seat` event for a calm re-frame |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |

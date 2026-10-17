@@ -82,6 +82,7 @@ CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
 LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds EMOJI.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
+SEATED    When you sit or lie down, the camera looks down on you from above, in Social, Personal and Friends: Auto (45 degrees, default), Higher, Lower or Off.
 REACH     How far the scenery camera may go (50 / 100 / 150 / 200 m; 100 by default). If your viewer really holds the camera closer, it lowers itself; Re-learn goes back to your choice.
 TEST CAM  A 3-second check that the HUD can move your camera.
 RESET     Back to factory settings.

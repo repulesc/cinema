@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.7.1";
+string VERSION = "4.8.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -44,6 +44,7 @@ list DEFAULTS = [
     "trace", "0",
     "cmd_chan", "77",
     "theta_max", "10",
+    "seat_deg", "45",
     "aspect", "1.778"
 ];
 
@@ -60,6 +61,7 @@ list ITEMS = [
     "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a180", "", "3 min", "a300", "", "5 min", "a600", "", "10 min",
     "mcheck", "", "Mouse check", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
     "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
+    "seat", "🪑", "Seated view", "high", "", "Higher", "low", "", "Lower",
     "r50", "", "50 m", "r100", "", "100 m", "r150", "", "150 m", "r200", "", "200 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
 ];
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
@@ -287,6 +289,14 @@ string afkText()
     return t;
 }
 
+string seatText()
+{
+    integer d = (integer)cfgGet("seat_deg");
+    if (d <= 0) return "off";
+    if (d == 45) return "auto (45°)";
+    return (string)d + "°";
+}
+
 string paceName()
 {
     integer i = llListFindList(PACE_SECS, [(integer)cfgGet("hold")]);
@@ -354,9 +364,14 @@ openMenu(string page)
     {
         text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace");
-        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "test", "reset", "back"];
+            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace") + "\nSeated view: " + seatText();
+        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "seat", "test", "reset", "back"];
         if (LITE) b = llListReplaceList(b, ["emoji"], 7, 7);        // Look is locked in Lite: Emoji goes here instead
+    }
+    else if (page == "seat")
+    {
+        text += "Sitting or lying down: look down on you and your friends from above.\nNow: " + seatText();
+        b = ["auto", "high", "low", "off", "back"];
     }
     else if (page == "look")
     {
@@ -438,7 +453,7 @@ onChoice(string msg)
     if (locked(id)) { closeMenu(); upsell(); return; }
     if (id == "back")
     {
-        if (gPage == "altcam" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
+        if (gPage == "altcam" || gPage == "seat" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
         else openMenu("main");
         return;
     }
@@ -483,7 +498,7 @@ onChoice(string msg)
     }
     else if (gPage == "opts")
     {
-        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "reach" || id == "reset" || id == "look") openMenu(id);
+        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "seat" || id == "reach" || id == "reset" || id == "look") openMenu(id);
         else if (id == "test")
         {
             closeMenu();
@@ -526,6 +541,12 @@ onChoice(string msg)
             for (j = 0; j < llGetListLength(ks); j++) llLinksetDataDeleteProtected(llList2String(ks, j), PASS);
         }
         note("Favourite spots cleared.");
+        openMenu("opts");
+    }
+    else if (gPage == "seat")
+    {
+        cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id]) + 1));
+        note("Seated view: " + seatText());
         openMenu("opts");
     }
     else if (gPage == "altcam")
