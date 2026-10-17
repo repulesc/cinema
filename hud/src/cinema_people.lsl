@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.9.0";
+string VERSION = "4.9.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -382,8 +382,9 @@ integer planG()
     gLastClose = (best < 3.5 && !gLastClose && llFrand(1.0) < 0.55);     // people standing close: now and then a close, half-length view
     if (gLastClose)
     {
-        gVNeed = 0.9 / tanV * MARGIN;
-        gPLo = 2.0;
+        gVNeed = 0.75 / tanV * MARGIN;                  // heads and shoulders, faces large
+        gPLo = 1.2;
+        gPEye += 0.15;                                  // a little headroom for a taller neighbour
     }
     gPd = fclamp(needAt(gPAz), gPLo, gPHi);
     return TRUE;

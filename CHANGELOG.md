@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.9.1
+**The close views are now intimate: heads and shoulders, much closer.** 4.9.0's close view (about 2 m, down to the thighs) was still too far for people sitting together.
+- A close view now frames **heads and shoulders**, with faces large. The camera comes in to about **1.7 m** for a tight group (under 2 m across; 2.2 m on average over all compact groups, against 3.3 m for the wide views), and it stays clear of the screen edges as before.
+- Bodies are cropped on purpose; only faces and heads must stay in. A little extra headroom keeps the head of a neighbour who is 0.3 m taller in the picture in 99 % of the simulated cases.
+- Same rhythm as before: about one cut in three, never two close views in a row, only when everyone stands within 3.5 m of each other.
+
 ## 4.9.0
 **Close views for people who stand close together.** The group shots in Social and Friends were always the wide, environmental kind, with the camera at least 3-4 m away even for two friends side by side.
 - When everyone in the shot stands within about **3.5 m** of each other, now and then (about one cut in three, never two in a row) the camera comes in for a **close, half-length view**: roughly 2 m away instead of 3-4 m, the faces larger. In the simulations the camera comes out about 30 % closer on average (2.3 m against 3.3 m), and for a tight pair about half.

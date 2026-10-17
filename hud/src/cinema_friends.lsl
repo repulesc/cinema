@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.9.0";
+string VERSION = "4.9.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -496,8 +496,9 @@ integer planF(float mult, integer cnt)
         integer cl = (best < 3.5 && mult == 1.0 && !gLastClose && llFrand(1.0) < 0.55);   // friends standing close: now and then a close, half-length view
         if (cl)
         {
-            gVNeed = 0.9 / tanV * MARGIN;
-            gPLo = 2.0;
+            gVNeed = 0.75 / tanV * MARGIN;              // heads and shoulders, faces large
+            gPLo = 1.2;
+            gPEye += 0.15;                              // a little headroom for a taller neighbour
         }
         float need = needAt(gPAz) * mult;               // everyone fits, those nearer the camera counted wider
         if (need <= MAX_DIST || cnt == 1)

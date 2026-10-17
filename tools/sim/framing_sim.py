@@ -114,7 +114,7 @@ class Planner:
         spread = max(abs(dot(sub(p, C), A)) for p in M)
         s.F, s.az, s.dMin, s.axis, s.center, s.type, s.meas = C, math.atan2(Nn[1], Nn[0]), 3.0, None, True, 2, M
         s.vneed, s.lo, s.hi = 1.3 / tanV * s.M, 4.0, 12.0
-        if s.close: s.vneed, s.lo = 0.9 / tanV * s.M, 2.0
+        if s.close: s.vneed, s.lo = 0.75 / tanV * s.M, 1.2
         s.d = s.fitDist(spread, 1.3, 4.0, 12.0)
         if s.new: s.d = min(s.hi, max(s.lo, s.need_at(s.az)))
         return True
@@ -132,7 +132,7 @@ class Planner:
             if dot(d2(s.oy), Nn) < 0: Nn = mul(Nn, -1)
             s.F, s.az, s.dMin, s.axis, s.center, s.type, s.meas = C, math.atan2(Nn[1], Nn[0]), 3.0, None, True, 3, M
             s.vneed, s.lo, s.hi = 1.3 / tanV * s.M, 3.0, maxd
-            if s.close: s.vneed, s.lo = 0.9 / tanV * s.M, 2.0
+            if s.close: s.vneed, s.lo = 0.75 / tanV * s.M, 1.2
             if s.new: need = s.need_at(s.az)
             else:
                 need = 1.3 / tanV * s.M
@@ -311,9 +311,9 @@ if __name__ == "__main__":
     # close views (4.9.0): people standing within 3.5 m of each other get, now and then, a half-length view from about
     # half the distance; they must fit as well as the wide ones, and the camera must come out closer
     for s_, what in ((people, "people"), (friends, "friends")):
-        check("(best < 3.5 &&" in s_ and "gPLo = 2.0;" in s_ and "gVNeed = 0.9 / tanV * MARGIN;" in s_
-              and "llFrand(1.0) < 0.55" in s_ and "!gLastClose" in s_, f"{what}: the close-view rule changed")
-    rng = random.Random(21); wide_d = []; close_d = []; worst = 99.0; nclose = 0
+        check("(best < 3.5 &&" in s_ and "gPLo = 1.2;" in s_ and "gVNeed = 0.75 / tanV * MARGIN;" in s_
+              and "gPEye += 0.15;" in s_ and "llFrand(1.0) < 0.55" in s_ and "!gLastClose" in s_, f"{what}: the close-view rule changed")
+    rng = random.Random(21); wide_d = []; close_d = []; tight_d = []; worst = 99.0; nclose = 0; head_n = head_cut = 0
     for t in range(600):
         pts = scene(rng, rng.choice(("pair", "line", "cluster")))
         for mode in ("social", "friends"):
@@ -332,10 +332,22 @@ if __name__ == "__main__":
                 if sh is None: continue
                 (close_d if use_close else wide_d).append(pl.d)
                 m = min(margins(sh[0], sh[1], pl.meas, 1.6))
-                if use_close: worst = min(worst, m); nclose += 1
+                if use_close:
+                    worst = min(worst, m); nclose += 1
+                    if spread < 2.0: tight_d.append(pl.d)
+                    V = norm(sub(sh[1], sh[0])); E = 1.7                  # eye line of the group; cam z puts it on the upper third
+                    camz = E + 0.15 - pl.d * tanV / 3.0
+                    for p_ in pl.meas:
+                        dep = dot(sub(p_, sh[0]), V)
+                        for dz in (-0.3, 0.3):                            # a taller or shorter neighbour: eyes 0.3 m off
+                            ytop = (E + dz + 0.22 - camz) / (dep * tanV)  # the top of the head
+                            head_n += 1; head_cut += ytop > 0.97
                 check(m >= 10.0, f"close={use_close} {mode}: margin {m:.1f} % under 10 %")
     mean = lambda L: sum(L) / len(L)
     print(f"close views: {nclose} compact groups; mean camera distance wide {mean(wide_d):.1f} m, close {mean(close_d):.1f} m; worst margin {worst:.1f} %")
+    print(f"close views: tight groups (under 2 m across) {mean(tight_d):.1f} m from the camera; heads cut with a neighbour 0.3 m taller: {100 * head_cut / head_n:.1f} %")
+    check(head_cut <= 0.03 * head_n, "close views cut the heads of taller neighbours too often")
+    check(mean(tight_d) < 2.0, "close views of tight groups should come in under 2 m")
     check(nclose > 100 and mean(close_d) < 0.75 * mean(wide_d), "close views should be clearly closer than wide ones")
     print("framing checks:", "ALL PASS" if ok else "FAILURES")
     raise SystemExit(0 if ok else 1)
