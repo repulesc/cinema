@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.9.0
+**Close views for people who stand close together.** The group shots in Social and Friends were always the wide, environmental kind, with the camera at least 3-4 m away even for two friends side by side.
+- When everyone in the shot stands within about **3.5 m** of each other, now and then (about one cut in three, never two in a row) the camera comes in for a **close, half-length view**: roughly 2 m away instead of 3-4 m, the faces larger. In the simulations the camera comes out about 30 % closer on average (2.3 m against 3.3 m), and for a tight pair about half.
+- The wide views stay exactly as they were, and are still the usual choice. Spread-out groups always get the wide view.
+- The same fitting as before keeps everyone clear of the screen edges (at least 10 % margin in all tests). In a small room a close view needs less space, so it fits more often.
+- No new setting. "Next" (double-tap) can land on either kind.
+
 ## 4.8.1
 **Fix: "Stack-Heap Collision" in the UI script when you pressed the HUD (4.8.0 only).**
 - Cause: the UI script was already close to its memory limit, and the new Seated view entries tipped it over. The memory estimate had missed that every element of a constant list is its own object: the menu table and the defaults held about 250 of them.

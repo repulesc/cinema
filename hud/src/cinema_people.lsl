@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.8.1";
+string VERSION = "4.9.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -67,6 +67,7 @@ float   gOY;
 float   gOE;
 integer gOSit;
 integer gSitAtShot;
+integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
 integer gNearCnt;
 vector  gNPos;
@@ -378,6 +379,12 @@ integer planG()
     gVNeed = 1.3 / tanV * MARGIN;
     gPLo = 4.0;
     gPHi = 12.0;
+    gLastClose = (best < 3.5 && !gLastClose && llFrand(1.0) < 0.55);     // people standing close: now and then a close, half-length view
+    if (gLastClose)
+    {
+        gVNeed = 0.9 / tanV * MARGIN;
+        gPLo = 2.0;
+    }
     gPd = fclamp(needAt(gPAz), gPLo, gPHi);
     return TRUE;
 }

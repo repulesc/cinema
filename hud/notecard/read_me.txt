@@ -46,6 +46,8 @@ Composed shots of you that follow you as you walk.
 SOCIAL
 You and the people around you: over-the-shoulder shots when you talk with someone, and group shots when more people join. It cuts to whoever speaks in local chat. When YOU type, it cuts to you, and keeps rolling.
 
+In Social and Friends, when everyone stands close together, the camera now and then comes in for a closer, half-length view among the wider ones.
+
 FRIENDS
 You and the friends you picked, framed together. While your group stays in the picture, the camera glides gently to keep it there. If someone walks out of the picture for about a second, it cuts to a wider shot that holds everyone.
  - Tap the button > Friends > Pick. Everyone within 20 m is listed. Tap a name to add them. Tap a name with a check mark to take them off again.

@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.8.1";
+string VERSION = "4.9.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -73,6 +73,7 @@ float   gOY;
 float   gOE;
 integer gOSit;
 integer gSitAtShot;
+integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
 vector  gNPos;
 float   gNEye;
@@ -492,10 +493,17 @@ integer planF(float mult, integer cnt)
         gPLo = 3.0;
         gPHi = MAX_DIST;
         gMult = mult;
+        integer cl = (best < 3.5 && mult == 1.0 && !gLastClose && llFrand(1.0) < 0.55);   // friends standing close: now and then a close, half-length view
+        if (cl)
+        {
+            gVNeed = 0.9 / tanV * MARGIN;
+            gPLo = 2.0;
+        }
         float need = needAt(gPAz) * mult;               // everyone fits, those nearer the camera counted wider
         if (need <= MAX_DIST || cnt == 1)
         {
-            gPd = fclamp(need, 3.0, MAX_DIST);
+            gLastClose = cl;
+            gPd = fclamp(need, gPLo, MAX_DIST);
             gUsedN = cnt;
             return TRUE;
         }
