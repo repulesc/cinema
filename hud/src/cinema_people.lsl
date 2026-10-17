@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.7.1";
+string VERSION = "5.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -39,6 +39,7 @@ list OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263]
 list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
 
 float   gThetaMax;
+float   gSeatEl;                // seated view: how high above you the camera looks down (0 = off)
 integer gTrace;
 list    gRayOpts;
 float   gFov;
@@ -65,6 +66,9 @@ vector  gOP;
 float   gOY;
 float   gOE;
 integer gOSit;
+integer gSitAtShot;
+float   gSeatR;                 // extra body radius for a close view of someone lying down
+integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
 integer gNearCnt;
 vector  gNPos;
@@ -144,6 +148,7 @@ tsay(string s)
 loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
+    gSeatEl   = (float)cfg("seat_deg", "45") * DEG_TO_RAD;
     gTrace    = (integer)cfg("trace", "0");
     float pace = (float)cfg("hold", "60");                // the Pace setting also sets the people cameras' rhythm
     gBase = fclamp(0.75 * pace, 20.0, 150.0);               // a shot is held about this long (Calm 60 s: 45 s)
@@ -247,10 +252,10 @@ integer survey()
 // ============================================================================
 //  composition
 // ============================================================================
-// camera height: the subject's eye line on the upper third while the camera stays level
 float camZ(float eyeRef, float d)
 {
     float z = fmax(eyeRef - d * tanV / 3.0, gFloorZ + 0.35);
+    if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);
     if (gIndoor) z = fmin(z, gRoofZ - 0.3);
     return z;
 }
@@ -284,10 +289,31 @@ float needAt(float az)
         vector o = llList2Vector(gMeas, i) - gPFp;
         o.z = 0.0;
         float a = o * P;
-        float b = BODY_R - k * (o * V);
+        float b = BODY_R + gSeatR - k * (o * V);
         need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));
     }
     return need;
+}
+
+// people close together: now and then a close view of faces and shoulders (the caller remembers it, so two in a row never happen)
+integer closeView(float spread)
+{
+    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;   // seated: more often
+    gVNeed = 0.75 / tanV * MARGIN;
+    gPLo = 1.2;
+    gPEye += 0.15;                                      // a little headroom for a taller neighbour
+    if (gOSit) gSeatR = 0.45;                           // lying down, a head can be 0.8 m from where the avatar stands
+    return TRUE;
+}
+
+// the camera hangs above the shot when you are seated, so a picture's distance is the slant: stand that much closer
+float seatD(float S)
+{
+    if (!gOSit || gSeatEl <= 0.0) return S;
+    float d = S * llCos(gSeatEl);
+    float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);
+    if (gIndoor && d * llTan(gSeatEl) > R) d = llSqrt(S * S - R * R);   // a low ceiling caps the rise
+    return d;
 }
 
 // portrait of you, or (pair = TRUE and someone is close) an over-the-shoulder shot
@@ -326,6 +352,7 @@ planA(integer pair)
         gPType = 1;
         gVNeed = 0.9 / tanV * MARGIN;
         gPHi = 6.5;
+        gLastClose = closeView(llVecMag(ax));
         gPd = fclamp(needAt(gPAz), gPLo, gPHi);
         return;
     }
@@ -375,6 +402,7 @@ integer planG()
     gVNeed = 1.3 / tanV * MARGIN;
     gPLo = 4.0;
     gPHi = 12.0;
+    gLastClose = closeView(best);
     gPd = fclamp(needAt(gPAz), gPLo, gPHi);
     return TRUE;
 }
@@ -402,7 +430,9 @@ list tryCand(float az, float de)
     if (rs < 0) gSweepErr = TRUE;
     if (rs < 0 || (rs == 1 && llList2Float(rr, 1) < llVecDist(cam, gPFp) - 0.8)) return [];
     vector foc = cam + viewDir(az) * de;
-    foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
+    float r = cam.z - gPEye;
+    if (gOSit && gSeatEl > 0.0 && r > de * 0.176) foc.z = cam.z - de * llTan(llAtan2(r, de) + llAtan2(tanV, 3.0));
+    else foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
     return [cam, foc];
 }
 
@@ -416,7 +446,7 @@ list sweep()
     {
         float off = llList2Float(OFFS, i);
         float az = gPAz + off;
-        float de = fmax(needAt(az), gPLo);
+        float de = seatD(fmax(needAt(az), gPLo));
         vector cc = gPFp + dirOf(az) * de;
         cc.z = camZ(gPEye, de);
         list r = [0, 0.0];
@@ -524,6 +554,7 @@ nextShot()
     gPendEvent = "";
     if (!refreshOwner()) return;                    // core covers and asks again
     gSweepErr = FALSE;
+    gSeatR = 0.0;
     if (!gSurveyOK || llVecDist(gOP, gSurveyPos) > 2.0) survey();
     list shot = [];
     if (gMode == "social")
@@ -576,6 +607,7 @@ nextShot()
     gCurType = type;
     gFaceOwner = (llList2Vector(gMeas, 0) == gOP);
     gOwnerAtShot = gOP;
+    gSitAtShot = gOSit;
     gGrpAtShot = llGetListLength(gGrp);
     tsay(gMode + ": " + llList2String(["portrait", "pair", "group", "friends group", "speaker"], type) + ", camera " + (string)llRound(llVecDist(cam, gOP)) + " m from you");
 }
@@ -623,6 +655,7 @@ doScan()
         gPendEvent = "scene";
     }
     else if (gMode == "social" && llGetListLength(gGrp) > gGrpAtShot) gPendEvent = "arrival";
+    else if (gOSit != gSitAtShot) gPendEvent = "seat";          // you sat down or stood up: a calm re-frame
     else if (!framed()) gPendEvent = "frame";          // someone drifted near the edge: re-frame at the next calm moment
     if (llGetListLength(gGrp) < gGrpAtShot) gGrpAtShot = llGetListLength(gGrp);
 }

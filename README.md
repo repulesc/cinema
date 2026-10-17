@@ -41,7 +41,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
    - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
-3. **Delete any old scripts from the prim (v3 or earlier)**, then add the seven from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`, `cinema_frame`. Each prints a `ready` line with its free memory.
+3. **Delete any old scripts from the prim (v3 or earlier)**, then add the eight from `hud/src/` to the root prim: `cinema_core`, `cinema_ui`, `cinema_scenery`, `cinema_people`, `cinema_friends`, `cinema_picker`, `cinema_frame`, `cinema_lens`. Each prints a `ready` line with its free memory.
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
 5. Create a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.
 6. Before giving or selling it: change `PASS` (the same string at the top of every script) and set the scripts to no-modify.

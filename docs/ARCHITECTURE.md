@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All seven scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All eight scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -15,6 +15,7 @@ All seven scripts go in the **root prim** of a one-prim HUD. Each must compile c
 | `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
 | `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
+| `cinema_lens.lsl` | **New in 5.0.** The framing keys in Friends: closeness gears (Auto, Wide, Group, Half, Close, Faces), the seated angle, A/D round, and Tune (an aim offset per seat, kept in the seat's frame, stored in LSD `cin.seat.<root>.<offset in 0.5 m steps>`). Turns NUDGE key presses into LENS 7319 `"<half-height>\|<nearest>\|<body allowance>\|<eye lift>\|<angle>\|<aim>\|<round>"` for Friends. Core forwards Friends' keys: seated all six (pass-on off), standing only E/C (W A S D passed on) | – | 115 (37.9 KB est.) |
 | `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
@@ -40,6 +41,7 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
 | **7317 NUDGE** | core → frame | control level bits | Frame: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
 | **7318 FOVMSG** | core → frame | radians | Frame: the viewer's field of view changed (checked every 0.5 s) |
+| **7319 LENS** | lens → friends | `<half-height>\|<nearest>\|<body allowance>\|<eye lift>\|<angle deg>\|<aim>\|<round>` | 5.0: the framing keys. Half-height 0 = Auto. Friends re-cuts at once |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
 | 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |
 | **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
@@ -163,7 +165,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
   - The text-only fallback uses `Cinema - ` in place of the emoji.
   - Keep each dialog under 512 bytes.
 - **Pages:**
-  - `main`, `live`, `pace`, `afk`, `opts`, `indoors`, `chat`, `favs`, `altcam`, `reach` and `reset`.
+  - `main`, `live`, `pace`, `afk`, `opts`, `indoors`, `chat`, `favs`, `altcam`, `seat`, `reach` and `reset`.
   - `friends` and `pick` belong to the friends script: the UI sends UI_FRIENDS `page`, and the friends script answers "↩ Back" with UI_MENU `main`.
 - **Live page:**
   - 📷 Photo shows as ▶ Resume when frozen.
@@ -187,6 +189,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
 | `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
 | `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
+| `seat_deg` | **45** (4.8.0) | seated view: degrees above your eye line (0 off, 30 / 45 / 60). Read by people and friends (`gSeatEl`); `camZ` raises the camera while `gOSit`, `tryCand` pitches it down by that angle plus the rule-of-thirds offset; a change of sit state sets the `seat` event for a calm re-frame |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
