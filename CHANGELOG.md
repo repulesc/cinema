@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.8.1
+**Fix: "Stack-Heap Collision" in the UI script when you pressed the HUD (4.8.0 only).**
+- Cause: the UI script was already close to its memory limit, and the new Seated view entries tipped it over. The memory estimate had missed that every element of a constant list is its own object: the menu table and the defaults held about 250 of them.
+- Fix: the menu table and the defaults are now single strings, and a menu choice is matched only against the buttons on screen instead of the whole table. Same menus, same behaviour, much less memory.
+- `tools/lslcheck.sh` now counts list elements in its memory estimate.
+- Replace all seven scripts (the version is now 4.8.1). `/77 status` shows each script's free memory.
+
 ## 4.8.0
 **Seated view: when you sit or lie down, the camera looks down on you.** Meant for a beach blanket, a bed, a sofa with friends.
 - **Automatic** in Social, Personal and Friends: while you are seated (anything you sit on, including a pose bed), the camera rises and looks down at about **45 degrees**, with the same fitting of everyone as before, so people no longer hide behind each other. Indoors the ceiling caps the rise (under about 10 degrees it stays level). Scenery and Frame are unchanged.

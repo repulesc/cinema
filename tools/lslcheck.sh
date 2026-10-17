@@ -12,7 +12,9 @@ files=("$@")
 rc=0
 for f in "${files[@]}"; do
     if python3 "$DIR/main.py" -O clear -o /dev/null "$f"; then
-        # rough Mono size model fitted on in-world readings: ~18 KB base + ~58 B per statement + 2 B per string char
+        # rough Mono size model fitted on in-world readings: ~18 KB base + ~58 B per statement + 2 B per string char,
+        # plus ~30 B for each element of a constant list (every element is an object): 4.8.0 crashed with "Stack-Heap
+        # Collision" in the UI script while this model, then without that term, still showed 15 KB free
         python3 -I - "$f" <<'PY'
 import re, sys
 f = sys.argv[1]
@@ -20,7 +22,9 @@ f = sys.argv[1]
 t = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*', lambda m: m.group(0) if m.group(0)[0] == '"' else '', open(f).read())
 chars = sum(len(x) for x in re.findall(r'"((?:\\.|[^"\\])*)"', t))
 stmts = re.sub(r'"(?:\\.|[^"\\])*"', '""', t).count(';')
-free = 64 - (18372 + 58.3 * stmts + 2 * chars) / 1024
+clean = re.sub(r'"(?:\\.|[^"\\])*"', '""', t)
+elems = sum(m.group(1).count(',') + 1 for m in re.finditer(r'\blist\s+\w+\s*=\s*\[(.*?)\];', clean, re.S) if m.group(1).strip())
+free = 64 - (18372 + 58.3 * stmts + 2 * chars + 30 * elems) / 1024
 print(f"OK    {f}: {stmts} statements, est. free memory {free:.1f} KB" + ("   <-- LOW" if free < 10 else ""))
 PY
     else

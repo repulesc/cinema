@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION = "4.8.0";
+string VERSION = "4.8.1";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -24,46 +24,10 @@ integer CMD         = 7371;
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
 
-list DEFAULTS = [
-    "afk_on", "1",
-    "afk_sec", "180",
-    "afk_away", "1",
-    "hold", "60",
-    "reach", "100",
-    "reach_set", "100",
-    "reach_ok", "0",
-    "indoors", "auto",
-    "chat_cuts", "1",
-    "emoji", "1",
-    "look", "1",
-    "face", "-1",
-    "peek", "1",
-    "peek_bail", "0",
-    "phantom", "0",
-    "cutmode", "0",
-    "trace", "0",
-    "cmd_chan", "77",
-    "theta_max", "10",
-    "seat_deg", "45",
-    "aspect", "1.778"
-];
+string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~emoji=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji, title
-list ITEMS = [
-    "scenery", "🏞", "Scenery", "personal", "🚶", "Personal", "social", "👥", "Social", "friends", "💞", "Friends",
-    "frame", "🖼", "Frame", "pace", "⏳", "Pace", "afk", "💤", "AFK", "opts", "⚙", "Options", "help", "❔", "Help",
-    "close", "✖", "Close", "back", "↩", "Back", "photo", "📷", "Photo", "resume", "▶", "Resume",
-    "save", "⭐", "Save", "next", "⏭", "Next", "stop", "⏹", "Stop", "modes", "🎬", "Modes",
-    "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
-    "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
-    "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Chat text", "emoji", "🔤", "Emoji",
-    "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
-    "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a180", "", "3 min", "a300", "", "5 min", "a600", "", "10 min",
-    "mcheck", "", "Mouse check", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
-    "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
-    "seat", "🪑", "Seated view", "high", "", "Higher", "low", "", "Lower",
-    "r50", "", "50 m", "r100", "", "100 m", "r150", "", "150 m", "r200", "", "200 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
-];
+string ITEMS = "~scenery|🏞|Scenery~personal|🚶|Personal~social|👥|Social~friends|💞|Friends~frame|🖼|Frame~pace|⏳|Pace~afk|💤|AFK~opts|⚙|Options~help|❔|Help~close|✖|Close~back|↩|Back~photo|📷|Photo~resume|▶|Resume~save|⭐|Save~next|⏭|Next~stop|⏹|Stop~modes|🎬|Modes~lively|⚡|Lively~easy|🙂|Easy~calm|🍃|Calm~slow|🌙|Slow~still|🗿|Still~indoors|🏠|Indoors~chat|💬|Chat cuts~favs|⭐|Favourites~altcam|👁|Alt-cam~phantom|🧱|Phantom~reach|📏|Reach~trace|📝|Chat text~emoji|🔤|Emoji~look|🎨|Look~th0||Classic~th1||Rec~th2||Viewfinder~test|🧪|Test cam~reset|♻|Reset~gotit|👍|Got it~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~here||Clear here~all||Clear all~pause||Pause~end||End~ignore||Ignore~seat|🪑|Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -75,6 +39,7 @@ integer gCmdListen;
 integer gCmdChan;
 integer gVerAsked;
 integer gEmoji;
+list    gBtn;                   // the ids of the buttons on screen
 integer gFirst;
 string  gPage;
 
@@ -126,11 +91,13 @@ cfgSet(string k, string v)
 initDefaults(integer force)
 {
     integer i;
-    integer n = llGetListLength(DEFAULTS);
-    for (i = 0; i < n; i += 2)
+    list D = llParseString2List(DEFAULTS, ["~"], []);
+    integer n = llGetListLength(D);
+    for (i = 0; i < n; i++)
     {
-        string k = llList2String(DEFAULTS, i);
-        if (force || cfgGet(k) == "") cfgWrite(k, llList2String(DEFAULTS, i + 1));
+        list kv = llParseString2List(llList2String(D, i), ["="], []);
+        string k = llList2String(kv, 0);
+        if (force || cfgGet(k) == "") cfgWrite(k, llList2String(kv, 1));
     }
     cfgWrite("ver", VERSION);
     cfgWrite("owner", (string)gOwner);
@@ -227,10 +194,14 @@ integer locked(string id)
 
 string label(string id)
 {
-    integer i = llListFindList(ITEMS, [id]);
+    integer i = llSubStringIndex(ITEMS, "~" + id + "|");
     if (i < 0) return id;
-    string t = llList2String(ITEMS, i + 2);
-    string e = llList2String(ITEMS, i + 1);
+    i += 2 + llStringLength(id);
+    string r = llGetSubString(ITEMS, i, i + 40);                // one entry is shorter than this
+    r = llGetSubString(r, 0, llSubStringIndex(r, "~") - 1);
+    list p = llParseStringKeepNulls(r, ["|"], []);
+    string e = llList2String(p, 0);
+    string t = llList2String(p, 1);
     if (locked(id))
     {
         if (gEmoji) return "🔒 " + t;
@@ -250,10 +221,10 @@ upsell()
 string idOf(string msg)
 {
     integer i;
-    integer n = llGetListLength(ITEMS);
-    for (i = 0; i < n; i += 3)
+    integer n = llGetListLength(gBtn);
+    for (i = 0; i < n; i++)
     {
-        string id = llList2String(ITEMS, i);
+        string id = llList2String(gBtn, i);
         if (label(id) == msg) return id;
     }
     return msg;
@@ -262,6 +233,7 @@ string idOf(string msg)
 // llDialog fills from the bottom-left: give it the rows bottom-first, padded to full rows
 list order(list ids)
 {
+    gBtn = ids;
     list b = [];
     integer i;
     integer n = llGetListLength(ids);

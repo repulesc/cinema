@@ -16,7 +16,7 @@ for name in ("people", "friends"):
     check("r > de * 0.176" in src and "llAtan2(tanV, 3.0)" in src, f"{name}: tryCand lacks the seated look-down")
     check('gOSit != gSitAtShot) gPendEvent = "seat"' in src, f"{name}: no re-frame when you sit or stand")
 ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
-check('"seat_deg", "45"' in ui, "ui: default seat angle missing")
+check('seat_deg=45' in ui, "ui: default seat angle missing")
 check('"look", "seat", "test", "reset", "back"' in ui, "ui: the Seated view button is not on the Options page")
 
 def shot(el_deg, de, eye_z, roof=None):
