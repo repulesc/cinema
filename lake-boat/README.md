@@ -21,6 +21,7 @@ Size: **4.44 m × 1.39 m × 0.83 m** (bow = +X). Built entirely from code (numpy
 | `out/textures/*_n.png` | Normal maps (alpha = 0, i.e. no environment reflection) |
 | `out/textures/*_s.png` | Specular maps (alpha = glossiness) |
 | `lakeboat_drive.lsl` | Vehicle script: sit on the rowing thwart, row, steer, wake and optional sound |
+| `lakeboat_textures.lsl` | One-shot script that applies all textures to the 5 faces from the boat's contents |
 | `out/preview/*.png` | Renders from my own small software renderer (not Second Life, see "Honest limits") |
 
 ## Faces (materials)
@@ -46,8 +47,13 @@ Every LOD has the same 5 faces **in this order**; face numbers in the SL build t
    cut triangles.
 5. **Build ▸ Upload ▸ Image** for the five `*_d.png` (and, if you want the extra depth, the
    `*_n.png` / `*_s.png` for hull, interior, hull_end and wood).
-6. Rez the boat, open *Edit ▸ Texture*, select each face (0–4, table above), apply the diffuse
-   texture, then use the *Materials* radio button to add normal and specular maps.
+6. Rez the boat and texture it, either:
+   - **with the script (quick):** upload the images under the file names without `.png`
+     (`hull_d`, `hull_n`, `hull_s`, `interior_d`, …), drop them and `lakeboat_textures.lsl` into
+     *Edit ▸ Content*. It applies diffuse, normal and specular to faces 0–4, lists anything it
+     couldn't find, and deletes itself when all five diffuse maps were there; or
+   - **by hand:** *Edit ▸ Texture*, select each face (0–4, table above), apply the diffuse
+     texture, then use the *Materials* radio button to add normal and specular maps.
 7. *Edit ▸ Features*: Physics shape type **Prim** (= use the uploaded physics shape).
 8. Make a new script in the boat and paste `lakeboat_drive.lsl`.
 
@@ -65,7 +71,7 @@ re-sit. The script prints the new `SIT_POS` to paste back into the constants at 
   textures. But the SL uploader, the land-impact number, and especially the **vehicle feel**
   (hover height, how it grips the water, turning) still need an in-world test. Those constants
   are marked `TUNE` in the script.
-- The `.lsl` script passes a full LSL parser and type check (LSL-PyOptimizer, via the repo's
+- Both `.lsl` scripts pass a full LSL parser and type check (LSL-PyOptimizer, via the repo's
   `tools/lslcheck.sh`; roughly 40 KB of Mono memory free), so it should compile in-world. That
   says nothing about how the boat *drives*; see the `TUNE` values.
 - The sit position is an estimate from the thwart height; use the nudge commands.
