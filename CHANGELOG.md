@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.0.0
+**Friends: you choose how close, from what angle, and where the faces are.** Sitting or lying together, Friends was still too far away, because a script cannot see where a seated or lying body really is: an avatar on a bed reports the same position it would standing, and only the animation lays it down.
+- **Closeness gears:** Auto (the mix of 4.9, the default) → Wide → Group → Half → Close → Faces. Seated or lying, **W/S** step closer or wider; standing, **E/C** do (W A S D still walk). From Auto, closer goes to Close and wider to Group; wider past Wide is Auto again. A gear stays until you change it; double-tap still cuts to another angle in the same gear. Faces brings the camera to about 1 m from a couple side by side.
+- **Angle (seated or lying):** **E/C** step through 60°, 45°, 30°, 15° and level. It starts from Options › Seated view. **A/D** turn round the group.
+- **Tune:** long press › **Tune**, then W/S/A/D move the aim across the screen and E/C up or down, until the faces are where you want them; long press › Tune again when done. The aim is saved at once for that seat (the object, and where on it you sit, so each side or pose of a bed has its own), and comes back by itself the next time you sit there. Long press › Clear tune forgets it.
+- What changed shows for 3 seconds, then the screen is clean.
+- **New script `cinema_lens.lsl`** (eight scripts now): replace all of them.
+- Friends memory: the unused friend-names list and two diagnostic counters are gone, so Friends stays where it was (13.2 KB by the stricter estimate).
+- New `tools/sim/lens_sim.py` in CI: each gear is closer than the one before, nobody is cut at any gear, Faces is closer than Frame's nearest, the Tune aim comes back exactly however the bed is turned.
+- Social and Personal get the same keys once this is right in-world.
+- To check in-world: standing in Friends, E/C must change the gear without making you jump or crouch (two control requests: W A S D passed on, E/C kept).
+
 ## 4.9.2
 **Fix: seated and lying shots were far too far away; close views now reach pairs and lying people.** A screenshot of two people lying on a bed showed the whole bed.
 - **Cause 1:** the raised seated camera was placed as if it were level. At 45° the real distance to the people is about 40 % longer than the distance the framing had worked out, so every seated shot came out too far. The camera now stands so that its true distance, along the line of sight, is what the framing needs: seated shots are about 30 % closer, wide ones included. A low ceiling is accounted for.

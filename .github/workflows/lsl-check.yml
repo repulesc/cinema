@@ -26,3 +26,4 @@ jobs:
           python3 tools/sim/framing_sim.py
           python3 tools/sim/frame_sim.py
           python3 tools/sim/seated_sim.py
+          python3 tools/sim/lens_sim.py

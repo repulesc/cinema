@@ -53,6 +53,9 @@ You and the friends you picked, framed together. While your group stays in the p
  - Tap the button > Friends > Pick. Everyone within 20 m is listed. Tap a name to add them. Tap a name with a check mark to take them off again.
  - Friends > Remove lists everyone you saved (even if they are not here), so you can remove just one person.
  - You can save up to 10 friends.
+ - HOW CLOSE: sitting or lying, W / S step closer or wider (Wide, Group, Half, Close, Faces; Auto mixes them). Standing, E / C do it, and W A S D still walk. The name shows for 3 seconds.
+ - ANGLE (sitting or lying): E / C step the camera higher or lower (60, 45, 30, 15 degrees, level). A / D turn round the group.
+ - TUNE: if the faces are off-centre on a bed or sofa, hold the button > Tune, move the aim with W S A D (across) and E C (up and down), then hold > Tune again. It is remembered for that seat. Hold > Clear tune forgets it.
 
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.

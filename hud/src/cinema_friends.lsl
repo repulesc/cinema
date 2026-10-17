@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "4.9.2";
+string VERSION = "5.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -24,6 +24,7 @@ integer GLIDE      = 7312;
 integer ACK        = 7313;
 integer SPEAKER    = 7315;
 integer CFG_CHANGED= 7330;
+integer LENS       = 7319;   // lens -> friends  gear, angle, Tune aim, round (cinema_lens.lsl)
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 
@@ -67,12 +68,13 @@ key     gLastSpk;
 integer gLastSpkT;
 
 list    gFKeys;              // saved friends
-list    gFNames;
 vector  gOP;
 float   gOY;
 float   gOE;
 integer gOSit;
 integer gSitAtShot;
+list    gLens;               // the framing keys: half-height, nearest, body allowance, eye lift, angle, aim, round
+vector  gAim;                // Tune: where the faces are, from the reported positions
 float   gSeatR;                 // extra body radius for a close view of someone lying down
 integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
@@ -117,8 +119,6 @@ vector  gOwnerAtShot;
 integer gSweepErr;
 integer gSkip;               // this shot was asked for with "next": it must differ from the one on screen
 integer gOut;                // half-second ticks someone has been out of frame
-integer gGlides;
-integer gSnaps;
 
 // ============================================================================
 string cfg(string k, string d)
@@ -249,7 +249,7 @@ float needAt(float az)
     integer i;
     for (i = 0; i < llGetListLength(gMeas); i++)
     {
-        vector o = llList2Vector(gMeas, i) - gPFp;
+        vector o = llList2Vector(gMeas, i) + gAim - gPFp;
         o.z = 0.0;
         float a = o * P;
         float b = BODY_R + gSeatR - k * (o * V);
@@ -398,7 +398,7 @@ list sweep()
 // is p inside the picture? lateral offset against the frame half-width at p's depth; k = how much of the half-width counts
 integer inFrame(vector p, float k)
 {
-    vector to = p - gCurCam;
+    vector to = p + gAim - gCurCam;
     to.z = 0.0;
     if (llVecMag(to) < 0.1) return TRUE;
     float fwd = to * gCurV;
@@ -412,14 +412,11 @@ integer inFrame(vector p, float k)
 loadFriends()
 {
     gFKeys = [];
-    gFNames = [];
     list L = llParseString2List(cfg("friends", ""), [";"], []);
     integer i;
     for (i = 0; i < llGetListLength(L); i++)
     {
-        list P = llParseString2List(llList2String(L, i), [","], []);
-        gFKeys += [(key)llList2String(P, 0)];
-        gFNames += [llList2String(P, 1)];
+        gFKeys += [(key)llList2String(llParseString2List(llList2String(L, i), [","], []), 0)];
     }
 }
 
@@ -503,9 +500,9 @@ integer planF(float mult, integer cnt)
         }
         vector Nn = <-A.y, A.x, 0.0>;
         if (dirOf(gOY) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
-        gPEye = C.z + (gOE - gOP.z);
-        gPFp = <C.x, C.y, gPEye>;
-        gPAz = llAtan2(Nn.y, Nn.x);
+        gPEye = C.z + (gOE - gOP.z) + gAim.z;
+        gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;
+        gPAz = llAtan2(Nn.y, Nn.x) + llList2Float(gLens, 6);
         gPAxis = ZERO_VECTOR;
         gPTh = 0.0;
         gPCenter = TRUE;
@@ -516,7 +513,15 @@ integer planF(float mult, integer cnt)
         gPHi = MAX_DIST;
         gMult = mult;
         integer cl = FALSE;
-        if (mult == 1.0) cl = closeView(best);
+        float g = llList2Float(gLens, 0);
+        if (g > 0.0)                                    // a gear chosen with the keys
+        {
+            gVNeed = g / tanV * MARGIN;
+            gPLo = llList2Float(gLens, 1);
+            if (gOSit) gSeatR = llList2Float(gLens, 2);
+            gPEye += llList2Float(gLens, 3);
+        }
+        else if (mult == 1.0) cl = closeView(best);     // Auto
         float need = needAt(gPAz) * mult;               // everyone fits, those nearer the camera counted wider
         if (need <= MAX_DIST || cnt == 1)
         {
@@ -610,7 +615,7 @@ nextShot(float mult)
         if (llGetListLength(gGrp) == 0 && !gToldAlone)
         {
             gToldAlone = TRUE;
-            tsay("friends: none of your saved friends are within " + (string)llRound(R_FR) + " m - showing you until they come");
+            tsay("friends: none here yet");
         }
         gUsedN = 0;
         planA(FALSE);
@@ -672,7 +677,6 @@ glideTick(integer since)
         gOut++;
         if (gOut >= 2 && since >= 3)
         {
-            gSnaps++;
             nextShot(1.3);                          // a wider shot that holds everyone
         }
         return;
@@ -692,14 +696,12 @@ glideTick(integer since)
         vector bc = gCurCam - gCurV * back;
         if (llVecDist(bc, gCenter) > MAX_DIST || llList2Integer(ray(gCurCam, bc), 0) != 0)
         {
-            gSnaps++;
             nextShot(1.3);                          // no room behind the camera: cut to a wider shot
             return;
         }
         gCurCam = bc;
         gCurFoc = gCurFoc - gCurV * back;
         llMessageLinked(LINK_SET, GLIDE, (string)gCurCam + "|" + (string)gCurFoc, "");
-        gGlides++;
         return;
     }
     vector C = centroid(gUsedN);
@@ -718,7 +720,6 @@ glideTick(integer since)
     gCurCam = nc;
     gCurFoc = nf;
     gCenter = C;
-    gGlides++;
 }
 
 nextTimer()
@@ -774,8 +775,6 @@ default
             gPendEvent = "";
             gMoveUntil = 0;
             gToldAlone = FALSE;
-            gGlides = 0;
-            gSnaps = 0;
             newScene();
             nextTimer();
             if (refreshOwner())
@@ -793,6 +792,13 @@ default
             chatListen();
             nextTimer();
         }
+        else if (num == LENS)
+        {
+            gLens = llParseString2List(str, ["|"], []);
+            gSeatEl = llList2Float(gLens, 4) * DEG_TO_RAD;
+            gAim = (vector)llList2String(gLens, 5);
+            if (gActive && gHaveShot) nextShot(1.0);    // a key: the new framing now
+        }
         else if (num == CFG_CHANGED)
         {
             loadCfg();
@@ -802,7 +808,7 @@ default
         else if (num == STATUS && str == "?")
         {
             llOwnerSay("[Take 12/friends] v" + VERSION + " active " + (string)gActive + ", saved " + (string)llGetListLength(gFKeys) + ", here "
-                + (string)llGetListLength(gGrp) + ", glides " + (string)gGlides + ", snaps " + (string)gSnaps + ", free mem " + (string)llGetFreeMemory());
+                + (string)llGetListLength(gGrp) + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;
         else if (num == NEXT)
