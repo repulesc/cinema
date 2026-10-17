@@ -65,8 +65,9 @@ re-sit. The script prints the new `SIT_POS` to paste back into the constants at 
   textures. But the SL uploader, the land-impact number, and especially the **vehicle feel**
   (hover height, how it grips the water, turning) still need an in-world test. Those constants
   are marked `TUNE` in the script.
-- The `.lsl` script has not been compiled. Paste it into a script and watch for syntax errors;
-  tell me what it says and I'll fix it.
+- The `.lsl` script passes a full LSL parser and type check (LSL-PyOptimizer, via the repo's
+  `tools/lslcheck.sh`; roughly 40 KB of Mono memory free), so it should compile in-world. That
+  says nothing about how the boat *drives*; see the `TUNE` values.
 - The sit position is an estimate from the thwart height; use the nudge commands.
 - The previews are not SL lighting. The paint will look different under SL's sun and with
   normal/specular maps on.
