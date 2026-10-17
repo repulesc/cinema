@@ -27,14 +27,18 @@ Size: **4.44 m × 1.39 m × 0.83 m** (bow = +X). Built entirely from code (numpy
 ## Faces (materials)
 
 Every LOD has the same 5 faces **in this order**; face numbers in the SL build tool follow it.
+The materials are named `f0_…` to `f4_…` on purpose: Second Life orders faces by material name
+(alphabetically), not by their order in the file, so the prefix keeps face N the same material
+everywhere. (The first version used plain names and came out with the inside and outside
+textures swapped.)
 
 | Face | Material | Parts | Texture (size) |
 |---|---|---|---|
-| 0 | `hull_planks` | outer planking, keel board | `hull` (1024²) |
-| 1 | `interior` | inner planking | `interior` (1024²) |
-| 2 | `hull_end` | transom, stem post, bow deck | `hull_end` (512²) |
-| 3 | `wood` | gunwale, benches, ribs, floor, keel strip, rowlock blocks | `wood` (512²) |
-| 4 | `metal` | rowlock horns, stem band, bow ring | `metal` (128²) |
+| 0 | `f0_hull_planks` | outer planking, keel board | `hull` (1024²) |
+| 1 | `f1_interior` | inner planking | `interior` (1024²) |
+| 2 | `f2_hull_end` | transom, stem post, bow deck | `hull_end` (512²) |
+| 3 | `f3_wood` | gunwale, benches, ribs, floor, keel strip, rowlock blocks | `wood` (512²) |
+| 4 | `f4_metal` | rowlock horns, stem band, bow ring | `metal` (128²) |
 
 ## Getting it into Second Life
 

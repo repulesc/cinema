@@ -9,7 +9,7 @@
 //    If something is missing, add it and reset the script (Edit > Content > Reset).
 //
 // Face order on the mesh (same in every LOD):
-//    0 hull_planks   1 interior   2 hull_end   3 wood   4 metal
+//    0 f0_hull_planks   1 f1_interior   2 f2_hull_end   3 f3_wood   4 f4_metal
 
 // ---------------------------------------------------------------- TUNE
 integer REMOVE_WHEN_DONE = TRUE;   // delete this script after a complete diffuse pass

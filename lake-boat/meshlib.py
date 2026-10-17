@@ -204,7 +204,7 @@ def match_bbox(ms, lo, hi, mat):
 
 # ---------------------------------------------------------------- export
 def write_obj(ms, path, name="lakeboat", tex_prefix="textures/"):
-    mats = ms.merged()
+    mats = sl_materials(ms)
     base = os.path.splitext(path)[0]
     with open(base + ".mtl", "w") as f:
         for m in mats:
@@ -228,10 +228,23 @@ def write_obj(ms, path, name="lakeboat", tex_prefix="textures/"):
 TEXMAP = {"hull_planks": "hull", "interior": "interior", "hull_end": "hull_end",
           "wood": "wood", "metal": "metal"}
 
+# Second Life numbers faces by material NAME order (alphabetical), not by order in the file.
+# Prefixing f0..f4 makes both orders identical, so face N is always the same material.
+FACE_ORDER = ["hull_planks", "interior", "hull_end", "wood", "metal"]
+SL_NAME = {m: f"f{i}_{m}" for i, m in enumerate(FACE_ORDER)}
+for _m, _n in SL_NAME.items():
+    TEXMAP[_n] = TEXMAP[_m]
+
+
+def sl_materials(ms):
+    """merged() with materials renamed to SL_NAME and sorted by face order."""
+    mats = ms.merged()
+    return {SL_NAME[k]: mats[k] for k in FACE_ORDER if k in mats}
+
 
 def write_dae(ms, path, name="lakeboat", tex_dir="textures"):
     """COLLADA 1.4.1, Z_UP, metres, one <triangles> block per material (= one SL face each)."""
-    mats = ms.merged()
+    mats = sl_materials(ms)
     L = []
     L.append('<?xml version="1.0" encoding="utf-8"?>')
     L.append('<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">')
