@@ -20,9 +20,17 @@ A boat that rides the water on its own and slowly goes under when someone sits i
    `SINK_PITCH` and `SINK_ROLL` to minus values or turn the root prim.
 3. Put the boat on open water, drop `sinking_boat.lsl` into the **root prim**, and **close the edit window**: Second
    Life freezes keyframed motion while the boat is selected. Where the boat is when the script starts is home; after
-   moving it by hand, Reset Scripts.
+   moving it by hand, use **Align** in the owner menu.
 4. The script sets the root prim's physics shape to Convex Hull, which keyframed motion needs.
 5. Tune `DRAFT` if the boat sits too high or too low, and `SIT_POS` / `SIT_ROT` until the sitter sits right.
+
+## Owner menu (Align)
+Only the owner gets it. Left-click still sits people down (that is the gag), so open the menu with
+**right-click the boat > Touch**, or say **`/9 boat`** in chat (use this if your pie menu has no Touch entry).
+- **Align:** put the boat on the water level where it is now, level it, and make this spot its home. Use it after
+  moving the boat by hand (instead of Reset Scripts), or whenever the boat floats at the wrong height.
+- **Higher / Lower:** move the hull 5 cm up or down in the water, then align again. The boat tells you the new depth
+  in chat; to keep it after a script reset, copy that number into `DRAFT` at the top of the script.
 
 ## How it moves
 Keyframed motion (non-physical, played by the simulator): the boat cannot be pushed away and cannot leave its patch
