@@ -2,8 +2,9 @@
 
 A boat that rides the water on its own and slowly goes under when someone sits in it. Not part of Take 12.
 
-- **Afloat:** it bobs, rocks side to side and bow to stern, and its bow slowly swings round. These come from several
-  waves with unrelated periods, so the motion never visibly repeats. It drifts very slowly (about 5 cm/s) on a lazy
+- **Afloat:** it rises and falls a few centimetres, rocks softly side to side (2°) and bow to stern (under 1°), and
+  its bow slowly swings round: Second Life water is flat, so the motion is kept small and slow. It comes from several
+  slow swells (6 to 10 s) with unrelated periods, so it never visibly repeats. It drifts very slowly (about 5 cm/s) on a lazy
   loop within `DRIFT_RADIUS` of home. It finds the water level and its own size, and sits with the hull bottom
   `DRAFT` (25 cm) under the surface.
 - **Sit:** it starts taking on water. Over `SINK_TIME` (90 s) it settles lower, tips bow down and lists a little, and

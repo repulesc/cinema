@@ -6,9 +6,9 @@
 
 // ---- Floating ----
 float DRAFT         = 0.25;   // m, how deep the bottom of the hull sits in the water (the boat's size is measured)
-float HEAVE         = 0.15;   // m, up-and-down bob
-float ROLL_DEG      = 5.0;    // side-to-side rock
-float PITCH_DEG     = 2.5;    // bow-to-stern rock
+float HEAVE         = 0.035;  // m, up-and-down bob (Second Life water is flat: keep it very small)
+float ROLL_DEG      = 2.0;    // side-to-side rock
+float PITCH_DEG     = 0.8;    // bow-to-stern rock
 float YAW_SWING_DEG = 25.0;   // how far the bow slowly swings round
 // ---- Drift ----
 float DRIFT_RADIUS  = 6.0;    // m, the boat wanders within this distance of home (keep it over deep water)
@@ -62,14 +62,14 @@ list pose(float t, float s, vector start)
 
     vector p = home + <DRIFT_RADIUS * wave(t, DRIFT_PERIOD, 0.0),
                        DRIFT_RADIUS * wave(t, DRIFT_PERIOD * 1.37, 0.0), 0.0>;
-    // several waves of unrelated periods, so the rocking never visibly repeats
-    float heave = HEAVE * (0.6 * wave(t, 5.3, 0.0) + 0.4 * wave(t, 3.1, 1.3));
+    // slow swells of unrelated periods, so the rocking is soft and never visibly repeats
+    float heave = HEAVE * (0.6 * wave(t, 9.7, 0.0) + 0.4 * wave(t, 6.3, 1.3));
     p.z = llWater(ZERO_VECTOR) + lift - e * SINK_DEPTH + calm * heave;
     float floor = llGround(p - start) + BOTTOM_GAP + lift - DRAFT;
     if (p.z < floor) p.z = floor;
 
-    float roll  = calm * ROLL_DEG  * (0.7 * wave(t, 6.1, 0.4) + 0.3 * wave(t, 2.9, 2.1)) + e * SINK_ROLL;
-    float pitch = calm * PITCH_DEG * (0.6 * wave(t, 4.7, 0.9) + 0.4 * wave(t, 3.7, 0.0)) + e * SINK_PITCH;
+    float roll  = calm * ROLL_DEG  * (0.7 * wave(t, 8.9, 0.4) + 0.3 * wave(t, 5.7, 2.1)) + e * SINK_ROLL;
+    float pitch = calm * PITCH_DEG * (0.6 * wave(t, 7.9, 0.9) + 0.4 * wave(t, 5.1, 0.0)) + e * SINK_PITCH;
     float yaw   = homeYaw + YAW_SWING_DEG * DEG_TO_RAD * (0.8 * wave(t, 97.0, 0.0) + 0.2 * wave(t, 41.0, 1.0));
     rotation r = llEuler2Rot(<roll, pitch, 0.0> * DEG_TO_RAD) * llEuler2Rot(<0.0, 0.0, yaw>);
     return [p, r];
