@@ -1,5 +1,52 @@
 # Changelog
 
+## 5.0.0
+**Friends: you choose how close, from what angle, and where the faces are.** Sitting or lying together, Friends was still too far away, because a script cannot see where a seated or lying body really is: an avatar on a bed reports the same position it would standing, and only the animation lays it down.
+- **Closeness gears:** Auto (the mix of 4.9, the default) → Wide → Group → Half → Close → Faces. Seated or lying, **W/S** step closer or wider; standing, **E/C** do (W A S D still walk). From Auto, closer goes to Close and wider to Group; wider past Wide is Auto again. A gear stays until you change it; double-tap still cuts to another angle in the same gear. Faces brings the camera to about 1 m from a couple side by side.
+- **Angle (seated or lying):** **E/C** step through 60°, 45°, 30°, 15° and level. It starts from Options › Seated view. **A/D** turn round the group.
+- **Tune:** long press › **Tune**, then W/S/A/D move the aim across the screen and E/C up or down, until the faces are where you want them; long press › Tune again when done. The aim is saved at once for that seat (the object, and where on it you sit, so each side or pose of a bed has its own), and comes back by itself the next time you sit there. Long press › Clear tune forgets it.
+- What changed shows for 3 seconds, then the screen is clean.
+- **New script `cinema_lens.lsl`** (eight scripts now): replace all of them.
+- Friends memory: the unused friend-names list and two diagnostic counters are gone, so Friends stays where it was (13.2 KB by the stricter estimate).
+- New `tools/sim/lens_sim.py` in CI: each gear is closer than the one before, nobody is cut at any gear, Faces is closer than Frame's nearest, the Tune aim comes back exactly however the bed is turned.
+- Social and Personal get the same keys once this is right in-world.
+- To check in-world: standing in Friends, E/C must change the gear without making you jump or crouch (two control requests: W A S D passed on, E/C kept).
+
+## 4.9.2
+**Fix: seated and lying shots were far too far away; close views now reach pairs and lying people.** A screenshot of two people lying on a bed showed the whole bed.
+- **Cause 1:** the raised seated camera was placed as if it were level. At 45° the real distance to the people is about 40 % longer than the distance the framing had worked out, so every seated shot came out too far. The camera now stands so that its true distance, along the line of sight, is what the framing needs: seated shots are about 30 % closer, wide ones included. A low ceiling is accounted for.
+- **Cause 2:** the close view only applied to groups of three or more. A pair (you and one person, over the shoulder in Social) never got it. Now it does.
+- **Lying down:** an avatar lying on a bed is about 1.8 m long, not the 0.7 m width the framing assumes, and a head can be 0.8 m from where the avatar is. A close view of seated people therefore keeps a wider body allowance, so the faces stay in the picture. While you are seated it is chosen more often (about every other cut).
+- Friends is tight on memory again (13.2 KB by the stricter estimate): please send `/77 status` if anything misbehaves.
+
+## 4.9.1
+**The close views are now intimate: heads and shoulders, much closer.** 4.9.0's close view (about 2 m, down to the thighs) was still too far for people sitting together.
+- A close view now frames **heads and shoulders**, with faces large. The camera comes in to about **1.7 m** for a tight group (under 2 m across; 2.2 m on average over all compact groups, against 3.3 m for the wide views), and it stays clear of the screen edges as before.
+- Bodies are cropped on purpose; only faces and heads must stay in. A little extra headroom keeps the head of a neighbour who is 0.3 m taller in the picture in 99 % of the simulated cases.
+- Same rhythm as before: about one cut in three, never two close views in a row, only when everyone stands within 3.5 m of each other.
+
+## 4.9.0
+**Close views for people who stand close together.** The group shots in Social and Friends were always the wide, environmental kind, with the camera at least 3-4 m away even for two friends side by side.
+- When everyone in the shot stands within about **3.5 m** of each other, now and then (about one cut in three, never two in a row) the camera comes in for a **close, half-length view**: roughly 2 m away instead of 3-4 m, the faces larger. In the simulations the camera comes out about 30 % closer on average (2.3 m against 3.3 m), and for a tight pair about half.
+- The wide views stay exactly as they were, and are still the usual choice. Spread-out groups always get the wide view.
+- The same fitting as before keeps everyone clear of the screen edges (at least 10 % margin in all tests). In a small room a close view needs less space, so it fits more often.
+- No new setting. "Next" (double-tap) can land on either kind.
+
+## 4.8.1
+**Fix: "Stack-Heap Collision" in the UI script when you pressed the HUD (4.8.0 only).**
+- Cause: the UI script was already close to its memory limit, and the new Seated view entries tipped it over. The memory estimate had missed that every element of a constant list is its own object: the menu table and the defaults held about 250 of them.
+- Fix: the menu table and the defaults are now single strings, and a menu choice is matched only against the buttons on screen instead of the whole table. Same menus, same behaviour, much less memory.
+- `tools/lslcheck.sh` now counts list elements in its memory estimate.
+- Replace all seven scripts (the version is now 4.8.1). `/77 status` shows each script's free memory.
+
+## 4.8.0
+**Seated view: when you sit or lie down, the camera looks down on you.** Meant for a beach blanket, a bed, a sofa with friends.
+- **Automatic** in Social, Personal and Friends: while you are seated (anything you sit on, including a pose bed), the camera rises and looks down at about **45 degrees**, with the same fitting of everyone as before, so people no longer hide behind each other. Indoors the ceiling caps the rise (under about 10 degrees it stays level). Scenery and Frame are unchanged.
+- **Adjustable:** Options › **Seated view**: Auto (45°), Higher (60°), Lower (30°) or Off. Stored as `seat_deg`.
+- **Sitting or standing up** brings a calm re-frame at the next quiet moment (no sooner than the usual minimum hold), never an abrupt jump.
+- A script can tell seated from standing but not sitting upright from lying down (a pose bed uses its own animation), so one elevated view serves both.
+- New `tools/sim/seated_sim.py` in CI.
+
 ## 4.7.1
 **Fix: "next" (double-tap, or Next in the live menu) did nothing visible in Social, Personal and Friends.** Only Scenery changed the view. Three causes, all fixed:
 - **Group shots never varied.** Social's group shot and Friends' shot are planned from where people stand, so "next" planned exactly the same camera again (the framing test showed it: 300 of 300 repeated). Now a shot asked for with "next" must come from a spot at least 1.5 m from the camera on screen, and it still frames everyone.

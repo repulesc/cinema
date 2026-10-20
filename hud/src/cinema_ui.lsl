@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION  = "4.7.1";
+string VERSION = "5.0.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -24,44 +24,10 @@ integer CMD         = 7371;
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
 
-list DEFAULTS = [
-    "afk_on", "1",
-    "afk_sec", "180",
-    "afk_away", "1",
-    "hold", "60",
-    "reach", "100",
-    "reach_set", "100",
-    "reach_ok", "0",
-    "indoors", "auto",
-    "chat_cuts", "1",
-    "emoji", "1",
-    "look", "1",
-    "face", "-1",
-    "peek", "1",
-    "peek_bail", "0",
-    "phantom", "0",
-    "cutmode", "0",
-    "trace", "0",
-    "cmd_chan", "77",
-    "theta_max", "10",
-    "aspect", "1.778"
-];
+string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~emoji=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji, title
-list ITEMS = [
-    "scenery", "🏞", "Scenery", "personal", "🚶", "Personal", "social", "👥", "Social", "friends", "💞", "Friends",
-    "frame", "🖼", "Frame", "pace", "⏳", "Pace", "afk", "💤", "AFK", "opts", "⚙", "Options", "help", "❔", "Help",
-    "close", "✖", "Close", "back", "↩", "Back", "photo", "📷", "Photo", "resume", "▶", "Resume",
-    "save", "⭐", "Save", "next", "⏭", "Next", "stop", "⏹", "Stop", "modes", "🎬", "Modes",
-    "lively", "⚡", "Lively", "easy", "🙂", "Easy", "calm", "🍃", "Calm", "slow", "🌙", "Slow", "still", "🗿", "Still",
-    "indoors", "🏠", "Indoors", "chat", "💬", "Chat cuts", "favs", "⭐", "Favourites", "altcam", "👁", "Alt-cam",
-    "phantom", "🧱", "Phantom", "reach", "📏", "Reach", "trace", "📝", "Chat text", "emoji", "🔤", "Emoji",
-    "look", "🎨", "Look", "th0", "", "Classic", "th1", "", "Rec", "th2", "", "Viewfinder", "test", "🧪", "Test cam", "reset", "♻", "Reset", "gotit", "👍", "Got it",
-    "off", "", "Off", "a60", "", "1 min", "a90", "", "90 s", "a120", "", "2 min", "a180", "", "3 min", "a300", "", "5 min", "a600", "", "10 min",
-    "mcheck", "", "Mouse check", "auto", "", "Auto", "inside", "", "Inside", "outside", "", "Outside", "on", "", "On",
-    "here", "", "Clear here", "all", "", "Clear all", "pause", "", "Pause", "end", "", "End", "ignore", "", "Ignore",
-    "r50", "", "50 m", "r100", "", "100 m", "r150", "", "150 m", "r200", "", "200 m", "relearn", "", "Re-learn", "yes", "", "Yes, reset"
-];
+string ITEMS = "~scenery|🏞|Scenery~personal|🚶|Personal~social|👥|Social~friends|💞|Friends~frame|🖼|Frame~pace|⏳|Pace~afk|💤|AFK~opts|⚙|Options~help|❔|Help~close|✖|Close~back|↩|Back~photo|📷|Photo~resume|▶|Resume~save|⭐|Save~next|⏭|Next~stop|⏹|Stop~modes|🎬|Modes~lively|⚡|Lively~easy|🙂|Easy~calm|🍃|Calm~slow|🌙|Slow~still|🗿|Still~indoors|🏠|Indoors~chat|💬|Chat cuts~favs|⭐|Favourites~altcam|👁|Alt-cam~phantom|🧱|Phantom~reach|📏|Reach~trace|📝|Chat text~emoji|🔤|Emoji~look|🎨|Look~th0||Classic~th1||Rec~th2||Viewfinder~test|🧪|Test cam~reset|♻|Reset~gotit|👍|Got it~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~here||Clear here~all||Clear all~pause||Pause~end||End~ignore||Ignore~seat|🪑|Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~tune|🎯|Tune~untune||Clear tune~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -73,6 +39,7 @@ integer gCmdListen;
 integer gCmdChan;
 integer gVerAsked;
 integer gEmoji;
+list    gBtn;                   // the ids of the buttons on screen
 integer gFirst;
 string  gPage;
 
@@ -124,11 +91,13 @@ cfgSet(string k, string v)
 initDefaults(integer force)
 {
     integer i;
-    integer n = llGetListLength(DEFAULTS);
-    for (i = 0; i < n; i += 2)
+    list D = llParseString2List(DEFAULTS, ["~"], []);
+    integer n = llGetListLength(D);
+    for (i = 0; i < n; i++)
     {
-        string k = llList2String(DEFAULTS, i);
-        if (force || cfgGet(k) == "") cfgWrite(k, llList2String(DEFAULTS, i + 1));
+        list kv = llParseString2List(llList2String(D, i), ["="], []);
+        string k = llList2String(kv, 0);
+        if (force || cfgGet(k) == "") cfgWrite(k, llList2String(kv, 1));
     }
     cfgWrite("ver", VERSION);
     cfgWrite("owner", (string)gOwner);
@@ -225,10 +194,14 @@ integer locked(string id)
 
 string label(string id)
 {
-    integer i = llListFindList(ITEMS, [id]);
+    integer i = llSubStringIndex(ITEMS, "~" + id + "|");
     if (i < 0) return id;
-    string t = llList2String(ITEMS, i + 2);
-    string e = llList2String(ITEMS, i + 1);
+    i += 2 + llStringLength(id);
+    string r = llGetSubString(ITEMS, i, i + 40);                // one entry is shorter than this
+    r = llGetSubString(r, 0, llSubStringIndex(r, "~") - 1);
+    list p = llParseStringKeepNulls(r, ["|"], []);
+    string e = llList2String(p, 0);
+    string t = llList2String(p, 1);
     if (locked(id))
     {
         if (gEmoji) return "🔒 " + t;
@@ -248,10 +221,10 @@ upsell()
 string idOf(string msg)
 {
     integer i;
-    integer n = llGetListLength(ITEMS);
-    for (i = 0; i < n; i += 3)
+    integer n = llGetListLength(gBtn);
+    for (i = 0; i < n; i++)
     {
-        string id = llList2String(ITEMS, i);
+        string id = llList2String(gBtn, i);
         if (label(id) == msg) return id;
     }
     return msg;
@@ -260,6 +233,7 @@ string idOf(string msg)
 // llDialog fills from the bottom-left: give it the rows bottom-first, padded to full rows
 list order(list ids)
 {
+    gBtn = ids;
     list b = [];
     integer i;
     integer n = llGetListLength(ids);
@@ -285,6 +259,14 @@ string afkText()
     if (n % 60 == 0) t = (string)(n / 60) + " min";
     if (cfgGet("afk_away") == "1") t += " + mouse check";
     return t;
+}
+
+string seatText()
+{
+    integer d = (integer)cfgGet("seat_deg");
+    if (d <= 0) return "off";
+    if (d == 45) return "auto (45°)";
+    return (string)d + "°";
 }
 
 string paceName()
@@ -337,6 +319,7 @@ openMenu(string page)
         if (gUiState == "frozen") b = ["resume"];
         else b = ["photo"];
         if (gUiMode == "scenery") b += ["save"];
+        if (gUiMode == "friends") b += ["tune", "untune"];
         b += ["next", "stop", "modes", "close"];
         if (gNextCut > 0 && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
@@ -354,9 +337,14 @@ openMenu(string page)
     {
         text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace");
-        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "test", "reset", "back"];
+            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace") + "\nSeated view: " + seatText();
+        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "seat", "test", "reset", "back"];
         if (LITE) b = llListReplaceList(b, ["emoji"], 7, 7);        // Look is locked in Lite: Emoji goes here instead
+    }
+    else if (page == "seat")
+    {
+        text += "Sitting or lying down: look down on you and your friends from above.\nNow: " + seatText();
+        b = ["auto", "high", "low", "off", "back"];
     }
     else if (page == "look")
     {
@@ -438,7 +426,7 @@ onChoice(string msg)
     if (locked(id)) { closeMenu(); upsell(); return; }
     if (id == "back")
     {
-        if (gPage == "altcam" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
+        if (gPage == "altcam" || gPage == "seat" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
         else openMenu("main");
         return;
     }
@@ -459,7 +447,7 @@ onChoice(string msg)
         closeMenu();
         if (id == "photo" || id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");
         else if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
-        else if (id == "next" || id == "stop") llMessageLinked(LINK_SET, CMD, id, "");
+        else if (id == "next" || id == "stop" || id == "tune" || id == "untune") llMessageLinked(LINK_SET, CMD, id, "");
         else if (id == "modes") openMenu("main");
     }
     else if (gPage == "pace")
@@ -483,7 +471,7 @@ onChoice(string msg)
     }
     else if (gPage == "opts")
     {
-        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "reach" || id == "reset" || id == "look") openMenu(id);
+        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "seat" || id == "reach" || id == "reset" || id == "look") openMenu(id);
         else if (id == "test")
         {
             closeMenu();
@@ -526,6 +514,12 @@ onChoice(string msg)
             for (j = 0; j < llGetListLength(ks); j++) llLinksetDataDeleteProtected(llList2String(ks, j), PASS);
         }
         note("Favourite spots cleared.");
+        openMenu("opts");
+    }
+    else if (gPage == "seat")
+    {
+        cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id]) + 1));
+        note("Seated view: " + seatText());
         openMenu("opts");
     }
     else if (gPage == "altcam")

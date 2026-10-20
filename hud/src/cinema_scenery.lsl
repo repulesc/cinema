@@ -12,7 +12,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "4.7.1";
+string VERSION = "5.0.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 

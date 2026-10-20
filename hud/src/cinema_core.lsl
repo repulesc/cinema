@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.7.1";
+string VERSION = "5.0.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -23,7 +23,7 @@ integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
-integer NUDGE      = 7317;   // core -> frame    movement keys held now (control level bits)
+integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
 integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
@@ -55,6 +55,7 @@ string  gMode;                // "scenery" / "personal" / "social" / "friends" /
 float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
+integer gSitCtl;              // friends: the controls were taken seated
 integer gLastAct;
 integer gNoEngageUntil;
 integer gIgnoreCtl;
@@ -244,10 +245,22 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
-// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still
+// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still.
+// Friends: seated, all six frame the shot (they do not move a seated avatar); standing, W A S D still walk and only
+// E/C (UP 16, DOWN 32) are kept back to shift the framing
 takeCtl(integer pass)
 {
     llTakeControls(CTL, TRUE, pass);
+    if (gMode == "friends" && gState != ST_IDLE)
+    {
+        gSitCtl = llGetAgentInfo(gOwner) & AGENT_SITTING;
+        if (gSitCtl) llTakeControls(CTL, TRUE, FALSE);
+        else
+        {
+            llTakeControls(CTL & ~48, TRUE, TRUE);
+            llTakeControls(48, TRUE, FALSE);
+        }
+    }
 }
 
 // ---- lifecycle ------------------------------------------------------------------
@@ -264,7 +277,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
-    if (gPermOK && gMode == "frame") takeCtl(TRUE);
+    if (gPermOK && (gMode == "frame" || gMode == "friends")) takeCtl(TRUE);
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
@@ -357,6 +370,7 @@ activeTick(float dt)
     }
     else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
+    if (gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) takeCtl(TRUE);
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -532,10 +546,10 @@ default
             bail("key");
             return;
         }
-        if (gMode == "frame")
+        if (gMode == "frame" || gMode == "friends")
         {
-            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level, "");     // Frame steps while held
-            return;
+            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "");   // Frame steps while held; lens frames Friends
+            if (gMode == "frame") return;
         }
         // personal / social: the camera follows you
         if (now != gMovSent)

@@ -98,8 +98,8 @@ Ana, Bo, Kit
 ```
 [🏠 Indoors ][💬 Chat cuts][⭐ Favourites]
 [👁 Alt-cam ][🧱 Phantom ][📏 Reach   ]
-[📝 Chat text][🎨 Look    ][🧪 Test cam]
-[♻ Reset   ][↩ Back    ]
+[📝 Chat text][🎨 Look    ][🪑 Seated view]
+[🧪 Test cam][♻ Reset   ][↩ Back    ]
 ```
 | Option | Choices (default first) | What it does |
 |---|---|---|
@@ -108,6 +108,7 @@ Ana, Bo, Kit
 | ⭐ Favourites | Clear here / Clear all | Saved Scenery spots of this region |
 | 👁 Alt-cam | **Pause** / End / Ignore | What happens when you Alt-orbit during a shot |
 | 🧱 Phantom | **Off** / On | Rays treat phantom objects as walls |
+| 🪑 Seated view | **Auto (45°)** / Higher (60°) / Lower (30°) / Off | While you are seated or lying down, Social, Personal and Friends place the camera above you, looking down at that angle (same fitting of everyone). Indoors the ceiling caps it; sitting or standing up brings a calm re-frame. Stored as `seat_deg` (0 = off) |
 | 📏 Reach | 50 / **100** / 150 / 200 m / Re-learn | The furthest Scenery camera distance (the nearest is always 20 m). If your viewer really holds the camera closer (it stops short at the same distance twice), the HUD lowers it by itself and slowly grows it back up to your choice. Orbiting, Alt-cam, mouselook or a minimised viewer never lower it. Re-learn goes back to your choice |
 | 📝 Chat text | On / **Off** | Chat feedback. **Off by default**: the HUD says nothing in chat, except errors, warnings and the answers to commands you type. On: one line per cut (with what it found and why), and a line after each menu choice. The setting is stored as `trace` |
 | 🎨 Look | **Classic** / **Rec** (default) / **Viewfinder**; plus 🔤 Emoji (**On** / Off) | The button picture, how visible it stays while the camera rolls, and emoji on the menu buttons |
