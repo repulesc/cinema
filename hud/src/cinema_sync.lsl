@@ -9,7 +9,7 @@
 //    offer|<name>  (llRegionSay)      join / leave / next  (watcher -> sharer)      cam|<pos>|<focus>|<lag> / end
 // ============================================================================
 
-string VERSION = "5.3.0";
+string VERSION = "5.3.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -27,6 +27,8 @@ list    gWatchers;           // sharing: the avatars watching you
 string  gLastCam;            // the camera on your screen now
 key     gHost;               // watching: whose view you follow
 key     gOffer;              // the sharer who just asked you
+list    gAck;                // who answered your offer: "<name>" (watching) or "<name> (double-tap)"
+integer gAckT;               // ... the offer went out at
 integer gPendT;              // ... and since when (an offer from someone not in your Friends: double-tap to watch)
 string  gPage;               // our own dialog: "share", "give", "offer"
 list    gNear;               // give: the avatars listed
@@ -155,6 +157,9 @@ default
         else if (num == CMD && str == "share")
         {
             llRegionSay(SYNC_CH, "T12|offer|" + llKey2Name(gOwner));     // offered at once
+            gAck = [];
+            gAckT = llGetUnixTime();
+            llSetTimerEvent(1.0);
             string t = "Your view is offered to the people near you who wear Take 12 or Take 12 Watch.";
             if (gWatchers != []) t += "\nWatching now: " + (string)llGetListLength(gWatchers);
             dialog("share", t, ["Give Watch", "Stop sharing", "Close"]);
@@ -226,13 +231,22 @@ default
             if (gHost != NULL_KEY || !near(who)) return;
             gOffer = who;
             // someone in your Friends: their view at once. Anyone else: a double-tap, so no stranger takes your camera
-            if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0) watch(who);
+            if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)
+            {
+                say(who, "ack|1");
+                watch(who);
+            }
             else
             {
+                say(who, "ack|0");
                 if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");         // core: keep the double-tap for this
                 gPendT = llGetUnixTime();
                 show(llList2String(L, 2) + " shares a view\ndouble-tap to watch");
             }
+        }
+        else if (w == "ack")
+        {
+            if (gAckT) gAck += [llKey2Name(who) + llList2String([" (double-tap)", ""], (integer)llList2String(L, 2))];   // the answers to your offer
         }
         else if (w == "join")
         {
@@ -264,7 +278,15 @@ default
     timer()
     {
         if (gPendT && llGetUnixTime() - gPendT > 20) unpend();
-        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0 + 3.0 * (gHost != NULL_KEY) + 17.0 * (gPendT != 0))
+        if (gAckT && llGetUnixTime() - gAckT >= 2)
+        {
+            gAckT = 0;                                      // two seconds: who got your offer
+            string r = "Nobody near you wears Take 12 or Take 12 Watch (within " + (string)llRound(NEAR) + " m).";
+            if (gAck != []) r = "Offered to: " + llDumpList2String(gAck, ", ");
+            llOwnerSay("[Take 12] " + r);
+            show(r);
+        }
+        if (gTextT > 0.0 && llGetTime() - gTextT > 5.0 + 3.0 * (gHost != NULL_KEY) + 15.0 * (gPendT != 0))
         {
             gTextT = 0.0;
             llSetText("", ZERO_VECTOR, 0.0);
@@ -274,6 +296,6 @@ default
             gDlgT = 0;
             llListenRemove(gDlgL);
         }
-        if (gTextT == 0.0 && gDlgT == 0 && !gPendT) llSetTimerEvent(0.0);
+        if (gTextT == 0.0 && gDlgT == 0 && !gPendT && !gAckT) llSetTimerEvent(0.0);
     }
 }
