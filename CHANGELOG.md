@@ -7,6 +7,7 @@
 - **Anyone drives:** a watcher's double-tap cuts to the next view for everyone.
 - **Leaving:** a watcher gets their own camera back with any movement key, or with a single tap on the Watch HUD. A Take 12 owner also gets it back by starting their own camera from the menu.
 - **Ending:** stopping your camera, or Share › **Stop sharing**, ends it for everyone.
+- **The Watch HUD's look:** the Take 12 clapper with a quiet pixel eye on the slate instead of the "12" (`watch/art/take12_watch_icon_128.png`, made by `tools/art/make_icon.py`). How to build it: `watch/README.md`.
 - **Give Watch:** Share › **Give Watch** hands the free HUD to someone near you. Put the "Take 12 Watch" object in your HUD's contents for this.
 - Only one thing has to be worn: a script can move an avatar's camera only with their own permission, and HUDs get that permission by themselves. Same region only.
 - **New script `cinema_sync.lsl`** (nine scripts now), the free Watch HUD's script `watch/take12_watch.lsl`, and core reports every camera it sets (CAMSET 7325).
