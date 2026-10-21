@@ -32,8 +32,16 @@ check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must b
 check("if (!gPermOK || gWatch) return;" in core, "core: idle start while watching")
 check('else if (gWatch && gState == ST_IDLE && str == "scenery") return;' in core, "core: double-tap while watching starts scenery")
 check('b += ["share"];' in ui and 'llMessageLinked(LINK_SET, CMD, "share", "")' in ui, "ui: Share is not in the live menu")
-check('else if (num == START) leave(TRUE);' in sync and 'else if (num == STOP && str != "switch") endShare();' in sync,
+check('else if (num == START) leave(TRUE, TRUE);' in sync and 'else if (num == STOP && str != "switch") endShare();' in sync,
       "sync: own camera / stop handling changed")
+
+# taking a HUD off: Second Life has already withdrawn the camera, so the camera is never cleared on detach (5.2.1:
+# "trying to clear camera parameters but PERMISSION_CONTROL_CAMERA permission not set")
+for name, s_ in (("sync", sync), ("watch", watch)):
+    check(s_.count("llClearCameraParams()") == 1, f"{name}: the camera is cleared in more than one place")
+    check("clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;" in s_, f"{name}: the camera clear is not guarded")
+    check("leave(TRUE, FALSE);" in s_, f"{name}: detaching must leave without touching the camera")
+check("if (id == NULL_KEY) leave(TRUE, FALSE);" in watch, "watch: detach handling changed")
 
 # ---- a small region ---------------------------------------------------------------------------------------------
 class Region:

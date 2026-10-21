@@ -1,5 +1,8 @@
 # Changelog
 
+## 5.2.1
+**Fix: the Watch HUD showed "trying to clear camera parameters but PERMISSION_CONTROL_CAMERA permission not set".** Taking the HUD off while watching tried to hand the camera back, but Second Life had already withdrawn the HUD's camera permission at that moment (and gives the camera back by itself). Now taking it off only tells the sharer you left. The camera is cleared only while the HUD is still worn and holds the permission. Putting the Watch HUD on asks for its permissions again. Take 12's own sync script got the same fix, and taking Take 12 off while sharing tells your watchers it ended.
+
 ## 5.2.0
 **Share the view: your friends watch what your Take 12 films, live.**
 - **Offer:** long press › **👁 Share** › **Offer view**. Everyone within 20 m who wears Take 12 or the free **Take 12 Watch** HUD is asked "Pano shares their view. Watch?" and taps **Watch**.

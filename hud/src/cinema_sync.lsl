@@ -9,7 +9,7 @@
 //    offer|<name>  (llRegionSay)      join / leave / next  (watcher -> sharer)      cam|<pos>|<focus>|<lag> / end
 // ============================================================================
 
-string VERSION = "5.2.0";
+string VERSION = "5.2.1";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -81,13 +81,15 @@ watch(key host)
     show("Watching " + llKey2Name(host) + "\nany key: your camera · double-tap: next for all");
 }
 
-leave(integer tell)
+leave(integer tell, integer clear)
 {
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
     gHost = NULL_KEY;
-    if (llGetPermissions() & PERMISSION_CONTROL_CAMERA) llClearCameraParams();
-    if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays)
+    // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
+    clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
+    if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
+    if (clear && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays)
     llMessageLinked(LINK_SET, CMD, "unwatch", "");
     show("Your camera");
 }
@@ -113,9 +115,16 @@ default
         if (c & CHANGED_OWNER) llResetScript();
     }
 
+    attach(key id)
+    {
+        if (id != NULL_KEY) return;
+        leave(TRUE, FALSE);                                 // taken off: tell the sharer, or your watchers
+        endShare();
+    }
+
     control(key id, integer level, integer edge)
     {
-        if (edge & level) leave(TRUE);
+        if (edge & level) leave(TRUE, TRUE);
     }
 
     link_message(integer sender, integer num, string str, key id)
@@ -126,7 +135,7 @@ default
             integer i;
             for (i = 0; i < llGetListLength(gWatchers); i++) say(llList2Key(gWatchers, i), "cam|" + str);
         }
-        else if (num == START) leave(TRUE);                 // your own camera starts: stop watching
+        else if (num == START) leave(TRUE, TRUE);                 // your own camera starts: stop watching
         else if (num == STOP && str != "switch") endShare();
         else if (num == CMD && str == "share")
         {
@@ -231,7 +240,7 @@ default
                 CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
                 CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
         }
-        else if (who == gHost && w == "end") leave(FALSE);
+        else if (who == gHost && w == "end") leave(FALSE, TRUE);
     }
 
     timer()
