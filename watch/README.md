@@ -4,6 +4,8 @@ A one-prim HUD for friends who don't own Take 12. While they wear it, the view o
 
 - **Watching:** the camera follows the sharer's cuts. Above the HUD: "Watching Pano · tap: your camera · double-tap: next".
 - **Next view:** double-tap the HUD to cut to the next view for everyone watching.
+- **Look around:** orbit your own camera. The director sees that you're looking around, and Esc brings you back to the shared view.
+- **New director:** when someone with Take 12 takes over (Share › Direct), the Watch follows them by itself.
 - **Leave:** a single tap or any movement key gives you your own camera back.
 
 ## Design

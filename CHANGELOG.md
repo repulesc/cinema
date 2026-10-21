@@ -1,5 +1,18 @@
 # Changelog
 
+## 5.4.0
+**Share the view: one director at a time, one Share button, and you always know who sees what.**
+- **One Share button**, now in the tap menu as well as the hold menu. It does what fits the moment:
+  - nothing is shared: it starts your camera if it isn't running (in your last mode) and offers your view;
+  - you share: it shows who watches and who is looking around, with Offer again, Stop sharing and Give Watch;
+  - you watch: Direct or Leave;
+  - an offer is waiting for you: it joins.
+- **One director:** everyone watching follows one camera, so two cameras never fight.
+- **Direct:** a watcher with Take 12 can take over. Everyone, the old director too, then follows their camera, and all see "Ana directs now". The free Watch HUD follows the new director by itself.
+- **Next for all:** a watcher's double-tap cuts for everyone. Double-taps less than 5 s apart cut once, so two friends tapping together don't make two jumps.
+- **Looking around:** a watcher who orbits their own camera steps out, and the director sees "Ben is looking around". Esc puts them back on the shared view ("Ben is back").
+- **Ending:** when the director stops, it ends for everyone. A movement key still gives a watcher their own camera back.
+
 ## 5.3.1
 **You now see who got your Share.** Two seconds after you press Share, one line in chat and above your button tells you who answered, for example "Offered to: Ana, Ben, Cleo (double-tap)":
 - a name alone is watching your view now;

@@ -58,12 +58,13 @@ You and the friends you picked, framed together. While your group stays in the p
  - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
 SHARE THE VIEW
-Let the people with you watch what your camera films.
- - While your camera runs: hold the button > Share. Your view is offered at once to everyone within 20 m. Two seconds later a line in chat (and above your button) tells you who got it, e.g. "Offered to: Ana, Cleo (double-tap)", or that nobody near you wears Take 12 or Take 12 Watch.
- - Friends wearing the free Take 12 Watch, or Take 12 with you in their Friends, switch to your view straight away. Anyone else with Take 12 sees "... shares a view - double-tap to watch" above their button for 20 seconds.
- - Their camera follows your cuts. A double-tap (on their Take 12 or their Watch HUD) cuts to the next view for everyone.
- - Any movement key (or a tap on the Watch HUD) gives them their own camera back. When you stop, sharing ends.
- - Share > Give Watch hands the free Take 12 Watch to someone near you.
+Let the people with you watch what your camera films. One person directs; everyone watching sees that camera.
+ - Tap the button > Share (or hold > Share while your camera runs). Your camera starts if it isn't running, and your view is offered to everyone within 20 m. A line tells you who got it.
+ - Friends wearing the free Take 12 Watch, or Take 12 with you in their Friends, follow at once. Anyone else with Take 12 sees "... shares a view - double-tap to watch" for 20 seconds.
+ - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the director sees it); Esc brings you back. Any movement key gives you your own camera.
+ - Take over: if you have Take 12 and watch someone, press Share > Direct. Everyone then follows your camera.
+ - Share again while you direct: who watches, Offer again, Stop sharing, Give Watch (hands the free Take 12 Watch to someone near you).
+ - When the director stops, sharing ends for everyone.
 
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.
