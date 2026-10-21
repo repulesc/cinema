@@ -21,7 +21,7 @@ for s, what in ((core, "gCamBefore = llGetCameraPos();"), (core, "llVecDist(cp, 
                 (scen, "if (gReachOk >= 20 && gReach < gReachSet)"), (scen, "gReach = clampf(gReach * 1.1, MIN_DIST, gReachSet);"),
                 (scen, "if (gReach < gReachSet && llVecDist(c, gOP) > gReach) need = 999.0;"),
                 (scen, 'cfg("reach_set", "100")'), (scen, 'cfg("reach", "100")'), (scen, "float   MIN_DIST   = 20.0;"),
-                (ui, '"reach", "100",'), (ui, '"reach_set", "100",'), (ui, "if (v < 4)"), (ui, 'if (rr != "50" && rr != "200") rr = "100";'),
+                (ui, '~reach=100~'), (ui, '~reach_set=100~'), (ui, "if (v < 4)"), (ui, 'if (rr != "50" && rr != "200") rr = "100";'),
                 (ui, 'if (id == "relearn") setReach(cfgGet("reach_set"));')):
     check(what in s, f"source changed, port is stale: {what}")
 

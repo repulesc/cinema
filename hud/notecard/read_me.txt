@@ -46,11 +46,16 @@ Composed shots of you that follow you as you walk.
 SOCIAL
 You and the people around you: over-the-shoulder shots when you talk with someone, and group shots when more people join. It cuts to whoever speaks in local chat. When YOU type, it cuts to you, and keeps rolling.
 
+In Social and Friends, when everyone stands close together, the camera now and then comes in for a close view of your faces, among the wider ones.
+
 FRIENDS
 You and the friends you picked, framed together. While your group stays in the picture, the camera glides gently to keep it there. If someone walks out of the picture for about a second, it cuts to a wider shot that holds everyone.
  - Tap the button > Friends > Pick. Everyone within 20 m is listed. Tap a name to add them. Tap a name with a check mark to take them off again.
  - Friends > Remove lists everyone you saved (even if they are not here), so you can remove just one person.
  - You can save up to 10 friends.
+ - YOUR OWN VIEW (Friends only, needs the cinema_lens script): frame it the usual way (Alt-orbit, mouse wheel, or A / D while seated). When you hold still, "Your view is kept · Esc to continue" shows above the button (a notice, not a menu): press ESC and Take 12 carries on with your view - just as close, as high and aimed at the same faces - in every next cut, following your friends if they move.
+ - Sitting or lying, W / S step closer or wider.
+ - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.
@@ -82,6 +87,7 @@ CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
 LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds EMOJI.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
+SEATED    When you sit or lie down, the camera looks down on you from above, in Social, Personal and Friends: Auto (45 degrees, default), Higher, Lower or Off.
 REACH     How far the scenery camera may go (50 / 100 / 150 / 200 m; 100 by default). If your viewer really holds the camera closer, it lowers itself; Re-learn goes back to your choice.
 TEST CAM  A 3-second check that the HUD can move your camera.
 RESET     Back to factory settings.

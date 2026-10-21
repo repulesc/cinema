@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "4.7.1";
+string VERSION = "5.1.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -23,7 +23,8 @@ integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
-integer NUDGE      = 7317;   // core -> frame    movement keys held now (control level bits)
+integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
+integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
@@ -55,6 +56,10 @@ string  gMode;                // "scenery" / "personal" / "social" / "friends" /
 float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
+integer gSitCtl;              // friends: the controls were taken seated
+float   gLeadT;               // friends: your own camera, and since when it is still
+vector  gLeadP;
+rotation gLeadR;
 integer gLastAct;
 integer gNoEngageUntil;
 integer gIgnoreCtl;
@@ -78,6 +83,7 @@ float   gApplyT;
 float   gLastTick;
 float   gGlideUntil;
 vector  gShotPos;
+vector  gShotFoc;
 vector  gCamBefore;            // where the viewer had the camera just before the cut
 vector  gCamPos;
 rotation gCamRot;
@@ -154,6 +160,7 @@ setCam(vector p, vector f)
         CAMERA_FOCUS_THRESHOLD, 0.0
     ]);
     gShotPos = p;
+    gShotFoc = f;
     gApplyT = llGetTime();
     gVerify = TRUE;
 }
@@ -244,10 +251,17 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
-// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still
+// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still.
+// Friends, seated: W/S (FWD 1, BACK 2) are kept back for closer/wider (they do not move a seated avatar)
 takeCtl(integer pass)
 {
     llTakeControls(CTL, TRUE, pass);
+    gSitCtl = llGetAgentInfo(gOwner) & AGENT_SITTING;
+    if (gMode == "friends" && gState != ST_IDLE && gSitCtl)
+    {
+        llTakeControls(CTL & ~3, TRUE, TRUE);
+        llTakeControls(3, TRUE, FALSE);
+    }
 }
 
 // ---- lifecycle ------------------------------------------------------------------
@@ -264,7 +278,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
-    if (gPermOK && gMode == "frame") takeCtl(TRUE);
+    if (gPermOK && (gMode == "frame" || gMode == "friends")) takeCtl(TRUE);
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
@@ -357,6 +371,7 @@ activeTick(float dt)
     }
     else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
+    if (gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) takeCtl(TRUE);
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -413,16 +428,50 @@ activeTick(float dt)
                 return;
             }
         }
-        else if (gPeekOn)
+        else if (gPeekOn || gMode == "friends")
         {
             // Alt-cam / orbit: the viewer silently overrides scripted cameras
             integer dev = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want);
+            rotation cr = llGetCameraRot();
+            // Friends: a smaller move, or a turn of the view over about 10 degrees, is you taking the camera too
+            if (gMode == "friends" && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;
             if (dev && gState == ST_ROLL)
             {
-                if (gPeekBail) { bail("camera"); return; }
+                if (gPeekBail && gMode != "friends") { bail("camera"); return; }
                 gState = ST_PEEK;
                 setUi("peek");
                 llMessageLinked(LINK_SET, PAUSE, "peek", "");
+                gLeadT = llGetTime();
+                gLeadP = cp;
+                gLeadR = cr;
+            }
+            else if (dev && gMode == "friends")
+            {
+                // Follow my lead: your view, still for 1.5 s, becomes the shot (Esc hands the camera back to it)
+                if (llVecDist(cp, gLeadP) > 0.05 || llAngleBetween(cr, gLeadR) > 0.02)
+                {
+                    gLeadT = llGetTime();
+                    gLeadP = cp;
+                    gLeadR = cr;
+                }
+                else if (llGetTime() - gLeadT > 1.5)
+                {
+                    list O = llParseStringKeepNulls(gLast, ["|"], []);
+                    vector f0 = (vector)llList2String(O, 4);    // the subject Friends aimed at
+                    if (f0 == ZERO_VECTOR) f0 = (vector)llList2String(O, 1);
+                    vector u = llRot2Fwd(cr);
+                    float t = (f0 - cp) * u;
+                    if (t < 0.5) t = 0.5;
+                    vector f = cp + u * t;
+                    setCam(cp, f);
+                    gVerify = FALSE;
+                    gLast = (string)cp + "|" + (string)f + "|" + llList2String(O, 2) + "|" + llList2String(O, 3) + "|" + (string)f;
+                    gPending = FALSE;
+                    gState = ST_ROLL;
+                    setUi("rolling");
+                    llMessageLinked(LINK_SET, RESUME, "peek", "");
+                    llMessageLinked(LINK_SET, LEAD, (string)cp + "|" + (string)f, "");
+                }
             }
             else if (!dev && gState == ST_PEEK)
             {
@@ -532,10 +581,10 @@ default
             bail("key");
             return;
         }
-        if (gMode == "frame")
+        if (gMode == "frame" || gMode == "friends")
         {
-            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level, "");     // Frame steps while held
-            return;
+            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "");   // Frame steps while held; lens frames Friends
+            if (gMode == "frame") return;
         }
         // personal / social: the camera follows you
         if (now != gMovSent)
@@ -583,6 +632,7 @@ default
                 if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
                 llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
+                gShotFoc = gf;
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
                 list O = llParseStringKeepNulls(gLast, ["|"], []);
