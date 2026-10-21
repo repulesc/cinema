@@ -31,7 +31,8 @@ for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNee
           "gPEye = C.z + (gOE - gOP.z) + gAim.z;", "gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;",
           'llMessageLinked(LINK_SET, CMD, "autoq", "");', "if (gPType == 3 && gUsedN > 0 && gLed == 0.0)"):
     check(w in friends, f"friends: missing {w}")
-check('if (gUiMode == "friends") b += ["auto"];' in ui and "tune" not in ui, "ui: the live menu should offer Auto, not Tune")
+check('if (gUiMode == "friends") b += ["release"];' in ui and 'llMessageLinked(LINK_SET, CMD, "auto", "")' in ui and "tune" not in ui,
+      "ui: the live menu should offer Release (back to automatic), not Tune")
 
 # ---- the chain, ported -------------------------------------------------------------------------------------------
 add = lambda a, b: tuple(x + y for x, y in zip(a, b))

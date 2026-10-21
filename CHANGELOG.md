@@ -4,7 +4,7 @@
 **Fix: Follow my lead did not show "Got it", or did not keep the view.**
 - **Too insensitive:** Take 12 only noticed your own camera once it was more than 1 m from the shot. In Friends it now also notices a move of 0.3 m, or a turn of the view of about 10°, so a small orbit toward your faces counts.
 - **Friends undid your view:** after your view was taken, Friends kept checking "is everyone inside the frame?" against its own old camera. With a close view it decided people were out of frame and cut to a wider shot. While you lead, that check, the pull-back and the drift glide are off; your friends are followed at the next cut instead.
-- "Your view is kept · Esc to continue" shows for 3 s above the button (a notice, nothing to click), only when your view really changed. The first time after each rez, one chat line explains Esc and Auto.
+- "Your view is kept · Esc to continue" shows for 3 s above the button (a notice, nothing to click), only when your view really changed. The first time after each rez, one chat line explains Esc and Release. The live menu entry is now called **Release** (it was Auto): it lets go of your view.
 - **Check that all eight scripts are in the HUD.** `cinema_lens` is new since 5.0, and without it nothing is kept.
 - Follow my lead works in Friends only, for now.
 
@@ -13,7 +13,7 @@
 - In Friends, frame the view the usual way: Alt-orbit, the mouse wheel, or A/D while seated. When the camera has been still for about 1.5 s, "Got it" shows, and your view becomes the shot. Press **Esc** and it carries on from there.
 - From then on, every cut and double-tap variation keeps **how close, how high and where you aimed** (your faces, which a script cannot see when you sit or lie down). They are kept relative to the group, so when your friends shift, the camera follows them.
 - **Seated, W/S** step about 20 % closer or wider; they do not move a seated avatar.
-- **Back to automatic:** long press › **Auto**. It also happens by itself when you sit down or stand up, or when a friend comes or goes.
+- **Back to automatic:** long press › **Release** (named Auto in 5.1.0). It also happens by itself when you sit down or stand up, or when a friend comes or goes.
 - Standing, the movement keys just walk, as before 5.0.
 - Other modes keep the Alt-cam setting (pause, end, ignore) as before.
 - `tools/sim/lens_sim.py` now checks the whole chain: 400 orbited views come back exactly as the next planned shot, follow a moving group, and scale with W/S.

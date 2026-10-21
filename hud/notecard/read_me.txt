@@ -55,7 +55,7 @@ You and the friends you picked, framed together. While your group stays in the p
  - You can save up to 10 friends.
  - YOUR OWN VIEW (Friends only, needs the cinema_lens script): frame it the usual way (Alt-orbit, mouse wheel, or A / D while seated). When you hold still, "Your view is kept · Esc to continue" shows above the button (a notice, not a menu): press ESC and Take 12 carries on with your view - just as close, as high and aimed at the same faces - in every next cut, following your friends if they move.
  - Sitting or lying, W / S step closer or wider.
- - Hold the button > Auto to go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
+ - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.

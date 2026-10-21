@@ -135,7 +135,7 @@ default
             gFoc = q;
             lead(c, q);
             show("Your view is kept · Esc to continue");
-            if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Hold the button > Auto to go back.");
+            if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Hold the button > Release to go back.");
             gTold = TRUE;
             send(FALSE);                                    // it is on screen already
         }
