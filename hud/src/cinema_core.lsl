@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.1.1";
+string VERSION = "5.2.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -24,6 +24,7 @@ integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
+integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
@@ -56,6 +57,7 @@ string  gMode;                // "scenery" / "personal" / "social" / "friends" /
 float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
+integer gWatch;               // you are watching someone's shared view: no idle start, double-tap cuts for all (sync)
 integer gSitCtl;              // friends: the controls were taken seated
 float   gLeadT;               // friends: your own camera, and since when it is still
 vector  gLeadP;
@@ -161,6 +163,7 @@ setCam(vector p, vector f)
     ]);
     gShotPos = p;
     gShotFoc = f;
+    llMessageLinked(LINK_SET, CAMSET, (string)p + "|" + (string)f + "|0", "");
     gApplyT = llGetTime();
     gVerify = TRUE;
 }
@@ -343,7 +346,7 @@ resume()
 // ============================================================================
 idleTick(integer now)
 {
-    if (!gPermOK) return;
+    if (!gPermOK || gWatch) return;
     integer info = llGetAgentInfo(gOwner);
     vector cp = llGetCameraPos();
     rotation cr = llGetCameraRot();
@@ -633,6 +636,7 @@ default
                 llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
                 gShotFoc = gf;
+                llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag, "");
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
                 list O = llParseStringKeepNulls(gLast, ["|"], []);
@@ -671,6 +675,8 @@ default
                     llSetTimerEvent(0.25);
                 }
             }
+            else if (str == "watch" || str == "unwatch") gWatch = (str == "watch");
+            else if (gWatch && gState == ST_IDLE && str == "scenery") return;   // watching: the double-tap cuts for all (sync)
             else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame") engage(str);
             else if (str == "photo")
             {

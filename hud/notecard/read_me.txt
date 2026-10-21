@@ -57,6 +57,13 @@ You and the friends you picked, framed together. While your group stays in the p
  - Sitting or lying, W / S step closer or wider.
  - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
+SHARE THE VIEW
+Let the people with you watch what your camera films.
+ - While your camera runs: hold the button > Share > Offer view. Everyone within 20 m who wears Take 12 or the free Take 12 Watch gets "... shares their view. Watch?" and taps Watch.
+ - Their camera follows your cuts. A double-tap (on their Take 12 or their Watch HUD) cuts to the next view for everyone.
+ - Any movement key (or a tap on the Watch HUD) gives them their own camera back. When you stop, sharing ends.
+ - Share > Give Watch hands the free Take 12 Watch to someone near you.
+
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.
  - Tap the button > Frame. DOUBLE-TAP for the next framing: Full length, Half length, Close.
