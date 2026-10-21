@@ -1,8 +1,8 @@
 # Take 12 Watch (free)
 
-A one-prim HUD for friends who don't own Take 12. While they wear it, they can watch the view of someone near them who shares their Take 12 view (long press › Share › Offer view) with one tap.
+A one-prim HUD for friends who don't own Take 12. While they wear it, the view of someone near them who shares their Take 12 view (long press › Share) comes up at once. Wearing it is the yes; there's nothing to click.
 
-- **Watch:** tap Watch in the dialog. The camera then follows the sharer's cuts.
+- **Watching:** the camera follows the sharer's cuts. Above the HUD: "Watching Pano · tap: your camera · double-tap: next".
 - **Next view:** double-tap the HUD to cut to the next view for everyone watching.
 - **Leave:** a single tap or any movement key gives you your own camera back.
 

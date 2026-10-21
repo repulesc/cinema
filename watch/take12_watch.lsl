@@ -1,20 +1,17 @@
 // ============================================================================
 //  Take 12 Watch  -  take12_watch.lsl  (v5.2)  - free, one script, one prim HUD
-//  For friends without Take 12: when someone near you shares their Take 12 view, you are asked "Watch?". Tap Watch
-//  and your camera follows their cuts. Double-tap this HUD: the next view, for everyone watching. A single tap or any
+//  For friends without Take 12: when someone near you shares their Take 12 view, your camera follows their cuts at
+//  once (wearing it is the yes). Double-tap this HUD: the next view, for everyone watching. A single tap or any
 //  movement key: your own camera back. Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl.
 // ============================================================================
 
-string  VERSION = "5.2.1";
+string  VERSION = "5.3.0";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
 
 key     gOwner;
 key     gHost;
-key     gOffer;
-integer gDlg;
-integer gDlgL;
 float   gTapT;
 integer gTaps;
 
@@ -96,18 +93,6 @@ default
 
     listen(integer ch, string name, key id, string msg)
     {
-        if (ch == gDlg)
-        {
-            llListenRemove(gDlgL);
-            if (msg == "Watch" && gHost == NULL_KEY && near(gOffer))
-            {
-                gHost = gOffer;
-                say(gHost, "join");
-                if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
-                llSetText("Watching " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next", <1.0, 1.0, 1.0>, 0.85);
-            }
-            return;
-        }
         if (llGetSubString(msg, 0, 3) != "T12|") return;
         key who = llGetOwnerKey(id);
         if (who == gOwner) return;
@@ -115,11 +100,10 @@ default
         string w = llList2String(L, 1);
         if (w == "offer" && gHost == NULL_KEY && near(who))
         {
-            gOffer = who;
-            llListenRemove(gDlgL);
-            gDlg = -1000000 - (integer)llFrand(1000000.0);
-            gDlgL = llListen(gDlg, "", gOwner, "");
-            llDialog(gOwner, llList2String(L, 2) + " shares their view.\nWatch?", ["Watch", "No"], gDlg);
+            gHost = who;                                     // wearing the Watch is the yes: their view at once
+            say(gHost, "join");
+            if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
+            llSetText("Watching " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next", <1.0, 1.0, 1.0>, 0.85);
         }
         else if (who == gHost && w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
         {
