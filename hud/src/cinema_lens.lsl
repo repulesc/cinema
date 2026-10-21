@@ -7,7 +7,7 @@
 //  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "5.1.0";
+string VERSION = "5.1.1";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -31,6 +31,8 @@ float   gAz;
 vector  gAim;                // where you aimed, from the subject Friends planned
 integer gPrev;               // keys held at the last NUDGE
 integer gSit;
+vector  gLC;                 // the last view you led with
+integer gTold;               // the Esc tip was given (once per rez)
 float   gTextT;
 
 show(string s)
@@ -125,12 +127,16 @@ default
             list L = llParseStringKeepNulls(str, ["|"], []);
             vector c = (vector)llList2String(L, 0);
             vector q = (vector)llList2String(L, 1);
+            if (llVecDist(c, gLC) < 0.05) return;           // the same view again: Esc not pressed yet
+            gLC = c;
             gAim += q - gSubj;
             gSubj = q;
             gCam = c;
             gFoc = q;
             lead(c, q);
-            show("Got it");
+            show("Got it - Esc to carry on");
+            if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Hold the button > Auto to go back.");
+            gTold = TRUE;
             send(FALSE);                                    // it is on screen already
         }
         else if (num == NUDGE && gSit)
@@ -148,13 +154,13 @@ default
             else show("Wider");
             send(TRUE);
         }
-        else if (num == CMD && str == "auto") automatic(TRUE);
+        else if (num == CMD && str == "auto") { gLC = ZERO_VECTOR; automatic(TRUE); }
         else if (num == CMD && str == "autoq") automatic(FALSE);   // Friends: the group changed
     }
 
     timer()
     {
-        if (gTextT > 0.0 && llGetTime() - gTextT > 2.0)
+        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0)
         {
             gTextT = 0.0;
             llSetText("", ZERO_VECTOR, 0.0);

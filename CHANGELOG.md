@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.1.1
+**Fix: Follow my lead did not show "Got it", or did not keep the view.**
+- **Too insensitive:** Take 12 only noticed your own camera once it was more than 1 m from the shot. In Friends it now also notices a move of 0.3 m, or a turn of the view of about 10°, so a small orbit toward your faces counts.
+- **Friends undid your view:** after your view was taken, Friends kept checking "is everyone inside the frame?" against its own old camera. With a close view it decided people were out of frame and cut to a wider shot. While you lead, that check, the pull-back and the drift glide are off; your friends are followed at the next cut instead.
+- "Got it - Esc to carry on" shows for 3 s above the button, only when your view really changed. The first time after each rez, one chat line explains Esc and Auto.
+- **Check that all eight scripts are in the HUD.** `cinema_lens` is new since 5.0, and without it nothing is kept.
+- Follow my lead works in Friends only, for now.
+
 ## 5.1.0
 **Follow my lead: frame it yourself with Second Life's own camera, and Take 12 keeps it.** 5.0's keys (gears, angle keys, A/D round, Tune) were too much to learn, and they fought the camera everyone already knows. They are gone.
 - In Friends, frame the view the usual way: Alt-orbit, the mouse wheel, or A/D while seated. When the camera has been still for about 1.5 s, "Got it" shows, and your view becomes the shot. Press **Esc** and it carries on from there.

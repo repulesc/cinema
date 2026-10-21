@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.1.0";
+string VERSION = "5.1.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -83,6 +83,7 @@ float   gApplyT;
 float   gLastTick;
 float   gGlideUntil;
 vector  gShotPos;
+vector  gShotFoc;
 vector  gCamBefore;            // where the viewer had the camera just before the cut
 vector  gCamPos;
 rotation gCamRot;
@@ -159,6 +160,7 @@ setCam(vector p, vector f)
         CAMERA_FOCUS_THRESHOLD, 0.0
     ]);
     gShotPos = p;
+    gShotFoc = f;
     gApplyT = llGetTime();
     gVerify = TRUE;
 }
@@ -431,6 +433,8 @@ activeTick(float dt)
             // Alt-cam / orbit: the viewer silently overrides scripted cameras
             integer dev = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want);
             rotation cr = llGetCameraRot();
+            // Friends: a smaller move, or a turn of the view over about 10 degrees, is you taking the camera too
+            if (gMode == "friends" && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;
             if (dev && gState == ST_ROLL)
             {
                 if (gPeekBail && gMode != "friends") { bail("camera"); return; }
@@ -628,6 +632,7 @@ default
                 if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
                 llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
+                gShotFoc = gf;
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
                 list O = llParseStringKeepNulls(gLast, ["|"], []);

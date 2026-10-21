@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "5.1.0";
+string VERSION = "5.1.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -869,11 +869,11 @@ default
         if (llGetListLength(gGrp) > gPresAtShot) gPendEvent = "arrival";
         if (gOSit != gSitAtShot) gPendEvent = "seat";               // you sat down or stood up: a calm re-frame
         if (llGetListLength(gGrp) < gPresAtShot) gPresAtShot = llGetListLength(gGrp);
-        if (gPType == 3 && gUsedN > 0)
+        if (gPType == 3 && gUsedN > 0 && gLed == 0.0)      // led: your view holds; the next cut follows the group
         {
             glideTick(since);
         }
-        else if (now < gMoveUntil && since >= 4 && (!inFrame(gOP, 0.85) || llVecDist(gOP, gOwnerAtShot) > 4.0))
+        else if (now < gMoveUntil && since >= 4 && !gOSit && (!inFrame(gOP, 0.85) || llVecDist(gOP, gOwnerAtShot) > 4.0))
         {
             nextShot(1.0);
             return;

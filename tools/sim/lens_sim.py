@@ -18,15 +18,18 @@ for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string
           "llTakeControls(CTL & ~3, TRUE, TRUE);", "llTakeControls(3, TRUE, FALSE);"):
     check(w in core, f"core: missing {w}")
 check("llTakeControls(48" not in core, "core: standing E/C are still kept back")
+check('if (gMode == "friends" && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
+      "core: Friends does not notice a small move or a turn of your camera")
+check("gShotFoc = f;" in core and "gShotFoc = gf;" in core, "core: the shot's focus is not kept")
 for w in ('integer LEAD       = 7324;', "gAim += q - gSubj;", "gS = llVecDist(c, q);",
           "gEl = llAtan2(h.z, llVecMag(<h.x, h.y, 0.0>));", "gAz = llAtan2(h.y, h.x);", "gS = gS * 0.8;", "gS = gS * 1.25;",
-          'else if (num == CMD && str == "auto") automatic(TRUE);', "gSubj += f - gFoc;"):
+          'automatic(TRUE); }', "gSubj += f - gFoc;", "if (llVecDist(c, gLC) < 0.05) return;"):
     check(w in lens, f"lens: missing {w}")
 for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNeed = gLed;", "gPLo = gLed;", "gMeas = [];",
           "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);",
           "if ((!gOSit && gLed == 0.0) || gSeatEl <= 0.0) return S;", "llAtan2(tanV, 3.0) * (gLed == 0.0)",
           "gPEye = C.z + (gOE - gOP.z) + gAim.z;", "gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;",
-          'llMessageLinked(LINK_SET, CMD, "autoq", "");'):
+          'llMessageLinked(LINK_SET, CMD, "autoq", "");', "if (gPType == 3 && gUsedN > 0 && gLed == 0.0)"):
     check(w in friends, f"friends: missing {w}")
 check('if (gUiMode == "friends") b += ["auto"];' in ui and "tune" not in ui, "ui: the live menu should offer Auto, not Tune")
 
