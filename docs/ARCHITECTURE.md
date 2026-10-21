@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All eight scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All nine scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -16,6 +16,7 @@ All eight scripts go in the **root prim** of a one-prim HUD. Each must compile c
 | `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
 | `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
 | `cinema_lens.lsl` | **New in 5.0, reworked in 5.1: Follow my lead.** Core sends LEAD 7324 `"<cam>\|<focus>"` when your own camera (Alt-orbit) has been still for 1.5 s in Friends, and holds that view. Lens keeps how far, how high, from where and the aim (relative to the subject Friends planned, sent as the 5th SHOT field) and sends LENS 7319 `"<distance>\|<angle down>\|<from>\|<aim>\|<cut>"` (distance 0 = automatic). Seated W/S scale the distance (core keeps back only FWD/BACK). Auto: long press, sitting or standing up, a friend coming or going (`autoq` from Friends) | – | 90 (40.7 KB est.) |
+| `cinema_sync.lsl` | **New in 5.2.** Share the view. Sharing: Share › Offer view (`llRegionSay` on SYNC_CH -7712120, `T12\|offer\|<name>`), watchers within 20 m reply `join` / `leave` / `next` with `llRegionSayTo`; every camera core sets (CAMSET 7325) goes to each watcher as `cam\|<pos>\|<focus>\|<lag>`; `end` on Stop. Watching (someone else shares): the offer dialog, the camera set from `cam`, any movement key leaves, a double-tap (core passes CMD scenery through while watching) sends `next`. Give Watch: `llGiveInventory` of the "Take 12 Watch" object. The free Watch HUD (`watch/take12_watch.lsl`) is the watching half alone | – | 122 (37.8 KB est.) |
 | `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
@@ -42,6 +43,7 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | **7317 NUDGE** | core → frame | control level bits | Frame: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
 | **7318 FOVMSG** | core → frame | radians | Frame: the viewer's field of view changed (checked every 0.5 s) |
 | **7319 LENS** | lens → friends | `<distance>\|<angle down rad>\|<from rad>\|<aim>\|<cut now>` | 5.1 Follow my lead: distance 0 = automatic. Friends plans its group shot from it: subject + aim, that distance and angle, from that side |
+| **7325 CAMSET** | core → sync | `<pos>\|<focus>\|<lag>` | 5.2: every camera core puts on screen (cuts and glides), relayed to watchers |
 | **7324 LEAD** | core → lens | `<cam>\|<focus>` | 5.1: in Friends, your own camera held still for 1.5 s; core holds it as the shot |
 | 7320 UI_STATE | core → ui | **`"<state>|<mode>|<nextCutUnix>"`** | state = `off` / `armed` / `rolling` / `peek` / **`frozen`** |
 | 7321 UI_MENU | picker → ui | page: `main` / `live` / `opts` | the picker sends `main` for "↩ Back" |

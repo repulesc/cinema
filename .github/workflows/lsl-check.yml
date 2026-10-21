@@ -10,7 +10,7 @@ jobs:
           python-version: "3.12"
       # Lite is paused (frozen at 4.4.5) until the full version leaves beta. To resume, bring back:
       #   python3 tools/build_lite.py --check   and   python3 tools/sim/lite_test.py
-      - name: Compile-check the full (hud/src) and frozen v3 (legacy/v3/src) scripts
+      - name: Compile-check the full (hud/src), the Watch HUD (watch) and frozen v3 (legacy/v3/src) scripts
         run: bash tools/lslcheck.sh
       - name: Install Pillow (the sprite-sheet test reads the real texture)
         run: python3 -m pip install --quiet pillow
@@ -27,3 +27,4 @@ jobs:
           python3 tools/sim/frame_sim.py
           python3 tools/sim/seated_sim.py
           python3 tools/sim/lens_sim.py
+          python3 tools/sim/sync_sim.py

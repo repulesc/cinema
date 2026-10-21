@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION = "5.1.1";
+string VERSION = "5.2.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -27,7 +27,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~emoji=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji, title
-string ITEMS = "~scenery|🏞|Scenery~personal|🚶|Personal~social|👥|Social~friends|💞|Friends~frame|🖼|Frame~pace|⏳|Pace~afk|💤|AFK~opts|⚙|Options~help|❔|Help~close|✖|Close~back|↩|Back~photo|📷|Photo~resume|▶|Resume~save|⭐|Save~next|⏭|Next~stop|⏹|Stop~modes|🎬|Modes~lively|⚡|Lively~easy|🙂|Easy~calm|🍃|Calm~slow|🌙|Slow~still|🗿|Still~indoors|🏠|Indoors~chat|💬|Chat cuts~favs|⭐|Favourites~altcam|👁|Alt-cam~phantom|🧱|Phantom~reach|📏|Reach~trace|📝|Chat text~emoji|🔤|Emoji~look|🎨|Look~th0||Classic~th1||Rec~th2||Viewfinder~test|🧪|Test cam~reset|♻|Reset~gotit|👍|Got it~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~here||Clear here~all||Clear all~pause||Pause~end||End~ignore||Ignore~seat|🪑|Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~release|🔓|Release~";
+string ITEMS = "~scenery|🏞|Scenery~personal|🚶|Personal~social|👥|Social~friends|💞|Friends~frame|🖼|Frame~pace|⏳|Pace~afk|💤|AFK~opts|⚙|Options~help|❔|Help~close|✖|Close~back|↩|Back~photo|📷|Photo~resume|▶|Resume~save|⭐|Save~next|⏭|Next~stop|⏹|Stop~modes|🎬|Modes~lively|⚡|Lively~easy|🙂|Easy~calm|🍃|Calm~slow|🌙|Slow~still|🗿|Still~indoors|🏠|Indoors~chat|💬|Chat cuts~favs|⭐|Favourites~altcam|👁|Alt-cam~phantom|🧱|Phantom~reach|📏|Reach~trace|📝|Chat text~emoji|🔤|Emoji~look|🎨|Look~th0||Classic~th1||Rec~th2||Viewfinder~test|🧪|Test cam~reset|♻|Reset~gotit|👍|Got it~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~here||Clear here~all||Clear all~pause||Pause~end||End~ignore||Ignore~seat|🪑|Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~release|🔓|Release~share|👁|Share~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -320,6 +320,7 @@ openMenu(string page)
         else b = ["photo"];
         if (gUiMode == "scenery") b += ["save"];
         if (gUiMode == "friends") b += ["release"];
+        b += ["share"];
         b += ["next", "stop", "modes", "close"];
         if (gNextCut > 0 && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
@@ -449,6 +450,7 @@ onChoice(string msg)
         else if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
         else if (id == "next" || id == "stop") llMessageLinked(LINK_SET, CMD, id, "");
         else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
+        else if (id == "share") llMessageLinked(LINK_SET, CMD, "share", "");
         else if (id == "modes") openMenu("main");
     }
     else if (gPage == "pace")

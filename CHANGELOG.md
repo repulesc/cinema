@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.2.0
+**Share the view: your friends watch what your Take 12 films, live.**
+- **Offer:** long press › **👁 Share** › **Offer view**. Everyone within 20 m who wears Take 12 or the free **Take 12 Watch** HUD is asked "Pano shares their view. Watch?" and taps **Watch**.
+- **Watching:** their camera then follows every cut and glide of yours. When someone joins or leaves, "👁 Ana watches" or "👁 Ana left" shows above your button.
+- **Anyone drives:** a watcher's double-tap cuts to the next view for everyone.
+- **Leaving:** a watcher gets their own camera back with any movement key, or with a single tap on the Watch HUD. A Take 12 owner also gets it back by starting their own camera from the menu.
+- **Ending:** stopping your camera, or Share › **Stop sharing**, ends it for everyone.
+- **Give Watch:** Share › **Give Watch** hands the free HUD to someone near you. Put the "Take 12 Watch" object in your HUD's contents for this.
+- Only one thing has to be worn: a script can move an avatar's camera only with their own permission, and HUDs get that permission by themselves. Same region only.
+- **New script `cinema_sync.lsl`** (nine scripts now), the free Watch HUD's script `watch/take12_watch.lsl`, and core reports every camera it sets (CAMSET 7325).
+- New `tools/sim/sync_sim.py` in CI: both scripts speak the same protocol, and a simulated region checks that only people within 20 m are asked, cameras follow, double-taps cut for all, keys release, and stopping ends it.
+
 ## 5.1.1
 **Fix: Follow my lead did not show "Got it", or did not keep the view.**
 - **Too insensitive:** Take 12 only noticed your own camera once it was more than 1 m from the shot. In Friends it now also notices a move of 0.3 m, or a turn of the view of about 10°, so a small orbit toward your faces counts.
