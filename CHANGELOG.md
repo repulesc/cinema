@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3.0
+**Share the view switches at once, no clicking.**
+- **Long press › 👁 Share** now offers your view straight away. The Share dialog that follows only holds Give Watch and Stop sharing.
+- **A friend wearing the free Take 12 Watch** switches to your view instantly: wearing it is the yes. Above their HUD: "Watching Pano · tap: your camera · double-tap: next".
+- **A friend with Take 12 who has you in their Friends** switches instantly too.
+- **Someone with Take 12 who has not saved you** is not taken over. Above their button, for 20 s: "Pano shares a view · double-tap to watch". One double-tap joins; ignored, the text goes away and the double-tap is theirs again.
+- The Watch HUD has no dialog any more.
+
 ## 5.2.1
 **Fix: the Watch HUD showed "trying to clear camera parameters but PERMISSION_CONTROL_CAMERA permission not set".** Taking the HUD off while watching tried to hand the camera back, but Second Life had already withdrawn the HUD's camera permission at that moment (and gives the camera back by itself). Now taking it off only tells the sharer you left. The camera is cleared only while the HUD is still worn and holds the permission. Putting the Watch HUD on asks for its permissions again. Take 12's own sync script got the same fix, and taking Take 12 off while sharing tells your watchers it ended.
 

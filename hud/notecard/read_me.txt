@@ -59,7 +59,8 @@ You and the friends you picked, framed together. While your group stays in the p
 
 SHARE THE VIEW
 Let the people with you watch what your camera films.
- - While your camera runs: hold the button > Share > Offer view. Everyone within 20 m who wears Take 12 or the free Take 12 Watch gets "... shares their view. Watch?" and taps Watch.
+ - While your camera runs: hold the button > Share. Your view is offered at once to everyone within 20 m.
+ - Friends wearing the free Take 12 Watch, or Take 12 with you in their Friends, switch to your view straight away. Anyone else with Take 12 sees "... shares a view - double-tap to watch" above their button for 20 seconds.
  - Their camera follows your cuts. A double-tap (on their Take 12 or their Watch HUD) cuts to the next view for everyone.
  - Any movement key (or a tap on the Watch HUD) gives them their own camera back. When you stop, sharing ends.
  - Share > Give Watch hands the free Take 12 Watch to someone near you.

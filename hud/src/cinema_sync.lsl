@@ -1,7 +1,7 @@
 // ============================================================================
 //  Take 12  -  cinema_sync.lsl  (v5.2)  - Share the view
-//  You: long press > Share > Offer view. Everyone within 20 m who wears Take 12 or the free Take 12 Watch is asked
-//  "<you> shares their view. Watch?" and accepts with one tap; their camera then follows every cut and glide of
+//  You: long press > Share. Everyone within 20 m who wears the free Take 12 Watch, or Take 12 with you in their Friends,
+//  watches at once (anyone else with Take 12 sees "<you> shares a view - double-tap to watch"); their camera follows every cut and glide of
 //  yours (core reports each camera as CAMSET). Anyone watching can double-tap to cut for all. Any movement key
 //  gives a watcher their own camera back. Share > Give Watch hands the free HUD to someone near you.
 //  The same script watches for you when someone else shares.
@@ -9,7 +9,8 @@
 //    offer|<name>  (llRegionSay)      join / leave / next  (watcher -> sharer)      cam|<pos>|<focus>|<lag> / end
 // ============================================================================
 
-string VERSION = "5.2.1";
+string VERSION = "5.3.0";
+string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -26,6 +27,7 @@ list    gWatchers;           // sharing: the avatars watching you
 string  gLastCam;            // the camera on your screen now
 key     gHost;               // watching: whose view you follow
 key     gOffer;              // the sharer who just asked you
+integer gPendT;              // ... and since when (an offer from someone not in your Friends: double-tap to watch)
 string  gPage;               // our own dialog: "share", "give", "offer"
 list    gNear;               // give: the avatars listed
 integer gDlg;
@@ -72,8 +74,17 @@ endShare()
 }
 
 // ---- watching --------------------------------------------------------------
+// an offer nobody took up: the double-tap is yours again
+unpend()
+{
+    if (!gPendT) return;
+    gPendT = 0;
+    if (gHost == NULL_KEY) llMessageLinked(LINK_SET, CMD, "unwatch", "");
+}
+
 watch(key host)
 {
+    gPendT = 0;
     gHost = host;
     say(host, "join");
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);   // any movement key: your camera back
@@ -135,15 +146,21 @@ default
             integer i;
             for (i = 0; i < llGetListLength(gWatchers); i++) say(llList2Key(gWatchers, i), "cam|" + str);
         }
-        else if (num == START) leave(TRUE, TRUE);                 // your own camera starts: stop watching
+        else if (num == START)                              // your own camera starts: stop watching
+        {
+            unpend();
+            leave(TRUE, TRUE);
+        }
         else if (num == STOP && str != "switch") endShare();
         else if (num == CMD && str == "share")
         {
-            string t = "Share your view with the people near you.";
+            llRegionSay(SYNC_CH, "T12|offer|" + llKey2Name(gOwner));     // offered at once
+            string t = "Your view is offered to the people near you who wear Take 12 or Take 12 Watch.";
             if (gWatchers != []) t += "\nWatching now: " + (string)llGetListLength(gWatchers);
-            dialog("share", t, ["Offer view", "Give Watch", "Stop sharing"]);
+            dialog("share", t, ["Give Watch", "Stop sharing", "Close"]);
         }
         else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while watching
+        else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: watch the offer
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/sync] v" + VERSION + " watching you " + (string)llGetListLength(gWatchers) + ", following "
@@ -157,12 +174,7 @@ default
             llListenRemove(gDlgL);
             if (gPage == "share")
             {
-                if (msg == "Offer view")
-                {
-                    llRegionSay(SYNC_CH, "T12|offer|" + llKey2Name(gOwner));
-                    show("Offered to the people near you");
-                }
-                else if (msg == "Stop sharing") endShare();
+                if (msg == "Stop sharing") endShare();
                 else if (msg == "Give Watch")
                 {
                     if (llGetInventoryType(WATCH) != INVENTORY_OBJECT)
@@ -201,7 +213,6 @@ default
                     }
                 }
             }
-            else if (gPage == "offer" && msg == "Watch" && near(gOffer)) watch(gOffer);
             return;
         }
         // the share channel: only what an avatar's own HUD says counts
@@ -214,7 +225,14 @@ default
         {
             if (gHost != NULL_KEY || !near(who)) return;
             gOffer = who;
-            dialog("offer", llList2String(L, 2) + " shares their view.\nWatch?", ["Watch", "No"]);
+            // someone in your Friends: their view at once. Anyone else: a double-tap, so no stranger takes your camera
+            if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0) watch(who);
+            else
+            {
+                if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");         // core: keep the double-tap for this
+                gPendT = llGetUnixTime();
+                show(llList2String(L, 2) + " shares a view\ndouble-tap to watch");
+            }
         }
         else if (w == "join")
         {
@@ -245,7 +263,8 @@ default
 
     timer()
     {
-        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0 + 3.0 * (gHost != NULL_KEY))
+        if (gPendT && llGetUnixTime() - gPendT > 20) unpend();
+        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0 + 3.0 * (gHost != NULL_KEY) + 17.0 * (gPendT != 0))
         {
             gTextT = 0.0;
             llSetText("", ZERO_VECTOR, 0.0);
@@ -255,6 +274,6 @@ default
             gDlgT = 0;
             llListenRemove(gDlgL);
         }
-        if (gTextT == 0.0 && gDlgT == 0) llSetTimerEvent(0.0);
+        if (gTextT == 0.0 && gDlgT == 0 && !gPendT) llSetTimerEvent(0.0);
     }
 }

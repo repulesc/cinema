@@ -32,7 +32,7 @@ check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must b
 check("if (!gPermOK || gWatch) return;" in core, "core: idle start while watching")
 check('else if (gWatch && gState == ST_IDLE && str == "scenery") return;' in core, "core: double-tap while watching starts scenery")
 check('b += ["share"];' in ui and 'llMessageLinked(LINK_SET, CMD, "share", "")' in ui, "ui: Share is not in the live menu")
-check('else if (num == START) leave(TRUE, TRUE);' in sync and 'else if (num == STOP && str != "switch") endShare();' in sync,
+check('unpend();\n            leave(TRUE, TRUE);' in sync and 'else if (num == STOP && str != "switch") endShare();' in sync,
       "sync: own camera / stop handling changed")
 
 # taking a HUD off: Second Life has already withdrawn the camera, so the camera is never cleared on detach (5.2.1:
@@ -43,6 +43,10 @@ for name, s_ in (("sync", sync), ("watch", watch)):
     check("leave(TRUE, FALSE);" in s_, f"{name}: detaching must leave without touching the camera")
 check("if (id == NULL_KEY) leave(TRUE, FALSE);" in watch, "watch: detach handling changed")
 
+check('if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0) watch(who);' in sync, "sync: friends must watch at once")
+check('else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);' in sync, "sync: double-tap does not accept an offer")
+check("llDialog" not in watch, "watch: no dialog any more, the view switches at once")
+check('if (gPendT && llGetUnixTime() - gPendT > 20) unpend();' in sync, "sync: an offer must expire after 20 s")
 # ---- a small region ---------------------------------------------------------------------------------------------
 class Region:
     def __init__(s): s.av = {}; s.out = []
@@ -53,8 +57,8 @@ class Region:
         if to in s.av: s.av[to].hear(frm, msg)
 class Av:
     """one avatar wearing cinema_sync (kind 'take12') or take12_watch (kind 'watch')"""
-    def __init__(s, rg, name, pos, kind):
-        s.rg, s.name, s.pos, s.kind = rg, name, pos, kind
+    def __init__(s, rg, name, pos, kind, friends=()):
+        s.rg, s.name, s.pos, s.kind, s.friends, s.pending = rg, name, pos, kind, set(friends), None
         s.watchers, s.host, s.offer, s.cam, s.next_asked, s.last = [], None, None, None, 0, None
         rg.av[name] = s
     def near(s, k): return k in s.rg.av and sum((a - b) ** 2 for a, b in zip(s.rg.av[k].pos, s.pos)) ** 0.5 <= 20.0
@@ -68,17 +72,22 @@ class Av:
         for w in s.watchers: s.say(w, "end")
         s.watchers = []
     # watcher side
-    def accept(s):
-        if s.offer and s.host is None and s.near(s.offer): s.host = s.offer; s.say(s.host, "join")
+    def join(s, k): s.host, s.pending = k, None; s.say(k, "join")
+    def expire(s): s.pending = None                      # 20 s without a double-tap
     def key(s):
         if s.host: s.say(s.host, "leave"); s.host = None; s.cam = None
     def double_tap(s):
         if s.host: s.say(s.host, "next")
+        elif s.pending: s.join(s.pending)
     def hear(s, frm, msg):
         if not msg.startswith("T12|") or frm == s.name: return
         L = msg.split("|"); w = L[1]
         if w == "offer":
-            if s.host is None and s.near(frm): s.offer = frm
+            if s.host is None and s.near(frm):
+                s.offer = frm
+                # the Watch HUD, or Take 12 with you in its Friends: at once; anyone else: a double-tap
+                if s.kind == "watch" or frm in s.friends: s.join(frm)
+                else: s.pending = frm
         elif w == "join" and s.kind == "take12":
             if frm not in s.watchers: s.watchers.append(frm)
             if s.last: s.say(frm, "cam|" + s.last)
@@ -89,30 +98,36 @@ class Av:
 
 rg = Region()
 you = Av(rg, "Pano", (128, 128, 22), "take12")
-ana = Av(rg, "Ana", (130, 127, 22), "take12")
+ana = Av(rg, "Ana", (130, 127, 22), "take12", friends=["Pano"])
+cleo = Av(rg, "Cleo", (127, 126, 22), "take12")              # has Take 12, has not saved you
 ben = Av(rg, "Ben", (126, 131, 22), "watch")
 far = Av(rg, "Stranger", (168, 128, 22), "watch")
 you.camset("<1,2,3>|<4,5,6>|0")
 you.share()
-check(ana.offer == "Pano" and ben.offer == "Pano", "friends near you are not asked")
+check(ana.host == "Pano" and ben.host == "Pano", "a Watch HUD, or Take 12 with you in its Friends, must watch at once")
+check(cleo.host is None and cleo.pending == "Pano", "a Take 12 owner who has not saved you must be asked (double-tap), not taken over")
 check(far.offer is None, "someone 40 m away was asked")
 check(you.offer is None, "you were asked about your own view")
-ana.accept(); ben.accept()
 check(you.watchers == ["Ana", "Ben"], f"watchers: {you.watchers}")
+cleo.expire(); cleo.double_tap()
+check(cleo.host is None and you.next_asked == 0, "an ignored offer must leave the double-tap free again")
 check(ana.cam == "<1,2,3>|<4,5,6>|0" and ben.cam == ana.cam, "a new watcher does not get the view on screen at once")
 you.camset("<7,8,9>|<1,1,1>|1.5")
 check(ana.cam == ben.cam == "<7,8,9>|<1,1,1>|1.5", "a glide is not followed")
 ben.double_tap(); ana.double_tap()
 check(you.next_asked == 2, "a watcher's double-tap does not cut for all")
+you.share(); cleo.double_tap()
+check(cleo.host == "Pano" and "Cleo" in you.watchers, "a double-tap on the offer does not join")
+check(cleo.cam == "<7,8,9>|<1,1,1>|1.5", "a late joiner does not get the view on screen")
 far.say("Pano", "next")
 check(you.next_asked == 2, "someone not watching could cut")
 Av(rg, "Mallory", (129, 129, 22), "take12").say("Ana", "cam|<0,0,0>|<0,0,0>|0")
 check(ana.cam == "<7,8,9>|<1,1,1>|1.5", "a camera from someone else than the sharer was taken")
 ana.key()
-check(you.watchers == ["Ben"] and ana.host is None, "a key does not give a watcher their camera back")
+check(you.watchers == ["Ben", "Cleo"] and ana.host is None, "a key does not give a watcher their camera back")
 you.stop()
-check(ben.host is None and you.watchers == [], "stopping your camera does not end sharing")
-print("share the view: offers reach 20 m only; 2 watchers follow cuts and glides; their double-tap cuts for all; "
+check(ben.host is None and cleo.host is None and you.watchers == [], "stopping your camera does not end sharing")
+print("share the view: offers reach 20 m only; Watch HUDs and friends watch at once, others on a double-tap; watchers follow cuts and glides; their double-tap cuts for all; "
       "keys release; stopping ends it")
 print("sync checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)
