@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "5.0.0";
+string VERSION = "5.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -24,6 +24,7 @@ integer GLIDE      = 7312;
 integer ACK        = 7313;
 integer SPEAKER    = 7315;
 integer CFG_CHANGED= 7330;
+integer CMD        = 7371;
 integer LENS       = 7319;   // lens -> friends  gear, angle, Tune aim, round (cinema_lens.lsl)
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -73,8 +74,10 @@ float   gOY;
 float   gOE;
 integer gOSit;
 integer gSitAtShot;
-list    gLens;               // the framing keys: half-height, nearest, body allowance, eye lift, angle, aim, round
-vector  gAim;                // Tune: where the faces are, from the reported positions
+float   gLed;                // Follow my lead (cinema_lens.lsl): your distance along the view, 0 = automatic
+float   gLedAz;              // ... from where
+integer gLedN;               // ... with this many friends here
+vector  gAim;                // ... and where you aimed, from the planned subject
 float   gSeatR;                 // extra body radius for a close view of someone lying down
 integer gLastClose;          // the last group shot was a close one: the next is a wide one
 integer gHasN;
@@ -218,7 +221,7 @@ integer survey()
 float camZ(float eyeRef, float d)
 {
     float z = fmax(eyeRef - d * tanV / 3.0, gFloorZ + 0.35);
-    if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);
+    if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);
     if (gIndoor) z = fmin(z, gRoofZ - 0.3);
     return z;
 }
@@ -272,7 +275,7 @@ integer closeView(float spread)
 // the camera hangs above the shot when you are seated, so a picture's distance is the slant: stand that much closer
 float seatD(float S)
 {
-    if (!gOSit || gSeatEl <= 0.0) return S;
+    if ((!gOSit && gLed == 0.0) || gSeatEl <= 0.0) return S;
     float d = S * llCos(gSeatEl);
     float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);
     if (gIndoor && d * llTan(gSeatEl) > R) d = llSqrt(S * S - R * R);   // a low ceiling caps the rise
@@ -336,7 +339,7 @@ list tryCand(float az, float de)
     if (rs < 0 || (rs == 1 && llList2Float(rr, 1) < llVecDist(cam, gPFp) - 0.8)) return [];
     vector foc = cam + viewDir(az) * de;
     float r = cam.z - gPEye;
-    if (gOSit && gSeatEl > 0.0 && r > de * 0.176) foc.z = cam.z - de * llTan(llAtan2(r, de) + llAtan2(tanV, 3.0));
+    if ((gOSit || gLed > 0.0) && gSeatEl > 0.0 && r > de * 0.176) foc.z = cam.z - de * llTan(llAtan2(r, de) + llAtan2(tanV, 3.0) * (gLed == 0.0));
     else foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
     return [cam, foc];
 }
@@ -502,7 +505,8 @@ integer planF(float mult, integer cnt)
         if (dirOf(gOY) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
         gPEye = C.z + (gOE - gOP.z) + gAim.z;
         gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;
-        gPAz = llAtan2(Nn.y, Nn.x) + llList2Float(gLens, 6);
+        gPAz = llAtan2(Nn.y, Nn.x);
+        if (gLed > 0.0) gPAz = gLedAz;
         gPAxis = ZERO_VECTOR;
         gPTh = 0.0;
         gPCenter = TRUE;
@@ -513,15 +517,13 @@ integer planF(float mult, integer cnt)
         gPHi = MAX_DIST;
         gMult = mult;
         integer cl = FALSE;
-        float g = llList2Float(gLens, 0);
-        if (g > 0.0)                                    // a gear chosen with the keys
+        if (gLed > 0.0)                                 // your lead: your distance, whoever it leaves out
         {
-            gVNeed = g / tanV * MARGIN;
-            gPLo = llList2Float(gLens, 1);
-            if (gOSit) gSeatR = llList2Float(gLens, 2);
-            gPEye += llList2Float(gLens, 3);
+            gMeas = [];
+            gVNeed = gLed;
+            gPLo = gLed;
         }
-        else if (mult == 1.0) cl = closeView(best);     // Auto
+        else if (mult == 1.0) cl = closeView(best);     // automatic
         float need = needAt(gPAz) * mult;               // everyone fits, those nearer the camera counted wider
         if (need <= MAX_DIST || cnt == 1)
         {
@@ -597,6 +599,11 @@ nextShot(float mult)
     if (!refreshOwner()) return;                    // core covers and asks again
     gSweepErr = FALSE;
     gSeatR = 0.0;
+    if (gLed > 0.0 && llGetListLength(gGrp) != gLedN)
+    {
+        gLed = 0.0;                                 // someone came or went: automatic again (lens confirms)
+        llMessageLinked(LINK_SET, CMD, "autoq", "");
+    }
     if (!gSurveyOK || llVecDist(gOP, gSurveyPos) > 2.0) survey();
     list shot = [];
     gUsedN = 0;
@@ -638,7 +645,7 @@ nextShot(float mult)
     integer type = llList2Integer(shot, 2);
     float hold = gBase * (0.85 + 0.3 * llFrand(1.0));
     if (type == 4) hold = fmax(14.0, 0.4 * gBase);          // a speaker cut is short (Calm: 18 s)
-    llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type, "");
+    llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)foc + "|" + (string)hold + "|" + (string)type + "|" + (string)gPFp, "");
     vector v = foc - cam;
     v.z = 0.0;
     gCurV = llVecNorm(v);
@@ -651,8 +658,7 @@ nextShot(float mult)
     gOut = 0;
     gCenter = centroid(gUsedN);
     gPresAtShot = llGetListLength(gGrp);
-    tsay("friends: " + llList2String(["portrait", "pair", "group", "friends group", "speaker"], type) + " (" + (string)(gUsedN + 1)
-        + " in frame), camera " + (string)llRound(llVecDist(cam, gOP)) + " m from you");
+    tsay("friends: shot " + (string)type + ", " + (string)(gUsedN + 1) + " in frame, " + (string)llRound(llVecDist(cam, gOP)) + " m");
 }
 
 // you and the friends in the shot all within k of the half-width?
@@ -794,10 +800,14 @@ default
         }
         else if (num == LENS)
         {
-            gLens = llParseString2List(str, ["|"], []);
-            gSeatEl = llList2Float(gLens, 4) * DEG_TO_RAD;
-            gAim = (vector)llList2String(gLens, 5);
-            if (gActive && gHaveShot) nextShot(1.0);    // a key: the new framing now
+            list L = llParseString2List(str, ["|"], []);
+            gLed = llList2Float(L, 0);
+            loadCfg();
+            if (gLed > 0.0) gSeatEl = llList2Float(L, 1);
+            gLedAz = llList2Float(L, 2);
+            gAim = (vector)llList2String(L, 3);
+            gLedN = llGetListLength(gGrp);
+            if (gActive && gHaveShot && llList2Integer(L, 4)) nextShot(1.0);    // W/S or Auto: now
         }
         else if (num == CFG_CHANGED)
         {

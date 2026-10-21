@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.1.0
+**Follow my lead: frame it yourself with Second Life's own camera, and Take 12 keeps it.** 5.0's keys (gears, angle keys, A/D round, Tune) were too much to learn, and they fought the camera everyone already knows. They are gone.
+- In Friends, frame the view the usual way: Alt-orbit, the mouse wheel, or A/D while seated. When the camera has been still for about 1.5 s, "Got it" shows, and your view becomes the shot. Press **Esc** and it carries on from there.
+- From then on, every cut and double-tap variation keeps **how close, how high and where you aimed** (your faces, which a script cannot see when you sit or lie down). They are kept relative to the group, so when your friends shift, the camera follows them.
+- **Seated, W/S** step about 20 % closer or wider; they do not move a seated avatar.
+- **Back to automatic:** long press › **Auto**. It also happens by itself when you sit down or stand up, or when a friend comes or goes.
+- Standing, the movement keys just walk, as before 5.0.
+- Other modes keep the Alt-cam setting (pause, end, ignore) as before.
+- `tools/sim/lens_sim.py` now checks the whole chain: 400 orbited views come back exactly as the next planned shot, follow a moving group, and scale with W/S.
+
 ## 5.0.0
 **Friends: you choose how close, from what angle, and where the faces are.** Sitting or lying together, Friends was still too far away, because a script cannot see where a seated or lying body really is: an avatar on a bed reports the same position it would standing, and only the animation lays it down.
 - **Closeness gears:** Auto (the mix of 4.9, the default) → Wide → Group → Half → Close → Faces. Seated or lying, **W/S** step closer or wider; standing, **E/C** do (W A S D still walk). From Auto, closer goes to Close and wider to Group; wider past Wide is Auto again. A gear stays until you change it; double-tap still cuts to another angle in the same gear. Faces brings the camera to about 1 m from a couple side by side.

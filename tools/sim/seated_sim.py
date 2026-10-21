@@ -12,7 +12,8 @@ TANV = math.tan(math.radians(60) / 2)                    # the default viewer FO
 for name in ("people", "friends"):
     src = open(os.path.join(R, "hud", "src", f"cinema_{name}.lsl")).read()
     check('cfg("seat_deg", "45")' in src, f"{name}: default seat angle is not 45")
-    check("if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src, f"{name}: camZ lacks the seated rise")
+    check("if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src
+          or "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src, f"{name}: camZ lacks the seated rise")
     check("r > de * 0.176" in src and "llAtan2(tanV, 3.0)" in src, f"{name}: tryCand lacks the seated look-down")
     check('gOSit != gSitAtShot) gPendEvent = "seat"' in src, f"{name}: no re-frame when you sit or stand")
     check("float de = seatD(fmax(needAt(az)" in src, f"{name}: the sweep does not use the slant distance")

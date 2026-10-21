@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.0.0";
+string VERSION = "5.1.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -24,6 +24,7 @@ integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
+integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
 integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
 integer CFG_CHANGED= 7330;
@@ -56,6 +57,9 @@ float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gSitCtl;              // friends: the controls were taken seated
+float   gLeadT;               // friends: your own camera, and since when it is still
+vector  gLeadP;
+rotation gLeadR;
 integer gLastAct;
 integer gNoEngageUntil;
 integer gIgnoreCtl;
@@ -246,20 +250,15 @@ askWorker(string why)
 }
 
 // the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still.
-// Friends: seated, all six frame the shot (they do not move a seated avatar); standing, W A S D still walk and only
-// E/C (UP 16, DOWN 32) are kept back to shift the framing
+// Friends, seated: W/S (FWD 1, BACK 2) are kept back for closer/wider (they do not move a seated avatar)
 takeCtl(integer pass)
 {
     llTakeControls(CTL, TRUE, pass);
-    if (gMode == "friends" && gState != ST_IDLE)
+    gSitCtl = llGetAgentInfo(gOwner) & AGENT_SITTING;
+    if (gMode == "friends" && gState != ST_IDLE && gSitCtl)
     {
-        gSitCtl = llGetAgentInfo(gOwner) & AGENT_SITTING;
-        if (gSitCtl) llTakeControls(CTL, TRUE, FALSE);
-        else
-        {
-            llTakeControls(CTL & ~48, TRUE, TRUE);
-            llTakeControls(48, TRUE, FALSE);
-        }
+        llTakeControls(CTL & ~3, TRUE, TRUE);
+        llTakeControls(3, TRUE, FALSE);
     }
 }
 
@@ -427,16 +426,48 @@ activeTick(float dt)
                 return;
             }
         }
-        else if (gPeekOn)
+        else if (gPeekOn || gMode == "friends")
         {
             // Alt-cam / orbit: the viewer silently overrides scripted cameras
             integer dev = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want);
+            rotation cr = llGetCameraRot();
             if (dev && gState == ST_ROLL)
             {
-                if (gPeekBail) { bail("camera"); return; }
+                if (gPeekBail && gMode != "friends") { bail("camera"); return; }
                 gState = ST_PEEK;
                 setUi("peek");
                 llMessageLinked(LINK_SET, PAUSE, "peek", "");
+                gLeadT = llGetTime();
+                gLeadP = cp;
+                gLeadR = cr;
+            }
+            else if (dev && gMode == "friends")
+            {
+                // Follow my lead: your view, still for 1.5 s, becomes the shot (Esc hands the camera back to it)
+                if (llVecDist(cp, gLeadP) > 0.05 || llAngleBetween(cr, gLeadR) > 0.02)
+                {
+                    gLeadT = llGetTime();
+                    gLeadP = cp;
+                    gLeadR = cr;
+                }
+                else if (llGetTime() - gLeadT > 1.5)
+                {
+                    list O = llParseStringKeepNulls(gLast, ["|"], []);
+                    vector f0 = (vector)llList2String(O, 4);    // the subject Friends aimed at
+                    if (f0 == ZERO_VECTOR) f0 = (vector)llList2String(O, 1);
+                    vector u = llRot2Fwd(cr);
+                    float t = (f0 - cp) * u;
+                    if (t < 0.5) t = 0.5;
+                    vector f = cp + u * t;
+                    setCam(cp, f);
+                    gVerify = FALSE;
+                    gLast = (string)cp + "|" + (string)f + "|" + llList2String(O, 2) + "|" + llList2String(O, 3) + "|" + (string)f;
+                    gPending = FALSE;
+                    gState = ST_ROLL;
+                    setUi("rolling");
+                    llMessageLinked(LINK_SET, RESUME, "peek", "");
+                    llMessageLinked(LINK_SET, LEAD, (string)cp + "|" + (string)f, "");
+                }
             }
             else if (!dev && gState == ST_PEEK)
             {

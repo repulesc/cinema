@@ -1,109 +1,94 @@
-# The framing keys in Friends (cinema_lens.lsl -> cinema_friends.lsl): gears from Wide to Faces, the seated angle,
-# and Tune. Checks that each gear brings the camera closer than the one before, that nobody is cut at any gear, that
-# Faces comes in closer than Frame's nearest distance for people sitting together, that a Tune aim saved in a seat's
-# frame comes back right however the seat is turned, and that the scripts carry the same table and wiring.
-import importlib.util, math, os, random, re
+# Follow my lead (5.1): you frame a Friends view with Second Life's own camera; core sends LEAD once it is still,
+# cinema_lens.lsl keeps how close, how high, from where and aimed at what, and cinema_friends.lsl plans every next
+# shot from it. A port of that chain: your view must come back exactly as the next planned shot, move with the group,
+# scale with W/S, and the scripts must carry the same maths and wiring.
+import math, os, random
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 src = lambda n: open(os.path.join(R, "hud", "src", n)).read()
-spec = importlib.util.spec_from_file_location("framing_sim", os.path.join(os.path.dirname(os.path.abspath(__file__)), "framing_sim.py"))
-fs = importlib.util.module_from_spec(spec); spec.loader.exec_module(fs)
+lens, friends, core, ui = src("cinema_lens.lsl"), src("cinema_friends.lsl"), src("cinema_core.lsl"), src("cinema_ui.lsl")
 ok = True
 def check(c, msg):
     global ok
     if not c: ok = False; print("FAIL", msg)
 
-lens, friends, core, ui = src("cinema_lens.lsl"), src("cinema_friends.lsl"), src("cinema_core.lsl"), src("cinema_ui.lsl")
-body = re.search(r"list GEARS = \[(.*?)\];", lens, re.S).group(1)
-toks = re.findall(r'"[^"]*"|-?\d+(?:\.\d+)?', body)
-GEARS = [(toks[i].strip('"'), float(toks[i + 1]), float(toks[i + 2]), float(toks[i + 3]), float(toks[i + 4])) for i in range(0, len(toks), 5)]
-check([g[0] for g in GEARS] == ["Auto", "Wide", "Group", "Half", "Close", "Faces"], "gear names changed")
-check(re.search(r"list ANGLES = \[60, 45, 30, 15, 0\];", lens) is not None, "angle steps changed")
-
-# ---- wiring: the keys reach the lens, the lens reaches Friends ----------------------------------------------------
-check('llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "")' in core, "core: NUDGE without the camera rotation")
-check('if (gMode == "frame" || gMode == "friends")' in core, "core: Friends keys are not forwarded")
-check("llTakeControls(CTL & ~48, TRUE, TRUE);" in core and "llTakeControls(48, TRUE, FALSE);" in core, "core: standing Friends must keep only E/C")
-check('if (gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) takeCtl(TRUE);' in core, "core: sitting down does not re-take the keys")
-check("integer LENS       = 7319;" in lens and "integer LENS       = 7319;" in friends, "LENS id differs")
-for w in ("gSeatEl = llList2Float(gLens, 4) * DEG_TO_RAD;", "gAim = (vector)llList2String(gLens, 5);",
-          "gPAz = llAtan2(Nn.y, Nn.x) + llList2Float(gLens, 6);", "vector o = llList2Vector(gMeas, i) + gAim - gPFp;",
-          "gVNeed = g / tanV * MARGIN;", "gPLo = llList2Float(gLens, 1);", "if (gOSit) gSeatR = llList2Float(gLens, 2);",
-          "gPEye += llList2Float(gLens, 3);", "vector to = p + gAim - gCurCam;"):
+# ---- wiring ------------------------------------------------------------------------------------------------------
+for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string)cp + "|" + (string)f, "");',
+          'else if (gPeekOn || gMode == "friends")', "else if (llGetTime() - gLeadT > 1.5)", "float t = (f0 - cp) * u;",
+          "llTakeControls(CTL & ~3, TRUE, TRUE);", "llTakeControls(3, TRUE, FALSE);"):
+    check(w in core, f"core: missing {w}")
+check("llTakeControls(48" not in core, "core: standing E/C are still kept back")
+for w in ('integer LEAD       = 7324;', "gAim += q - gSubj;", "gS = llVecDist(c, q);",
+          "gEl = llAtan2(h.z, llVecMag(<h.x, h.y, 0.0>));", "gAz = llAtan2(h.y, h.x);", "gS = gS * 0.8;", "gS = gS * 1.25;",
+          'else if (num == CMD && str == "auto") automatic(TRUE);', "gSubj += f - gFoc;"):
+    check(w in lens, f"lens: missing {w}")
+for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNeed = gLed;", "gPLo = gLed;", "gMeas = [];",
+          "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);",
+          "if ((!gOSit && gLed == 0.0) || gSeatEl <= 0.0) return S;", "llAtan2(tanV, 3.0) * (gLed == 0.0)",
+          "gPEye = C.z + (gOE - gOP.z) + gAim.z;", "gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;",
+          'llMessageLinked(LINK_SET, CMD, "autoq", "");'):
     check(w in friends, f"friends: missing {w}")
-check('if (gUiMode == "friends") b += ["tune", "untune"];' in ui and "~tune|" in ui and "~untune|" in ui, "ui: Tune is not in the live menu")
+check('if (gUiMode == "friends") b += ["auto"];' in ui and "tune" not in ui, "ui: the live menu should offer Auto, not Tune")
 
-# ---- the keys: from Auto, closer lands on Close and wider on Group; the ends hold; past Wide is Auto again ----------
-def gear(g, d):
-    g = 3 + d if g == 0 else g + d
-    return max(0, min(5, g))
-check(gear(0, 1) == 4 and gear(0, -1) == 2 and gear(5, 1) == 5 and gear(1, -1) == 0, "gear stepping")
-g, seen = 1, [1]
-for _ in range(6): g = gear(g, 1); seen.append(g)
-check(seen[:5] == [1, 2, 3, 4, 5], "closer does not walk Wide -> Faces")
+# ---- the chain, ported -------------------------------------------------------------------------------------------
+add = lambda a, b: tuple(x + y for x, y in zip(a, b))
+sub = lambda a, b: tuple(x - y for x, y in zip(a, b))
+mul = lambda a, k: tuple(x * k for x in a)
+dot = lambda a, b: sum(x * y for x, y in zip(a, b))
+mag = lambda a: math.sqrt(dot(a, a))
+def norm(a): return mul(a, 1.0 / mag(a))
 
-# ---- distances and margins at each gear, tight groups sitting together ---------------------------------------------
-rng = random.Random(3)
-dist = {g[0]: [] for g in GEARS[1:]}
-worst = {g[0]: 99.0 for g in GEARS[1:]}
-pair_faces = []
-for t in range(300):
-    n = rng.randint(2, 3)
-    a = rng.uniform(0, math.pi); step = rng.uniform(0.4, 1.2)
-    pts = [fs.mul(fs.d2(a), (i - (n - 1) / 2) * step) for i in range(n)]
-    for name, half, lo, sr, lift in GEARS[1:]:
-        pl = fs.Planner(fs.World(None), True, rng); pl.op, pl.oy = pts[0], rng.uniform(0, 2 * math.pi)
-        pl.grp = pts[1:]; pl.np = pts[1]
-        if not pl.planF(): continue
-        pl.vneed, pl.lo = half / fs.tanV * pl.M, lo
-        for seated in (False, True):
-            pl.seatr = sr if seated else 0.0
-            sh = pl.sweep()
-            check(sh is not None, f"{name}: no shot for a tight group")
-            if sh is None: continue
-            d = fs.mag(fs.sub(sh[0], pl.F))
-            if not seated:
-                dist[name].append(d)
-                if name == "Faces" and n == 2 and step <= 0.7: pair_faces.append(d)
-                m = min(fs.margins(sh[0], sh[1], pl.meas, 1.6))
-                worst[name] = min(worst[name], m)
-                check(m >= 10.0, f"{name}: someone is within {m:.1f} % of the edge")
-mean = {k: sum(v) / len(v) for k, v in dist.items()}
-names = [g[0] for g in GEARS[1:]]
-for a_, b_ in zip(names, names[1:]):
-    check(mean[b_] < mean[a_], f"{b_} ({mean[b_]:.2f} m) is not closer than {a_} ({mean[a_]:.2f} m)")
-pf = sum(pair_faces) / len(pair_faces)
-check(pf <= 1.2, f"Faces stands {pf:.2f} m from a couple: not closer than Frame's nearest (1.2 m)")
-print(f"Faces, two people side by side: {pf:.2f} m (Frame's nearest is 1.2 m)")
-print("gears, two or three people sitting together (camera distance along the view, worst edge margin):")
-for k in names: print(f"  {k:6s} {mean[k]:5.2f} m   margin {worst[k]:5.1f} %")
+def core_lead(cp, u, f0):                              # core: the point your view looks at, nearest the old subject
+    t = max(dot(sub(f0, cp), u), 0.5)
+    return add(cp, mul(u, t))
+def lens_lead(c, q):                                   # lens: how far, how high, from where
+    h = sub(c, q)
+    return mag(h), math.atan2(h[2], math.hypot(h[0], h[1])), math.atan2(h[1], h[0])
+def friends_plan(base, aim, S, el, az, tanV=math.tan(math.radians(30))):
+    # planF: subject = group base + aim; sweep picks off = 0 in the open; seatD: horizontal = S cos(el);
+    # camZ: eye + d tan(el); tryCand: looks down by the same angle (no thirds offset when led)
+    P = add(base, aim)
+    d = S * math.cos(el) if el > 0 else S
+    cam = (P[0] + math.cos(az) * d, P[1] + math.sin(az) * d, P[2] + d * math.tan(el) if el > 0 else P[2])
+    r = cam[2] - P[2]
+    pitch = math.atan2(r, d) if r > d * 0.176 else 0.0
+    V = (-math.cos(az), -math.sin(az))
+    foc = (cam[0] + V[0] * d, cam[1] + V[1] * d, cam[2] - d * math.tan(pitch))
+    return cam, foc
 
-# ---- Tune: the aim is kept in the seat's frame -------------------------------------------------------------------
-def qmul(a, b):
-    ax, ay, az, aw = a; bx, by, bz, bw = b
-    return (aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx,
-            aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz)
-def rotv(v, q):                       # LSL v * q
-    x, y, z, w = q
-    p = qmul(qmul((-x, -y, -z, w), (v[0], v[1], v[2], 0.0)), q)   # LSL rotates by the conjugate convention
-    return p[:3]
-def unrot(v, q): return rotv(v, (-q[0], -q[1], -q[2], q[3]))      # v / q
-def zrot(a): return (0.0, 0.0, math.sin(a / 2), math.cos(a / 2))
-check("gAim += m / gSeatRot;" in lens and "(string)(gAim * gSeatRot)" in lens, "lens: the aim is not kept in the seat's frame")
-worst_err = 0.0
-for t in range(200):
-    q = zrot(rng.uniform(0, 2 * math.pi))
-    moves = [(rng.uniform(-0.1, 0.1), rng.uniform(-0.1, 0.1), rng.uniform(-0.05, 0.05)) for _ in range(8)]
-    aim = (0.0, 0.0, 0.0)
-    for m in moves: aim = tuple(a + b for a, b in zip(aim, unrot(m, q)))
-    world = rotv(aim, q)
-    want = tuple(sum(m[i] for m in moves) for i in range(3))
-    worst_err = max(worst_err, max(abs(world[i] - want[i]) for i in range(3)))
-check(worst_err < 1e-9, f"the aim comes back {worst_err} m off")
-# the seat key: each side or pose of a bed (0.5 m steps) is its own entry
-check('(string)llRound(v.x * 2.0) + "," + (string)llRound(v.y * 2.0) + "," + (string)llRound(v.z * 2.0)' in lens, "lens: seat key rounding changed")
-key = lambda v: tuple(round(c * 2.0) for c in v)
-check(key((0.6, 0.0, 0.3)) != key((-0.6, 0.0, 0.3)), "the two sides of a bed share a key")
-print(f"tune: the aim comes back exactly ({worst_err:.0e} m) however the seat is turned")
+rng = random.Random(9)
+worst_pos = worst_dir = worst_move = worst_scale = 0.0
+n = 0
+for t in range(400):
+    base = (rng.uniform(20, 200), rng.uniform(20, 200), rng.uniform(21, 40))        # the planned subject
+    # you orbit: a camera 0.8 to 6 m from your faces, 12 to 70 degrees down, from anywhere; the faces are up to
+    # 0.9 m from the planned subject (a lying avatar's head)
+    faces = add(base, (rng.uniform(-0.9, 0.9), rng.uniform(-0.9, 0.9), rng.uniform(-0.4, 0.2)))
+    S0, el0, az0 = rng.uniform(0.8, 6.0), math.radians(rng.uniform(12, 70)), rng.uniform(-math.pi, math.pi)
+    cp = add(faces, (math.cos(az0) * S0 * math.cos(el0), math.sin(az0) * S0 * math.cos(el0), S0 * math.sin(el0)))
+    u = norm(sub(faces, cp))
+    q = core_lead(cp, u, base)
+    aim = sub(q, base)                                                              # lens: aim += q - subject (aim was 0)
+    S, el, az = lens_lead(cp, q)
+    cam, foc = friends_plan(base, aim, S, el, az)
+    worst_pos = max(worst_pos, mag(sub(cam, cp)))
+    worst_dir = max(worst_dir, math.degrees(math.acos(max(-1.0, min(1.0, dot(norm(sub(foc, cam)), u))))))
+    # the group shifts by up to 1.5 m: the camera shifts with it, nothing else changes
+    mv = (rng.uniform(-1.5, 1.5), rng.uniform(-1.5, 1.5), 0.0)
+    cam2, _ = friends_plan(add(base, mv), aim, S, el, az)
+    worst_move = max(worst_move, mag(sub(sub(cam2, cam), mv)))
+    # W: 20 % closer along the same line
+    cam3, _ = friends_plan(base, aim, S * 0.8, el, az)
+    worst_scale = max(worst_scale, abs(mag(sub(cam3, q)) - 0.8 * S))
+    n += 1
+check(worst_pos < 1e-6, f"your view comes back {worst_pos:.2e} m off")
+check(worst_dir < 1e-4, f"your view comes back turned by {worst_dir:.2e} degrees")
+check(worst_move < 1e-6, f"a moved group moves the camera wrongly by {worst_move:.2e} m")
+check(worst_scale < 1e-6, f"W/S do not scale the distance ({worst_scale:.2e} m off)")
+# the core's focus: when you look at your faces, the point kept is on your line of sight nearest the old subject
+check(abs(dot(sub(core_lead((0, 0, 0), (1, 0, 0), (3, 0.4, 0)), (3, 0, 0)), (1, 1, 1))) < 1e-9, "core lead point")
+check(core_lead((0, 0, 0), (1, 0, 0), (-2, 0, 0)) == (0.5, 0.0, 0.0), "a subject behind the camera must not flip the view")
+print(f"follow my lead: {n} orbited views come back exactly (worst {worst_pos:.0e} m, {worst_dir:.0e} deg), "
+      f"follow the group and scale with W/S")
 print("lens checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

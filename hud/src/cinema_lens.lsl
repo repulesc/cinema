@@ -1,78 +1,37 @@
 // ============================================================================
-//  Take 12  -  cinema_lens.lsl  (v5.0)  - the framing keys in Friends
-//  Closeness (gears), the seated camera angle, and Tune: where the faces really are on a bed, a sofa or the ground,
-//  remembered per seat. Core forwards the movement keys as NUDGE; this script turns them into a LENS message for
-//  the Friends camera. The name of a change shows for 3 s, then the screen is clean.
-//    seated or lying:  W/S closer/wider   E/C angle higher/lower   A/D round the group
-//    standing:         E/C closer/wider   (W A S D walk)
-//    Tune (long press > Tune): W/S/A/D move the aim across, E/C up/down; saved for this seat at once
+//  Take 12  -  cinema_lens.lsl  (v5.1)  - Follow my lead, in Friends
+//  You frame the view with Second Life's own camera (Alt-orbit, the wheel, A/D while seated) and press Esc: core
+//  sees the camera still for 1.5 s and sends LEAD. This script keeps what you chose - how close, how high, from where
+//  and aimed at what - relative to the group, and hands it to Friends as LENS, so every next cut and variation keeps it.
+//  Seated, W/S step closer or wider (they do not move a seated avatar). Long press > Auto, sitting down or standing
+//  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "5.0.0";
-string PASS    = "cinema-1.0-build1";
+string VERSION = "5.1.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
+integer SHOT       = 7310;   // friends -> core  "<cam>|<focus>|<hold>|<type>|<subject>" (the subject: where it aimed)
+integer GLIDE      = 7312;
 integer NUDGE      = 7317;
-integer LENS       = 7319;   // lens -> friends  "<vneed half-height>|<nearest>|<body allowance>|<eye lift>|<angle deg>|<aim>|<round rad>"
-integer CFG_CHANGED= 7330;
+integer LENS       = 7319;   // lens -> friends  "<distance>|<angle down rad>|<from rad>|<aim>|<cut now>"; distance 0 = automatic
+integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": your own view, held still
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
 
-// gears: name, half-height the picture needs (m), nearest camera (m), extra body allowance seated (m), eye lift (m)
-list GEARS = [
-    "Auto",  0.0,  0.0, 0.0,  0.0,
-    "Wide",  1.3,  6.0, 0.0,  0.0,
-    "Group", 1.3,  3.0, 0.0,  0.0,
-    "Half",  0.9,  2.0, 0.45, 0.1,
-    "Close", 0.75, 1.2, 0.45, 0.15,
-    "Faces", 0.45, 0.8, 0.3,  0.15
-];
-list ANGLES = [60, 45, 30, 15, 0];
-
 key     gOwner;
 integer gActive;             // Friends is running
-integer gGear;               // 0 Auto .. 5 Faces
-integer gAng;                // index in ANGLES
-float   gAz;                 // round the group (radians)
-vector  gAim;                // where the faces are, from the shot's centre, in the seat's frame
-integer gTune;
+vector  gCam;                // the shot on screen: camera, focus, and the subject it was planned on
+vector  gFoc;
+vector  gSubj;
+float   gS;                  // your lead: distance along the view (0 = automatic), angle down, from where
+float   gEl;
+float   gAz;
+vector  gAim;                // where you aimed, from the subject Friends planned
 integer gPrev;               // keys held at the last NUDGE
-string  gSeat;               // this seat's store key ("" standing)
-rotation gSeatRot;
+integer gSit;
 float   gTextT;
-
-// the seat you are on: the object, and where on it you sit (to 0.5 m), so each side or pose of a bed has its own aim
-string seatKey()
-{
-    if (!(llGetAgentInfo(gOwner) & AGENT_SITTING)) return "";
-    list d = llGetObjectDetails(gOwner, [OBJECT_ROOT, OBJECT_POS]);
-    key root = llList2Key(d, 0);
-    list o = llGetObjectDetails(root, [OBJECT_POS, OBJECT_ROT]);
-    if (root == gOwner || llGetListLength(o) < 2) return "";
-    gSeatRot = llList2Rot(o, 1);
-    vector v = (llList2Vector(d, 1) - llList2Vector(o, 0)) / gSeatRot;
-    return "cin.seat." + (string)root + "." + (string)llRound(v.x * 2.0) + "," + (string)llRound(v.y * 2.0) + "," + (string)llRound(v.z * 2.0);
-}
-
-// sat down, stood up or moved to another seat: its saved aim (or none)
-seat()
-{
-    string k = seatKey();
-    if (k == gSeat) return;
-    gSeat = k;
-    gAim = ZERO_VECTOR;
-    if (k != "") gAim = (vector)llLinksetDataReadProtected(k, PASS);
-    gTune = gTune && (k != "");
-}
-
-send()
-{
-    integer g = gGear * 5;
-    llMessageLinked(LINK_SET, LENS, llDumpList2String(llList2List(GEARS, g + 1, g + 4)
-        + [llList2Integer(ANGLES, gAng), (string)(gAim * gSeatRot), (string)gAz], "|"), "");
-}
 
 show(string s)
 {
@@ -80,61 +39,27 @@ show(string s)
     gTextT = llGetTime();
 }
 
-gear(integer d)
+send(integer cut)
 {
-    if (gGear == 0) gGear = 3 + d;                          // from Auto: closer goes to Close, wider to Group
-    else gGear += d;
-    if (gGear > 5) gGear = 5;
-    if (gGear < 0) gGear = 0;
-    show(llList2String(GEARS, gGear * 5));
+    llMessageLinked(LINK_SET, LENS, llDumpList2String([gS, gEl, gAz, gAim, cut], "|"), "");
 }
 
-// one key press; cr = your camera, so in Tune W moves the aim away from you on screen, A to the left
-press(integer k, rotation cr)
+// keep camera c looking at q: how far, how high, from where
+lead(vector c, vector q)
 {
-    integer sit = (gSeat != "");
-    if (gTune)
-    {
-        vector f = llRot2Fwd(cr);
-        f.z = 0.0;
-        f = llVecNorm(f);
-        vector m;
-        if (k & CONTROL_FWD) m = f * 0.1;
-        if (k & CONTROL_BACK) m = f * -0.1;
-        if (k & (CONTROL_LEFT | CONTROL_ROT_LEFT)) m = <-f.y, f.x, 0.0> * 0.1;
-        if (k & (CONTROL_RIGHT | CONTROL_ROT_RIGHT)) m = <f.y, -f.x, 0.0> * 0.1;
-        if (k & CONTROL_UP) m.z = 0.05;
-        if (k & CONTROL_DOWN) m.z = -0.05;
-        gAim += m / gSeatRot;                               // kept in the seat's frame: right however the bed is turned
-        llLinksetDataWriteProtected(gSeat, (string)gAim, PASS);
-        show("Tune: aim at your faces");
-    }
-    else if (sit)
-    {
-        if (k & CONTROL_FWD) gear(1);
-        if (k & CONTROL_BACK) gear(-1);
-        if (k & (CONTROL_UP | CONTROL_DOWN))
-        {
-            if (k & CONTROL_UP) { if (gAng > 0) gAng--; }
-            else if (gAng < 4) gAng++;
-            show((string)llList2Integer(ANGLES, gAng) + "°");
-        }
-        if (k & (CONTROL_LEFT | CONTROL_ROT_LEFT)) gAz += 0.35;
-        if (k & (CONTROL_RIGHT | CONTROL_ROT_RIGHT)) gAz -= 0.35;
-    }
-    else
-    {
-        if (k & CONTROL_UP) gear(1);
-        else if (k & CONTROL_DOWN) gear(-1);
-        else return;                                        // walking
-    }
-    send();
+    vector h = c - q;
+    gS = llVecDist(c, q);
+    gEl = llAtan2(h.z, llVecMag(<h.x, h.y, 0.0>));
+    gAz = llAtan2(h.y, h.x);
 }
 
-loadAng()
+automatic(integer cut)
 {
-    gAng = llListFindList(ANGLES, [(integer)llLinksetDataReadProtected("cin.seat_deg", PASS)]);
-    if (gAng < 0) gAng = 1;
+    if (gS == 0.0 && gAim == ZERO_VECTOR) return;
+    gS = 0.0;
+    gAim = ZERO_VECTOR;
+    if (cut) show("Auto");
+    send(cut);
 }
 
 // ============================================================================
@@ -143,8 +68,6 @@ default
     state_entry()
     {
         gOwner = llGetOwner();
-        gSeatRot = ZERO_ROTATION;
-        loadAng();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "lens");
     }
 
@@ -164,67 +87,83 @@ default
         {
             gActive = (llList2String(llParseString2List(str, ["|"], []), 0) == "friends");
             gPrev = 0;
-            gTune = FALSE;
-            gSeat = "-";
             if (!gActive) return;
-            seat();
-            send();
+            gSit = llGetAgentInfo(gOwner) & AGENT_SITTING;
+            send(FALSE);
             llSetTimerEvent(1.0);
         }
         else if (num == STOP)
         {
             gActive = FALSE;
-            gTune = FALSE;
             llSetText("", ZERO_VECTOR, 0.0);
             llSetTimerEvent(0.0);
         }
-        else if (num == CFG_CHANGED)
-        {
-            loadAng();
-            if (gActive) send();
-        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "lens");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/lens] v" + VERSION + " " + llList2String(GEARS, gGear * 5) + ", " + (string)llList2Integer(ANGLES, gAng)
-                + " deg, tuned " + (string)(gAim != ZERO_VECTOR) + ", free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/lens] v" + VERSION + " lead " + (string)gS + " m, " + (string)llRound(gEl * RAD_TO_DEG)
+                + " deg down, free mem " + (string)llGetFreeMemory());
         else if (!gActive) return;
-        else if (num == NUDGE)
+        else if (num == SHOT)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            gCam = (vector)llList2String(L, 0);
+            gFoc = (vector)llList2String(L, 1);
+            gSubj = (vector)llList2String(L, 4);
+            if (gSubj == ZERO_VECTOR) gSubj = gFoc;
+        }
+        else if (num == GLIDE)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            vector f = (vector)llList2String(L, 1);
+            gSubj += f - gFoc;                              // the group moved: its subject with it
+            gFoc = f;
+            gCam = (vector)llList2String(L, 0);
+        }
+        else if (num == LEAD)
+        {
+            // your view: the camera, and the point it looks at nearest the old subject
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            vector c = (vector)llList2String(L, 0);
+            vector q = (vector)llList2String(L, 1);
+            gAim += q - gSubj;
+            gSubj = q;
+            gCam = c;
+            gFoc = q;
+            lead(c, q);
+            show("Got it");
+            send(FALSE);                                    // it is on screen already
+        }
+        else if (num == NUDGE && gSit)
         {
             integer lv = (integer)str;
             integer k = lv & ~gPrev;
             gPrev = lv;
-            if (k) press(k, (rotation)llList2String(llParseString2List(str, ["|"], []), 1));
+            if (!(k & (CONTROL_FWD | CONTROL_BACK))) return;
+            if (gS == 0.0) lead(gCam, gSubj);               // from the shot on screen
+            if (k & CONTROL_FWD) gS = gS * 0.8;
+            else gS = gS * 1.25;
+            if (gS < 0.6) gS = 0.6;
+            if (gS > 25.0) gS = 25.0;
+            if (k & CONTROL_FWD) show("Closer");
+            else show("Wider");
+            send(TRUE);
         }
-        else if (num == CMD && (str == "tune" || str == "untune"))
-        {
-            seat();
-            if (gSeat == "") show("Tune: sit or lie down first");
-            else if (str == "untune")
-            {
-                llLinksetDataDeleteProtected(gSeat, PASS);
-                gAim = ZERO_VECTOR;
-                gTune = FALSE;
-                show("Tune cleared");
-                send();
-            }
-            else
-            {
-                gTune = !gTune;
-                if (gTune) show("Tune: aim at your faces\nW S A D across · E C up and down\nlong press > Tune when done");
-                else show("Tuned for this seat");
-            }
-        }
+        else if (num == CMD && str == "auto") automatic(TRUE);
+        else if (num == CMD && str == "autoq") automatic(FALSE);   // Friends: the group changed
     }
 
     timer()
     {
-        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0 + 5.0 * gTune)
+        if (gTextT > 0.0 && llGetTime() - gTextT > 2.0)
         {
             gTextT = 0.0;
             llSetText("", ZERO_VECTOR, 0.0);
         }
-        string before = gSeat;
-        seat();
-        if (gSeat != before) send();                        // sat down, stood up, changed seats
+        integer s = llGetAgentInfo(gOwner) & AGENT_SITTING;
+        if (s != gSit)
+        {
+            gSit = s;                                       // sat down or stood up: automatic again
+            automatic(FALSE);
+        }
     }
 }
