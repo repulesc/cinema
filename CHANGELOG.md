@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3.1
+**You now see who got your Share.** Two seconds after you press Share, one line in chat and above your button tells you who answered, for example "Offered to: Ana, Ben, Cleo (double-tap)":
+- a name alone is watching your view now;
+- "(double-tap)" means they have Take 12 but have not saved you, so they see "double-tap to watch" above their button;
+- if nobody answers: "Nobody near you wears Take 12 or Take 12 Watch (within 20 m)".
+
+Texts above the button now stay 5 seconds instead of 3. Hover text always sits above a HUD and Second Life cannot place it below. If your button is right at the top edge of the screen, drag it down a little so the text fits; the chat line is always there.
+
 ## 5.3.0
 **Share the view switches at once, no clicking.**
 - **Long press › 👁 Share** now offers your view straight away. The Share dialog that follows only holds Give Watch and Stop sharing.

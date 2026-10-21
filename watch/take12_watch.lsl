@@ -5,7 +5,7 @@
 //  movement key: your own camera back. Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl.
 // ============================================================================
 
-string  VERSION = "5.3.0";
+string  VERSION = "5.3.1";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -101,6 +101,7 @@ default
         if (w == "offer" && gHost == NULL_KEY && near(who))
         {
             gHost = who;                                     // wearing the Watch is the yes: their view at once
+            say(gHost, "ack|1");                            // so the sharer sees who got it
             say(gHost, "join");
             if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
             llSetText("Watching " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next", <1.0, 1.0, 1.0>, 0.85);

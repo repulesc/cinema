@@ -43,10 +43,13 @@ for name, s_ in (("sync", sync), ("watch", watch)):
     check("leave(TRUE, FALSE);" in s_, f"{name}: detaching must leave without touching the camera")
 check("if (id == NULL_KEY) leave(TRUE, FALSE);" in watch, "watch: detach handling changed")
 
-check('if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0) watch(who);' in sync, "sync: friends must watch at once")
+check('if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)\n            {\n                say(who, "ack|1");\n                watch(who);' in sync,
+      "sync: friends must watch at once")
 check('else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);' in sync, "sync: double-tap does not accept an offer")
 check("llDialog" not in watch, "watch: no dialog any more, the view switches at once")
 check('if (gPendT && llGetUnixTime() - gPendT > 20) unpend();' in sync, "sync: an offer must expire after 20 s")
+check('say(who, "ack|1");' in sync and 'say(who, "ack|0");' in sync and 'say(gHost, "ack|1");' in watch, "who got the offer is not reported back")
+check('if (gAck != []) r = "Offered to: " + llDumpList2String(gAck, ", ");' in sync and "Nobody near you wears Take 12 or Take 12 Watch" in sync, "sync: the offer summary is missing")
 # ---- a small region ---------------------------------------------------------------------------------------------
 class Region:
     def __init__(s): s.av = {}; s.out = []
@@ -59,12 +62,12 @@ class Av:
     """one avatar wearing cinema_sync (kind 'take12') or take12_watch (kind 'watch')"""
     def __init__(s, rg, name, pos, kind, friends=()):
         s.rg, s.name, s.pos, s.kind, s.friends, s.pending = rg, name, pos, kind, set(friends), None
-        s.watchers, s.host, s.offer, s.cam, s.next_asked, s.last = [], None, None, None, 0, None
+        s.watchers, s.host, s.offer, s.cam, s.next_asked, s.last, s.acks = [], None, None, None, 0, None, []
         rg.av[name] = s
     def near(s, k): return k in s.rg.av and sum((a - b) ** 2 for a, b in zip(s.rg.av[k].pos, s.pos)) ** 0.5 <= 20.0
     def say(s, k, m): s.rg.say_to(s.name, k, "T12|" + m)
     # sharer side (Take 12 only)
-    def share(s): s.rg.region_say(s.name, "T12|offer|" + s.name)
+    def share(s): s.acks = []; s.rg.region_say(s.name, "T12|offer|" + s.name)
     def camset(s, c):
         s.last = c
         for w in s.watchers: s.say(w, "cam|" + c)
@@ -86,8 +89,9 @@ class Av:
             if s.host is None and s.near(frm):
                 s.offer = frm
                 # the Watch HUD, or Take 12 with you in its Friends: at once; anyone else: a double-tap
-                if s.kind == "watch" or frm in s.friends: s.join(frm)
-                else: s.pending = frm
+                if s.kind == "watch" or frm in s.friends: s.say(frm, "ack|1"); s.join(frm)
+                else: s.say(frm, "ack|0"); s.pending = frm
+        elif w == "ack": s.acks.append(frm + ("" if L[2] == "1" else " (double-tap)"))
         elif w == "join" and s.kind == "take12":
             if frm not in s.watchers: s.watchers.append(frm)
             if s.last: s.say(frm, "cam|" + s.last)
@@ -107,6 +111,7 @@ you.share()
 check(ana.host == "Pano" and ben.host == "Pano", "a Watch HUD, or Take 12 with you in its Friends, must watch at once")
 check(cleo.host is None and cleo.pending == "Pano", "a Take 12 owner who has not saved you must be asked (double-tap), not taken over")
 check(far.offer is None, "someone 40 m away was asked")
+check(sorted(you.acks) == ["Ana", "Ben", "Cleo (double-tap)"], f"your offer summary: {you.acks}")
 check(you.offer is None, "you were asked about your own view")
 check(you.watchers == ["Ana", "Ben"], f"watchers: {you.watchers}")
 cleo.expire(); cleo.double_tap()
