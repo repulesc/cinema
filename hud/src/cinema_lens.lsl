@@ -134,7 +134,7 @@ default
             gCam = c;
             gFoc = q;
             lead(c, q);
-            show("Got it - Esc to carry on");
+            show("Your view is kept · Esc to continue");
             if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Hold the button > Auto to go back.");
             gTold = TRUE;
             send(FALSE);                                    // it is on screen already
