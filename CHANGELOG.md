@@ -1,5 +1,32 @@
 # Changelog
 
+## 5.8.2
+**Bug fixes.** These came from your report and a code review of every script.
+- **A "|" above the HUD, all the time.** When nothing was shared, the text above the button showed a stray "|". LSL reads `llGetSubString("|", 1, -1)` as an inverted range and returns the "|" itself. Fixed in `tips`.
+- **The text above the HUD could freeze.** Second Life cuts hover text at 254 bytes, and `tips` then took its own text for another script's notice. It now reads the text back after writing. `sync` does the same for its notices, so a long "didn't answer" list clears again.
+- **Watching could stay blank** if a sharing notice was up when it started. `tips` kept no timer for it.
+- **Seated view saved the wrong angle for every button** (since 4.8.0). Off saved Auto, Auto saved Higher, and Lower deleted the setting. Now each button saves its own angle.
+- **Menus that could not open:**
+  - The Pick page failed when a saved friend had a long username: "✓ " pushed the label over llDialog's 24 bytes.
+  - The Share panel failed when a live director with a longer name was near.
+  - The roster failed when someone had just left.
+  - The Share panel's text could pass 512 bytes in a crowd.
+  Person labels are now cut to 24 bytes, names are remembered after people leave, and dialog texts are capped.
+- **"Pass camera" to someone on a Take 12 Watch ended the live view for everyone.** A Watch has no camera of its own. The Watch now joins with `join|W`, and the roster offers only Remove for it.
+- **Watching while your own camera ran** left both your camera and the shared one driving the same view. Watching now stops your own camera first.
+- **Names for people who had left:** "Ana left", "Pano's camera is gone" and "👁 Pano" lost the name, because `llKey2Name` returns "" for someone outside the region. Names are now remembered, in sync and in the Watch.
+- **The Watch** wiped "Pano's camera is gone" and "Your camera" the moment they appeared. They now stay for 4 s.
+- **A late "Watch" after End live** sat on a dead view for 25 s. It is now answered with `end`.
+- **Reset** now also puts back the chat channel (picker) and the button look (ui).
+- **Changing the menu style by chat while a menu was open** sent the click to the wrong page. Clicks are now matched against the labels shown.
+- **Chat command checks:** `/77 face` and `/77 trace` / `cutmode` accept only valid values.
+- **Live menu:** no negative "next cut in".
+- **Read Me:** "Hold › ⋯ More › Photo / Release" (hold opens the Share panel).
+- **Tests:**
+  - `tips_sim` models LSL's substring rules, the 254-byte cut and a stopping timer;
+  - `menu_sim` checks the Seated view mapping and the Pick label bytes;
+  - `sync_sim` checks Watch viewers, the late join and watching with your own camera running.
+
 ## Marketing refresh (no script changes; the HUD stays at 5.8.1)
 The Marketplace texts and the ad boards were still the 4.7 ones. Now:
 - **`hud/marketing/marketplace_listing.md`** is rewritten:

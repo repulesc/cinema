@@ -21,7 +21,7 @@ check(ch(sync) == ch(watch), "the two scripts use different channels")
 cam = lambda s: re.sub(r"\s+", " ", re.search(r"llSetCameraParams\(\[CAMERA_ACTIVE.*?\]\);", s, re.S).group(0))
 check(cam(sync) == cam(watch), "viewers set the camera differently")
 for name, s in (("sync", sync), ("watch", watch)):
-    for w in ('w == "who"', '"here|', 'w == "invite"', '"busy|watching "', '"ack|1"', '"join"', '"leave"', '"next"', '"away"',
+    for w in ('w == "who"', '"here|', 'w == "invite"', '"busy|watching "', '"ack|1"', '"join', '"leave"', '"next"', '"away"',
               '"back"', 'w == "cam"', 'w == "hb"', 'w == "director"', 'w == "kick"', 'w == "end"', "key who = llGetOwnerKey(id);",
               "if (who == gOwner) return;", "else if (who != gHost) return;", "PERMISSION_TRACK_CAMERA", "CHANGED_REGION",
               "if (!gIsAway && d > 0.6)", "else if (gIsAway && d < 0.3)", "gApplyT = llGetTime() + lag + 2.0;", "GONE"):
@@ -35,10 +35,19 @@ for w in ("integer QUIET      = 25;", "integer LOST       = 45;", 't += " (no si
           '" watching\\n"', '" lost connection"', "if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);",
           'return "👁 " + sn(gHost) + " · no signal…";'):
     check(w in sync, f"sync: missing {w}")
-check('s = "👁 " + llKey2Name(gHost) + " · no signal…";' in watch, "watch: no signal is not shown")
+check('s = "👁 " + gHostN + " · no signal…";' in watch, "watch: no signal is not shown")
+# 5.8.2: a Watch says so when it joins (it cannot lead), and keeps the director's name (llKey2Name is "" once they left)
+check('say(gHost, "join|W");' in watch and 'gHostN = n;' in watch, "watch: join|W / the kept name")
+check('if (llList2String(L, 2) == "W" && llListFindList(gW, [who]) < 0) gW += [who];' in sync
+      and 'if (llListFindList(gW, [gSel]) >= 0) dialog("person", name(gSel) + " (Take 12 Watch: cannot lead)", ["Remove", "Back"]);' in sync,
+      "sync: no Pass camera for a Watch viewer")
+check('if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");    // viewing never runs your own camera too' in sync, "sync: watching must stop your own camera")
+check('llDialog(gOwner, fit(text, 500), b, gDlg);' in sync and sync.count("fit(") >= 6, "sync: dialog text and person labels must be cut to their byte limits")
+check('gNoteS = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);' in sync, "sync: a notice must be read back (254-byte cut)")
+check("llKey2Name(" not in sync.replace("string n = llKey2Name(k);", ""), "sync: names must go through name() (kept after someone left)")
 check("llDialog" not in watch and '"ask"' not in watch, "watch: no dialogs, and it cannot lead")
 for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|0");', 'say(who, "busy|live");',
-          'if (!gSharing) return;                          // only a live view can be joined', 'if (gLeadAsk != NULL_KEY || gLead == 2) say(who, "lead|0");',
+          'if (!gSharing) { say(who, "end"); return; }     // only a live view can be joined (a late "Watch" after End live)', 'if (gLeadAsk != NULL_KEY || gLead == 2) say(who, "lead|0");',
           "llGetUnixTime() - gNextT >= NEXT_GAP", "integer NEXT_GAP   = 5;", "integer WAIT       = 20;", "integer GONE       = 25;",
           'if (gHand) gHand = FALSE;', 'llMessageLinked(LINK_SET, CMD, "sharecam", "");', 'say(k, "lead|1");', 'say(gLeadAsk, "lead|0");',
           'all("director|"', 'say(gSel, "kick");', 'all("hb");', "if (llGetAgentSize(k) == ZERO_VECTOR)",
@@ -76,7 +85,7 @@ class Av:
         s.sharing = s.cam_on = s.hand = False; s.toggle_t = -99
         s.watchers, s.away, s.inv, s.res, s.notes, s.near_list = [], [], [], [], [], None
         s.next_t, s.hb_t, s.inv_t, s.cuts, s.lead, s.lead_ask, s.lead_t = -99, 0, 0, 0, 0, None, 0
-        s.host = s.offer = s.cam = None; s.pend_t = s.ask_t = 0; s.is_away = False; s.hear_t = 0; s.last = None
+        s.host = s.offer = s.cam = None; s.pend_t = s.ask_t = 0; s.is_away = False; s.hear_t = 0; s.last = None; s.wset = set()
         rg.av[name] = s
     def near(s, k): return k in s.rg.av and sum((a - b) ** 2 for a, b in zip(s.rg.av[k].pos, s.pos)) ** 0.5 <= 20.0
     def say(s, k, m): s.rg.say_to(s.name, k, "T12|" + m)
@@ -98,14 +107,15 @@ class Av:
         return True
     def endlive(s):
         if not s.sharing and not s.watchers: return
-        s.all("end"); s.watchers = []; s.away = []; s.sharing = False; s.toggle_t = s.rg.t
+        s.all("end"); s.watchers = []; s.away = []; s.wset = set(); s.sharing = False; s.toggle_t = s.rg.t
         if s.lead_ask: s.say(s.lead_ask, "lead|0"); s.lead_ask = None
     def grant(s, k):
         s.lead_ask = None
         if k in s.watchers: s.watchers.remove(k)
         s.say(k, "lead|1"); s.all("director|%s|%s" % (k, k))
-        s.watchers = []; s.away = []; s.sharing = False; s.cam_on = False
+        s.watchers = []; s.away = []; s.wset = set(); s.sharing = False
         s.watch(k)
+    def person_buttons(s, k): return ["Remove", "Back"] if k in s.wset else ["Pass camera", "Remove", "Back"]
     def camset(s, c): s.last = c; s.all("cam|" + c)
     def answer_lead(s, allow):
         if allow and s.lead_ask in s.watchers: s.grant(s.lead_ask)
@@ -113,7 +123,8 @@ class Av:
     def remove(s, k): s.say(k, "kick"); s.watchers.remove(k)
     # ---- viewer -------------------------------------------------------------------------------------------------
     def watch(s, k):
-        s.pend_t = 0; s.host = k; s.is_away = False; s.ask_t = 0; s.hear_t = s.rg.t; s.say(k, "join")
+        s.pend_t = 0; s.host = k; s.is_away = False; s.ask_t = 0; s.hear_t = s.rg.t; s.say(k, "join|W" if s.kind == "W" else "join")
+        s.cam_on = False                                   # viewing never runs your own camera
     def leave(s, tell=True):
         if s.host is None: return
         if tell: s.say(s.host, "leave")
@@ -173,7 +184,8 @@ class Av:
             s.inv.remove(frm)
             s.res.append(frm + (" busy (" + L[2] + ")" if w == "busy" else (" watches" if L[2] == "1" else " is asked")))
         elif w == "join":
-            if not s.sharing: return
+            if not s.sharing: s.say(frm, "end"); return
+            if len(L) > 2 and L[2] == "W": s.wset.add(frm)
             if frm not in s.watchers: s.watchers.append(frm); s.seen[frm] = s.rg.t
             if s.last: s.say(frm, "cam|" + s.last)
         elif w == "leave" and frm in s.watchers: s.watchers.remove(frm); s.away = [a for a in s.away if a != frm]
@@ -289,6 +301,16 @@ check("Ben" not in cleo.watchers and "Ben left" in cleo.notes, "a viewer who lef
 # the director goes quiet (logged off): viewers drop out after 25 s
 cleo.region = False; rg.tick(26)
 check(ana.host is None and ana.notes[-1] == "Cleo's camera is gone", "viewers of a vanished director must drop out")
+# 5.8.2 ---------------------------------------------------------------------------------------------------------------
+rg2 = Region()
+p = Av(rg2, "Pia", (128, 128, 22), "T"); q = Av(rg2, "Quin", (129, 128, 22), "T"); w = Av(rg2, "Wim", (127, 128, 22), "W")
+p.camset("<1,1,1>|<2,2,2>|0"); p.golive(False); p.invite("Wim"); p.invite("Quin")
+check(w.host == "Pia" and "Wim" in p.wset, "a Watch viewer must be known as one")
+check("Pass camera" not in p.person_buttons("Wim") and "Pass camera" in p.person_buttons("Quin"), "no Pass camera for a Watch viewer")
+p.endlive(); rg2.tick(3); q.double_tap()                   # Quin accepts the invite after End live
+check(q.host is None and q.notes[-1] == "Pia ended the live view", f"a late Watch after End live must be told: {q.notes}")
+q.cam_on = True; p.golive(False); p.invite("Quin"); q.double_tap()
+check(q.host == "Pia" and not q.cam_on, "watching must stop your own camera")
 print("sharing: who check, Go live (free only), instant / asked joins, expiry, no-answer, pull join, next 5 s apart, "
       "looking around, Ask / Always / Never lead with auto-decline, Remove, Pass camera, heartbeat drops, rapid toggles")
 print("sync checks:", "ALL PASS" if ok else "FAILURES")
