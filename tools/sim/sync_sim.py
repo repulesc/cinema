@@ -1,4 +1,4 @@
-# Sharing (5.5, protocol v2): cinema_sync.lsl (the sharing manager in Take 12) and watch/take12_watch.lsl (the free
+# Sharing (5.5, protocol v2): sync.lsl (the sharing manager in Take 12) and watch/take12_watch.lsl (the free
 # Watch HUD). First the two scripts must speak the same protocol; then a small region plays the whole flow:
 # the "who" check (busy, out of range, Watch HUD), Go live inviting only the free, a friend and a Watch HUD joining at
 # once while a stranger with Take 12 is only asked (accept / expire), no-answer reporting, a pull join on a live
@@ -8,8 +8,8 @@ import os, re
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 rd = lambda *p: open(os.path.join(R, *p)).read()
-sync, watch = rd("hud", "src", "cinema_sync.lsl"), rd("watch", "take12_watch.lsl")
-core, ui = rd("hud", "src", "cinema_core.lsl"), rd("hud", "src", "cinema_ui.lsl")
+sync, watch = rd("hud", "src", "sync.lsl"), rd("watch", "take12_watch.lsl")
+core, ui = rd("hud", "src", "core.lsl"), rd("hud", "src", "ui.lsl")
 ok = True
 def check(c, msg):
     global ok
@@ -46,7 +46,7 @@ for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|
           'llLinksetDataWriteProtected("cin.share_lead"', "didn't answer (out of range or HUD off)",
           'if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)',
           "llGetPrimitiveParams([PRIM_TEXT])", 'return "● LIVE · nobody watching yet";',
-          # 5.8: the state goes to cinema_tips (the one owner of the text above the HUD), short notices stay here
+          # 5.8: the state goes to tips (the one owner of the text above the HUD), short notices stay here
           'integer TEXT       = 7380;', 'if (gSharing) k = "live";', 'else if (gHost != NULL_KEY) k = "view";',
           'if (k != gSent) llMessageLinked(LINK_SET, TEXT, k, "");', '== gNoteS) llSetText("", ZERO_VECTOR, 0.0);'):
     check(w in sync, f"sync: missing {w}")
@@ -69,7 +69,7 @@ class Region:
     def tick(s, dt):
         for _ in range(dt): s.t += 1; [a.timer() for a in list(s.av.values())]
 class Av:
-    """one avatar: kind 'T' (Take 12, cinema_sync) or 'W' (Take 12 Watch)"""
+    """one avatar: kind 'T' (Take 12, sync) or 'W' (Take 12 Watch)"""
     def __init__(s, rg, name, pos, kind, friends=()):
         s.rg, s.name, s.pos, s.kind, s.friends, s.region = rg, name, pos, kind, set(friends), True
         s.dead = False; s.seen = {}; s.beat_t = 0      # dead: the HUD stops (crashed, detached without a word)

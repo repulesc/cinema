@@ -4,10 +4,10 @@
 //  theirs at once (wearing it is the yes). Double-tap this HUD: the next view, for everyone watching. Orbit your own
 //  camera to look around (the director is told); Esc brings you back. A single tap or any movement key: your own
 //  camera back. A new director (a hand-over) is followed by itself. It cannot lead: it has no camera of its own.
-//  Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl (docs/SHARING.md).
+//  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "5.8.0";
+string  VERSION = "5.8.1";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;

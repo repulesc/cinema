@@ -1,5 +1,5 @@
 // ============================================================================
-//  Take 12  -  cinema_lens.lsl  (v5.1)  - Follow my lead, in Friends
+//  Take 12  -  lens.lsl  (v5.1)  - Follow my lead, in Friends
 //  You frame the view with Second Life's own camera (Alt-orbit, the wheel, A/D while seated) and press Esc: core
 //  sees the camera still for 1.5 s and sends LEAD. This script keeps what you chose - how close, how high, from where
 //  and aimed at what - relative to the group, and hands it to Friends as LENS, so every next cut and variation keeps it.
@@ -7,7 +7,7 @@
 //  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 
 integer START      = 7301;
 integer STOP       = 7302;

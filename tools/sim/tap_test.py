@@ -1,4 +1,4 @@
-# Python port of the touch decoder in hud/src/cinema_ui.lsl (touch_start / touch_end / timer).
+# Python port of the touch decoder in hud/src/ui.lsl (touch_start / touch_end / timer).
 # Feeds scripted press/release sequences and checks which gesture fires, and when.
 TAP_GAP, LONG_HOLD = 0.35, 0.8
 

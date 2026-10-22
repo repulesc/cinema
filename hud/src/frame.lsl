@@ -1,5 +1,5 @@
 // ============================================================================
-//  Take 12  -  cinema_frame.lsl  (v4.6)  - Frame
+//  Take 12  -  frame.lsl  (v4.6)  - Frame
 //  A held, well-composed view of you, or of you and whoever stands right next to you. Three framings:
 //  Full length, Half length, Close. Double-tap = next. The movement keys nudge the camera (core forwards them as
 //  NUDGE; you stand still meanwhile). The distance follows the viewer's zoom silently (FOVMSG from core).
@@ -7,7 +7,7 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 
 integer START      = 7301;
 integer STOP       = 7302;

@@ -1,5 +1,5 @@
-# People framing: where do the people land on screen? A port of the shot planning in cinema_people.lsl (Social:
-# group tableau planG, over-the-shoulder pair planA, portrait) and cinema_friends.lsl (planF), with their sweep() and
+# People framing: where do the people land on screen? A port of the shot planning in people.lsl (Social:
+# group tableau planG, over-the-shoulder pair planA, portrait) and friends.lsl (planF), with their sweep() and
 # tryCand(), run over pairs, lines, chat circles and loose clusters, in the open and in rooms whose walls block spots,
 # on 16:9 and 16:10 windows. Every person who should be in the picture is projected at their real depth with a body
 # half-width of 0.3 m; the result is their margin to the nearest screen edge in % of the screen width.
@@ -258,7 +258,7 @@ def fmt(x):
             f"<10 % {100 * x['edge10'] / x['n']:5.1f} %  median margin {med:5.1f} %  fallback {x['fallback']:3d}")
 
 if __name__ == "__main__":
-    people, friends = src("cinema_people.lsl"), src("cinema_friends.lsl")
+    people, friends = src("people.lsl"), src("friends.lsl")
     for s, name in ((people, "people"), (friends, "friends")):     # the port must match the scripts it claims to
         for what in ("float MARGIN      = 1.3;", "tanH = tanV * fmin(aspect, 1.6);", "gAlpha = llAtan2(tanV * aspect / 3.0, 1.0);",
                      "need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));", "float b = BODY_R + gSeatR - k * (o * V);",

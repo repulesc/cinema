@@ -1,5 +1,5 @@
 // ============================================================================
-//  Take 12  -  cinema_scenery.lsl  (v4)  - the default mode
+//  Take 12  -  scenery.lsl  (v4)  - the default mode
 //  Finds grand, unobstructed views of the place around you and has core cut to
 //  them: high drone views looking down over your area, and wide eye-level views
 //  along the horizon. People are ignored. The camera stays inside your region
@@ -12,7 +12,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
 

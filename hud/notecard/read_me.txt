@@ -54,7 +54,7 @@ You and the friends you picked, framed together. While your group stays in the p
  - Tap the button > Us > Friends list > Pick. Everyone within 20 m is listed. Tap a name to add them. Tap a name with a check mark to take them off again.
  - Friends list > Remove lists everyone you saved (even if they are not here), so you can remove just one person.
  - You can save up to 10 friends.
- - YOUR OWN VIEW (Only friends, needs the cinema_lens script): frame it the usual way (Alt-orbit, mouse wheel, or A / D while seated). When you hold still, "Your view is kept · Esc to continue" shows above the button (a notice, not a menu): press ESC and Take 12 carries on with your view - just as close, as high and aimed at the same faces - in every next cut, following your friends if they move.
+ - YOUR OWN VIEW (Only friends, needs the lens script): frame it the usual way (Alt-orbit, mouse wheel, or A / D while seated). When you hold still, "Your view is kept · Esc to continue" shows above the button (a notice, not a menu): press ESC and Take 12 carries on with your view - just as close, as high and aimed at the same faces - in every next cut, following your friends if they move.
  - Sitting or lying, W / S step closer or wider.
  - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 

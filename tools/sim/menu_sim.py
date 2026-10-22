@@ -1,11 +1,11 @@
 # The menus (5.6.0, 5.7.0: Symbols by default, Help > Read Me / Tips): Scenery / Me / Us / Still on the main page, Pace and Idle start under Options > Timing, the camera
 # settings under Options > Camera, the menu style (Plain / Symbols / Color) under Options > Look. Ported from
-# cinema_ui.lsl: every page fits a dialog (12 buttons), every button has a name, Back goes to the page above, and in
+# ui.lsl: every page fits a dialog (12 buttons), every button has a name, Back goes to the page above, and in
 # every menu style the labels on a page are distinct (a choice is matched back by its label).
 import os, re
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
+ui = open(os.path.join(R, "hud", "src", "ui.lsl")).read()
 ok = True
 def check(c, msg):
     global ok

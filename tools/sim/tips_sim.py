@@ -1,4 +1,4 @@
-# The text above the button (5.8.0): cinema_tips.lsl ported, played against a fake HUD - the core's states, the
+# The text above the button (5.8.0): tips.lsl ported, played against a fake HUD - the core's states, the
 # sharing block from sync, the lens, the short notices other scripts write, and the clock.
 # Status line: every camera says its mode and who is in charge, nothing with your own camera, idle start says so,
 # "your view" follows the lens, Photo and pause, the mark follows the menu style, Status line off.
@@ -9,11 +9,11 @@
 import os, re
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-src = open(os.path.join(R, "hud", "src", "cinema_tips.lsl")).read()
-ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
-core = open(os.path.join(R, "hud", "src", "cinema_core.lsl")).read()
-sync = open(os.path.join(R, "hud", "src", "cinema_sync.lsl")).read()
-picker = open(os.path.join(R, "hud", "src", "cinema_picker.lsl")).read()
+src = open(os.path.join(R, "hud", "src", "tips.lsl")).read()
+ui = open(os.path.join(R, "hud", "src", "ui.lsl")).read()
+core = open(os.path.join(R, "hud", "src", "core.lsl")).read()
+sync = open(os.path.join(R, "hud", "src", "sync.lsl")).read()
+picker = open(os.path.join(R, "hud", "src", "picker.lsl")).read()
 ok = True
 def check(c, msg):
     global ok
@@ -32,7 +32,7 @@ check('st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy' in core, "core: U
 check(re.search(r'engage\("scenery"\);\s*if \(gState != ST_IDLE\)\s*\{\s*gWhy = "idle";\s*setUi\("rolling"\);', core) is not None,
       "core: the idle start must say so")
 check(re.search(r'gMode = mode;\s*gWhy = "";', core) is not None, "core: every other start must clear why")
-check("llSetText(ind()" not in sync, "sync must not write its state itself any more (cinema_tips does)")
+check("llSetText(ind()" not in sync, "sync must not write its state itself any more (tips does)")
 check("~status=1~" in ui and 'toggle("status", "Status line")' in ui, "ui: Status line on by default, toggled in Look")
 check('c == "statusline"' in picker, "/77 statusline on|off missing")
 

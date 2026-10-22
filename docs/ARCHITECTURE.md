@@ -11,16 +11,16 @@ All ten scripts go in the **root prim** of a one-prim HUD. Each must compile cle
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
-| `cinema_core.lsl` | Owns the camera: permissions, controls, AFK, modes, exits, hold timer, peek, pauses, watchdog plus basic shots, reach verification, `grab` test. **New:** FREEZE (photo hold), GLIDE, SPEAKER (owner typing), FAV forwarding, richer UI_STATE. **Touch handlers removed.** | 302 | ~350 (≥ 23 KB) |
-| `cinema_scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
-| `cinema_people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
-| `cinema_friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
-| `cinema_lens.lsl` | **New in 5.0, reworked in 5.1: Follow my lead.** Core sends LEAD 7324 `"<cam>\|<focus>"` when your own camera (Alt-orbit) has been still for 1.5 s in Friends, and holds that view. Lens keeps how far, how high, from where and the aim (relative to the subject Friends planned, sent as the 5th SHOT field) and sends LENS 7319 `"<distance>\|<angle down>\|<from>\|<aim>\|<cut>"` (distance 0 = automatic). Seated W/S scale the distance (core keeps back only FWD/BACK). Auto: long press, sitting or standing up, a friend coming or going (`autoq` from Friends) | – | 90 (40.7 KB est.) |
-| `cinema_sync.lsl` | **The sharing manager (5.5).** Hold = the Share panel (CMD `share` from the UI's long press and the tap menu). States IDLE / LIVE / VIEWING / INVITED, a `who` check, push invites, pull views, Ask / Always / Never lead, a roster (Pass camera, Remove), heartbeat and timeouts, the state above the HUD. Core starts the camera (CMD `sharecam` → Social) and reports it (CAMSET 7325); `⋯ More` sends CMD `livemenu` / `mainmenu` back to the UI. Everything else, protocol included: `docs/SHARING.md` | – | 396 (19.5 KB est.) |
-| `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
-| `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
-| `cinema_tips.lsl` | **The text above the button (5.8; tips since 5.7).** The one owner of the hover text. It composes, top to bottom: the sharing block from sync (TEXT 7380), the **status line** while a camera runs (mode and who is in charge, from UI_STATE's `why` and LENS 7319: `◇ Scenery · auto`, `… · started while you were idle`, `♡ Only friends · your view`, `▣ Photo · held`, `… · paused · Esc to carry on`; nothing with your own camera, only the 👁 block while watching; `cin.status` 0 hides it), and a tip. It writes only when the composed text changes and never over another script's short notice (text on screen that it did not write last); when that is cleared it redraws within 1 s. Tips: UI_STATE transitions, 6 s, at most one per 20 s, the second line only under a status line; a tip that finds no free moment in 10 s is dropped, not counted. Each tip retires after 3 showings (`cin.tipn`); when all have retired, or after 24 in all, it writes `tips=0`, sends CFG_CHANGED `tips` and says one line. No menus or listeners | – | 154 (34.3 KB est.) |
-| `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
+| `core.lsl` | Owns the camera: permissions, controls, AFK, modes, exits, hold timer, peek, pauses, watchdog plus basic shots, reach verification, `grab` test. **New:** FREEZE (photo hold), GLIDE, SPEAKER (owner typing), FAV forwarding, richer UI_STATE. **Touch handlers removed.** | 302 | ~350 (≥ 23 KB) |
+| `scenery.lsl` | Default mode. Outdoor drone and wide finder (v3). **New:** room classifier, room-shot finder, favourites | 178 | ~330 (≥ 25 KB) |
+| `people.lsl` | Personal and Social (v3). **New:** chat cuts in Social | 384 | ~420 (≥ 21 KB) |
+| `friends.lsl` | **New.** Friends mode (group framing, glide and snap, chat cuts) | – | 472 (18.4 KB est.) |
+| `lens.lsl` | **New in 5.0, reworked in 5.1: Follow my lead.** Core sends LEAD 7324 `"<cam>\|<focus>"` when your own camera (Alt-orbit) has been still for 1.5 s in Friends, and holds that view. Lens keeps how far, how high, from where and the aim (relative to the subject Friends planned, sent as the 5th SHOT field) and sends LENS 7319 `"<distance>\|<angle down>\|<from>\|<aim>\|<cut>"` (distance 0 = automatic). Seated W/S scale the distance (core keeps back only FWD/BACK). Auto: long press, sitting or standing up, a friend coming or going (`autoq` from Friends) | – | 90 (40.7 KB est.) |
+| `sync.lsl` | **The sharing manager (5.5).** Hold = the Share panel (CMD `share` from the UI's long press and the tap menu). States IDLE / LIVE / VIEWING / INVITED, a `who` check, push invites, pull views, Ask / Always / Never lead, a roster (Pass camera, Remove), heartbeat and timeouts, the state above the HUD. Core starts the camera (CMD `sharecam` → Social) and reports it (CAMSET 7325); `⋯ More` sends CMD `livemenu` / `mainmenu` back to the UI. Everything else, protocol included: `docs/SHARING.md` | – | 396 (19.5 KB est.) |
+| `frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
+| `picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
+| `tips.lsl` | **The text above the button (5.8; tips since 5.7).** The one owner of the hover text. It composes, top to bottom: the sharing block from sync (TEXT 7380), the **status line** while a camera runs (mode and who is in charge, from UI_STATE's `why` and LENS 7319: `◇ Scenery · auto`, `… · started while you were idle`, `♡ Only friends · your view`, `▣ Photo · held`, `… · paused · Esc to carry on`; nothing with your own camera, only the 👁 block while watching; `cin.status` 0 hides it), and a tip. It writes only when the composed text changes and never over another script's short notice (text on screen that it did not write last); when that is cleared it redraws within 1 s. Tips: UI_STATE transitions, 6 s, at most one per 20 s, the second line only under a status line; a tip that finds no free moment in 10 s is dropped, not counted. Each tip retires after 3 showings (`cin.tipn`); when all have retired, or after 24 in all, it writes `tips=0`, sends CFG_CHANGED `tips` and says one line. No menus or listeners | – | 154 (34.3 KB est.) |
+| `ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
 
@@ -115,7 +115,7 @@ Reach verification (§3) applies to types 5, 6 and 7 only.
 - **Watchdog and basic shots:** `friends` uses the people basic shot (portrait orbit).
 - **Status line:** add `frozen`, the glide count and `friends` to the mode names.
 
-## 4. UI (`cinema_ui.lsl`)
+## 4. UI (`ui.lsl`)
 ### 4.1 Touch decoder
 Owner only:
 ```
@@ -215,8 +215,8 @@ All commands are listed in PRODUCT.md.
 - `pace <s>` takes 10–600 s and writes `hold`; `hold <s>` is kept as an alias.
 - `friend list|clear` is forwarded to the friends script as CMD-like UI_FRIENDS `list` / `clear`.
 
-## 5. Friends (`cinema_friends.lsl`, new)
-- **Copied from `cinema_people.lsl`** (separate memory, so they are copied, not shared): `cfg`, `fmin`, `fmax`, `fclamp`, `dirOf`, `tsay`, `ray`, `refreshOwner`, `survey`, `camZ`, `fitDist`, `planG` (generalised below), `tryCand`, `sweep`, `shoulderShot`, `inFrame`, and the FOV maths in `loadCfg` / START.
+## 5. Friends (`friends.lsl`, new)
+- **Copied from `people.lsl`** (separate memory, so they are copied, not shared): `cfg`, `fmin`, `fmax`, `fclamp`, `dirOf`, `tsay`, `ray`, `refreshOwner`, `survey`, `camZ`, `fitDist`, `planG` (generalised below), `tryCand`, `sweep`, `shoulderShot`, `inFrame`, and the FOV maths in `loadCfg` / START.
 - **Friends list:**
   - Kept as two lists, `gFKeys` and `gFNames`, loaded from `cin.friends` on START and on CFG_CHANGED `friends`.
 - **Presence scan** (1 s):
@@ -262,7 +262,7 @@ All commands are listed in PRODUCT.md.
   - `🗑 Clear` asks for confirmation, `[Yes, clear][↩ Back]`.
 - **Status line:** saved count, present count, glides, snaps and free memory.
 
-## 6. Scenery (`cinema_scenery.lsl`)
+## 6. Scenery (`scenery.lsl`)
 ### 6.1 Outdoor
 Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v3/docs/ARCHITECTURE.md` §Scenery.
 
@@ -332,7 +332,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 - **Regrowth:** after 20 cuts in a row without a REACH_FAIL (`cin.reach_ok`), `gReach` grows by 10 %, up to `gReachSet`.
 - **`tools/sim/reach_sim.py`** ports all of this plus the settings migration and runs 600 cuts × 8 seeds per viewer: unlimited, stale, slow, mouselook, Alt-cam, camera lifted off the land, orbiting 20 % / 50 % (reach must stay 100 m), and limits of 90 / 64 / 48 / 32 m with and without orbiting (must settle near the limit, ≤ 6 % short views afterwards). It also runs the 4.4.4 logic and asserts it collapses to 20 m, the reported bug.
 
-## 7. People (`cinema_people.lsl`): chat cuts in Social
+## 7. People (`people.lsl`): chat cuts in Social
 - On START `social` with `chat_cuts` on: `gChat = llListen(0, "", NULL_KEY, "")`. Remove it on STOP and on a switch.
 - `listen`:
   - Ignore non-agents (`llGetAgentSize(id) == ZERO_VECTOR`) and the owner (the owner arrives as SPEAKER).
@@ -379,7 +379,7 @@ The fix:
   - The source is `tools/art/make_icon.py`, with the pixel grids as strings.
   - `hud/art/take12_icon_sheet_512x256.png`: 4 columns × 2 rows of 128×128 frames, each holding a 16×16 sprite ×7 with an 8 px clear margin.
   - **Frame k** is at column `k % 4`, row `k / 4` (row 0 is the top). **Look n** uses frame `2n` (open) and `2n + 1` (clapped). Looks: 0 classic, 1 rec (default), 2 viewfinder. Frames 6 and 7 are spare for a fourth look.
-  - **How the UI script shows frame k** (`frame()` in `cinema_ui.lsl`): repeats `<0.25, 0.5>`, offset `<(k % 4 + 0.5) / 4 − 0.5, +0.25 for the top row, −0.25 for the bottom row>`, on the face `cin.face` (default −1 = all faces; `/77 face <n>` picks one).
+  - **How the UI script shows frame k** (`frame()` in `ui.lsl`): repeats `<0.25, 0.5>`, offset `<(k % 4 + 0.5) / 4 − 0.5, +0.25 for the top row, −0.25 for the bottom row>`, on the face `cin.face` (default −1 = all faces; `/77 face <n>` picks one).
   - **Settings:** `look` (0–2, default 1) and `face` (default −1). Options › 🎨 Look changes the look and the emoji (the fade is gone in 4.7).
   - Single-look, two-frame sheets are in `hud/art/variants/`, for anyone who wants only one look.
   - **Upload settings:** no lossless needed; the alpha must be kept.

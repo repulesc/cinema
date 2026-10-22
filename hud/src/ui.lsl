@@ -1,13 +1,13 @@
 // ============================================================================
-//  Take 12  -  cinema_ui.lsl  (v4)
+//  Take 12  -  ui.lsl  (v4)
 //  Touch decoding (tap / double-tap / long press), emoji dialog menus, /77 chat
 //  commands, settings in protected Linkset Data, the button look (the plain logo, always the same),
 //  first-run welcome, owner-change reset.
-//  Lives in the ROOT prim with cinema_core, cinema_scenery, cinema_people and
-//  cinema_friends.
+//  Lives in the ROOT prim with core, scenery, people and
+//  friends.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -617,7 +617,7 @@ onDouble()
     else llMessageLinked(LINK_SET, CMD, "next", "");
 }
 
-// hold: the Share panel (cinema_sync), whatever you are doing; its ⋯ More comes back here as livemenu / mainmenu
+// hold: the Share panel (sync), whatever you are doing; its ⋯ More comes back here as livemenu / mainmenu
 onLong()
 {
     llMessageLinked(LINK_SET, CMD, "share", "");
@@ -700,7 +700,7 @@ default
             setLook(st);
         }
         else if (num == UI_MENU) openMenu(str);
-        else if (num == CFG_CHANGED)                        // a chat command (cinema_picker) may have changed these
+        else if (num == CFG_CHANGED)                        // a chat command (picker) may have changed these
         {
             gSkin = (integer)cfgGet("skin");
             gNote = (cfgGet("trace") == "1");

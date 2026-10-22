@@ -1,12 +1,12 @@
 // ============================================================================
-//  Take 12  -  cinema_core.lsl  (v4)
+//  Take 12  -  core.lsl  (v4)
 //  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social, friends, frame
 //  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 

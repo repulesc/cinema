@@ -1,13 +1,13 @@
 // ============================================================================
-//  Take 12  -  cinema_picker.lsl  (v4)  - the Friends page and friend picker
+//  Take 12  -  picker.lsl  (v4)  - the Friends page and friend picker
 //  Menu page: Start / Pick / Clear. Picker: people within 20 m, one button each,
 //  tap a name to add or remove (up to 10 friends, saved in protected Linkset Data
 //  as "key,name;key,name;..."). Starting Friends mode is CMD "friends" to core;
-//  the camera work is in cinema_friends.lsl.
-//  Also the chat commands (/77 ...): they moved here from cinema_ui.lsl in 5.6.0 to give the menus room.
+//  the camera work is in friends.lsl.
+//  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;

@@ -10,7 +10,7 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 | 4.0 · Phase B | Code v4 (milestones B1–B7 below), one release | Sonnet | ✅ coded, checked by compile and sims |
 | 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | ⏳ next |
 | 4.4.x | Beta polish from in-world tests: indoor mode, quiet chat, calm people cameras, reach learning, people framing, clearer texts | Opus | ⏳ ongoing |
-| Frame | A slim, held picture of you (or you and the people with you): Full length, Half length, Close. 4.6.0 (`cinema_frame.lsl`). Next: in-world test, body calibration | Opus | ⏳ in-world test |
+| Frame | A slim, held picture of you (or you and the people with you): Full length, Half length, Close. 4.6.0 (`frame.lsl`). Next: in-world test, body calibration | Opus | ⏳ in-world test |
 | Composition tool (later) | A fuller, more serious version, starting from `lab/frame-full-4.5.0/` (subjects, landscapes, photo shapes, lens guidance). Only after Take 12 is out of beta | – | 💤 later |
 | Lite | Paused, frozen at 4.4.5. **Resume** once the full version leaves beta: steps in `hud-lite/README.md` | – | ⏸ paused |
 | Later | Backlog at the bottom, only on request | – | – |
@@ -31,7 +31,7 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 
 ## Phase B: build v4.0.0 (Sonnet), done
 All seven milestones are coded in `hud/src/`. Deviations from the plan:
-- A sixth script, `cinema_picker.lsl`, holds the Friends menu and picker, because `cinema_friends` alone came out at 10.5 KB free.
+- A sixth script, `picker.lsl`, holds the Friends menu and picker, because `friends` alone came out at 10.5 KB free.
 - The favourites case in `scenery_sim.py` was **not** added (only compile-checked).
 - B6: the texture default stays "rec" until the user picks a variant on the design board.
 - The friends sim found a real fit bug, now fixed (depth-aware fit).
@@ -72,7 +72,7 @@ The checklists below are kept as the record of what was specified.
 - **Accept:** people_geometry still ALL PASS. Add a case: the speaker shot keeps the 180-degree side and puts the speaker on screen.
 
 ### B5 · Friends mode
-- [ ] New `cinema_friends.lsl` (§5):
+- [ ] New `friends.lsl` (§5):
   - the presence scan, `planF`, the glide and snap loop, chat cuts;
   - the Friends page and the picker.
 - [ ] Core: GLIDE handling, clearing the lag after a glide, skipping peek while gliding (§3).

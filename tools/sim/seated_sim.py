@@ -10,7 +10,7 @@ def check(c, msg):
 
 TANV = math.tan(math.radians(60) / 2)                    # the default viewer FOV
 for name in ("people", "friends"):
-    src = open(os.path.join(R, "hud", "src", f"cinema_{name}.lsl")).read()
+    src = open(os.path.join(R, "hud", "src", f"{name}.lsl")).read()
     check('cfg("seat_deg", "45")' in src, f"{name}: default seat angle is not 45")
     check("if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src
           or "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src, f"{name}: camZ lacks the seated rise")
@@ -20,7 +20,7 @@ for name in ("people", "friends"):
     check("float d = S * llCos(gSeatEl);" in src and "float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);" in src
           and "d = llSqrt(S * S - R * R);" in src, f"{name}: seatD changed")
     check("if (gOSit) gSeatR = 0.45;" in src and "closeView(" in src, f"{name}: close view for lying people changed")
-ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
+ui = open(os.path.join(R, "hud", "src", "ui.lsl")).read()
 check('seat_deg=45' in ui, "ui: default seat angle missing")
 check('"seat", "indoors", "reach", "altcam", "chat", "phantom", "back"' in ui, "ui: the Seated view button is not on the Options page")
 

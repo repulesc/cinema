@@ -1,12 +1,12 @@
 # Follow my lead (5.1): you frame a Friends view with Second Life's own camera; core sends LEAD once it is still,
-# cinema_lens.lsl keeps how close, how high, from where and aimed at what, and cinema_friends.lsl plans every next
+# lens.lsl keeps how close, how high, from where and aimed at what, and friends.lsl plans every next
 # shot from it. A port of that chain: your view must come back exactly as the next planned shot, move with the group,
 # scale with W/S, and the scripts must carry the same maths and wiring.
 import math, os, random
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 src = lambda n: open(os.path.join(R, "hud", "src", n)).read()
-lens, friends, core, ui = src("cinema_lens.lsl"), src("cinema_friends.lsl"), src("cinema_core.lsl"), src("cinema_ui.lsl")
+lens, friends, core, ui = src("lens.lsl"), src("friends.lsl"), src("core.lsl"), src("ui.lsl")
 ok = True
 def check(c, msg):
     global ok

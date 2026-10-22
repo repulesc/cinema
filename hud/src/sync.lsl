@@ -1,5 +1,5 @@
 // ============================================================================
-//  Take 12  -  cinema_sync.lsl  (v5.5)  - the sharing manager
+//  Take 12  -  sync.lsl  (v5.5)  - the sharing manager
 //  Hold the HUD button: the Share panel, whatever you are doing. One director at a time; any number of viewers.
 //    IDLE      who is near (a quick "who" check), Go live, + <name> (invite one), Watch <live director>, Give Watch
 //    LIVE      who watches / looks around, Invite more, Roster (Pass camera, Remove), Lead: Ask/Always/Never, End live
@@ -15,7 +15,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -71,7 +71,7 @@ integer gDlgL;
 integer gDlgT;
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
 string  gNoteS;              // ... its text
-string  gSent;               // the sharing block last sent to cinema_tips (TEXT), which shows it above the HUD
+string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
 
 // ---- above the HUD: the state, and short notices ------------------------------
 // a short name: "Ana Resident" -> "Ana"
@@ -115,7 +115,7 @@ string ind()
     return "";
 }
 
-// the state goes to cinema_tips, the one owner of the text above the HUD (with the status line and the tips)
+// the state goes to tips, the one owner of the text above the HUD (with the status line and the tips)
 refresh()
 {
     string k = "";
@@ -128,7 +128,7 @@ refresh()
     llSetTimerEvent(1.0);
 }
 
-// a short notice: the whole text for 4 s, then it gives way (cinema_tips draws the state again)
+// a short notice: the whole text for 4 s, then it gives way (tips draws the state again)
 show(string s)
 {
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
