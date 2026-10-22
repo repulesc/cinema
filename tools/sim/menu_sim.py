@@ -35,7 +35,7 @@ check(pages.get("opts") == ["timing", "camcfg", "look", "favs", "test", "reset",
 check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")
 check(pages.get("timing") == ["pace", "afk", "back"], f"Timing: {pages.get('timing')}")
 check(set(pages.get("camcfg", [])) >= {"seat", "indoors", "reach", "altcam", "chat", "phantom", "back"}, f"Camera: {pages.get('camcfg')}")
-check(pages.get("look", [])[:3] == ["sk0", "sk1", "sk2"], f"Look: {pages.get('look')}")
+check(pages.get("look", [])[:3] == ["sk0", "sk1", "sk2"] and "stline" in pages.get("look", []), f"Look: {pages.get('look')}")
 for p, ids in pages.items():
     check(len(ids) <= 12, f"{p}: {len(ids)} buttons (a dialog holds 12)")
     for i in ids:
