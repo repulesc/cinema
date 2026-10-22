@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "5.8.2";
+string VERSION = "5.9.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons

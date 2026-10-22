@@ -12,7 +12,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "5.8.2";
+string VERSION = "5.9.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -21,6 +21,7 @@ integer CFG_CHANGED = 7330;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
 integer TEXT        = 7380;   // sync -> here  "<live/view/inv or empty>|<the sharing block>"
+integer STILL       = 7381;   // frame -> here "<framing>|<recommended mm>|<your mm>": the lens guide
 
 integer MAXN = 3;             // showings per tip
 integer ALL  = 24;            // ... and in all, then Tips is off
@@ -37,7 +38,7 @@ list TIPS = [
     "Me\nwalk around, it follows you · tap: stop",
     "Us\nit cuts to whoever speaks · double-tap: next",
     "Only friends\nframe it yourself, then Esc: it keeps your view",
-    "Still\nW/S A/D E/C: adjust · double-tap: next framing",
+    "Still\nW/S A/D E/C adjust · Shift+A/D slide",
     "Photo\ntake your pictures · tap: carry on",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
@@ -57,6 +58,7 @@ string  gSt;                 // the last state, mode and why from core
 string  gMode;
 string  gWhy;
 integer gLed;                // Only friends: your own view (lens)
+string  gStill;              // Still: the framing, the lens for it, yours (from frame)
 string  gKind;               // the sharing block from sync: live / view / inv / ""
 string  gSync;
 string  gTip;                // the tip on screen ("" = none)
@@ -107,15 +109,29 @@ integer free()
     return (c == "" || c == gLast);
 }
 
+// Still's lens guide: "85 mm ✓" within 15 %, else what to press (only you can zoom: a script can read it, not set it)
+string guide()
+{
+    list L = llParseStringKeepNulls(gStill, ["|"], []);
+    integer want = (integer)llList2String(L, 1);
+    integer now = (integer)llList2String(L, 2);
+    string s = llList2String(L, 0) + " · " + (string)want + " mm";
+    if (llAbs(now - want) * 100 <= 15 * want) return s + " ✓";
+    if (now < want) return s + " · now " + (string)now + " · Ctrl+0";
+    return s + " · now " + (string)now + " · Ctrl+8";
+}
+
 // the status line: the mode and who is in charge; nothing with your own camera
 string line()
 {
     integer m = llListFindList(MODES, [gMode]);
-    if (!gStat || m < 0 || (gSt != "rolling" && gSt != "frozen" && gSt != "peek")) return "";
+    if (m < 0 || (gSt != "rolling" && gSt != "frozen" && gSt != "peek")) return "";
+    if (!gStat && !(gMode == "frame" && gSt == "rolling")) return "";    // Still's lens guide shows even then
     string s = llList2String(NAMES, m);
     string k = llList2String(MARKS, m);
     string w = "auto";
-    if (gMode == "frame") w = "held";
+    if (gMode == "frame" && gStill != "") w = guide();
+    else if (gMode == "frame") w = "held";
     else if (gMode == "friends" && gLed) w = "your view";
     else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";
     if (gSt == "frozen")
@@ -251,6 +267,7 @@ default
             gWhy = llList2String(L, 3);
             if (mode != "friends") gLed = FALSE;
         }
+        else if (num == STILL) gStill = str;
         else if (num == LENS) gLed = ((float)llList2String(llParseStringKeepNulls(str, ["|"], []), 0) > 0.0);
         else if (num == TEXT)
         {

@@ -1,5 +1,20 @@
 # Changelog
 
+## 5.9.0
+**Still, for real portraits: a lens guide, and Shift + A/D to slide the picture.**
+- **The lens guide.** Each framing names the lens a photographer would use: Full length 50 mm, Half length 85 mm, Close 105 mm. The line above the button shows it next to yours, live, as you zoom:
+  - `□ Still · Close · 105 mm · now 21 · Ctrl+0`
+  - `□ Still · Close · 105 mm ✓` (within 15 %)
+  - Ctrl+8 when the lens is too long.
+  Take 12 reads the viewer's field of view (`llGetCameraFOV`, 35 mm equivalent `12 / tan(FOV/2)`, SL's normal view ≈ 21 mm). A script cannot change it, so the guide tells you which key to press. The camera already backs off as you zoom, keeping the picture's size: a longer lens gives the flatter, flattering portrait perspective. The line shows in Still even with the status line off.
+- **Shift + A/D (or Shift + ←/→)** slides you left or right in the picture (up to 0.6 of the way to the edge), for example onto a third, without moving the camera round you. Second Life sends Shift + A/D as strafe, which a script can tell apart from turn; plain A/D still walks round you. The next framing clears it.
+- **Frame writes no text of its own any more.** The framing name lives in the status line, with the lens.
+- **New STILL 7381 (frame → tips).** The Still tip mentions Shift + A/D.
+- **Docs:** Read Me (Still), docs/FRAME.md (the lens guide and the slide), ARCHITECTURE and the listing.
+- **Tests:**
+  - **`frame_sim`:** the lens table, the mm conversion, every framing exact at its lens, the strafe/turn split, and the slide landing where asked;
+  - **`tips_sim`:** the guide lines, ✓, Ctrl+0 / Ctrl+8, status line off, and Plain.
+
 ## 5.8.2
 **Bug fixes.** These came from your report and a code review of every script.
 - **A "|" above the HUD, all the time.** When nothing was shared, the text above the button showed a stray "|". LSL reads `llGetSubString("|", 1, -1)` as an inverted range and returns the "|" itself. Fixed in `tips`.

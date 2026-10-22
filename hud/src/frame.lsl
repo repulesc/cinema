@@ -2,12 +2,15 @@
 //  Take 12  -  frame.lsl  (v4.6)  - Frame
 //  A held, well-composed view of you, or of you and whoever stands right next to you. Three framings:
 //  Full length, Half length, Close. Double-tap = next. The movement keys nudge the camera (core forwards them as
-//  NUDGE; you stand still meanwhile). The distance follows the viewer's zoom silently (FOVMSG from core).
-//  Nothing to choose, nothing on screen but the framing's name for a moment.
+//  NUDGE; you stand still meanwhile): W/S closer/further, A/D round you, E/C up/down, and Shift + A/D (the strafe
+//  keys, CONTROL_LEFT/RIGHT) slides you left or right in the picture. The distance follows the viewer's zoom
+//  (FOVMSG from core). The lens guide: each framing has a classic portrait lens; STILL tells cinema tips the
+//  framing, that lens and yours (35 mm equivalent, 12 / tan(FOV / 2)), and the status line shows them. A script can
+//  read the zoom, only you can change it (Ctrl+0 in, Ctrl+8 out, Ctrl+9 back). This script writes no text itself.
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "5.8.2";
+string VERSION = "5.9.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -19,6 +22,7 @@ integer GLIDE      = 7312;
 integer ACK        = 7313;
 integer NUDGE      = 7317;
 integer FOVMSG     = 7318;
+integer STILL      = 7381;   // frame -> tips  "<framing>|<recommended mm>|<your mm>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 
@@ -32,6 +36,8 @@ float MARGIN = 1.3;          // groups: side room, as in the people framing
 float FIT    = 1.6;          // fitted for a 16:10 window, so 16:9 has room to spare
 float R_NEAR = 3.0;          // m  who stands with you is in the picture
 list  NAMES  = ["Full length", "Half length", "Close"];
+list  LENSES = [50, 85, 105]; // mm (35 mm equivalent): the classic lens for each framing
+float SLIDE  = 0.6;          // Shift + A/D: you at most this far from the centre (screen units, edge = 1)
 
 // you: camera height (fraction), degrees round from the nose, across (x), f1, y1, f2, y2
 list PORT = [
@@ -56,9 +62,9 @@ float   gSide = 1.0;
 float   gNDist = 1.0;        // nudges: distance factor, degrees round, metres up
 float   gNAz;
 float   gNH;
+float   gNX;                 // Shift + A/D: you slid across the picture (+ right)
 integer gKeys;               // movement keys held
 float   gFovT;               // the zoom changed at: re-frame when it has settled
-float   gTextT;              // the name went up at
 float   gPhi;                // tilt from the last solve
 
 // ============================================================================
@@ -186,6 +192,7 @@ list frame()
             float lk = F * <V.y, -V.x, 0.0>;
             if (lk > 0.1) x = -x;
             else if (lk >= -0.1) x = x * gSide;
+            x += gNX;                                       // Shift + A/D: where you asked to be
             V = V * llEuler2Rot(<0.0, 0.0, llAtan2(x * t * FIT, 1.0)>);
             vector foc = cam + V * D;
             foc.z = cam.z - D * llTan(gPhi);
@@ -292,7 +299,7 @@ list group(vector P, float yaw, float t)
         vector cam = <C.x, C.y, zc> + dirOf(a) * D;
         if (clear(EC, cam))
         {
-            vector foc = cam - dirOf(a) * D;
+            vector foc = cam - dirOf(a) * D * llEuler2Rot(<0.0, 0.0, llAtan2(gNX * t * FIT, 1.0)>);
             foc.z = cam.z - D * llTan(gPhi);
             return [cam, foc];
         }
@@ -300,12 +307,11 @@ list group(vector P, float yaw, float t)
     return [];
 }
 
-// ---- on screen -----------------------------------------------------------------
-// the framing's name for a moment, then a clean screen
-showName()
+// ---- the lens guide (shown by cinema tips in the status line) ---------------------
+lens()
 {
-    llSetText(llList2String(NAMES, gIdx), <1.0, 1.0, 1.0>, 0.85);
-    gTextT = llGetTime();
+    llMessageLinked(LINK_SET, STILL, llList2String(NAMES, gIdx) + "|" + llList2String(LENSES, gIdx) + "|"
+        + (string)llRound(12.0 / llTan(gFov * 0.5)), "");
 }
 
 // a new framing (cut: who is with you is looked at again) or the same one re-placed (glide)
@@ -331,7 +337,7 @@ shoot(integer cut)
     if (cut)
     {
         llMessageLinked(LINK_SET, SHOT, c + "|0|" + (string)(20 + gIdx), "");
-        showName();
+        lens();
     }
     else llMessageLinked(LINK_SET, GLIDE, c + "|0.35", "");
 }
@@ -341,15 +347,21 @@ resetNudges()
     gNDist = 1.0;
     gNAz = 0.0;
     gNH = 0.0;
+    gNX = 0.0;
 }
 
-// one step of the keys held (5 per second): W/S closer/further, A/D round, E/C up/down
+// one step of the keys held (5 per second): W/S closer/further, A/D round, E/C up/down,
+// Shift + A/D (Second Life sends them as strafe, CONTROL_LEFT/RIGHT) across the picture
 step()
 {
     if (gKeys & CONTROL_FWD) gNDist = gNDist * 0.96;
     if (gKeys & CONTROL_BACK) gNDist = gNDist * 1.04;
-    if (gKeys & (CONTROL_ROT_LEFT | CONTROL_LEFT)) gNAz += 3.0;
-    if (gKeys & (CONTROL_ROT_RIGHT | CONTROL_RIGHT)) gNAz -= 3.0;
+    if (gKeys & CONTROL_ROT_LEFT) gNAz += 3.0;
+    if (gKeys & CONTROL_ROT_RIGHT) gNAz -= 3.0;
+    if (gKeys & CONTROL_LEFT) gNX -= 0.02;
+    if (gKeys & CONTROL_RIGHT) gNX += 0.02;
+    if (gNX > SLIDE) gNX = SLIDE;
+    if (gNX < -SLIDE) gNX = -SLIDE;
     if (gKeys & CONTROL_UP) gNH += 0.05;
     if (gKeys & CONTROL_DOWN) gNH -= 0.05;
     if (gNDist < 0.4) gNDist = 0.4;
@@ -365,7 +377,6 @@ default
     state_entry()
     {
         gOwner = llGetOwner();
-        llSetText("", ZERO_VECTOR, 0.0);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "frame");
     }
 
@@ -402,13 +413,12 @@ default
         {
             gActive = FALSE;
             gKeys = 0;
-            llSetText("", ZERO_VECTOR, 0.0);
             llSetTimerEvent(0.0);
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "frame");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/frame] v" + VERSION + " active " + (string)gActive + ", " + llList2String(NAMES, gIdx)
-                + ", with " + (string)llGetListLength(gWith) + ", free mem " + (string)llGetFreeMemory());
+                + ", with " + (string)llGetListLength(gWith) + ", lens " + (string)llRound(12.0 / llTan(gFov * 0.5)) + " mm, free mem " + (string)llGetFreeMemory());
         else if (!gActive) return;
         else if (num == NEXT)
         {
@@ -429,16 +439,12 @@ default
         {
             gFov = (float)str;
             gFovT = llGetTime();
+            lens();                                         // the readout follows your zoom at once
         }
     }
 
     timer()
     {
-        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0)
-        {
-            gTextT = 0.0;
-            llSetText("", ZERO_VECTOR, 0.0);
-        }
         if (gKeys) step();
         else if (gFovT > 0.0 && llGetTime() - gFovT > 0.8)
         {

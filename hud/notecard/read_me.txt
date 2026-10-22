@@ -72,8 +72,12 @@ STILL
 For a picture of yourself, or of you and whoever stands right next to you. Still places the camera well and holds it still: no cuts, and it never moves by itself.
  - Tap the button > Still. DOUBLE-TAP for the next framing: Full length, Half length, Close.
  - Adjust with your movement keys: W / S closer / further, A / D round you, E / C higher / lower. You stand still meanwhile. The next framing starts fresh.
+ - SHIFT + A / D (or Shift + the left / right arrows) slides you left or right in the picture, for example onto a third, without moving the camera round you.
+ - THE LENS: the line above the button names the lens a photographer would use for this framing, and yours:
+      □ Still · Close · 105 mm · now 21 · Ctrl+0
+   Take 12 can read your viewer's zoom, but only you can change it: Ctrl+0 zooms in, Ctrl+8 zooms out, Ctrl+9 goes back to normal. Press Ctrl+0 until the line shows "105 mm ✓". The camera backs off by itself so the picture keeps its size: a longer lens flattens the perspective, the classic flattering portrait look. Second Life's normal view is about 21 mm, a wide angle.
+   The lenses: Full length 50 mm, Half length 85 mm, Close 105 mm. The line shows in Still even when the status line is off.
  - Tap once to leave.
- - For closer close-ups, zoom the viewer in (Ctrl+0 a few times; Ctrl+9 sets it back). The camera follows the zoom by itself.
 
 Me, Us and Still only start when YOU choose them in the menu.
 

@@ -15,7 +15,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.8.2";
+string VERSION = "5.9.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
