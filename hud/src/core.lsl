@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "6.0.0";
+string VERSION = "6.0.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -24,7 +24,7 @@ integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
-integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>": every camera put on screen (Share the view)
+integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>|<lens>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> cameras, tips  the viewer's field of view changed (radians): your lens
 integer UI_STATE   = 7320;   // core -> ui, tips  "<state>|<mode>|<nextCutUnix>|<why>"
@@ -164,7 +164,7 @@ setCam(vector p, vector f)
     ]);
     gShotPos = p;
     gShotFoc = f;
-    llMessageLinked(LINK_SET, CAMSET, (string)p + "|" + (string)f + "|0", "");
+    llMessageLinked(LINK_SET, CAMSET, (string)p + "|" + (string)f + "|0|" + (string)llGetCameraFOV(), "");
     gApplyT = llGetTime();
     gVerify = TRUE;
 }
@@ -643,7 +643,7 @@ default
                 llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
                 gShotPos = gp;
                 gShotFoc = gf;
-                llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag, "");
+                llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
                 gGlideUntil = llGetTime() + 3.0;
                 gGlided = TRUE;
                 list O = llParseStringKeepNulls(gLast, ["|"], []);

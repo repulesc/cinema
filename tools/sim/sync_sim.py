@@ -20,6 +20,39 @@ ch = lambda s: re.search(r"integer SYNC_CH\s*=\s*(-?\d+);", s).group(1)
 check(ch(sync) == ch(watch), "the two scripts use different channels")
 cam = lambda s: re.sub(r"\s+", " ", re.search(r"llSetCameraParams\(\[CAMERA_ACTIVE.*?\]\);", s, re.S).group(0))
 check(cam(sync) == cam(watch), "viewers set the camera differently")
+# 6.0.1: each viewer places the director's camera through their OWN lens (same picture, own perspective)
+import math
+place = lambda src: re.search(r"\nplace\(integer again\)\n\{.*?\n\}\n", src, re.S)
+check(place(sync) is not None and place(watch) is not None and place(sync).group(0) == place(watch).group(0),
+      "sync and the Watch must place the camera with the same code")
+core_src = open(os.path.join(R, "hud", "src", "core.lsl")).read()
+check(core_src.count('"|" + (string)llGetCameraFOV(), "");') == 2, "core: CAMSET must carry the director's lens at both sites")
+for src_, nm in ((sync, "sync"), (watch, "watch")):
+    for frag in ('gCam = llDumpList2String(llList2List(L, 2, -1), "|");', "place(FALSE);",
+                 'if (gHost != NULL_KEY && gCam != "" && llFabs(llGetCameraFOV() - gMyFov) > 0.004) place(TRUE);'):
+        check(frag in src_, f"{nm}: missing {frag}")
+def py_place(p, f, df, mf, wall=None):
+    if df > 0.05 and mf > 0.05:
+        k = max(0.2, min(5.0, math.tan(df / 2) / math.tan(mf / 2)))
+        q = tuple(fi + (pi - fi) * k for pi, fi in zip(p, f))
+        if wall is not None and math.dist(f, q) > wall:            # a wall `wall` m from the focus, on the line
+            u = tuple((qi - fi) / math.dist(f, q) for qi, fi in zip(q, f))
+            q = tuple(fi + ui * (wall - 0.3) for fi, ui in zip(f, u))
+        return q
+    return p
+fov = lambda mm: 2 * math.atan(12.0 / mm)
+size = lambda c, f, mm: (1.8 / math.dist(c, f)) / (2 * math.tan(fov(mm) / 2))
+P, F = (120.0, 100.0, 27.0), (126.0, 104.0, 25.5)                # the director at 85 mm (backed off by 6.0's dolly)
+for mine in (21, 35, 50, 85, 105):
+    q = py_place(P, F, fov(85), fov(mine))
+    check(abs(size(q, F, mine) - size(P, F, 85)) < 1e-9, f"viewer at {mine} mm: not the director's picture size")
+    d0 = [b - a for a, b in zip(P, F)]; d1 = [b - a for a, b in zip(q, F)]
+    check(max(abs(x / math.dist(P, F) - y / math.dist(q, F)) for x, y in zip(d0, d1)) < 1e-9, f"viewer at {mine} mm: off the director's line")
+q = py_place(P, F, fov(50), fov(105), wall=9.0)                 # a longer lens than the director's: further back, a wall
+check(abs(math.dist(q, F) - 8.7) < 1e-9, "a wall must stop the viewer's camera 0.3 m short")
+for frag in ("if (k < 0.2) k = 0.2;", "if (k > 5.0) k = 5.0;", "llVecNorm(f - q) * 0.3"):
+    check(frag in sync and frag in watch, f"the placement must keep {frag}")
+check(py_place(P, F, 0.0, fov(21)) == P, "a camera without the lens (an older director) is applied as it is")
 for name, s in (("sync", sync), ("watch", watch)):
     for w in ('w == "who"', '"here|', 'w == "invite"', '"busy|watching "', '"ack|1"', '"join', '"leave"', '"next"', '"away"',
               '"back"', 'w == "cam"', 'w == "hb"', 'w == "director"', 'w == "kick"', 'w == "end"', "key who = llGetOwnerKey(id);",

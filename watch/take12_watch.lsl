@@ -7,7 +7,7 @@
 //  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "6.0.0";
+string  VERSION = "6.0.1";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -17,6 +17,8 @@ key     gOwner;
 key     gHost;               // whose view you follow
 string  gHostN;              // ... their name (kept: llKey2Name is "" once they have left the region)
 float   gNoteT;              // a note above the HUD ("... camera is gone") until then + 4 s
+string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes
+float   gMyFov;              // your lens when it was placed
 vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
@@ -26,6 +28,34 @@ string  gShownS;             // the text above the HUD now
 float   gTapT;
 integer gTaps;
 integer gTapPend;
+
+// the director's camera through YOUR lens: the same line to the same focus, at the distance that gives the same
+// picture size (k = tan(theirs / 2) / tan(yours / 2)); a wall on the way stops it 0.3 m short. again: your zoom changed
+place(integer again)
+{
+    list L = llParseStringKeepNulls(gCam, ["|"], []);
+    vector p = (vector)llList2String(L, 0);
+    vector f = (vector)llList2String(L, 1);
+    float lag = (float)llList2String(L, 2);
+    float df = (float)llList2String(L, 3);
+    gMyFov = llGetCameraFOV();
+    if (again) lag = 0.5;
+    if (df > 0.05 && gMyFov > 0.05)
+    {
+        float k = llTan(df * 0.5) / llTan(gMyFov * 0.5);
+        if (k < 0.2) k = 0.2;
+        if (k > 5.0) k = 5.0;
+        vector q = f + (p - f) * k;
+        list r = llCastRay(f, q, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
+        p = q;
+    }
+    gApplied = p;
+    gApplyT = llGetTime() + lag + 2.0;
+    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f,
+        CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
+        CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
+}
 
 say(key k, string m)
 {
@@ -51,6 +81,7 @@ follow(key host, string n)
 {
     gHost = host;
     gHostN = n;
+    gCam = "";
     gIsAway = FALSE;
     gApplied = ZERO_VECTOR;
     gHearT = llGetUnixTime();
@@ -67,6 +98,7 @@ leave(integer tell, integer clear, string why)
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
     gHost = NULL_KEY;
+    gCam = "";
     // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
     clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
@@ -128,6 +160,7 @@ default
             else if (gTaps >= 2) say(gHost, "next");         // double-tap: the next view for everyone
             else leave(TRUE, TRUE, "Your camera");           // tap: your own camera back
         }
+        if (gHost != NULL_KEY && gCam != "" && llFabs(llGetCameraFOV() - gMyFov) > 0.004) place(TRUE);   // you zoomed: same picture
         if (gHost != NULL_KEY && llGetUnixTime() - gBeatT >= 10)
         {
             gBeatT = llGetUnixTime();
@@ -198,12 +231,8 @@ default
         else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
         {
             gHearT = llGetUnixTime();
-            float lag = (float)llList2String(L, 4);
-            gApplied = (vector)llList2String(L, 2);
-            gApplyT = llGetTime() + lag + 2.0;
-            llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, gApplied, CAMERA_FOCUS, (vector)llList2String(L, 3),
-                CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
-                CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
+            gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
+            place(FALSE);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
         else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else leads now

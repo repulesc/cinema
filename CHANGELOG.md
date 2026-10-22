@@ -1,5 +1,17 @@
 # Changelog
 
+## 6.0.1
+**Sharing: the same picture for everyone, each through their own lens.**
+- **The problem.** A viewer received only the director's camera position and focus, and looked through their own zoom. Different zooms gave different pictures. Since 6.0 it was worse: a director zoomed to 85 mm backs the camera off about 4× so the people keep their size for them, and viewers at the normal zoom saw a tiny group.
+- **The fix.** core's CAMSET (and so `cam|…`) now carries the director's field of view. Each viewer places the camera on the same line to the same focus, at the distance that keeps the picture size through their own lens:
+  - `k = tan(director/2) / tan(yours/2)`, clamped to 0.2–5;
+  - 0.3 m short of a wall;
+  - placed again within a second if the viewer zooms while watching.
+- **No lens advice for viewers, nothing to click.** The same `place()` runs in `sync` and in the Watch.
+- **Compatible with 6.0:** older viewers ignore the extra field, and newer viewers apply a camera without it as it is.
+- **Docs:** SHARING.md ("Each through their own lens") and the Read Me.
+- **Tests:** `sync_sim` checks the picture size for viewers at 21–105 mm with an 85 mm director, the line, the wall, a camera without the lens, and `place()` being the same in both scripts.
+
 ## 6.0.0
 **Your lens, everywhere.** The viewer's zoom is your lens, and every camera now frames for it, with one rule: **the lens changes the perspective, never the size of the picture.**
 - **Zoom while a camera runs, and the picture keeps its size.**
