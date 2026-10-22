@@ -60,7 +60,8 @@ integer gLed;                // Only friends: your own view (lens)
 string  gKind;               // the sharing block from sync: live / view / inv / ""
 string  gSync;
 string  gTip;                // the tip on screen ("" = none)
-string  gLast;               // the text this script wrote last
+string  gText;               // the text this script composed last
+string  gLast;               // ... and as it reads back from the prim (cut short past 254 bytes)
 integer gWant = -1;          // the tip waiting for a free moment
 float   gWantT;
 float   gShowT;
@@ -138,8 +139,10 @@ draw()
     if (gKind != "view" && line() != "") L += [line()];
     if (gTip != "") L += [gTip];
     string t = llDumpList2String(L, "\n");
-    if (t != c) llSetText(t, <1.0, 1.0, 1.0>, 0.85);
-    gLast = t;
+    if (t == gText && c == gLast) return;
+    gText = t;
+    llSetText(t, <1.0, 1.0, 1.0>, 0.85);
+    gLast = cur();                                          // as Second Life keeps it (over 254 bytes it is cut short)
 }
 
 string idleText()
@@ -212,7 +215,7 @@ tick()
 {
     draw();
     if (gWant >= 0 || gShowT > 0.0) llSetTimerEvent(0.5);
-    else if (gLast != "" || gRollT > 0.0) llSetTimerEvent(1.0);    // the status line: back within a second after a notice
+    else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);    // back within a second after a notice
     else llSetTimerEvent(0.0);
 }
 
@@ -252,9 +255,9 @@ default
         else if (num == TEXT)
         {
             integer i = llSubStringIndex(str, "|");
-            gKind = llGetSubString(str, 0, i - 1);
-            gSync = llGetSubString(str, i + 1, -1);
-            if (i == 0) gKind = "";
+            gKind = "";
+            if (i > 0) gKind = llGetSubString(str, 0, i - 1);
+            gSync = llDeleteSubString(str, 0, i);                  // not llGetSubString(str, i + 1, -1): on "|" that is "|"
         }
         else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "all")) load();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tips");

@@ -55,12 +55,25 @@ for m, k in zip(["scenery", "personal", "us", "onlyfr", "frame"], MARKS):
     check(mk.get(m) == k, f"the mark for {m} must be the menu's ({mk.get(m)!r} vs {k!r})")
 check('"tips"' in picker and 'cin.tipn", "0"' in picker, "/77 tips on|off missing, or it does not start from zero")
 
+# ---- LSL, the parts that bite --------------------------------------------------------------------------------------
+def lsl_index(s, a, b):
+    n = len(s); return (a + n if a < 0 else a), (b + n if b < 0 else b)
+def llGetSubString(s, a, b):                 # start > end (after negative indices): everything EXCEPT the range between
+    a, b = lsl_index(s, a, b)
+    return s[max(a, 0):b + 1] if a <= b else s[:b + 1] + s[a:]
+def llDeleteSubString(s, a, b):
+    a, b = lsl_index(s, a, b)
+    return s[:max(a, 0)] + s[b + 1:] if a <= b else s[b + 1:a]
+def llSetText(t):                            # Second Life keeps at most 254 bytes
+    return t.encode("utf-8")[:254].decode("utf-8", "ignore")
+check(llGetSubString("|", 1, -1) == "|" and llDeleteSubString("|", 0, 0) == "", "the LSL model is wrong")
+
 # ---- the script, in Python ----------------------------------------------------------------------------------------
 ACTIVE = ("rolling", "frozen", "peek")
 class Hud:
     def __init__(s, on="1", n="0", afk_on="1", afk_sec="180", status="1", skin="1"):
         s.lsd = {"tips": on, "tipn": n, "afk_on": afk_on, "afk_sec": afk_sec, "status": status, "skin": skin}
-        s.text = ""; s.t = 100.0; s.chat = []; s.log = []
+        s.text = ""; s.t = 100.0; s.chat = []; s.log = []; s.gtext = ""; s.rate = 0.0; s.tickT = 0.0
         s.st = ""; s.mode = ""; s.why = ""; s.led = False; s.kind = ""; s.syncb = ""; s.tip = ""; s.last = ""
         s.want_i = -1; s.wantT = 0; s.showT = 0.0; s.lastT = -100.0
         s.rollT = 0.0; s.more = False; s.sat = False; s.sitting = False
@@ -84,12 +97,18 @@ class Hud:
         if s.skin: n = k + " " + n
         return n + " · " + w
     def draw(s):
-        if s.text != "" and s.text != s.last: return
+        c = s.text
+        if c != "" and c != s.last: return
         L = []
         if s.syncb: L.append(s.syncb)
         if s.kind != "view" and s.line(): L.append(s.line())
         if s.tip: L.append(s.tip)
-        s.text = s.last = "\n".join(L)
+        t = "\n".join(L)
+        if t == s.gtext and c == s.last: return
+        s.gtext = t; s.text = llSetText(t); s.last = s.text
+    def after(s):                            # the script's tick(): draw, then how often the timer runs (0 = stopped)
+        s.draw()
+        s.rate = 0.5 if (s.want_i >= 0 or s.showT > 0) else (1.0 if (s.last != "" or s.rollT > 0 or s.syncb != "") else 0.0)
     def show(s, i):
         assert s.free(), "a tip over another script's text"
         s.tip = TIPS[i]
@@ -120,9 +139,13 @@ class Hud:
             s.st = st; s.mode = mode
         s.why = why
         if mode != "friends": s.led = False
-        s.draw()
-    def lens(s, dist): s.led = dist > 0; s.draw()
-    def sharing(s, kind, text): s.kind = kind; s.syncb = text; s.draw()
+        s.after()
+    def lens(s, dist): s.led = dist > 0; s.after()
+    def sharing(s, kind, text):              # sync sends "<kind>|<text>"; parsed exactly as the script does
+        msg = kind + "|" + text; i = msg.find("|")
+        s.kind = llGetSubString(msg, 0, i - 1) if i > 0 else ""
+        s.syncb = llDeleteSubString(msg, 0, i)
+        s.after()
     def tick(s):
         now = s.t
         if s.showT > 0 and now - s.showT >= HOLD: s.tip = ""; s.showT = 0.0
@@ -132,15 +155,17 @@ class Hud:
         if s.want_i >= 0:
             if not s.on or now - s.wantT > WAIT: s.want_i = -1
             elif now - s.wantT >= LATE and now - s.lastT >= GAP and s.free(): s.show(s.want_i)
-        s.draw()
-    def run(s, sec):
+        s.after()
+    def run(s, sec):                         # only a running timer ticks
         for _ in range(int(sec * 2)):
-            s.t += 0.5; s.tick()
-    def attach(s): s.want(0)
+            s.t += 0.5
+            if s.rate > 0 and s.t - s.tickT >= s.rate - 1e-9: s.tickT = s.t; s.tick()
+    def attach(s): s.want(0); s.after()
 
 # the port matches the script where it matters
 for frag in ['if (gWant != 0 || !idle) gWant = -1;', 'if (rolling && (!was || mode != gMode))', 'now - gLastT >= GAP && free()) show(gWant);',
-             'if (c != "" && c != gLast) return;', 'if (gKind != "view" && line() != "") L += [line()];', 'if (done || all >= ALL)',
+             'if (c != "" && c != gLast) return;', 'gSync = llDeleteSubString(str, 0, i);', 'if (i > 0) gKind = llGetSubString(str, 0, i - 1);',
+             'if (t == gText && c == gLast) return;', 'gLast = cur();', 'else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);', 'if (gKind != "view" && line() != "") L += [line()];', 'if (done || all >= ALL)',
              'llInsertString(llDeleteSubString(gN, i, i), i, c)', 'else if (!gMore && now - gRollT >= 90.0)',
              'else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";',
              'else if (gMode == "friends" && gLed) w = "your view";', 'else if (gSt == "peek") w = "paused · Esc to carry on";',
@@ -178,6 +203,22 @@ h.sharing("inv", "Pano invites you · hold to watch"); h.state("rolling", "scene
 check(h.text == "Pano invites you · hold to watch\n◇ Scenery · auto", f"invited: {h.text!r}")
 h.lsd["status"] = "0"; h.load(); h.sharing("live", "● LIVE · nobody watching yet"); h.run(1)
 check(h.text == "● LIVE · nobody watching yet", "Status line off must still show sharing")
+# the empty block (sync, nothing shared) shows nothing - the stray "|" of 5.8.0/5.8.1
+h = Hud(on="0"); h.sharing("", ""); h.run(2); check(h.text == "", f"an empty sharing block must show nothing: {h.text!r}")
+h.state("rolling", "scenery"); h.sharing("", ""); h.run(2); check(h.text == "◇ Scenery · auto", f"empty block + status: {h.text!r}")
+# watching, while sync's own notice is up: once it clears, the 👁 line comes back (the timer must not stop)
+h = Hud(on="0"); h.state("armed"); h.text = "Watching Pano\ndouble-tap: next for all · any key: your camera"
+h.sharing("view", "👁 Pano"); h.run(3); check(h.text.startswith("Watching Pano"), "the notice was overwritten")
+h.text = ""; h.run(3); check(h.text == "👁 Pano", f"the 👁 line did not come back after the notice: {h.text!r}")
+# over 254 bytes Second Life cuts the text short: it must still be ours, and keep updating
+h = Hud(); h.state("rolling", "social")
+names = ["Anastasia Featherstonehaugh", "Benedetta Montgomery-Smythe", "Cordelia Vanderbilt-Ashford", "Desdemona Throckmorton"]
+h.sharing("live", "● LIVE · 9 watching\n" + " · ".join(n + " (looking around)" for n in names) + " · +5")
+h.run(3); n1 = len(h.text.encode())
+check(len((h.syncb + h.line() + h.tip).encode()) > 254 and n1 <= 254 and h.text.startswith("● LIVE"), f"the long-text case is not long ({n1} bytes)")
+h.run(8); h.sharing("live", "● LIVE · 1 watching\nAna"); h.run(2)
+check(h.text == "● LIVE · 1 watching\nAna\n◎ Us · auto", f"after a cut-short text the composer froze: {h.text!r}")
+
 # ---- other scripts' short notices --------------------------------------------------------------------------------
 h = Hud(on="0"); h.state("rolling", "friends"); h.run(1)
 h.text = "Your view is kept · Esc to continue"; h.lens(2.0); h.run(3)
