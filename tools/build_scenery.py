@@ -3,7 +3,8 @@
 
 Same code, four scripts: core, ui, scenery and tips. `integer LITE = 0;` becomes `= 1;` (core takes only the scenery
 camera, ui hides the other cameras and sharing and shows "More cameras", scenery keeps no favourites), and a few texts
-are swapped for the free build's own, so the full build carries none of them. people, friends, picker, frame, lens
+are swapped for the free build's own (and the Button choice is left out: it has one button design, scenery/art),
+so the full build carries none of them. people, friends, picker, frame, lens
 and sync are simply not part of it. Every substitution must match exactly once, so a change in hud/src that moves one
 fails here instead of shipping a stale text.
 
@@ -33,6 +34,10 @@ SUBS = {
         ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
         ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
         ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
+        # one button design (scenery/art): no Button choice under Options > Look
+        ('Look · menu style, button, chat text', 'Look · menu style, status line, chat text'),
+        (' + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', ''),
+        ('b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "trace", "back"];', 'b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];'),
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: share"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),

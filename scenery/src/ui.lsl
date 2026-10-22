@@ -350,7 +350,7 @@ openMenu(string page)
     }
     else if (page == "opts")
     {
-        text += "Timing · how long views last, when the idle camera starts\nCamera · indoors, reach, Alt-cam\nLook · menu style, button, chat text";
+        text += "Timing · how long views last, when the idle camera starts\nCamera · indoors, reach, Alt-cam\nLook · menu style, status line, chat text";
         b = ["timing", "camcfg", "look", "favs", "test", "reset", "back"];
     }
     else if (page == "help")
@@ -377,9 +377,9 @@ openMenu(string page)
     }
     else if (page == "look")
     {
-        text += "Menu style: " + llList2String(["Plain", "Symbols", "Color"], gSkin) + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)
+        text += "Menu style: " + llList2String(["Plain", "Symbols", "Color"], gSkin)
             + "\nStatus line (the mode above the button): " + onoff("status") + " · Chat text: " + onoff("trace");
-        b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "trace", "back"];
+        b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];
     }
     else if (page == "indoors")
     {

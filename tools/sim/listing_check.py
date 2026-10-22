@@ -29,7 +29,7 @@ for w in ("Take 12 Watch", "free", "Nothing to click", "Double-tap", "do not nee
     check(w.lower() in watch.lower(), f"watch listing: missing '{w}'")
 for w in ("Take 12 Scenery", "Free", "L$0", "More cameras", "Double-tap", "skybox", "Idle start", "Photo hold", "full Take 12"):
     check(w in free, f"scenery listing: missing '{w}'")
-for w in ("Lite", "Hold: share", "SHARE THE VIEW"):
+for w in ("Lite", "Hold: share", "SHARE THE VIEW", "three looks"):
     check(w not in free, f"scenery listing: says '{w}' (it has no sharing, and the name Lite is not used)")
 check("Take 12 Scenery" in main, "listing: the full Take 12 should name its free companion")
 
@@ -72,6 +72,8 @@ SIZES = {("hud", "marketing", "adboard_square_1024.png"): (1024, 1024), ("hud", 
          ("watch", "marketing", "adboard_watch_1024.png"): (1024, 1024)}
 for (a, b, n), sz in list(SIZES.items()):
     if a == "hud": SIZES[("scenery", "marketing", n.replace(".png", "_scenery.png"))] = sz
+SIZES[("scenery", "art", "take12_scenery_icon_128.png")] = (128, 128)
+check("icon.draw_scenery(True) if FREE" in art and 'ptext(im, (x, y), "SCENERY", sc' in art, "free boards: the Scenery clapper and the TAKE 12 / SCENERY title")
 for p, sz in SIZES.items():
     path = os.path.join(R, *p)
     check(os.path.exists(path) and Image.open(path).size == sz, f"board {'/'.join(p)} missing or not {sz}")

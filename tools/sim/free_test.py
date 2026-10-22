@@ -36,12 +36,17 @@ check('if (gIndoors == "outside") raw = FALSE;' in sc, "scenery: skybox rooms mu
 check("!LITE && gCuts % 4 == 3" in sc and "num == FAV && !LITE" in sc, "scenery: no favourites in the free build")
 check('if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "fav")) return;' in core,
       "core: the free build must refuse the other cameras")
+# its own button (scenery/art): one design, so no Button choice under Options > Look
+check('"th0"' not in ui and " · Button: " not in ui and "menu style, button" not in ui, "ui: the free build has one button design, no Button choice")
+readme = rd("scenery", "README.md")
+check("scenery/art/take12_scenery_icon_sheet_512x256.png" in readme and "hud/art/take12_icon_sheet" not in readme, "scenery/README.md must name the Scenery texture")
+check(os.path.exists(os.path.join(R, "scenery", "art", "take12_scenery_icon_sheet_512x256.png")), "the Scenery texture is missing")
 # the notecard the HUD looks for is the one shipped with it
 nc = re.search(r'string NOTECARD = "([^"]+)";', ui).group(1)
 check(nc == "Take 12 Scenery - Read Me" and "Read Me" in nc, f"ui: notecard name {nc}")
 check(os.path.exists(os.path.join(R, "scenery", "notecard", "read_me.txt")), "scenery/notecard/read_me.txt is missing")
 card = rd("scenery", "notecard", "read_me.txt")
-check(card.startswith("Take 12 Scenery") and "Lite" not in card and "HOLD" in card and "full Take 12" in card, "the free Read Me")
+check(card.startswith("Take 12 Scenery") and "Lite" not in card and "HOLD" in card and "full Take 12" in card and "Viewfinder" not in card, "the free Read Me")
 vers = {re.search(r'string VERSION = "([^"]+)";', rd("hud", "src", n)).group(1) for n in os.listdir(os.path.join(R, "hud", "src"))}
 check(len(vers) == 1, f"hud/src: every script must carry the same version (the ui warns otherwise): {vers}")
 # the tips keep their numbers (tips.lsl picks them by index)

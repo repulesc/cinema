@@ -17,7 +17,7 @@ Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in th
 
 === THE BUTTON ==========================================
 
-The small clapper is the whole HUD. Everything is done with taps.
+The small clapper, with a sun setting on its slate, is the whole HUD. Everything is done with taps.
 
 TAP
    - when idle: opens the menu
@@ -32,7 +32,7 @@ HOLD  (about 1 second)
    - while rolling: the live menu (Photo, Next, Stop)
    - when idle: the menu
 
-While the camera runs, the clapper gives a tiny clap now and then; with your own camera it is still. (Its look: Options > Look.)
+While the camera runs, the clapper gives a tiny clap now and then; with your own camera it is still.
 
 
 === THE SCENERY CAMERA ==================================
@@ -73,7 +73,7 @@ TIMING    PACE: how long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (d
 CAMERA    INDOORS: Auto (default): inside on a build in the sky, or under a roof; outdoor views on open land. Inside: always inside, near you. Outside: always outdoor views.
           REACH: how far the camera may go (50 / 100 / 150 / 200 m; 100 by default). If your viewer holds the camera closer, it lowers itself; Re-learn goes back to your choice.
           ALT-CAM: what happens if you Alt-orbit your camera: pause (default), end, or ignore.
-LOOK      Menu style (Symbols, Plain or Color), the button (Classic, Rec or Viewfinder), the status line and chat text.
+LOOK      Menu style (Symbols, Plain or Color), the status line and chat text.
 TEST CAM  A 3-second check that the HUD can move your camera.
 RESET     Back to factory settings.
 
