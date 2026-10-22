@@ -27,6 +27,7 @@ HOW IT WORKS
 - Wear the Watch on a HUD point (Top Right is usual) and allow camera control once.
 - When a friend near you goes live with Take 12 and invites you, your camera follows theirs at once. Wearing the Watch is your yes: there is nothing to click.
 - Above the Watch you see whose view you are watching: "Pano".
+- You see the same picture as your friend, whatever your own zoom: the Watch places the camera so your lens shows it the same size.
 
 YOU ARE IN CONTROL
 - Tap the Watch, or press any movement key: your own camera is back.
@@ -47,7 +48,7 @@ GOOD TO KNOW
 ## Features (the Marketplace "Features" list takes 5)
 ```
 Free HUD to watch a friend's Take 12 camera live
-Nothing to click: wearing it is the yes
+The same picture as your friend, whatever your zoom
 Tap or any movement key: your own camera back
 Double-tap: next view for everyone watching
 Follows the camera when your friend passes it on

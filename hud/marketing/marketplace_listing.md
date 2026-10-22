@@ -3,7 +3,7 @@
 The Marketplace description is plain text. Copy each block below as it is: no bold, no headings, only "-" lists.
 Fields marked (you) need your own details (price, creator, support contact).
 
-This is the 6.0 text. The 4.8 listing is kept in `legacy/` ("your idle time, on film" is in the older ones: it was
+This is the 6.0.1 text. The 4.8 listing is kept in `legacy/` ("your idle time, on film" is in the older ones: it was
 replaced because "film" and "filming" made people think the HUD records video, which it does not).
 The free Take 12 Watch has its own listing: `watch/marketing/marketplace_listing_watch.md`.
 
@@ -50,6 +50,7 @@ In Only friends, set the view up the way you like it with your own camera: close
 SHARE THE VIEW
 Hold the button and choose Go live. Everyone near you who wears Take 12 or the free Take 12 Watch follows your camera, at once, with nothing to click. The Watch is a tiny free HUD that you can hand to any friend.
 - Above your button you always see who is connected: "LIVE - 3 watching" and their names.
+- Everyone sees the same picture, whatever their own zoom: each viewer's camera stands where their lens shows it the same size.
 - Double-tap while watching, and everyone gets the next view.
 - Look around with your own camera, and Esc brings you back to the shared view.
 - Pass the camera to a friend, or let anyone ask to lead. You decide: ask me each time, always, or never.
@@ -124,12 +125,13 @@ Take 12 is a one-button HUD that moves your camera off your avatar to drone view
 
 ## What is new in 6.0 (the Marketplace update message, or a group notice for existing buyers)
 ```
-Take 12 6.0: your lens, everywhere.
+Take 12 6.0.1: your lens, everywhere.
 - Your viewer's zoom (Ctrl+0 / Ctrl+8) is your lens, and every camera now frames for it: zoom in while Me, Us or Only friends runs and the camera glides back, so everyone keeps their size with the flatter faces of a portrait lens.
 - A longer lens brings more close views of faces, a wider one more of the place.
 - The line above the button shows your lens and the range each camera likes.
 - Still names the classic portrait lens for each framing (50, 85, 105 mm), and Shift + A/D slides you across the picture.
 - While the camera runs, the little clapper gives a tiny clap now and then.
+- Sharing: everyone who watches sees the same picture, whatever their own zoom (6.0.1).
 Get the new version from your Marketplace purchases (Update), and read the new notecard.
 ```
 

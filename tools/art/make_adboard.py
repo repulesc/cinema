@@ -345,7 +345,7 @@ def watch():
     paste_framed(im, hero, (hx, hy), border=6)
     btn = icon.watch_icon().resize((72, 72), Image.NEAREST); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
     ptext(im, (hx + gw * sc - 112, hy + 98), "WEAR IT", 2, CHALK, shadow=INK)
-    chips(im, 800, ["Nothing to click", "Follows their cuts"], 30, 80, S - 80)
+    chips(im, 800, ["Nothing to click", "Same picture, any zoom"], 30, 80, S - 80)
     chips(im, 880, ["Tap: your camera", "Double-tap: next"], 30, 80, S - 80)
     d.text((S // 2, 990), "ONE TINY BUTTON  -  NO TAKE 12 NEEDED", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
