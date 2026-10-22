@@ -12,9 +12,9 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "6.0.1";
+string VERSION = "6.1.0";
 string PASS    = "cinema-1.0-build1";
-integer LITE    = 0;                  // the Lite build (tools/build_lite.py) sets this to 1: outdoor views only, no favourites
+integer LITE    = 0;                  // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: no favourites
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -258,7 +258,7 @@ context()
     // sticky: once inside, stay inside until clearly outdoors (no build floor, no roof) or 30 m away. This stops
     // the camera flipping in and out near a door or where one ray misses.
     if (!raw && gLocal && gIndoors != "outside" && (built || nHit >= 5) && llVecDist(gOP, gLocalAt) < 30.0) raw = TRUE;
-    if (LITE || gIndoors == "outside") raw = FALSE;
+    if (gIndoors == "outside") raw = FALSE;
     gLocal = raw;
     if (raw) gLocalAt = gOP;
     // inside limits: under the ceiling (or 3.4 m up when no ceiling can be seen), 12 m away (20 m in a big open hall)

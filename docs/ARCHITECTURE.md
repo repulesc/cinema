@@ -282,7 +282,7 @@ Unchanged from v3: `findShot`, `nextShot`, context, `REACH_FAIL`. Read `legacy/v
 5. **Decision** (v4.4.1):
    - Auto: `gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5))`. A build floor in the sky, or on the ground under a roof. A plaza with no roof stays outdoors.
    - Inside: always `TRUE`, an override. If nothing is detectable, the camera stays near you. `floorOK()` then accepts the land as your floor, because the land *is* your floor.
-   - Outside, and Lite: `FALSE`.
+   - Outside: `FALSE`. (Take 12 Scenery, the free build, has rooms too since 6.1.0.)
    - **Sticky (not for Outside):** if the raw answer is "outdoors", but you were inside a moment ago, you are still on a build floor or under a roof (or 5 or more walls hit), and you are within 30 m of `gLocalAt` (where it last confirmed), you stay inside. This stops flipping near a door or where one ray misses. START clears the memory.
 6. **Limits:**
    - `gCapZ` = ceiling − 0.4, kept between floor + 1.6 and floor + 6. With no roof seen it is floor + 3.4.
@@ -390,7 +390,8 @@ The fix:
 ## 9. Checks and sims
 | Tool | Covers |
 |---|---|
-| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl` and `legacy/v3/src/*.lsl` and estimates memory (Lite is paused) |
+| `tools/lslcheck.sh` | Compiles `hud/src/*.lsl`, the Watch, `scenery/src/*.lsl` (the free Take 12 Scenery) and `legacy/v3/src/*.lsl`, and estimates memory |
+| **`tools/build_scenery.py`**, **`tools/sim/free_test.py`** | Generate the free Take 12 Scenery (`scenery/src`: core, ui, scenery, tips with `LITE = 1` and its own texts); `--check` in CI, and the test that only the switch and the texts differ |
 | `tools/sim/scenery_sim.py` | Outdoor finder (v3), unchanged |
 | `tools/sim/people_geometry.py` | Composition, unchanged |
 | **`tools/sim/framing_sim.py`** | §7.1: ports the people/friends planning (old and new) and measures every person's margin to the screen edge over pairs, lines, circles, clusters, open space, 10 × 8 and 6 × 6 rooms, 16:9 and 16:10. It asserts that nobody is cut and that at most 1 % of shots are under a 10 % margin; the old planning must show the problem |

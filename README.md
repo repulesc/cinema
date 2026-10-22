@@ -6,9 +6,10 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - **Frame (optional):** a held, well-composed view of you (or you and whoever stands with you) for your own snapshots: Full length, Half length, Close (`docs/FRAME.md`).
 - **Share the view:** hold the button › Go live, and the people near you (Take 12 or the free Take 12 Watch) watch your camera; one leads, any number watch (`docs/SHARING.md`).
-- Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
+- Tap = menu, double-tap = go, hold = share. A movement key gives your camera back instantly.
+- **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
-> **Status:** **v4.6.0** (in `hud/`) works in-world in the tests so far (beta). The Lite build in `hud-lite/` is paused, frozen at 4.4.5. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v6.1.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -17,14 +18,14 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 |---|---|
 | `hud/src/` | The ten HUD scripts |
 | `hud/art/` | The button texture `take12_icon_sheet_512x256.png` (all three looks, switchable in the menu), single-look variants and a preview |
-| `hud-lite/` | **Take 12 Lite**: the scenery camera, Photo hold and the classic look. Generated from `hud/src` (`tools/build_lite.py`), with its own notecard, listing text and ad boards |
+| `scenery/` | **Take 12 Scenery** (free): the scenery camera on its own. `scenery/src` is generated from `hud/src` (`tools/build_scenery.py`); its own notecard, listing text, ad boards and build steps (`scenery/README.md`) |
 | `legacy/v3/` | The frozen, working v3.0.0: scripts, docs and build steps |
 | `legacy/v1-v2/` | The old people-centred v1/v2 code and design (superseded) |
-| `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src` and `legacy/v3/src` |
+| `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src`, the Watch, `scenery/src` and `legacy/v3/src` |
 | `tools/sim/` | Python ports of the camera maths, run in CI |
 | `tools/art/make_icon.py` | Generates the pixel clapper textures (Take 12 and the Take 12 Watch icon) |
 | `watch/` | The free Take 12 Watch HUD: its script, icon and build steps (`watch/README.md`) |
-| `tools/art/make_adboard.py` | Generates the Marketplace and vendor ad boards in `hud/marketing/` |
+| `tools/art/make_adboard.py` | Generates the Marketplace and vendor ad boards in `hud/marketing/`, `scenery/marketing/` and `watch/marketing/` |
 
 ## Documents
 | Document | Contents |
@@ -52,7 +53,8 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 Want the v3 version instead? See [`legacy/v3/README.md`](legacy/v3/README.md).
 
 ## Checks (run before every paste)
-- `tools/lslcheck.sh`: compile-checks every script and estimates its free memory (must be ≥ 15 KB).
-- `tools/sim/scenery_sim.py`, `tools/sim/people_geometry.py`, `indoor_sim.py` (inside views, with Second Life's exact ray-result layout), `friends_sim.py`, `tap_test.py`, `sheet_test.py`, `lite_test.py`.
+- `tools/lslcheck.sh`: compile-checks every script and estimates its free memory (keep `ui` at 13 KB or more, the others at 12.5 KB or more).
+- `python3 tools/build_scenery.py --check`: the free Take 12 Scenery is up to date with `hud/src`.
+- `tools/sim/*.py`: the camera maths, the menus, the tips, sharing, the listings and the free build (`free_test.py`).
 
 GitHub Actions runs all of them on every push.
