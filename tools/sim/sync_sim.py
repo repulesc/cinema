@@ -45,7 +45,10 @@ for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|
           "if (!gSharing && llGetUnixTime() - gToggleT < 2) return;", 'list    LEADS      = ["Ask", "Always", "Never"];',
           'llLinksetDataWriteProtected("cin.share_lead"', "didn't answer (out of range or HUD off)",
           'if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)',
-          "llGetPrimitiveParams([PRIM_TEXT])", 'return "● LIVE · nobody watching yet";'):
+          "llGetPrimitiveParams([PRIM_TEXT])", 'return "● LIVE · nobody watching yet";',
+          # 5.8: the state goes to cinema_tips (the one owner of the text above the HUD), short notices stay here
+          'integer TEXT       = 7380;', 'if (gSharing) k = "live";', 'else if (gHost != NULL_KEY) k = "view";',
+          'if (k != gSent) llMessageLinked(LINK_SET, TEXT, k, "");', '== gNoteS) llSetText("", ZERO_VECTOR, 0.0);'):
     check(w in sync, f"sync: missing {w}")
 check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must be sent from setCam and the glide")
 check('else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }' in core, "core: Go live must start Social")

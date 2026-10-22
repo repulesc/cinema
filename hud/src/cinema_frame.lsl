@@ -7,7 +7,7 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "5.7.0";
+string VERSION = "5.8.0";
 
 integer START      = 7301;
 integer STOP       = 7302;

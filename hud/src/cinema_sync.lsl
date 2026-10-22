@@ -15,7 +15,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.7.0";
+string VERSION = "5.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -24,6 +24,7 @@ integer CAMSET     = 7325;   // core -> sync  "<pos>|<focus>|<lag>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
+integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|<the state above the HUD>"
 integer SYNC_CH    = -7712120;   // Take 12 and Take 12 Watch share this channel
 float   NEAR       = 20.0;       // m  who is found and invited
 integer NEXT_GAP   = 5;          // s  two viewers' double-taps close together cut once
@@ -69,6 +70,8 @@ integer gDlg;
 integer gDlgL;
 integer gDlgT;
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
+string  gNoteS;              // ... its text
+string  gSent;               // the sharing block last sent to cinema_tips (TEXT), which shows it above the HUD
 
 // ---- above the HUD: the state, and short notices ------------------------------
 // a short name: "Ana Resident" -> "Ana"
@@ -112,17 +115,33 @@ string ind()
     return "";
 }
 
+// the state goes to cinema_tips, the one owner of the text above the HUD (with the status line and the tips)
 refresh()
 {
-    if (gTextT == 0.0) llSetText(ind(), <1.0, 1.0, 1.0>, 0.85);
+    string k = "";
+    if (gSharing) k = "live";
+    else if (gHost != NULL_KEY) k = "view";
+    else if (gPendT) k = "inv";
+    k += "|" + ind();
+    if (k != gSent) llMessageLinked(LINK_SET, TEXT, k, "");
+    gSent = k;
     llSetTimerEvent(1.0);
 }
 
+// a short notice: the whole text for 4 s, then it gives way (cinema_tips draws the state again)
 show(string s)
 {
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
+    gNoteS = s;
     gTextT = llGetTime();
     llSetTimerEvent(1.0);
+}
+
+quiet()
+{
+    if (gTextT > 0.0 && llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0) == gNoteS) llSetText("", ZERO_VECTOR, 0.0);
+    gTextT = 0.0;
+    refresh();
 }
 
 note(string s)
@@ -603,8 +622,7 @@ default
                     if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");     // core: keep the double-tap for this
                     gOffer = who;
                     gPendT = llGetUnixTime();
-                    gTextT = 0.0;
-                    refresh();
+                    quiet();
                 }
             }
         }
@@ -715,8 +733,7 @@ default
         if (gWhoT > 0.0 && llGetTime() - gWhoT > 1.5)
         {
             gWhoT = 0.0;                                    // the "who" check is in: the panel
-            gTextT = 0.0;
-            refresh();
+            quiet();
             panelNear();
         }
         if (gInv != [] && now - gInvT >= 3)
@@ -793,17 +810,8 @@ default
                 }
             }
         }
-        if (gTextT > 0.0 && llGetTime() - gTextT > 4.0)
-        {
-            gTextT = 0.0;                                   // the notice gives way to the state again
-            refresh();
-        }
-        else if (gTextT == 0.0 && ind() != "")
-        {
-            // keep the state current; never over another script's short notice (ours start with ● or 👁, or are empty)
-            string cur = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);
-            if (cur != ind() && (cur == "" || llGetSubString(cur, 0, 0) == "●" || llGetSubString(cur, 0, 0) == "👁")) refresh();
-        }
+        if (gTextT > 0.0 && llGetTime() - gTextT > 4.0) quiet();       // the notice gives way to the state again
+        else refresh();                                                 // keep the state current ("no signal")
         if (gDlgT > 0 && now - gDlgT > 60)
         {
             gDlgT = 0;

@@ -1,5 +1,31 @@
 # Changelog
 
+## 5.8.0
+**A status line above the button: which camera runs, and who is in charge.** While Take 12 films, one quiet line always says so:
+- `◇ Scenery · auto`, or `◇ Scenery · started while you were idle`;
+- `○ Me · auto`, `◎ Us · auto`, `□ Still · held`;
+- `♡ Only friends · auto`, which becomes `· your view` once you frame it yourself (and goes back to auto with Release);
+- `▣ Photo · held`;
+- `◇ Scenery · paused · Esc to carry on`.
+
+Nothing above the button means your own camera. The mark follows the menu style (none in Plain). It can be turned off in Options › Look › Status line, or with `/77 statusline on|off`.
+
+- **One owner for the text above the HUD.** `cinema_tips` now composes:
+  - the sharing block (from sync, over the new TEXT 7380), with the status line under it while you're live;
+  - only `👁 Pano` while you watch someone;
+  - the tips, under the status line, showing only their second line.
+  Other scripts' short notices (the lens, Frame, sync) still take the whole text for their few seconds. It never writes over them, and the status comes back within a second.
+- **Sync no longer re-asserts its indicator itself.** It sends it as TEXT and clears its own notices after about 4 s.
+- **Core:** UI_STATE carries a 4th field, `why` (`idle` when the idle start began the run).
+- **Tips:** the Paused, Hold › More and Sitting tips are reworded so their second line stands alone.
+- **`tools/sim/tips_sim.py` now models the whole text above the button:**
+  - every camera's line, idle start, your view, Photo and pause;
+  - Plain, and Status line off;
+  - LIVE on top, watching alone;
+  - notices never overwritten;
+  - tips under the status.
+  `sync_sim` checks the TEXT hand-off, and `menu_sim` checks the Look page.
+
 ## 5.7.0
 **Symbols by default, and short tips above the button.**
 - **Menu style:** Symbols (quiet black-and-white marks) is now the default. Plain and Color stay in Options › Look. Settings step 7 moves the 5.6.0 default (Plain) over; picking Plain again keeps it.

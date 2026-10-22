@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.7.0";
+string VERSION = "5.8.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -27,7 +27,7 @@ integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera ro
 integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
-integer UI_STATE   = 7320;   // core -> ui  "<state>|<mode>|<nextCutUnix>"
+integer UI_STATE   = 7320;   // core -> ui, tips  "<state>|<mode>|<nextCutUnix>|<why>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -54,6 +54,7 @@ integer gSitMask;
 integer gPermOK;
 integer gState;
 string  gMode;                // "scenery" / "personal" / "social" / "friends" / "frame"
+string  gWhy;                // "idle": the idle start began this run (shown above the HUD)
 float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
@@ -121,7 +122,7 @@ loadCfg()
 
 setUi(string st)
 {
-    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut, "");
+    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy, "");
 }
 
 string idleUi()
@@ -296,6 +297,7 @@ engage(string mode)
     }
     if (gState != ST_IDLE) llMessageLinked(LINK_SET, STOP, "switch", "");
     gMode = mode;
+    gWhy = "";
     gFrozen = FALSE;
     gState = ST_WAIT;
     gWorkerOK = FALSE;
@@ -357,7 +359,15 @@ idleTick(integer now)
     if (!gAfkOn || now < gNoEngageUntil || (info & (AGENT_TYPING | AGENT_MOUSELOOK))) return;
     // no keys, no typing, no camera moved for the chosen time; with the mouse check also the viewer's own Away
     // status, which the viewer clears on any mouse movement (a script cannot see the mouse itself)
-    if (now - gLastAct >= gAfkSec && (!gAfkAway || (info & AGENT_AWAY))) engage("scenery");
+    if (now - gLastAct >= gAfkSec && (!gAfkAway || (info & AGENT_AWAY)))
+    {
+        engage("scenery");
+        if (gState != ST_IDLE)
+        {
+            gWhy = "idle";
+            setUi("rolling");
+        }
+    }
 }
 
 activeTick(float dt)
