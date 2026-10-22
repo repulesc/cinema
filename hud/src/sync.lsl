@@ -15,12 +15,12 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.0.0";
+string VERSION = "6.0.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
 integer STOP       = 7302;
-integer CAMSET     = 7325;   // core -> sync  "<pos>|<focus>|<lag>"
+integer CAMSET     = 7325;   // core -> sync  "<pos>|<focus>|<lag>|<lens>" (6.0.1: viewers place it through their own lens)
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
@@ -70,6 +70,8 @@ integer gDlg;
 integer gDlgL;
 integer gDlgT;
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
+string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes
+float   gMyFov;              // your lens when it was placed
 string  gNoteS;              // ... its text
 string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
 
@@ -178,6 +180,34 @@ note(string s)
 {
     llOwnerSay("[Take 12] " + s);
     show(s);
+}
+
+// the director's camera through YOUR lens: the same line to the same focus, at the distance that gives the same
+// picture size (k = tan(theirs / 2) / tan(yours / 2)); a wall on the way stops it 0.3 m short. again: your zoom changed
+place(integer again)
+{
+    list L = llParseStringKeepNulls(gCam, ["|"], []);
+    vector p = (vector)llList2String(L, 0);
+    vector f = (vector)llList2String(L, 1);
+    float lag = (float)llList2String(L, 2);
+    float df = (float)llList2String(L, 3);
+    gMyFov = llGetCameraFOV();
+    if (again) lag = 0.5;
+    if (df > 0.05 && gMyFov > 0.05)
+    {
+        float k = llTan(df * 0.5) / llTan(gMyFov * 0.5);
+        if (k < 0.2) k = 0.2;
+        if (k > 5.0) k = 5.0;
+        vector q = f + (p - f) * k;
+        list r = llCastRay(f, q, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
+        p = q;
+    }
+    gApplied = p;
+    gApplyT = llGetTime() + lag + 2.0;
+    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f,
+        CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
+        CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
 }
 
 say(key k, string m)
@@ -407,6 +437,7 @@ watch(key host)
 {
     gPendT = 0;
     gHost = host;
+    gCam = "";
     gIsAway = FALSE;
     gAskT = 0;
     gApplied = ZERO_VECTOR;
@@ -423,6 +454,7 @@ leave(integer tell, integer clear)
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
     gHost = NULL_KEY;
+    gCam = "";
     gAskT = 0;
     // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
     clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
@@ -720,12 +752,8 @@ default
         else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
         {
             gHearT = llGetUnixTime();
-            float lag = (float)llList2String(L, 4);
-            gApplied = (vector)llList2String(L, 2);
-            gApplyT = llGetTime() + lag + 2.0;
-            llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, gApplied, CAMERA_FOCUS, (vector)llList2String(L, 3),
-                CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
-                CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
+            gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
+            place(FALSE);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
         else if (w == "lead")
@@ -817,6 +845,7 @@ default
             }
         }
         // viewing: the director gone quiet; your own camera (Alt-orbit) = looking around, Esc brings you back
+        if (gHost != NULL_KEY && gCam != "" && llFabs(llGetCameraFOV() - gMyFov) > 0.004) place(TRUE);   // you zoomed: same picture
         if (gHost != NULL_KEY && now - gBeatT >= 10)
         {
             gBeatT = now;

@@ -65,6 +65,7 @@ Let the people with you watch what your camera films. One person leads; everyone
  - Friends wearing Take 12 Watch, or Take 12 with you in their Friends list, join at once. Anyone else sees "... invites you - hold to watch" for 20 seconds (a double-tap also accepts).
  - Above your button while you share: "● LIVE · 3 watching" and the names of who is connected to your camera, e.g. "Ana · Ben (looking around) · Dee (no signal)". Someone silent for 45 seconds is dropped. While you watch: "👁 Pano" (or "no signal" if the leader goes quiet).
  - Hold again while live: who watches, Invite more, Roster (pass the camera to someone, or remove them), Lead (when someone asks to lead: Ask / Always / Never), End live.
+ - Everyone sees the same picture, whatever their zoom: each viewer's camera stands where their own lens shows it the same size.
  - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
  - Hold > ⋯ More: the usual menu (photo hold, next, stop, modes).
 

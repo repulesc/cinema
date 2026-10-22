@@ -47,7 +47,7 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
 | `ack\|1` / `ack\|0` / `busy\|<what>` | invited → director | joined at once (a Watch, or Take 12 with the director in Friends) / asked / busy |
 | `join` `leave` `next` `away` `back` `ask` | viewer → director | joined (`join\|W` from a Take 12 Watch: it cannot lead, so the roster offers no Pass camera for it), left, next view (5 s apart), looking around, back, asks to lead. A `join` to someone who is no longer live is answered with `end` |
 | `hb` | viewer → director | the viewer's heartbeat, every 10 s: still connected |
-| `cam\|<pos>\|<focus>\|<lag>` | director → viewers | every camera the director's core sets (cuts and glides) |
+| `cam\|<pos>\|<focus>\|<lag>\|<lens>` | director → viewers | every camera the director's core sets (cuts and glides), with the director's field of view (6.0.1; older directors send no lens) |
 | `hb` | director → viewers | heartbeat, every 10 s |
 | `lead\|1` / `lead\|0` | director → viewer | you lead now (a request allowed, or Pass camera) / declined |
 | `director\|<key>\|<name>` | old director → viewers | the camera passed: follow this one |
@@ -67,6 +67,16 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
   - A second request while one is waiting is declined at once.
   - **On a grant:** the director sends `lead|1` to the new director, `director|…` to everyone else, then becomes a viewer of the new director and stops its own camera. That stop does not end the session.
 - **Pass camera** is the same grant, from the roster. **Remove** sends `kick`.
+
+## Each through their own lens (6.0.1)
+A script can read its viewer's zoom but never set it, and every viewer has their own: a different default view
+angle, or a zoom they forgot. So nobody is asked to match a lens. Each viewer (Take 12 or the Watch) places the
+director's camera on the same line to the same focus, at the distance that gives the same picture size through
+their own lens: `k = tan(director/2) / tan(yours/2)`, clamped to 0.2–5 (21 ↔ 105 mm), and stopped 0.3 m short of a
+wall (a ray from the focus). Everyone sees the same composition, with their own perspective. A viewer who zooms
+while watching keeps the same picture: the camera is placed again within a second. The same `place()` is in both
+scripts (sync_sim checks it, and the geometry). This matters since 6.0: a director's zoom backs the camera off so
+the picture keeps its size for them, which without this would leave viewers at the normal zoom with a tiny group.
 
 ## Continuous feedback (who is connected)
 - **Every viewer** (Take 12 or Watch) sends `hb` every 10 s. The director counts any word from a viewer as a sign of life.
