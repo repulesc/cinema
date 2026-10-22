@@ -6,7 +6,8 @@
 
 Writes hud/art/take12_icon_sheet_512x256.png (upload this one: ALL looks, switchable from the
 menu), hud/art/variants/<look>_256x128.png (single-look, two frames), hud/art/preview.png, and the free
-Take 12 Watch HUD's icon, watch/art/take12_watch_icon_128.png (the clapper with an eye instead of "12").
+Take 12 Watch HUD's icon, watch/art/take12_watch_icon_128.png (the clapper with an eye instead of "12"), and
+Take 12 Scenery's sheet and icon in scenery/art/ (the clapper with a sun on the horizon instead of "12", one look).
 Pixels are scaled x8 with nearest-neighbour; the background is transparent.
 Edit the palette or the drawing below, re-run, re-upload.
 
@@ -136,6 +137,33 @@ def watch_icon():
     s.paste(frame_img(draw_watch()), (PAD, PAD))
     return s
 
+def draw_scenery(open_):
+    """Take 12 Scenery (the free scenery camera): the same clapper, rec look, with a coral sun setting on a chalk
+    horizon in place of the "12", and a faint reflection. Open and clapped, so the little clap still works."""
+    g = draw(open_, DEFAULT)
+    for y in range(11, 15):
+        for x in range(2, 14):
+            g[y][x] = "D"
+    S = ["....CCCC....", "...CCCCCC...", ".WWWWWWWWWW.", ".....HH....."]
+    for r, row in enumerate(S):
+        for c, ch in enumerate(row):
+            if ch != ".": g[11 + r][2 + c] = ch
+    return g
+
+def scenery_icon():
+    """128x128, transparent, the open frame, centred like the Take 12 frames (for the inventory and the boards)"""
+    s = Image.new("RGBA", (FRAME, FRAME), PAL["K"][:3] + (0,))
+    s.paste(frame_img(draw_scenery(True)), (PAD, PAD))
+    return s
+
+def scenery_sheet():
+    """the Take 12 sheet layout with ONE look: every look column holds the Scenery frames (open, clapped), so the
+    scripts' frame maths and any stored look show it; frames 6 and 7 stay empty"""
+    s = Image.new("RGBA", (SHEET_COLS * FRAME, SHEET_ROWS * FRAME), PAL["K"][:3] + (0,))
+    for k in range(6):
+        s.paste(frame_img(draw_scenery(k % 2 == 0)), ((k % SHEET_COLS) * FRAME + PAD, (k // SHEET_COLS) * FRAME + PAD))
+    return s
+
 LOOKS = ["classic", "rec", "viewfinder"]       # look number 0, 1, 2 (menu: Options > Look); 3 is spare
 SHEET_COLS, SHEET_ROWS = 4, 2
 
@@ -162,4 +190,8 @@ if __name__ == "__main__":
     wroot = os.path.join(root, "..", "..", "watch", "art")
     os.makedirs(wroot, exist_ok=True)
     watch_icon().save(os.path.join(wroot, "take12_watch_icon_128.png"))
-    print("wrote", os.path.normpath(os.path.join(root, "take12_icon_sheet_512x256.png")))
+    sroot = os.path.join(root, "..", "..", "scenery", "art")
+    os.makedirs(sroot, exist_ok=True)
+    scenery_sheet().save(os.path.join(sroot, "take12_scenery_icon_sheet_512x256.png"))
+    scenery_icon().save(os.path.join(sroot, "take12_scenery_icon_128.png"))
+    print("wrote", os.path.normpath(os.path.join(root, "take12_icon_sheet_512x256.png")), "and", os.path.normpath(sroot))

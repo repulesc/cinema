@@ -32,7 +32,7 @@ CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Your lens"]
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FREE = False                      # main() runs the boards twice; True draws the free Take 12 Scenery versions
-FREE_DESCRIPTOR = "SCENERY CAMERA HUD"
+FREE_DESCRIPTOR = "FREE CAMERA HUD"       # under the two-line TAKE 12 / SCENERY title
 FREE_CHIPS = ["Drone views", "Skybox rooms", "Idle start", "Photo hold"]
 FREE_SMALL = "FREE  -  ONE TINY BUTTON  -  NO SETUP"
 FULL_ONLY = ("SHARE",)            # the view Take 12 Scenery does not have
@@ -194,8 +194,18 @@ def view(fn, gw, gh, scale, seed):
     return fn(gw, gh, random.Random(seed)).resize((gw * scale, gh * scale), Image.NEAREST)
 
 def clapper(px, v=icon.DEFAULT):
-    im = icon.frame_img(icon.draw(True, v)).resize((px, px), Image.NEAREST)
+    g = icon.draw_scenery(True) if FREE else icon.draw(True, v)       # Take 12 Scenery: the sun on its slate
+    im = icon.frame_img(g).resize((px, px), Image.NEAREST)
     return im
+
+def free_head(im, x, y, sc, gap, desc_sc, tag_sz, how_sz=0):
+    """the free boards' header: TAKE 12 / SCENERY in two big lines, the descriptor, the tagline (and the how-to)"""
+    d = ImageDraw.Draw(im)
+    ptext(im, (x, y), "TAKE 12", sc, CHALK, shadow=CORAL); y += 7 * sc + gap
+    ptext(im, (x, y), "SCENERY", sc, CHALK, shadow=CORAL); y += 7 * sc + gap + 4
+    ptext(im, (x + 4, y), FREE_DESCRIPTOR, desc_sc, CORAL); y += 7 * desc_sc + 12
+    d.text((x + 4, y), TAGLINE, font=font(tag_sz), fill=(255, 196, 120)); y += tag_sz + 14
+    if how_sz: d.text((x + 4, y), HOWTO, font=font(how_sz), fill=(170, 176, 200))
 
 def looks(base, x, y, px, gap):
     """the three clapper looks (classic, rec, viewfinder), open frame, left to right"""
@@ -245,8 +255,6 @@ def scene_img(lab, fn, gw, gh, sc, seed):
         ptext(im, ((im.width - pwidth("FULL VERSION", t)) // 2, im.height // 2 - 7 * t // 2), "FULL VERSION", t, CHALK)
     return im
 
-def desc(): return FREE_DESCRIPTOR if FREE else DESCRIPTOR
-
 def chips(base, y, items, size, x_left, x_right, gap=14, fill=CORAL):
     d = ImageDraw.Draw(base); f = font(size); widths = [d.textlength(t, font=f) + 28 for t in items]
     total = sum(widths) + gap * (len(items) - 1); x = x_left + ((x_right - x_left) - total) / 2
@@ -258,10 +266,12 @@ def square():
     S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
     for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)   # faint scanlines
     im.paste(clapper(176), (44, 28), clapper(176))
-    ptext(im, (244, 44), NAME, 9, CHALK, shadow=CORAL)
-    ptext(im, (248, 118), desc(), 3, CORAL)
-    d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
-    d.text((248, 214), HOWTO, font=font(24), fill=(170, 176, 200))
+    if FREE: free_head(im, 244, 26, 7, 14, 2, 34, 20)
+    else:
+        ptext(im, (244, 44), NAME, 9, CHALK, shadow=CORAL)
+        ptext(im, (248, 118), DESCRIPTOR, 3, CORAL)
+        d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
+        d.text((248, 214), HOWTO, font=font(24), fill=(170, 176, 200))
     if FREE:
         ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
     else:
@@ -280,9 +290,11 @@ def wide():
     W, H = 1024, 512; im = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(im)
     for yy in range(0, H, 4): d.line([(0, yy), (W, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
     im.paste(clapper(128), (40, 30), clapper(128))
-    ptext(im, (192, 34), NAME, 7, CHALK, shadow=CORAL)
-    ptext(im, (196, 92), desc(), 2, CORAL)
-    d.text((196, 120), TAGLINE, font=font(32), fill=(255, 196, 120))
+    if FREE: free_head(im, 192, 22, 5, 10, 2, 26)
+    else:
+        ptext(im, (192, 34), NAME, 7, CHALK, shadow=CORAL)
+        ptext(im, (196, 92), DESCRIPTOR, 2, CORAL)
+        d.text((196, 120), TAGLINE, font=font(32), fill=(255, 196, 120))
     if FREE:
         ribbon(im, (716, 26, 980, 100)); ptext(im, (716, 114), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
     else:
@@ -310,9 +322,11 @@ def vendor():
     S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
     for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
     im.paste(clapper(150), (48, 34), clapper(150))
-    ptext(im, (232, 40), NAME, 11, CHALK, shadow=CORAL)
-    ptext(im, (236, 128), desc(), 3, CORAL)
-    d.text((236, 168), TAGLINE, font=font(38), fill=(255, 196, 120))
+    if FREE: free_head(im, 232, 24, 7, 14, 2, 30)
+    else:
+        ptext(im, (232, 40), NAME, 11, CHALK, shadow=CORAL)
+        ptext(im, (236, 128), DESCRIPTOR, 3, CORAL)
+        d.text((236, 168), TAGLINE, font=font(38), fill=(255, 196, 120))
     gw, gh, sc = 96, 56, 9                      # the hero: what you see on screen, with the HUD button top right
     hero = view(scene_wide, gw, gh, sc, 31)
     hx, hy = 80, 236
@@ -367,10 +381,12 @@ def portrait():
     """3:4 portrait (768 x 1024): header, one big view, three small views, chips"""
     W, H = 768, 1024; im, d = _base(W, H)
     im.paste(clapper(150), (40, 30), clapper(150))
-    ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
-    ptext(im, (220, 112), desc(), 3, CORAL)
-    d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
-    d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
+    if FREE: free_head(im, 216, 24, 6, 12, 2, 28, 16)
+    else:
+        ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
+        ptext(im, (220, 112), DESCRIPTOR, 3, CORAL)
+        d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
+        d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
     gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
     paste_framed(im, scene_img("HORIZON", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="HORIZON")
     small = [("DRONE", scene_drone), ("ROOM", scene_room), ("SHARE", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
@@ -390,10 +406,12 @@ def landscape43():
     """4:3 landscape (1024 x 768): header row and four views"""
     W, H = 1024, 768; im, d = _base(W, H)
     im.paste(clapper(110), (40, 22), clapper(110))
-    ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
-    ptext(im, (182, 90), desc(), 2, CORAL)
-    d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
-    d.text((182, 148), HOWTO, font=font(18), fill=(170, 176, 200))
+    if FREE: free_head(im, 178, 14, 5, 10, 2, 22)
+    else:
+        ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
+        ptext(im, (182, 90), DESCRIPTOR, 2, CORAL)
+        d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
+        d.text((182, 148), HOWTO, font=font(18), fill=(170, 176, 200))
     if FREE: ribbon(im, (760, 26, 984, 96))
     else:
         looks(im, 700, 20, 82, 12)

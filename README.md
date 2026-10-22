@@ -23,7 +23,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 | `legacy/v1-v2/` | The old people-centred v1/v2 code and design (superseded) |
 | `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) plus a memory estimate for `hud/src`, the Watch, `scenery/src` and `legacy/v3/src` |
 | `tools/sim/` | Python ports of the camera maths, run in CI |
-| `tools/art/make_icon.py` | Generates the pixel clapper textures (Take 12 and the Take 12 Watch icon) |
+| `tools/art/make_icon.py` | Generates the pixel clapper textures (Take 12, the Take 12 Watch icon, and Take 12 Scenery's sun clapper in `scenery/art/`) |
 | `watch/` | The free Take 12 Watch HUD: its script, icon and build steps (`watch/README.md`) |
 | `tools/art/make_adboard.py` | Generates the Marketplace and vendor ad boards in `hud/marketing/`, `scenery/marketing/` and `watch/marketing/` |
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Take 12 Scenery: its own button (no change to Take 12's scripts)
+- **The design:** the Take 12 clapper (Rec look, the same chalk and coral) with a coral sun setting on a chalk horizon, and a faint reflection, in place of the "12". It is the same family as the Watch and its eye: recognisable as Take 12, never mistaken for it. Open and clapped frames, so the little clap still works.
+- **One design:** `scenery/art/take12_scenery_icon_sheet_512x256.png` keeps the Take 12 sheet's layout, with the Scenery frames in every look column, so the scripts' frame maths work unchanged. The free build leaves out the Button choice under Options > Look (three build substitutions; `hud/src` is untouched, still 6.1.0). A 128 px icon is there too.
+- **Boards:** the free boards show the sun clapper and the full name, TAKE 12 / SCENERY, in two big lines, with "FREE CAMERA HUD" and the FREE ribbon. Take 12's and the Watch's boards are unchanged.
+- **Docs:** the build steps name the new texture; the Read Me and the listing describe the one button.
+- **Checks:** `sheet_test` runs the frame maths on both sheets and checks the Scenery columns match; `free_test` checks there is no Button choice and the README's texture; `listing_check` checks the free boards' clapper and title.
+
 ## 6.1.0
 **Take 12 Scenery: the scenery camera on its own, free.**
 - **What it is.** A free (L$0) HUD with the scenery camera of Take 12: drone views, wide horizons and skybox rooms from the inside, idle start, tap / double-tap, Photo hold, Next, Stop, Pace, Indoors, Reach, Alt-cam, the three button looks, the status line, tips and the little clap. Me, Us, Still, sharing, favourites and the seated view stay in the full Take 12. It replaces the old Lite, and the name Lite is gone.
