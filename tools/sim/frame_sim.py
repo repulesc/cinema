@@ -101,6 +101,34 @@ for i, (cam, (f1, y1), (f2, y2)) in enumerate(GRP):
             check(y_of(h, zc, D, phi, fov) <= 0.97, f"group {NAMES[i]}: a head is cut")
             check(y_of(BODY["eyes"] * h, zc, D, phi, fov) > -0.6, f"group {NAMES[i]}: someone's eyes near the bottom")
 
+# ---- 5.9: the lens guide and Shift + A/D ------------------------------------------------------------------------
+REC = [50, 85, 105]                                           # the classic lens per framing (35 mm equivalent)
+check([int(v) for v in lsl_list("LENSES")] == REC, f"LENSES differ: {lsl_list('LENSES')}")
+mm_of = lambda fov: round(12.0 / math.tan(fov / 2))
+check(mm_of(math.radians(60)) == 21 and all(mm_of(fov_of_mm(m)) == m for m in REC), "the mm <-> FOV conversion")
+check("(string)llRound(12.0 / llTan(gFov * 0.5))" in LSL and 'llMessageLinked(LINK_SET, STILL, llList2String(NAMES, gIdx) + "|" + llList2String(LENSES, gIdx)' in LSL,
+      "frame: STILL must carry the framing, its lens and yours")
+check(re.search(r"num == FOVMSG\)\s*\{[^}]*lens\(\);", LSL) is not None, "frame: the readout must follow the zoom at once")
+check("llSetText" not in LSL, "frame must not write text itself (the status line shows Still)")
+# at the recommended lens every framing keeps its exact lines (never pushed back to DMIN, so never looser)
+for i, (cam, side, x, (f1, y1), (f2, y2)) in enumerate(PORT):
+    for h in HEIGHTS:
+        zc = cam * h; sol = solve(BODY[f1] * h, y1, BODY[f2] * h, y2, zc, fov_of_mm(REC[i]))
+        check(sol is not None and sol[0] >= DMIN, f"{NAMES[i]} at {REC[i]} mm, {h} m: closer than DMIN")
+# Shift + A/D: Second Life sends Shift + A/D as strafe (CONTROL_LEFT/RIGHT); plain A/D (ROT) still walks round you
+for frag in ("if (gKeys & CONTROL_ROT_LEFT) gNAz += 3.0;", "if (gKeys & CONTROL_ROT_RIGHT) gNAz -= 3.0;",
+             "if (gKeys & CONTROL_LEFT) gNX -= 0.02;", "if (gKeys & CONTROL_RIGHT) gNX += 0.02;", "x += gNX;",
+             "float SLIDE  = 0.6;", "gNX = 0.0;", "llAtan2(gNX * t * FIT, 1.0)"):
+    check(frag in LSL, f"frame: missing {frag}")
+# the view turns by atan(x * tan(FOV/2) * FIT): you land at screen x (+ = right), inside the picture for |x| <= SLIDE
+for mm in (21, 50, 105):
+    t = math.tan(fov_of_mm(mm) / 2)
+    for x in (-0.6, -0.333, 0.0, 0.2, 0.6):
+        a = math.atan(x * t * FIT)                            # the view direction turns left (+) by a
+        fwd, right = (math.cos(a), math.sin(a)), (math.sin(a), -math.cos(a))
+        sx = (10 * right[0]) / (10 * fwd[0]) / (t * FIT)      # you, 10 m straight ahead of the unturned view
+        check(abs(sx - x) < 1e-9, f"slide {x} at {mm} mm lands at {sx:.3f}")
+
 print(f"Frame: 3 framings x {len(HEIGHTS)} heights x {len(LENSES)} zooms, and 600 mixed groups; "
       f"{loose} cases framed a little looser at a wide zoom (as intended)")
 print("frame checks:", "ALL PASS" if ok else "FAILURES")

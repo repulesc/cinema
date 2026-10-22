@@ -40,7 +40,7 @@ Me shows you. Composed shots from different sides, with room in front of you in 
 
 Us is for when you are with people. Choose Everyone near: over-the-shoulder shots between you and the person nearest to you, group shots of everyone within 8 m, and a cut to whoever speaks in local chat. Or choose Only friends: pick up to 10 friends from the people near you, and the camera holds you and them in one frame, glides slowly as the group moves, and widens when someone wanders toward the edge.
 
-Still is for a picture of yourself, or of you and a friend. It holds one well-composed view: full length, half length or close. Double-tap for the next, use your movement keys to adjust, take your snapshot.
+Still is for a picture of yourself, or of you and a friend. It holds one well-composed view: full length, half length or close. Double-tap for the next, use your movement keys to adjust (Shift + A/D slides you across the picture), take your snapshot. A lens guide names the portrait lens for each framing (50, 85 or 105 mm) and shows yours live: zoom your viewer to it, and the camera backs off for that flattering telephoto look.
 
 Me, Us and Still are chosen from the menu. Going idle only ever starts Scenery.
 

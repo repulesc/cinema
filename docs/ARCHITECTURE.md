@@ -51,6 +51,7 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | **7322 UI_FRIENDS** | ui → picker | `page` / `pick` / `list` / `clear` | the picker script runs the Friends page and the picker |
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
+| **7381 STILL** | frame → tips | `"<framing>\|<recommended mm>\|<your mm>"` | 5.9: Still's lens guide, sent at each shot and glide and at once on FOVMSG |
 | **7380 TEXT** | sync → tips | `"<live/view/inv or empty>\|<the sharing block>"` | 5.8: tips stacks it above the status line |
 | 7370 STATUS | ui → all | `?` | every script prints one line |
 | 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / **`frame`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |

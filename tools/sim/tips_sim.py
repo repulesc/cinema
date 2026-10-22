@@ -6,7 +6,7 @@
 # Notices: another script's text is never overwritten, the status comes back once it is cleared.
 # Tips (5.7.0): one per camera, short, under the status line, 20 s apart, each retires after 3 showings, Tips turns
 # itself off (all retired, or 24 in all) with one chat line, turning Tips back on starts from zero.
-import os, re
+import os, re, math
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 src = open(os.path.join(R, "hud", "src", "tips.lsl")).read()
@@ -74,7 +74,7 @@ class Hud:
     def __init__(s, on="1", n="0", afk_on="1", afk_sec="180", status="1", skin="1"):
         s.lsd = {"tips": on, "tipn": n, "afk_on": afk_on, "afk_sec": afk_sec, "status": status, "skin": skin}
         s.text = ""; s.t = 100.0; s.chat = []; s.log = []; s.gtext = ""; s.rate = 0.0; s.tickT = 0.0
-        s.st = ""; s.mode = ""; s.why = ""; s.led = False; s.kind = ""; s.syncb = ""; s.tip = ""; s.last = ""
+        s.st = ""; s.mode = ""; s.why = ""; s.led = False; s.still = ""; s.kind = ""; s.syncb = ""; s.tip = ""; s.last = ""
         s.want_i = -1; s.wantT = 0; s.showT = 0.0; s.lastT = -100.0
         s.rollT = 0.0; s.more = False; s.sat = False; s.sitting = False
         s.load()
@@ -86,10 +86,17 @@ class Hud:
         if not s.on or s.seen(i) >= MAXN: return
         s.want_i = i; s.wantT = s.t
     def free(s): return s.text in ("", s.last)
+    def guide(s):
+        name, want, now = (s.still.split("|") + ["", "", ""])[:3]; want, now = int(want or 0), int(now or 0)
+        g = f"{name} · {want} mm"
+        if abs(now - want) * 100 <= 15 * want: return g + " ✓"
+        return g + f" · now {now} · " + ("Ctrl+0" if now < want else "Ctrl+8")
     def line(s):
-        if not s.stat or s.mode not in MODES or s.st not in ACTIVE: return ""
+        if s.mode not in MODES or s.st not in ACTIVE: return ""
+        if not s.stat and not (s.mode == "frame" and s.st == "rolling"): return ""
         m = MODES.index(s.mode); n = NAMES[m]; k = MARKS[m]; w = "auto"
-        if s.mode == "frame": w = "held"
+        if s.mode == "frame" and s.still: w = s.guide()
+        elif s.mode == "frame": w = "held"
         elif s.mode == "friends" and s.led: w = "your view"
         elif s.mode == "scenery" and s.why == "idle": w = "started while you were idle"
         if s.st == "frozen": n, k, w = "Photo", "▣", "held"
@@ -141,6 +148,8 @@ class Hud:
         if mode != "friends": s.led = False
         s.after()
     def lens(s, dist): s.led = dist > 0; s.after()
+    def still_msg(s, name, want, fov_deg):    # frame: "<framing>|<mm>|<your mm>", your mm = 12 / tan(FOV / 2), rounded
+        s.still = f"{name}|{want}|{round(12 / math.tan(math.radians(fov_deg) / 2))}"; s.after()
     def sharing(s, kind, text):              # sync sends "<kind>|<text>"; parsed exactly as the script does
         msg = kind + "|" + text; i = msg.find("|")
         s.kind = llGetSubString(msg, 0, i - 1) if i > 0 else ""
@@ -168,7 +177,9 @@ for frag in ['if (gWant != 0 || !idle) gWant = -1;', 'if (rolling && (!was || mo
              'if (t == gText && c == gLast) return;', 'gLast = cur();', 'else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);', 'if (gKind != "view" && line() != "") L += [line()];', 'if (done || all >= ALL)',
              'llInsertString(llDeleteSubString(gN, i, i), i, c)', 'else if (!gMore && now - gRollT >= 90.0)',
              'else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";',
-             'else if (gMode == "friends" && gLed) w = "your view";', 'else if (gSt == "peek") w = "paused · Esc to carry on";',
+             'else if (gMode == "friends" && gLed) w = "your view";', 'if (llAbs(now - want) * 100 <= 15 * want) return s + " ✓";',
+             'if (now < want) return s + " · now " + (string)now + " · Ctrl+0";', 'if (gMode == "frame" && gStill != "") w = guide();',
+             'if (!gStat && !(gMode == "frame" && gSt == "rolling")) return "";', 'else if (num == STILL) gStill = str;', 'else if (gSt == "peek") w = "paused · Esc to carry on";',
              'if (gKind != "view" && line() != "") gTip = llList2String(llParseString2List(gTip, ["\\n"], []), 1);']:
     check(frag in src, f"the script changed, the sim must follow: {frag}")
 
@@ -187,6 +198,17 @@ check(h.text == "◇ Scenery · started while you were idle", f"idle start: {h.t
 h.state("off"); h.state("rolling", "personal"); h.run(1); check(h.text == "○ Me · auto", f"Me: {h.text!r}")
 h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto", f"Us: {h.text!r}")
 h.state("rolling", "frame"); h.run(1); check(h.text == "□ Still · held", f"Still: {h.text!r}")
+# 5.9: Still's lens guide - the framing, its lens, yours, and what to press (only you can zoom)
+h.still_msg("Full length", 50, 60); h.run(1)
+check(h.text == "□ Still · Full length · 50 mm · now 21 · Ctrl+0", f"Still at the default zoom: {h.text!r}")
+h.still_msg("Full length", 50, 27); h.run(1); check(h.text == "□ Still · Full length · 50 mm ✓", f"Still at 50 mm: {h.text!r}")
+h.still_msg("Close", 105, 27); h.run(1); check(h.text == "□ Still · Close · 105 mm · now 50 · Ctrl+0", f"Close at 50 mm: {h.text!r}")
+h.still_msg("Half length", 85, 9); h.run(1); check(h.text.endswith("85 mm · now 152 · Ctrl+8"), f"a lens too long: {h.text!r}")
+h.still_msg("Half length", 85, 18); h.run(1); check(h.text == "□ Still · Half length · 85 mm ✓", f"within 15 %: {h.text!r}")
+h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "□ Still · Half length · 85 mm ✓", "the lens guide must show with the status line off")
+h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Still · Half length · 85 mm ✓", f"Plain: {h.text!r}")
+h.state("rolling", "social"); h.run(1); check(h.text == "", "status off: nothing outside Still")
+h.lsd["status"] = "1"; h.lsd["skin"] = "1"; h.load()
 h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto", f"Only friends: {h.text!r}")
 h.lens(2.4); h.run(1); check(h.text == "♡ Only friends · your view", f"your own view: {h.text!r}")
 h.lens(0); h.run(1); check(h.text == "♡ Only friends · auto", "Release must say auto again")

@@ -35,6 +35,19 @@ Body heights are fractions of `llGetAgentSize().z`: top 1.00, eyes 0.935, should
 mid-thigh 0.38, feet 0. Two snapshots of Half length (a short and a tall shape) show where the eyes really land; the
 fractions are corrected from them.
 
+## The lens guide and the slide (5.9)
+- **The lens:** each framing names a classic portrait lens (35 mm equivalent, 24 mm frame height): Full length
+  50 mm, Half length 85 mm, Close 105 mm. Yours is `12 / tan(FOV / 2)` from the viewer's field of view (60° ≈ 21 mm).
+  Frame sends STILL 7381 `"<framing>|<lens>|<yours>"` at every shot and glide, and at once on every FOVMSG, so the
+  readout follows the keys live. `tips` shows `□ Still · Close · 105 mm ✓` (within 15 %) or
+  `… · 105 mm · now 21 · Ctrl+0` (Ctrl+8 when the lens is too long). A script can read the zoom, never set it; only
+  the user can (Ctrl+0 in, Ctrl+8 out, Ctrl+9 back). At the recommended lens every framing keeps its exact lines
+  (never pushed back to DMIN). Frame writes no text itself any more: the framing name is in that line.
+- **Shift + A/D:** Second Life sends them as strafe (CONTROL_LEFT/RIGHT), plain A/D as turn (ROT). Turn still walks
+  round you; strafe slides you across the picture: `x += gNX` after the lead room, ±0.02 per step, |x| ≤ 0.6 (screen
+  units, edge = 1). The view turns by `atan(x · tan(FOV/2) · FIT)`, so you land at screen x (+ right); groups turn the
+  same way. The next framing clears it with the other nudges.
+
 ## Left out on purpose
-Picking another person, landscapes, photo shapes, lens advice on screen, menus of its own. They live in
+Picking another person, landscapes, photo shapes, menus of its own. They live in
 `lab/frame-full-4.5.0/`, the starting point for a possible later composition tool.
