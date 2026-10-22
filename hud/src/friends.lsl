@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "5.9.0";
+string VERSION = "6.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -25,6 +25,7 @@ integer ACK        = 7313;
 integer SPEAKER    = 7315;
 integer CFG_CHANGED= 7330;
 integer CMD        = 7371;
+integer FOVMSG     = 7318;   // core -> cameras: your lens changed (radians)
 integer LENS       = 7319;   // lens -> friends  gear, angle, Tune aim, round (lens.lsl)
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -264,7 +265,8 @@ float needAt(float az)
 // people close together: now and then a close view of faces and shoulders (the caller remembers it, so two in a row never happen)
 integer closeView(float spread)
 {
-    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;   // seated: more often
+    // seated: more often; and the longer your lens (mm = 12 / tanV), the more often, like a camera operator would
+    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)) return FALSE;
     gVNeed = 0.75 / tanV * MARGIN;
     gPLo = 1.2;
     gPEye += 0.15;                                      // a little headroom for a taller neighbour
@@ -658,7 +660,7 @@ nextShot(float mult)
     gOut = 0;
     gCenter = centroid(gUsedN);
     gPresAtShot = llGetListLength(gGrp);
-    tsay("friends: shot " + (string)type + ", " + (string)(gUsedN + 1) + " in frame, " + (string)llRound(llVecDist(cam, gOP)) + " m");
+    tsay("friends: shot " + (string)type + ", " + (string)(gUsedN + 1) + " in frame");
 }
 
 // you and the friends in the shot all within k of the half-width?
@@ -809,6 +811,22 @@ default
             gLedN = llGetListLength(gGrp);
             if (gActive && gHaveShot && llList2Integer(L, 4)) nextShot(1.0);    // W/S or Auto: now
         }
+        else if (num == FOVMSG)
+        {
+            // your lens changed: the same picture, a new perspective - the camera dollies along its line to the focus
+            // (Follow my lead: lens answers the zoom with LENS, which puts back your angle after this loadCfg)
+            float k = tanV;
+            gFov = (float)str;
+            loadCfg();
+            if (!gActive || !gHaveShot) return;
+            vector nc = gCurFoc + (gCurCam - gCurFoc) * (k / tanV);
+            if (llVecDist(nc, gCenter) > MAX_DIST || llList2Integer(ray(gCurFoc, nc), 0)) nextShot(1.0);
+            else
+            {
+                gCurCam = nc;
+                llMessageLinked(LINK_SET, GLIDE, (string)gCurCam + "|" + (string)gCurFoc + "|1.5", "");
+            }
+        }
         else if (num == CFG_CHANGED)
         {
             loadCfg();
@@ -817,8 +835,8 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "friends");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Take 12/friends] v" + VERSION + " active " + (string)gActive + ", saved " + (string)llGetListLength(gFKeys) + ", here "
-                + (string)llGetListLength(gGrp) + ", free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/friends] v" + VERSION + " active " + (string)gActive + ", here " + (string)llGetListLength(gGrp)
+                + ", free mem " + (string)llGetFreeMemory());
         }
         else if (!gActive) return;
         else if (num == NEXT)

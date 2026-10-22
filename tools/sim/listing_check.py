@@ -20,7 +20,7 @@ STALE = ["Personal, Social, Friends and Frame", "Hold: the live menu", "Friends 
 for name, text in (("listing", main), ("watch listing", watch)):
     for w in STALE: check(w not in text, f"{name}: stale wording '{w}'")
 for w in ("Scenery", "Me shows you", "Us is for", "Still is for", "SHARE THE VIEW", "Take 12 Watch", "Hold: share your view", "Only friends",
-          "Your idle time, framed.", "What is new in 5.8"):
+          "Your idle time, framed.", "What is new in 6.0", "YOUR LENS"):
     check(w in main, f"listing: missing '{w}'")
 for w in ("Take 12 Watch", "free", "Nothing to click", "Double-tap", "do not need Take 12"):
     check(w.lower() in watch.lower(), f"watch listing: missing '{w}'")
@@ -44,7 +44,8 @@ for name, text in (("listing", main), ("watch listing", watch)):
 # ---- the boards say what the listing says ------------------------------------------------------------------------
 const = lambda n: re.search(r"^" + n + r' = "(.*?)"', art, re.M).group(1)
 check(const("TAGLINE") in main, "listing: the boards' tagline is not in the listing")
-check("SHARE" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label must mention sharing")
+check("LENS" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label must name the newest feature (6.0: your lens)")
+check("Your lens" in re.search(r"CHIPS = \[(.*?)\]", art).group(1), "boards: a chip for the lens")
 chips = re.search(r"CHIPS = \[(.*?)\]", art).group(1)
 check("Share the view" in chips and "Friends mode" not in chips, f"boards: chips {chips}")
 check("Double-tap to start" in const("HOWTO") and "HOLD  share" in art, "boards: the how-to lines")

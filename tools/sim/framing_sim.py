@@ -312,7 +312,8 @@ if __name__ == "__main__":
     # close views (4.9.0): people standing within 3.5 m of each other get, now and then, a half-length view from about
     # half the distance; they must fit as well as the wide ones, and the camera must come out closer
     for s_, what in ((people, "people"), (friends, "friends")):
-        check("if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;" in s_ and "gPLo = 1.2;" in s_
+        check("if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)) return FALSE;" in s_   # 6.0: + the lens (zoom_sim)
+              and "gPLo = 1.2;" in s_
               and "gVNeed = 0.75 / tanV * MARGIN;" in s_ and "gPEye += 0.15;" in s_ and "closeView(best)" in s_, f"{what}: the close-view rule changed")
     rng = random.Random(21); wide_d = []; close_d = []; tight_d = []; worst = 99.0; nclose = 0; head_n = head_cut = 0
     for t in range(600):

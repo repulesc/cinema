@@ -7,15 +7,19 @@
 //     nothing with your own camera, and only the 👁 block while you watch someone;
 //   - a tip, for 6 s, when something just happened (each retires after 3 showings; after all, or 24 in all, Tips
 //     turns itself off; Help > Tips brings them back, from zero).
+//  The button, while a camera runs: a tiny clap (the sheet's clapped frame, a quarter of a second) when it starts,
+//  then every 8-12 s; perfectly still with your own camera, in Photo and in a pause. Same frame maths as ui's frame().
 //  Short notices of other scripts (lens, Frame, sync: "Your view is kept", "Half length", "Ana joined") take the whole
 //  text for their few seconds: whatever is on screen that this script did not write is left alone, and when its
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "5.9.0";
+string VERSION = "6.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
+integer START       = 7301;   // core -> cameras "<mode>|<fov>": your lens at the start
+integer FOVMSG      = 7318;   // core -> cameras: your lens changed (radians)
 integer UI_STATE    = 7320;   // core -> all  "<state>|<mode>|<nextCutUnix>|<why>"  (why: "idle" = idle start)
 integer CFG_CHANGED = 7330;
 integer MSG_VER     = 7360;
@@ -31,6 +35,7 @@ float   WAIT = 10.0;          // s a tip waits for a free moment, then it is dro
 float   GAP  = 20.0;          // s between two tips
 
 // 0 hello  1 scenery  2 me  3 us  4 only friends  5 still  6 photo  7 paused  8 back  9 more  10 sitting  11 idle start
+// 12 your lens
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
     "Take 12\nTap: menu · Double-tap: scenery · Hold: share",
@@ -44,10 +49,14 @@ list TIPS = [
     "Your camera is back\ndouble-tap: scenery again",
     "Hold › More\nhold › More: photo, next, stop, other cameras",
     "Sitting\nsitting: W/S closer or wider",
-    "Idle start\nstay idle "];
+    "Idle start\nstay idle ",
+    "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back"];
 list MODES = ["scenery", "personal", "social", "friends", "frame"];   // tips 1 to 5
 list NAMES = ["Scenery", "Me", "Us", "Only friends", "Still"];
 list MARKS = ["◇", "○", "◎", "♡", "□"];
+// your lens (35 mm equivalent) and the range each camera suggests: Scenery wide, people 24-85 (Still has its own guide)
+list LO = [0, 35, 24, 35, 0];
+list HI = [28, 50, 50, 85, 999];
 
 key     gOwner;
 integer gOn;                 // Tips on
@@ -71,6 +80,12 @@ float   gLastT = -100.0;
 float   gRollT;              // rolling since (0: not rolling)
 integer gMore;               // the "Hold > More" tip was offered this run
 integer gSat;                // ... and the sitting one
+integer gLensTip;            // ... and the lens one
+float   gFov = 1.047198;     // your lens (field of view, radians)
+integer gLook = 1;           // the button: its look (frames 2n open, 2n+1 clapped) and face, as ui draws it
+integer gFace = ALL_SIDES;
+float   gClapT;              // filming: the next tiny clap (0 = the button is still)
+float   gClapEnd;            // ... the clapped frame shows until then
 
 string cfg(string k)
 {
@@ -82,6 +97,9 @@ load()
     gOn = (cfg("tips") != "0");
     gStat = (cfg("status") != "0");
     gSkin = (integer)cfg("skin");
+    gLook = (integer)cfg("look");
+    gFace = ALL_SIDES;
+    if (cfg("face") != "") gFace = (integer)cfg("face");
     gN = cfg("tipn");
     while (llStringLength(gN) < llGetListLength(TIPS)) gN += "0";
 }
@@ -121,6 +139,18 @@ string guide()
     return s + " · now " + (string)now + " · Ctrl+8";
 }
 
+// your lens against the camera's range: " · 21 mm · try 24", or " · 35 mm ✓"
+string lensTxt(integer m)
+{
+    integer n = llRound(12.0 / llTan(gFov * 0.5));
+    integer lo = llList2Integer(LO, m);
+    integer hi = llList2Integer(HI, m);
+    string s = " · " + (string)n + " mm";
+    if (n < lo) return s + " · try " + (string)lo;
+    if (n > hi) return s + " · try " + (string)hi;
+    return s + " ✓";
+}
+
 // the status line: the mode and who is in charge; nothing with your own camera
 string line()
 {
@@ -141,6 +171,7 @@ string line()
         w = "held";
     }
     else if (gSt == "peek") w = "paused · Esc to carry on";
+    else if (gMode != "frame") w += lensTxt(m);
     if (gSkin) s = k + " " + s;
     return s + " · " + w;
 }
@@ -212,6 +243,7 @@ onState(string st, string mode)
         gRollT = llGetTime();
         gMore = FALSE;
         gSat = FALSE;
+        gLensTip = FALSE;
         integer m = llListFindList(MODES, [mode]);
         if (m >= 0) want(m + 1);
     }
@@ -227,10 +259,21 @@ onState(string st, string mode)
     gMode = mode;
 }
 
+// the button: open (shut = FALSE) or clapped, on the sprite sheet (4 x 2 frames, row 0 on top)
+clap(integer shut)
+{
+    integer k = 2 * gLook + shut;
+    float oy = 0.25;
+    if (k > 3) oy = -0.25;
+    llScaleTexture(0.25, 0.5, gFace);
+    llOffsetTexture(((float)(k % 4) + 0.5) / 4.0 - 0.5, oy, gFace);
+}
+
 tick()
 {
     draw();
-    if (gWant >= 0 || gShowT > 0.0) llSetTimerEvent(0.5);
+    if (gClapEnd > 0.0) llSetTimerEvent(0.25);
+    else if (gWant >= 0 || gShowT > 0.0 || gClapT > 0.0) llSetTimerEvent(0.5);
     else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);    // back within a second after a notice
     else llSetTimerEvent(0.0);
 }
@@ -265,9 +308,21 @@ default
             string mode = llList2String(L, 1);
             if (st != gSt || (st == "rolling" && mode != gMode)) onState(st, mode);
             gWhy = llList2String(L, 3);
+            if (st != "rolling")
+            {
+                gClapT = 0.0;                               // still: your own camera, Photo, a pause
+                if (gClapEnd > 0.0) clap(FALSE);
+                gClapEnd = 0.0;
+            }
+            else if (gClapT == 0.0) gClapT = llGetTime();   // the camera rolls: a clap now
             if (mode != "friends") gLed = FALSE;
         }
         else if (num == STILL) gStill = str;
+        else if (num == START || num == FOVMSG)
+        {
+            float f = (float)llList2String(llParseStringKeepNulls(str, ["|"], []), num == START);
+            if (f > 0.05) gFov = f;
+        }
         else if (num == LENS) gLed = ((float)llList2String(llParseStringKeepNulls(str, ["|"], []), 0) > 0.0);
         else if (num == TEXT)
         {
@@ -276,7 +331,7 @@ default
             if (i > 0) gKind = llGetSubString(str, 0, i - 1);
             gSync = llDeleteSubString(str, 0, i);                  // not llGetSubString(str, i + 1, -1): on "|" that is "|"
         }
-        else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "all")) load();
+        else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "look" || str == "face" || str == "all")) load();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tips");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tips] v" + VERSION + " status line " + llList2String(["off", "on"], gStat) + ", tips "
@@ -293,9 +348,26 @@ default
             gTip = "";
             gShowT = 0.0;
         }
+        if (gClapEnd > 0.0 && now >= gClapEnd)
+        {
+            gClapEnd = 0.0;
+            clap(FALSE);
+        }
+        else if (gClapT > 0.0 && now >= gClapT)
+        {
+            clap(TRUE);                                     // the tiny clap, a quarter of a second
+            gClapEnd = now + 0.25;
+            gClapT = now + 8.0 + llFrand(4.0);
+        }
         if (gRollT > 0.0 && gSt == "rolling" && gWant < 0 && gShowT == 0.0)
         {
-            if (!gSat && gMode == "friends" && (llGetAgentInfo(gOwner) & AGENT_SITTING))
+            integer m = llListFindList(MODES, [gMode]);
+            if (!gLensTip && m >= 0 && m < 4 && now - gLastT >= GAP && llGetSubString(lensTxt(m), -1, -1) != "✓")
+            {
+                gLensTip = TRUE;                            // your lens is outside what this camera suggests
+                want(12);
+            }
+            else if (!gSat && gMode == "friends" && (llGetAgentInfo(gOwner) & AGENT_SITTING))
             {
                 gSat = TRUE;
                 want(10);

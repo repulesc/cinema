@@ -31,7 +31,7 @@ DOUBLE-TAP  (two quick taps)
 HOLD  (about 1 second)
    - always: the Share panel (see SHARE THE VIEW). Its "More" button opens the live menu (see below).
 
-The button always looks the same, idle or rolling. (Its look: Options > Look.)
+While a camera runs, the clapper gives a tiny clap now and then; with your own camera it is still. (Its look: Options > Look.)
 
 
 === THE CAMERAS ========================================
@@ -86,9 +86,9 @@ Me, Us and Still only start when YOU choose them in the menu.
 
 While Take 12 films, a short line above the button always says which camera runs and who is in charge:
 
-   ◇ Scenery · auto                          you started it
+   ◇ Scenery · auto · 21 mm ✓                you started it (and your lens, see YOUR LENS)
    ◇ Scenery · started while you were idle   the idle start began it
-   ○ Me · auto        ◎ Us · auto            □ Still · held
+   ○ Me · auto        ◎ Us · auto            □ Still · Close · 105 mm ✓
    ♡ Only friends · auto                     or  · your view  (after you framed it yourself)
    ▣ Photo · held                            tap to carry on
    ◇ Scenery · paused · Esc to carry on      you moved the camera yourself
@@ -97,6 +97,27 @@ Nothing above the button means: it is your own camera.
 While you share, "● LIVE · 2 watching" and the names sit on top of it. While you watch someone, you see only "👁 Pano".
 Short messages ("Your view is kept", "Half length", "Ana watches") show for a few seconds, then the line comes back.
 Options > Look > Status line turns it off (or /77 statusline off).
+
+
+=== YOUR LENS ===========================================
+
+Your viewer's zoom is your lens. Take 12 reads it all the time, in every camera, and frames for it. It cannot change it: only you can.
+   Ctrl+0   zoom in (a longer lens)
+   Ctrl+8   zoom out (a wider lens)
+   Ctrl+9   back to normal (about 21 mm, a wide angle)
+
+The rule, as in real photography: the lens changes the perspective, never the size of the picture.
+ - Zoom while a camera runs, and the camera glides back (or in) so the people keep their size. A longer lens gives the flatter, more natural faces of a portrait lens; a wider one shows more of the place around them. Every next view is planned for your lens.
+ - In Only friends, a view you framed yourself keeps its size through a zoom too.
+ - A longer lens also changes WHICH views you get: more close views of faces. A wider one: more of the group and the place.
+ - Scenery is about the place: zooming in gives a telephoto detail of the same view.
+
+The line above the button shows your lens, and the range each camera likes:
+   ◇ Scenery · auto · 21 mm ✓               Scenery: up to 28 mm
+   ◎ Us · auto · 21 mm · try 24              Everyone near: 24 to 50 mm
+   ○ Me · auto · 50 mm ✓                     Me: 35 to 50 mm
+   ♡ Only friends · auto · 85 mm ✓           Only friends: 35 to 85 mm
+"try" is only a suggestion: every lens works. Still names one exact lens for each framing (see STILL).
 
 
 === TIPS ================================================
