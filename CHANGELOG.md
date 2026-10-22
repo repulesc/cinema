@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.8.1
+**Plain script names.** The ten HUD scripts lose the `cinema_` prefix, since the HUD itself is Take 12: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `lens`, `sync`, `tips` (`hud/src/core.lsl` …).
+- Nothing else changes: no script looks another up by name, so the link messages, the settings (your saved settings and friends stay) and the behaviour are exactly 5.8.0.
+- **Updating in-world:** delete **all** the old `cinema_*` scripts from the prim first, then add the ten new ones. Left in, an old script would run beside its new twin (it announces 5.8.0 against 5.8.1, so the version warning tells you).
+- The version is 5.8.1 everywhere so that mixed old and new scripts are caught. Older entries below keep the names of their time. The paused Lite build (`hud-lite/`) keeps the old names too.
+
 ## 5.8.0
 **A status line above the button: which camera runs, and who is in charge.** While Take 12 films, one quiet line always says so:
 - `◇ Scenery · auto`, or `◇ Scenery · started while you were idle`;

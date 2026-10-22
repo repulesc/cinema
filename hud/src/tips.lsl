@@ -1,7 +1,7 @@
 // ============================================================================
-//  Take 12  -  cinema_tips.lsl  (v5.8)  - the text above the button: status, sharing, tips
+//  Take 12  -  tips.lsl  (v5.8)  - the text above the button: status, sharing, tips
 //  The one owner of the text above the HUD. It shows, top to bottom:
-//   - the sharing block from cinema_sync (TEXT 7380): "● LIVE · 2 watching / Ana · Ben", "👁 Pano", an invitation;
+//   - the sharing block from sync (TEXT 7380): "● LIVE · 2 watching / Ana · Ben", "👁 Pano", an invitation;
 //   - the status line while a camera runs: the mode and who is in charge ("◇ Scenery · auto", "♡ Only friends ·
 //     your view", "◇ Scenery · started while you were idle", "▣ Photo · held", "... · paused · Esc to carry on");
 //     nothing with your own camera, and only the 👁 block while you watch someone;
@@ -12,7 +12,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "5.8.0";
+string VERSION = "5.8.1";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view

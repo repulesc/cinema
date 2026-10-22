@@ -1,4 +1,4 @@
-# Python port of the Friends mode loop in hud/src/cinema_friends.lsl (planF, inFrame, glideTick).
+# Python port of the Friends mode loop in hud/src/friends.lsl (planF, inFrame, glideTick).
 # Scripted walks: checks that a slow walk glides (no snaps, everyone stays in frame), that someone leaving
 # the frame triggers a snap within 2 half-second ticks (1 s) to a wider shot that holds everyone, that the
 # camera never ends further than 25 m, that a glide into a wall becomes a cut, and (4.4.6) that a friend drifting

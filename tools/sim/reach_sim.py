@@ -1,5 +1,5 @@
-# Reach learning: a port of the scenery camera distance (cinema_scenery findShot / REACH_FAIL / regrowth), the
-# core camera check after a cut (cinema_core activeTick) and the settings migration (cinema_ui checkOwner), run
+# Reach learning: a port of the scenery camera distance (scenery findShot / REACH_FAIL / regrowth), the
+# core camera check after a cut (core activeTick) and the settings migration (ui checkOwner), run
 # against simulated viewers. The new logic must learn a real viewer limit and ignore everything that only LOOKS like
 # one (a stale or minimised viewer, mouselook, orbiting, Alt-cam, the viewer lifting the camera off the ground).
 # The 4.4.4 logic is run too: it must reproduce the "reach fell to 20 m" report, so the sim proves it tests the bug.
@@ -13,7 +13,7 @@ def check(c, msg):
     if not c: ok = False; print("FAIL", msg)
 
 # ---- the LSL this file ports (fails loudly if the scripts change under it) -------------------------------------
-core, scen, ui = src("cinema_core.lsl"), src("cinema_scenery.lsl"), src("cinema_ui.lsl")
+core, scen, ui = src("core.lsl"), src("scenery.lsl"), src("ui.lsl")
 for s, what in ((core, "gCamBefore = llGetCameraPos();"), (core, "llVecDist(cp, gCamBefore) > 1.0"),
                 (core, "got > 15.0 && got < 0.9 * want && llVecNorm(cp - op) * llVecNorm(gShotPos - op) > 0.99"),
                 (core, "float PEEK_GRACE  = 2.5;"),
@@ -39,7 +39,7 @@ def norm(a):
 clampf = lambda v, lo, hi: max(lo, min(hi, v))
 
 class Scenery:
-    """cinema_scenery: candidate distance, the learned-limit filter, REACH_FAIL (new or 4.4.4) and regrowth."""
+    """scenery: candidate distance, the learned-limit filter, REACH_FAIL (new or 4.4.4) and regrowth."""
     def __init__(s, rng, new, reach=100.0, reach_set=100.0):
         s.rng, s.new, s.reach, s.set = rng, new, reach, reach_set
         s.ok, s.cuts, s.fail_cut, s.fail_got = 0, 0, -99, 0.0
@@ -74,7 +74,7 @@ class Scenery:
         return False
 
 def verify(new, typ, cp, shot, op, before):
-    """cinema_core: the first camera check 2.5 s after a cut. Returns (want, got) for a REACH_FAIL, else None."""
+    """core: the first camera check 2.5 s after a cut. Returns (want, got) for a REACH_FAIL, else None."""
     if typ not in (5, 6, 7): return None
     want, got = dist(shot, op), dist(cp, op)
     if not new:
@@ -159,7 +159,7 @@ for name, v in (("minimised / stale camera", stale), ("mouselook", mouselook), (
 m = multi(unlimited, new=False, reach=150.0, reach_set=150.0)
 check(m["shrinks"] == 0, "old logic: an unlimited viewer should not shrink either")
 
-# 4. settings migration (cinema_ui checkOwner) on every rez
+# 4. settings migration (ui checkOwner) on every rez
 def boot_old(c):                                           # 4.4.4: the two string checks re-ran on every rez
     if c.get("cfgv") != "2": c["trace"] = "0"; c["cfgv"] = "2"
     if c.get("cfgv") != "3":

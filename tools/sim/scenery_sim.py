@@ -1,4 +1,4 @@
-# Python port of cinema_scenery.lsl findShot() run against simple test worlds
+# Python port of scenery.lsl findShot() run against simple test worlds
 # (flat ground + boxes). Checks: camera inside the region, above the top surface at
 # its spot (never inside a box), view ray unblocked, pitch in range, owner indoors ->
 # camera above the roof.

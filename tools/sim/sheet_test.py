@@ -1,4 +1,4 @@
-# Checks the sprite-sheet maths of frame() in hud/src/cinema_ui.lsl against the real texture
+# Checks the sprite-sheet maths of frame() in hud/src/ui.lsl against the real texture
 # hud/art/take12_icon_sheet_512x256.png. In Second Life the visible window of a face is centred at
 # (offset + 0.5) on each axis, repeats <rx, ry> give its size, and v runs up from the bottom of the image.
 # For every frame k the window must land exactly on cell k (column k % 4, row k // 4 from the top), frames
@@ -8,7 +8,7 @@ from PIL import Image
 path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "art", "take12_icon_sheet_512x256.png")
 im = Image.open(path).convert("RGBA"); W, H = im.size
 assert (W, H) == (512, 256), (W, H)
-def lsl_frame(k):                               # mirror of frame() in cinema_ui.lsl
+def lsl_frame(k):                               # mirror of frame() in ui.lsl
     oy = 0.25
     if k > 3: oy = -0.25
     return 0.25, 0.5, ((k % 4) + 0.5) / 4.0 - 0.5, oy

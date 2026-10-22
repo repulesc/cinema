@@ -1,11 +1,11 @@
-# Frame: the framing maths of cinema_frame.lsl, checked. Three framings (Full length, Half length, Close) for you
+# Frame: the framing maths of frame.lsl, checked. Three framings (Full length, Half length, Close) for you
 # alone and for you with the people next to you (mixed heights), over avatar heights 1.55-2.35 m and viewer zooms
 # from 21 mm (the default) to 105 mm. The script's tables must match the ones tested here.
 # (The fuller 4.5.0 version and its sim live in lab/frame-full-4.5.0/.)
 import math, os, random, re
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-LSL = open(os.path.join(R, "hud", "src", "cinema_frame.lsl")).read()
+LSL = open(os.path.join(R, "hud", "src", "frame.lsl")).read()
 ok = True
 def check(c, msg):
     global ok

@@ -1,4 +1,4 @@
-# Faithful port of the INSIDE logic of hud/src/cinema_scenery.lsl (context, floorOK, localShot, safeShot and the
+# Faithful port of the INSIDE logic of hud/src/scenery.lsl (context, floorOK, localShot, safeShot and the
 # inside part of nextShot), run against test builds. It replaces room_sim.py (the old wall-counting design).
 #
 # What makes it faithful:
@@ -78,7 +78,7 @@ class World:
         for t, k in out: flat += [k, add(a, mul(d, t))]
         return flat + [len(out)]
 
-# ---- the port (same names and order as cinema_scenery.lsl) ------------------------------------------------------
+# ---- the port (same names and order as scenery.lsl) ------------------------------------------------------
 UP_DIRS = [(0.0, 0.0, 1.0), (0.423, 0.0, 0.906), (-0.423, 0.0, 0.906), (0.0, 0.423, 0.906), (0.0, -0.423, 0.906)]
 N_LOCAL = 8
 FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0, 20.0]
