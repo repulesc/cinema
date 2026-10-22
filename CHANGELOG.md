@@ -1,5 +1,9 @@
 # Changelog
 
+## Take 12 Scenery's button: the same clapper in sepia
+- A sun on the 4-pixel-tall slate never read well (a red dome, then a pattern). The free button is now the Take 12 clapper and its "12" in sepia, like an old film, with only the red recording light left in colour: the same logo and feel, a step below the full Take 12, which stays the colour picture. None of Take 12's three looks is sepia, so the two are never confused.
+- New `scenery/art` texture and icon, and the free boards redrawn with it; the Read Me, the listing and the build steps describe it. Take 12's and the Watch's art and boards are unchanged.
+
 ## Take 12 Scenery: its own button (no change to Take 12's scripts)
 - **The design:** the Take 12 clapper (Rec look, the same chalk and coral) with a coral sun setting on a chalk horizon, and a faint reflection, in place of the "12". It is the same family as the Watch and its eye: recognisable as Take 12, never mistaken for it. Open and clapped frames, so the little clap still works.
 - **One design:** `scenery/art/take12_scenery_icon_sheet_512x256.png` keeps the Take 12 sheet's layout, with the Scenery frames in every look column, so the scripts' frame maths work unchanged. The free build leaves out the Button choice under Options > Look (three build substitutions; `hud/src` is untouched, still 6.1.0). A 128 px icon is there too.
