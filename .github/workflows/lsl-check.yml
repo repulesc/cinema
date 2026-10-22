@@ -28,3 +28,4 @@ jobs:
           python3 tools/sim/seated_sim.py
           python3 tools/sim/lens_sim.py
           python3 tools/sim/sync_sim.py
+          python3 tools/sim/menu_sim.py

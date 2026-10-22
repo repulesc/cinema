@@ -1,5 +1,30 @@
 # Changelog
 
+## 5.6.0
+**Cleaner menus: four cameras with plain names, settings in Options, and menu styles.**
+- **The main menu** is down from 11 buttons to 8: **Scenery · Me · Us · Still**, plus Share, Options, Help and Close. Each camera gets one line of explanation on the page:
+  - Scenery: the place, while you are away;
+  - Me: follows you (it was Personal);
+  - Us: you and the people around you; inside it, **Everyone near** (it was Social), **Only friends** (it was Friends) and **Friends list**;
+  - Still: a held picture of you (it was Frame).
+  The cameras themselves are unchanged. `/77 me`, `/77 us` and `/77 still` work too, alongside the old names.
+- **Options has three groups:**
+  - **Timing:** Pace, and Idle start (it was AFK);
+  - **Camera:** Seated view, Indoors, Reach, Alt-cam, Chat cuts, Phantom;
+  - **Look:** Menu style, Button, Chat text.
+  Favourites, Test cam and Reset sit next to them. Back always goes to the page above.
+- **Menu styles** (Options › Look), the same in the Share panel and the Friends list:
+  - **Plain** (words only), the new default for everyone;
+  - **Symbols** (quiet black-and-white marks);
+  - **Color** (the emoji as before).
+- **Hold** is described as "share your view" in the welcome text and the Read Me. The Pace step "Still" is now called "Slowest", so it doesn't clash with the Still camera.
+- **Memory:** the chat commands moved from `cinema_ui` to `cinema_picker`, so the menus have room (UI 14.8 KB free, by the stricter estimate).
+- **New `tools/sim/menu_sim.py` in CI:**
+  - every page fits a dialog and every button has a name;
+  - labels are distinct on each page, in all three styles;
+  - Back goes to the page above;
+  - Plain is the default.
+
 ## 5.5.0
 **Sharing, HUD-first: hold the button, Go live.** Starting a shared view took a walk through several menus. Now:
 - **Hold the HUD button** opens the **Share panel**, whatever you're doing. Going live is two actions: hold, then **🔴 Go live**. With your camera off, it starts Social.

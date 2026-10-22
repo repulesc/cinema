@@ -15,7 +15,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.5.0";
+string VERSION = "5.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -172,6 +172,15 @@ string names(list ks)
     return llDumpList2String(n, ", ");
 }
 
+// a label in the menu style chosen in Options > Look: Plain (words), Symbols (a quiet mark), Color (emoji)
+string lb(string e, string m, string t)
+{
+    integer k = (integer)llLinksetDataReadProtected("cin.skin", PASS);
+    if (k == 2) return e + " " + t;
+    if (k == 1) return m + " " + t;
+    return t;
+}
+
 // a button for a person: the label, and who it stands for
 btn(string label, key k)
 {
@@ -213,7 +222,7 @@ panelNear()
     list b = [];
     list desc = [];
     if (gSharing) b = ["Invite all"];
-    else b = ["🔴 Go live"];
+    else b = [lb("🔴", "●", "Go live")];
     integer i;
     for (i = 0; i < llGetListLength(gNear); i += 2)
     {
@@ -227,7 +236,9 @@ panelNear()
         desc += [d];
         if (llGetListLength(b) < 9)
         {
-            if (st == "live" && !gSharing) { b += ["👁 " + nm(k)]; btn("👁 " + nm(k), k); }
+            string wl = lb("👁", "◉", "Watch") + " " + nm(k);
+            if ((integer)llLinksetDataReadProtected("cin.skin", PASS)) wl = lb("👁", "◉", nm(k));
+            if (st == "live" && !gSharing) { b += [wl]; btn(wl, k); }
             else if (st == "idle" && llListFindList(gWatchers, [k]) < 0) { b += ["+ " + nm(k)]; btn("+ " + nm(k), k); }
         }
     }
@@ -235,26 +246,26 @@ panelNear()
     if (gSharing) t = "Invite more people.";
     if (desc == []) t += "\nNobody near you wears Take 12 or Take 12 Watch yet.";
     else t += "\nNear you: " + llDumpList2String(desc, ", ");
-    t += "\n+ name: invite one · 👁 name: watch a live view";
-    dialog("near", t, b + ["Give Watch", "⋯ More", "Close"]);
+    t += "\n+ name: invite one";
+    dialog("near", t, b + ["Give Watch", lb("⋯", "⋯", "More"), "Close"]);
 }
 
 panel()
 {
     if (gSharing)
     {
-        string t = "🔴 LIVE · ";
+        string t = lb("🔴", "●", "LIVE") + " · ";
         if (gWatchers == []) t += "nobody watches yet";
         else t += "watching: " + names(gWatchers);
         if (gAway != []) t += "\nlooking around: " + names(gAway);
         t += "\nWhen someone asks to lead: " + llList2String(LEADS, gLead);
-        dialog("live", t, ["Invite more", "Roster", "Lead: " + llList2String(LEADS, gLead), "End live", "⋯ More", "Close"]);
+        dialog("live", t, ["Invite more", "Roster", "Lead: " + llList2String(LEADS, gLead), "End live", lb("⋯", "⋯", "More"), "Close"]);
     }
     else if (gHost != NULL_KEY)
     {
-        string t = "👁 Viewing " + llKey2Name(gHost) + "'s camera.";
+        string t = "Viewing " + llKey2Name(gHost) + "'s camera.";
         if (gAskT) t += "\nYou asked to lead; waiting for an answer.";
-        dialog("view", t, ["Ask to lead", "Leave", "⋯ More", "Close"]);
+        dialog("view", t, ["Ask to lead", "Leave", lb("⋯", "⋯", "More"), "Close"]);
     }
     else if (gPendT) dialog("invited", llKey2Name(gOffer) + " invites you to watch their camera.", ["Watch", "No"]);
     else who();
@@ -445,14 +456,14 @@ default
         {
             llListenRemove(gDlgL);
             gDlgT = 0;
-            if (msg == "⋯ More")
+            if (msg == lb("⋯", "⋯", "More"))
             {
                 if (gCamOn) llMessageLinked(LINK_SET, CMD, "livemenu", "");
                 else llMessageLinked(LINK_SET, CMD, "mainmenu", "");
             }
             else if (gPage == "near")
             {
-                if (msg == "🔴 Go live") golive(TRUE);
+                if (msg == lb("🔴", "●", "Go live")) golive(TRUE);
                 else if (msg == "Invite all") golive(TRUE);
                 else if (msg == "Give Watch")
                 {

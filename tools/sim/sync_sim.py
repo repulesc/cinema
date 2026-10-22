@@ -53,7 +53,7 @@ check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState =
       "core: viewing must block the idle start and keep the double-tap")
 check('onLong()\n{\n    llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui, "ui: hold must open the Share panel, always")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
-check('"frame", "share", "pace"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
+check('"frame", "share", "opts"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
 
 # ---- a small region (the logic of both scripts, ported) -----------------------------------------------------------
 class Region:

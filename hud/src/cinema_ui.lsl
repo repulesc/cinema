@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION = "5.5.0";
+string VERSION = "5.6.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -24,10 +24,10 @@ integer CMD         = 7371;
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
 
-string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~emoji=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
+string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=0~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
-// menu items: id, emoji, title
-string ITEMS = "~scenery|🏞|Scenery~personal|🚶|Personal~social|👥|Social~friends|💞|Friends~frame|🖼|Frame~pace|⏳|Pace~afk|💤|AFK~opts|⚙|Options~help|❔|Help~close|✖|Close~back|↩|Back~photo|📷|Photo~resume|▶|Resume~save|⭐|Save~next|⏭|Next~stop|⏹|Stop~modes|🎬|Modes~lively|⚡|Lively~easy|🙂|Easy~calm|🍃|Calm~slow|🌙|Slow~still|🗿|Still~indoors|🏠|Indoors~chat|💬|Chat cuts~favs|⭐|Favourites~altcam|👁|Alt-cam~phantom|🧱|Phantom~reach|📏|Reach~trace|📝|Chat text~emoji|🔤|Emoji~look|🎨|Look~th0||Classic~th1||Rec~th2||Viewfinder~test|🧪|Test cam~reset|♻|Reset~gotit|👍|Got it~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~here||Clear here~all||Clear all~pause||Pause~end||End~ignore||Ignore~seat|🪑|Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~release|🔓|Release~share|👁|Share~";
+// menu items: id, emoji (Color style), mark (Symbols style), title (Plain style)
+string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~photo|📷|▣|Photo~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -35,10 +35,8 @@ key     gOwner;
 integer gChan;
 integer gListen;
 integer gMenuT;
-integer gCmdListen;
-integer gCmdChan;
 integer gVerAsked;
-integer gEmoji;
+integer gSkin;                  // menu style: 0 Plain (words), 1 Symbols (quiet marks), 2 Color (emoji)
 list    gBtn;                   // the ids of the buttons on screen
 integer gFirst;
 string  gPage;
@@ -82,7 +80,7 @@ cfgSet(string k, string v)
 {
     cfgWrite(k, v);
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
-    if (k == "emoji") gEmoji = (integer)v;
+    if (k == "skin") gSkin = (integer)v;
     if (k == "trace") gNote = (integer)v;
     if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
     if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
@@ -119,7 +117,7 @@ giveHelp()
     }
     if (card != "") llGiveInventory(gOwner, card);
     else llOwnerSay("[Take 12] No Read Me notecard in this prim. Add one with \"Read Me\" in its name.");
-    llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: live menu. Commands: /" + (string)gCmdChan + " help");
+    llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");
 }
 
 // new owner (or first run): wipe whatever was configured before
@@ -147,8 +145,13 @@ checkOwner()
         cfgWrite("afk_away", "1");
         cfgWrite("cfgv", "5");
     }
+    if (v < 6)                                     // 5.6.0: menus in plain words by default (Options > Look > Menu style)
+    {
+        cfgWrite("skin", "0");
+        cfgWrite("cfgv", "6");
+    }
     gNote = (cfgGet("trace") == "1");
-    gEmoji = (cfgGet("emoji") != "0");
+    gSkin = (integer)cfgGet("skin");
     gLook = (integer)cfgGet("look");
     if (LITE) gLook = 0;
     gFace = (integer)cfgGet("face");
@@ -189,7 +192,7 @@ note(string s)
 integer locked(string id)
 {
     if (!LITE) return FALSE;
-    return (llListFindList(["personal", "social", "friends", "frame", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
+    return (llListFindList(["personal", "us", "frame", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
 }
 
 string label(string id)
@@ -200,15 +203,11 @@ string label(string id)
     string r = llGetSubString(ITEMS, i, i + 40);                // one entry is shorter than this
     r = llGetSubString(r, 0, llSubStringIndex(r, "~") - 1);
     list p = llParseStringKeepNulls(r, ["|"], []);
-    string e = llList2String(p, 0);
-    string t = llList2String(p, 1);
-    if (locked(id))
-    {
-        if (gEmoji) return "🔒 " + t;
-        return t + " (full)";
-    }
-    if (e == "" || !gEmoji) return t;
-    return e + " " + t;
+    string t = llList2String(p, 2);
+    if (locked(id)) return t + " (full)";
+    string m = llList2String(p, (gSkin == 1));                  // Color: the emoji; Symbols: the quiet mark
+    if (gSkin == 0 || m == "") return t;
+    return m + " " + t;
 }
 
 // the Lite build: tell about the full version and open its listing
@@ -276,16 +275,27 @@ string paceName()
     return llToUpper(llGetSubString(llList2String(PACE_IDS, i), 0, 0)) + llDeleteSubString(llList2String(PACE_IDS, i), 0, 0);
 }
 
+// the modes by the names on the menu
 string modeName()
 {
-    return llToUpper(llGetSubString(gUiMode, 0, 0)) + llDeleteSubString(gUiMode, 0, 0);
+    integer i = llListFindList(["scenery", "personal", "social", "friends", "frame"], [gUiMode]);
+    return llList2String(["Scenery", "Me", "Us", "Us (friends)", "Still"], i);
+}
+
+// where Back goes
+string up(string p)
+{
+    if (llSubStringIndex("~pace~afk~", "~" + p + "~") >= 0) return "timing";
+    if (llSubStringIndex("~seat~indoors~reach~altcam~chat~", "~" + p + "~") >= 0) return "camcfg";
+    if (llSubStringIndex("~timing~camcfg~look~favs~reset~", "~" + p + "~") >= 0) return "opts";
+    return "main";
 }
 
 string title()
 {
     string h = "Take 12";
     if (LITE) h = "Take 12 Lite";
-    if (gEmoji) h = "🎬 " + h;
+    if (gSkin == 2) h = "🎬 " + h;
     string s = "idle";
     if (gUiState == "rolling") s = modeName() + " rolling";
     else if (gUiState == "frozen") s = modeName() + " frozen";
@@ -311,8 +321,13 @@ openMenu(string page)
     list b;
     if (page == "main")
     {
-        text += "Pace: " + paceName() + " (" + cfgGet("hold") + " s) · AFK: " + afkText() + " · Indoors: " + cfgGet("indoors");
-        b = ["scenery", "personal", "social", "friends", "frame", "share", "pace", "afk", "opts", "help", "close"];
+        text += "Scenery · the place, while you are away\nMe · follows you\nUs · you and the people around you\nStill · a held picture of you";
+        b = ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"];
+    }
+    else if (page == "us")
+    {
+        text += "Us · you and the people around you.\nEveryone near, or only the friends you saved.";
+        b = ["everyone", "onlyfr", "flist", "back"];
     }
     else if (page == "live")
     {
@@ -335,11 +350,20 @@ openMenu(string page)
     }
     else if (page == "opts")
     {
-        text += "Indoors: " + cfgGet("indoors") + " · Chat cuts: " + onoff("chat_cuts") + "\nAlt-cam: "
+        text += "Timing · how long views last, when the idle camera starts\nCamera · seated view, indoors, reach, Alt-cam, chat cuts\nLook · menu style, button, chat text";
+        b = ["timing", "camcfg", "look", "favs", "test", "reset", "back"];
+    }
+    else if (page == "timing")
+    {
+        text += "Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)\nIdle start: " + afkText();
+        b = ["pace", "afk", "back"];
+    }
+    else if (page == "camcfg")
+    {
+        text += "Seated view: " + seatText() + " · Indoors: " + cfgGet("indoors") + "\nReach: " + cfgGet("reach") + " m · Alt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + " · Reach: " + cfgGet("reach") + " m\nPhantom: " + onoff("phantom") + " · Chat text: " + onoff("trace") + "\nSeated view: " + seatText();
-        b = ["indoors", "chat", "favs", "altcam", "phantom", "reach", "trace", "look", "seat", "test", "reset", "back"];
-        if (LITE) b = llListReplaceList(b, ["emoji"], 7, 7);        // Look is locked in Lite: Emoji goes here instead
+            + "\nChat cuts: " + onoff("chat_cuts") + " · Phantom: " + onoff("phantom");
+        b = ["seat", "indoors", "reach", "altcam", "chat", "phantom", "back"];
     }
     else if (page == "seat")
     {
@@ -348,8 +372,9 @@ openMenu(string page)
     }
     else if (page == "look")
     {
-        text += "Button look: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook) + "\nEmoji on menus: " + onoff("emoji");
-        b = ["th0", "th1", "th2", "emoji", "back"];
+        text += "Menu style: " + llList2String(["Plain", "Symbols", "Color"], gSkin) + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)
+            + "\nChat text: " + onoff("trace");
+        b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "trace", "back"];
     }
     else if (page == "indoors")
     {
@@ -383,7 +408,7 @@ openMenu(string page)
     }
     else
     {
-        text = "Welcome to Take 12\nDouble-tap: scenery\nTap: menu (rolling: stop)\nHold: live menu";
+        text = "Welcome to Take 12\nDouble-tap: scenery\nTap: menu (rolling: stop)\nHold: share your view";
         b = ["gotit", "help"];
     }
     llDialog(gOwner, text, order(b), gChan);
@@ -426,20 +451,17 @@ onChoice(string msg)
     if (locked(id)) { closeMenu(); upsell(); return; }
     if (id == "back")
     {
-        if (gPage == "altcam" || gPage == "seat" || gPage == "reach" || gPage == "reset" || gPage == "indoors" || gPage == "chat" || gPage == "favs" || gPage == "look") openMenu("opts");
-        else openMenu("main");
+        openMenu(up(gPage));
         return;
     }
     if (gPage == "main")
     {
-        if (id == "scenery" || id == "personal" || id == "social" || id == "frame" || id == "share")
+        if (id == "scenery" || id == "personal" || id == "frame" || id == "share")
         {
             closeMenu();
             llMessageLinked(LINK_SET, CMD, id, "");
         }
-        else if (id == "friends") { closeMenu(); llMessageLinked(LINK_SET, UI_FRIENDS, "page", ""); }
-        else if (id == "pace" || id == "afk") openMenu(id);
-        else if (id == "opts") openMenu("opts");
+        else if (id == "us" || id == "opts") openMenu(id);
         else if (id == "help") { giveHelp(); closeMenu(); }
     }
     else if (gPage == "live")
@@ -451,12 +473,20 @@ onChoice(string msg)
         else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
         else if (id == "modes") openMenu("main");
     }
+    else if (gPage == "us")
+    {
+        closeMenu();
+        if (id == "everyone") llMessageLinked(LINK_SET, CMD, "social", "");
+        else if (id == "onlyfr") llMessageLinked(LINK_SET, CMD, "friends", "");
+        else if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");
+    }
+    else if (gPage == "timing") openMenu(id);
     else if (gPage == "pace")
     {
         integer i = llListFindList(PACE_IDS, [id]);
         if (i >= 0) cfgSet("hold", llList2String(PACE_SECS, i));
         note("Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
-        openMenu("main");
+        openMenu("timing");
     }
     else if (gPage == "afk")
     {
@@ -467,43 +497,46 @@ onChoice(string msg)
             cfgSet("afk_sec", (string)toNum(msg));
             cfgSet("afk_on", "1");
         }
-        note("AFK scenery: " + afkText());
-        openMenu("main");
+        note("Idle start: " + afkText());
+        openMenu("timing");
     }
     else if (gPage == "opts")
     {
-        if (id == "indoors" || id == "chat" || id == "favs" || id == "altcam" || id == "seat" || id == "reach" || id == "reset" || id == "look") openMenu(id);
-        else if (id == "test")
+        if (id == "test")
         {
             closeMenu();
             llMessageLinked(LINK_SET, CMD, "grab", "");
         }
-        else
+        else openMenu(id);
+    }
+    else if (gPage == "camcfg")
+    {
+        if (id == "phantom")
         {
-            if (id == "phantom") toggle("phantom", "Phantom obstacles");
-            else if (id == "trace") toggle("trace", "Trace lines");
-            else if (id == "emoji") toggle("emoji", "Emoji");
-            openMenu("opts");
+            toggle("phantom", "Phantom obstacles");
+            openMenu("camcfg");
         }
+        else openMenu(id);
     }
     else if (gPage == "look")
     {
         if (llGetSubString(id, 0, 1) == "th") cfgSet("look", llGetSubString(id, 2, 2));
-        else if (id == "emoji") toggle("emoji", "Emoji");
+        else if (llGetSubString(id, 0, 1) == "sk") cfgSet("skin", llGetSubString(id, 2, 2));
+        else if (id == "trace") toggle("trace", "Chat text");
         openMenu("look");
     }
     else if (gPage == "indoors")
     {
         cfgSet("indoors", id);
         note("Indoors: " + id);
-        openMenu("opts");
+        openMenu(up(gPage));
     }
     else if (gPage == "chat")
     {
         if (id == "on") cfgSet("chat_cuts", "1");
         else cfgSet("chat_cuts", "0");
         note("Chat cuts: " + onoff("chat_cuts"));
-        openMenu("opts");
+        openMenu(up(gPage));
     }
     else if (gPage == "favs")
     {
@@ -521,27 +554,27 @@ onChoice(string msg)
     {
         cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id]) + 1));
         note("Seated view: " + seatText());
-        openMenu("opts");
+        openMenu(up(gPage));
     }
     else if (gPage == "altcam")
     {
         if (id == "pause") { cfgSet("peek", "1"); cfgSet("peek_bail", "0"); }
         else if (id == "end") { cfgSet("peek", "1"); cfgSet("peek_bail", "1"); }
         else if (id == "ignore") cfgSet("peek", "0");
-        openMenu("opts");
+        openMenu(up(gPage));
     }
     else if (gPage == "reach")
     {
         if (id == "relearn") setReach(cfgGet("reach_set"));
         else setReach((string)toNum(msg));
-        openMenu("opts");
+        openMenu(up(gPage));
     }
     else if (gPage == "reset")
     {
         if (id == "yes")
         {
             initDefaults(TRUE);
-            gEmoji = TRUE;
+            gSkin = 0;
             llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
             note("Settings reset to defaults.");
         }
@@ -577,63 +610,6 @@ onLong()
 }
 
 // ============================================================================
-//  chat commands: /77 <command>
-// ============================================================================
-help()
-{
-    llOwnerSay("[Take 12] Commands on /" + (string)gCmdChan + ": scenery personal social friends frame stop next photo menu status pace reach indoors face chan reset (details: Read Me).");
-}
-
-onCommand(string msg)
-{
-    list a = llParseString2List(llToLower(llStringTrim(msg, STRING_TRIM)), [" "], []);
-    string c = llList2String(a, 0);
-    string v = llList2String(a, 1);
-    integer n = (integer)v;
-    if (LITE && (c == "personal" || c == "social" || c == "friends" || c == "frame" || c == "fav" || c == "friend" || c == "indoors")) upsell();
-    else if (c == "scenery" || c == "personal" || c == "social" || c == "friends" || c == "frame" || c == "stop" || c == "next" || c == "photo" || c == "fav" || c == "grab") llMessageLinked(LINK_SET, CMD, c, "");
-    else if (c == "menu") openMenu("main");
-    else if (c == "status")
-    {
-        llOwnerSay("[Take 12/ui] v" + VERSION + " commands on /" + (string)gCmdChan + ", AFK scenery " + afkText()
-            + ", pace " + paceName() + " (" + cfgGet("hold") + " s), reach " + cfgGet("reach") + " m, free mem " + (string)llGetFreeMemory());
-        llMessageLinked(LINK_SET, STATUS, "?", "");
-    }
-    else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { cfgSet("hold", (string)n); llOwnerSay("[Take 12] Pace: about " + v + " s per view"); }
-    else if (c == "reach" && v == "relearn") { setReach(cfgGet("reach_set")); llOwnerSay("[Take 12] Reach re-learned from " + cfgGet("reach_set") + " m"); }
-    else if (c == "reach" && n >= 20 && n <= 250) { setReach(v); llOwnerSay("[Take 12] Scenery reach: " + v + " m"); }
-    else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { cfgSet("indoors", v); llOwnerSay("[Take 12] Indoors: " + v); }
-    else if (c == "face" && v != "")
-    {
-        if (v == "all") n = -1;
-        cfgSet("face", (string)n);
-        llOwnerSay("[Take 12] Picture face: " + v);
-    }
-    else if (c == "friend" && (v == "list" || v == "clear")) llMessageLinked(LINK_SET, UI_FRIENDS, v, "");
-    else if (c == "trace" || c == "emoji" || c == "cutmode")
-    {
-        cfgSet(c, (string)(v == "on"));
-        llOwnerSay("[Take 12] " + c + ": " + onoff(c));
-    }
-    else if (c == "chan" && n > 0 && n != 9)
-    {
-        cfgSet("cmd_chan", (string)n);
-        gCmdChan = n;
-        if (gCmdListen) llListenRemove(gCmdListen);
-        gCmdListen = llListen(gCmdChan, "", gOwner, "");
-        llOwnerSay("[Take 12] Commands now on /" + v);
-    }
-    else if (c == "reset")
-    {
-        initDefaults(TRUE);
-        gEmoji = TRUE;
-        llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
-        llOwnerSay("[Take 12] Settings reset to defaults.");
-    }
-    else help();
-}
-
-// ============================================================================
 default
 {
     state_entry()
@@ -643,9 +619,6 @@ default
         llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_GLOW, ALL_SIDES, 0.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
         frame(2 * gLook);
         setLook("armed");
-        gCmdChan = (integer)cfgGet("cmd_chan");
-        if (gCmdChan <= 0) gCmdChan = 77;
-        gCmdListen = llListen(gCmdChan, "", gOwner, "");
         if (gFirst)
         {
             cfgWrite("seen_intro", "1");
@@ -713,6 +686,16 @@ default
             setLook(st);
         }
         else if (num == UI_MENU) openMenu(str);
+        else if (num == CFG_CHANGED)                        // a chat command (cinema_picker) may have changed these
+        {
+            gSkin = (integer)cfgGet("skin");
+            gNote = (cfgGet("trace") == "1");
+            gFace = (integer)cfgGet("face");
+            frame(2 * gLook);
+        }
+        else if (num == STATUS && str == "?")
+            llOwnerSay("[Take 12/ui] v" + VERSION + " idle start " + afkText() + ", pace " + paceName() + " (" + cfgGet("hold") + " s), reach "
+                + cfgGet("reach") + " m, free mem " + (string)llGetFreeMemory());
         else if (num == MSG_VER && str != "?" && str != VERSION)
             llOwnerSay("[Take 12] WARNING: " + (string)id + " script is version " + str + ", ui is " + VERSION + ". Re-drop all Take 12 scripts from the same release.");
     }
@@ -720,12 +703,8 @@ default
     listen(integer channel, string name, key id, string msg)
     {
         if (id != gOwner) return;
-        if (channel == gCmdChan) onCommand(msg);
-        else
-        {
-            gMenuT = llGetUnixTime();
-            onChoice(msg);
-        }
+        gMenuT = llGetUnixTime();
+        onChoice(msg);
     }
 
     timer()
