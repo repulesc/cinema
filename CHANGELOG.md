@@ -11,7 +11,9 @@
 - **While live:** who watches and who is looking around, Invite more, a **Roster** (Pass camera, Remove), **Lead: Ask / Always / Never**, and End live.
 - **While viewing:** **Ask to lead**. The director gets Allow / Decline, which is declined automatically after 20 s. On Allow, everyone follows the new director.
 - **Invites:** a Watch HUD, or Take 12 with you in its Friends, joins at once. Anyone else sees "Pano invites you · hold to watch" for 20 s. After an invite you get a line saying who watches, who was asked, who is busy and who didn't answer.
-- **Above the HUD, always:** "● LIVE · 2", "👁 Pano" or "Pano invites you".
+- **Who is connected, always:** above the director's button, "● LIVE · 3 watching" and, below it, the names: "Ana · Ben (looking around) · Dee (no signal)".
+  - Every viewer's HUD sends a heartbeat every 10 s. Someone silent for 25 s shows "(no signal)", and after 45 s they are dropped ("Dee lost connection").
+  - Viewers see "👁 Pano", or "👁 Pano · no signal…" when the director goes quiet.
 - **Reliability:**
   - a heartbeat: viewers drop out 25 s after a director vanishes;
   - viewers who leave the region are dropped from the roster;

@@ -62,7 +62,7 @@ Let the people with you watch what your camera films. One person leads; everyone
  - HOLD the button: the Share panel. It first looks who is near you (Take 12 or the free Take 12 Watch).
  - Go live: your camera starts if it is off (Social) and everyone near you who is free is invited. Or tap + name to invite one person, or 👁 name to watch someone who is already live.
  - Friends wearing Take 12 Watch, or Take 12 with you in their Friends, join at once. Anyone else sees "... invites you - hold to watch" for 20 seconds (a double-tap also accepts).
- - Above your button: "● LIVE · 2" while you share, "👁 Pano" while you watch.
+ - Above your button while you share: "● LIVE · 3 watching" and the names of who is connected to your camera, e.g. "Ana · Ben (looking around) · Dee (no signal)". Someone silent for 45 seconds is dropped. While you watch: "👁 Pano" (or "no signal" if the leader goes quiet).
  - Hold again while live: who watches, Invite more, Roster (pass the camera to someone, or remove them), Lead (when someone asks to lead: Ask / Always / Never), End live.
  - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
  - Hold > ⋯ More: the usual menu (photo hold, next, stop, modes).

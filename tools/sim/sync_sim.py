@@ -29,6 +29,13 @@ for name, s in (("sync", sync), ("watch", watch)):
     check(s.count("llClearCameraParams()") == 1 and "clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;" in s,
           f"{name}: the camera clear must be single and guarded (no clear while the HUD comes off)")
 check('say(who, "here|T|"' in sync and 'say(who, "here|W|"' in watch, "the who reply must say Take 12 or Watch")
+# continuous feedback (5.5.0): viewers send a heartbeat; the director lists who is connected, live
+check('say(gHost, "hb");' in sync and 'say(gHost, "hb");' in watch, "viewers must send a heartbeat")
+for w in ("integer QUIET      = 25;", "integer LOST       = 45;", 't += " (no signal)";', 't += " (looking around)";',
+          '" watching\\n"', '" lost connection"', "if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);",
+          'return "👁 " + sn(gHost) + " · no signal…";'):
+    check(w in sync, f"sync: missing {w}")
+check('s = "👁 " + llKey2Name(gHost) + " · no signal…";' in watch, "watch: no signal is not shown")
 check("llDialog" not in watch and '"ask"' not in watch, "watch: no dialogs, and it cannot lead")
 for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|0");', 'say(who, "busy|live");',
           'if (!gSharing) return;                          // only a live view can be joined', 'if (gLeadAsk != NULL_KEY || gLead == 2) say(who, "lead|0");',
@@ -38,7 +45,7 @@ for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|
           "if (!gSharing && llGetUnixTime() - gToggleT < 2) return;", 'list    LEADS      = ["Ask", "Always", "Never"];',
           'llLinksetDataWriteProtected("cin.share_lead"', "didn't answer (out of range or HUD off)",
           'if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)',
-          "llGetPrimitiveParams([PRIM_TEXT])", 'return "● LIVE · "'):
+          "llGetPrimitiveParams([PRIM_TEXT])", 'return "● LIVE · nobody watching yet";'):
     check(w in sync, f"sync: missing {w}")
 check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must be sent from setCam and the glide")
 check('else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }' in core, "core: Go live must start Social")
@@ -55,13 +62,14 @@ class Region:
         for k, a in list(s.av.items()):
             if k != frm and a.region: a.hear(frm, msg)
     def say_to(s, frm, to, msg):
-        if to in s.av and s.av[to].region and s.av[frm].region: s.av[to].hear(frm, msg)
+        if to in s.av and s.av[to].region and s.av[frm].region and not s.av[to].dead and not s.av[frm].dead: s.av[to].hear(frm, msg)
     def tick(s, dt):
         for _ in range(dt): s.t += 1; [a.timer() for a in list(s.av.values())]
 class Av:
     """one avatar: kind 'T' (Take 12, cinema_sync) or 'W' (Take 12 Watch)"""
     def __init__(s, rg, name, pos, kind, friends=()):
         s.rg, s.name, s.pos, s.kind, s.friends, s.region = rg, name, pos, kind, set(friends), True
+        s.dead = False; s.seen = {}; s.beat_t = 0      # dead: the HUD stops (crashed, detached without a word)
         s.sharing = s.cam_on = s.hand = False; s.toggle_t = -99
         s.watchers, s.away, s.inv, s.res, s.notes, s.near_list = [], [], [], [], [], None
         s.next_t, s.hb_t, s.inv_t, s.cuts, s.lead, s.lead_ask, s.lead_t = -99, 0, 0, 0, 0, None, 0
@@ -116,8 +124,17 @@ class Av:
         if s.host and not s.is_away: s.is_away = True; s.say(s.host, "away")
     def esc(s):
         if s.host and s.is_away: s.is_away = False; s.say(s.host, "back")
+    def ind(s):                                       # the text above the director's HUD
+        if not s.sharing: return ""
+        if not s.watchers: return "● LIVE · nobody watching yet"
+        n = []
+        for k in s.watchers[:4]:
+            n.append(k + (" (no signal)" if s.rg.t - s.seen.get(k, 0) > 25 else (" (looking around)" if k in s.away else "")))
+        return "● LIVE · %d watching\n%s" % (len(s.watchers), " · ".join(n))
     def timer(s):
         t = s.rg.t
+        if s.dead: return
+        if s.host and t - s.beat_t >= 10: s.beat_t = t; s.say(s.host, "hb")
         if s.inv and t - s.inv_t >= 3: s.res += [k + " no answer" for k in s.inv]; s.inv = []
         if s.pend_t and t - s.pend_t > 20: s.pend_t = 0
         if s.lead_ask and t - s.lead_t > 20: s.say(s.lead_ask, "lead|0"); s.lead_ask = None
@@ -125,11 +142,14 @@ class Av:
             s.hb_t = t; s.all("hb")
             for k in list(s.watchers):
                 if not s.rg.av[k].region: s.watchers.remove(k); s.notes.append(k + " left")
+                elif t - s.seen.get(k, 0) > 45: s.watchers.remove(k); s.notes.append(k + " lost connection")
         if s.ask_t and t - s.ask_t > 25: s.ask_t = 0
         if s.host and t - s.hear_t > 25: s.notes.append(s.host + "'s camera is gone"); s.host = None; s.cam = None
     def hear(s, frm, msg):
         if not msg.startswith("T12|") or frm == s.name: return
         L = msg.split("|"); w = L[1]
+        if frm in s.watchers: s.seen[frm] = s.rg.t          # a viewer's word: still connected
+        if w == "hb" and frm in s.watchers: return
         if w == "who":
             if not s.near(frm): return
             st, d = "idle", ""
@@ -151,7 +171,7 @@ class Av:
             s.res.append(frm + (" busy (" + L[2] + ")" if w == "busy" else (" watches" if L[2] == "1" else " is asked")))
         elif w == "join":
             if not s.sharing: return
-            if frm not in s.watchers: s.watchers.append(frm)
+            if frm not in s.watchers: s.watchers.append(frm); s.seen[frm] = s.rg.t
             if s.last: s.say(frm, "cam|" + s.last)
         elif w == "leave" and frm in s.watchers: s.watchers.remove(frm); s.away = [a for a in s.away if a != frm]
         elif w == "away" and frm in s.watchers and frm not in s.away: s.away.append(frm)
@@ -247,12 +267,25 @@ check(ben.cam == "<5,5,5>|<6,6,6>|0", "two cameras fight: the old director still
 # Pass camera from the roster: Ana passes to Cleo
 ana.grant("Cleo")
 check(cleo.sharing and you.host == "Cleo" and ben.host == "Cleo" and ana.host == "Cleo", "Pass camera failed")
+# continuous feedback: Cleo directs; Ana and Ben send heartbeats; Pano's HUD dies silently (still in the region)
+check(cleo.ind() == "● LIVE · 3 watching\nPano · Ben · Ana" or set(cleo.ind().split("\n")[1].split(" · ")) == {"Pano", "Ben", "Ana"},
+      f"the director's live list: {cleo.ind()!r}")
+ben.orbit()
+check("Ben (looking around)" in cleo.ind(), f"looking around not in the live list: {cleo.ind()!r}")
+ben.esc()
+you.dead = True; rg.tick(26)
+check("Pano (no signal)" in cleo.ind() and "Ana (no signal)" not in cleo.ind() and "Ben (no signal)" not in cleo.ind(),
+      f"after 26 s without a word from Pano: {cleo.ind()!r}")
+rg.tick(30)
+check("Pano" not in cleo.watchers and "Pano lost connection" in cleo.notes and sorted(cleo.watchers) == ["Ana", "Ben"],
+      f"after 46 s: {cleo.watchers}, {cleo.notes[-1:]}")
+you.dead = False; you.host = None
 # a viewer leaves the region: dropped at the next heartbeat check
 ben.region = False; rg.tick(10)
 check("Ben" not in cleo.watchers and "Ben left" in cleo.notes, "a viewer who left the region stays in the roster")
 # the director goes quiet (logged off): viewers drop out after 25 s
 cleo.region = False; rg.tick(26)
-check(you.host is None and ana.host is None and you.notes[-1] == "Cleo's camera is gone", "viewers of a vanished director must drop out")
+check(ana.host is None and ana.notes[-1] == "Cleo's camera is gone", "viewers of a vanished director must drop out")
 print("sharing: who check, Go live (free only), instant / asked joins, expiry, no-answer, pull join, next 5 s apart, "
       "looking around, Ask / Always / Never lead with auto-decline, Remove, Pass camera, heartbeat drops, rapid toggles")
 print("sync checks:", "ALL PASS" if ok else "FAILURES")

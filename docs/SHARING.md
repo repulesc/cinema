@@ -6,8 +6,8 @@
 | State | Meaning | Above the HUD |
 |---|---|---|
 | IDLE | not sharing, not viewing | (nothing) |
-| LIVE | you direct: your camera is the shared one | `● LIVE · 2` |
-| VIEWING | you follow a director's camera | `👁 Pano` (`· looking around (Esc: back)`) |
+| LIVE | you direct: your camera is the shared one | `● LIVE · 3 watching` and, below it, `Ana · Ben (looking around) · Dee (no signal)` |
+| VIEWING | you follow a director's camera | `👁 Pano` (`· looking around (Esc: back)`, or `· no signal…` after 15 s without a word) |
 | INVITED | a director invited you; waits 20 s | `Pano invites you · hold to watch` |
 
 - There is one director per session, and any number of viewers.
@@ -46,6 +46,7 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
 | `invite\|<name>` | director → one avatar | an invitation |
 | `ack\|1` / `ack\|0` / `busy\|<what>` | invited → director | joined at once (a Watch, or Take 12 with the director in Friends) / asked / busy |
 | `join` `leave` `next` `away` `back` `ask` | viewer → director | joined, left, next view (5 s apart), looking around, back, asks to lead |
+| `hb` | viewer → director | the viewer's heartbeat, every 10 s: still connected |
 | `cam\|<pos>\|<focus>\|<lag>` | director → viewers | every camera the director's core sets (cuts and glides) |
 | `hb` | director → viewers | heartbeat, every 10 s |
 | `lead\|1` / `lead\|0` | director → viewer | you lead now (a request allowed, or Pass camera) / declined |
@@ -66,6 +67,16 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
   - A second request while one is waiting is declined at once.
   - **On a grant:** the director sends `lead|1` to the new director, `director|…` to everyone else, then becomes a viewer of the new director and stops its own camera. That stop does not end the session.
 - **Pass camera** is the same grant, from the roster. **Remove** sends `kick`.
+
+## Continuous feedback (who is connected)
+- **Every viewer** (Take 12 or Watch) sends `hb` every 10 s. The director counts any word from a viewer as a sign of life.
+- **Above the director's HUD,** always up to date, with the first four names and `+N` for more:
+  ```
+  ● LIVE · 3 watching
+  Ana · Ben (looking around) · Dee (no signal)
+  ```
+- **"(no signal)"** appears after 25 s without a word. After 45 s the viewer is dropped: "Dee lost connection".
+- **Viewers see the same about the director:** `👁 Pano · no signal…` after 15 s without a word, and they drop out after 25 s.
 
 ## Edge cases
 - **Busy or out of range:** busy answers come back as `busy`. Avatars out of range don't answer and are reported after 3 s.

@@ -19,6 +19,8 @@ vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
 integer gHearT;              // the last word from the director
+integer gBeatT;              // your last heartbeat to the director (it sees you are connected)
+string  gShownS;             // the text above the HUD now
 float   gTapT;
 integer gTaps;
 integer gTapPend;
@@ -37,8 +39,10 @@ integer near(key k)
 shown()
 {
     string s = "👁 " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next";
-    if (gIsAway) s = "👁 " + llKey2Name(gHost) + " · looking around (Esc: back)";
-    llSetText(s, <1.0, 1.0, 1.0>, 0.85);
+    if (llGetUnixTime() - gHearT > 15) s = "👁 " + llKey2Name(gHost) + " · no signal…";
+    else if (gIsAway) s = "👁 " + llKey2Name(gHost) + " · looking around (Esc: back)";
+    if (s != gShownS) llSetText(s, <1.0, 1.0, 1.0>, 0.85);
+    gShownS = s;
 }
 
 follow(key host)
@@ -47,6 +51,8 @@ follow(key host)
     gIsAway = FALSE;
     gApplied = ZERO_VECTOR;
     gHearT = llGetUnixTime();
+    gBeatT = gHearT;
+    gShownS = "";
     say(gHost, "join");
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
     shown();
@@ -118,6 +124,12 @@ default
             else if (gTaps >= 2) say(gHost, "next");         // double-tap: the next view for everyone
             else leave(TRUE, TRUE, "Your camera");           // tap: your own camera back
         }
+        if (gHost != NULL_KEY && llGetUnixTime() - gBeatT >= 10)
+        {
+            gBeatT = llGetUnixTime();
+            say(gHost, "hb");                                // your heartbeat: the director sees you are connected
+        }
+        if (gHost != NULL_KEY) shown();
         if (gHost != NULL_KEY)
         {
             if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, llKey2Name(gHost) + "'s camera is gone");
@@ -189,11 +201,7 @@ default
                 CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
-        else if (w == "director")
-        {
-            follow((key)llList2String(L, 2));                // someone else leads now
-            llSetText(llList2String(L, 3) + " leads now", <1.0, 1.0, 1.0>, 0.85);
-        }
+        else if (w == "director") follow((key)llList2String(L, 2));   // someone else leads now
         else if (w == "kick") leave(FALSE, TRUE, llKey2Name(gHost) + " stopped sharing with you");
         else if (w == "end") leave(FALSE, TRUE, llKey2Name(gHost) + " ended the live view");
     }

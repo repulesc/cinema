@@ -29,6 +29,9 @@ float   NEAR       = 20.0;       // m  who is found and invited
 integer NEXT_GAP   = 5;          // s  two viewers' double-taps close together cut once
 integer WAIT       = 20;         // s  an invite or a lead request waits this long
 integer GONE       = 25;         // s  no camera and no heartbeat from the director: it is gone
+integer QUIET      = 25;         // s  a viewer not heard from this long shows "(no signal)"...
+integer LOST       = 45;         // s  ... and this long is dropped
+integer gBeatT;              // viewing: your last heartbeat to the director
 string  WATCH      = "Take 12 Watch";
 list    LEADS      = ["Ask", "Always", "Never"];
 
@@ -38,6 +41,7 @@ integer gCamOn;              // your own camera runs
 integer gHand;               // you just handed the camera over: your stop is not the end
 integer gToggleT;            // Go live / End live: repeats within 2 s are ignored
 list    gWatchers;           // LIVE: who watches you
+list    gSeen;               // ... when each was last heard from (their heartbeat), same order as gWatchers
 list    gAway;               // ... and who of them is looking around
 integer gNextT;              // ... the last "next" asked
 integer gHbT;                // ... the last heartbeat and roster check
@@ -67,13 +71,42 @@ integer gDlgT;
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
 
 // ---- above the HUD: the state, and short notices ------------------------------
+// a short name: "Ana Resident" -> "Ana"
+string sn(key k)
+{
+    string n = llKey2Name(k);
+    integer i = llSubStringIndex(n, " Resident");
+    if (i > 0) n = llGetSubString(n, 0, i - 1);
+    return n;
+}
+
 string ind()
 {
-    if (gSharing) return "● LIVE · " + (string)llGetListLength(gWatchers);
+    integer now = llGetUnixTime();
+    if (gSharing)
+    {
+        // who is connected to your camera, live: names, looking around, no signal
+        integer n = llGetListLength(gWatchers);
+        if (n == 0) return "● LIVE · nobody watching yet";
+        list s = [];
+        integer i;
+        for (i = 0; i < n && i < 4; i++)
+        {
+            key k = llList2Key(gWatchers, i);
+            string t = sn(k);
+            if (now - llList2Integer(gSeen, i) > QUIET) t += " (no signal)";
+            else if (llListFindList(gAway, [k]) >= 0) t += " (looking around)";
+            s += [t];
+        }
+        string r = "● LIVE · " + (string)n + " watching\n" + llDumpList2String(s, " · ");
+        if (n > 4) r += " · +" + (string)(n - 4);
+        return r;
+    }
     if (gHost != NULL_KEY)
     {
-        if (gIsAway) return "👁 " + llKey2Name(gHost) + " · looking around (Esc: back)";
-        return "👁 " + llKey2Name(gHost);
+        if (now - gHearT > 15) return "👁 " + sn(gHost) + " · no signal…";
+        if (gIsAway) return "👁 " + sn(gHost) + " · looking around (Esc: back)";
+        return "👁 " + sn(gHost);
     }
     if (gPendT) return llKey2Name(gOffer) + " invites you · hold to watch";
     return "";
@@ -155,7 +188,11 @@ key btnKey(string label)
 drop(key k)
 {
     integer i = llListFindList(gWatchers, [k]);
-    if (i >= 0) gWatchers = llDeleteSubList(gWatchers, i, i);
+    if (i >= 0)
+    {
+        gWatchers = llDeleteSubList(gWatchers, i, i);
+        gSeen = llDeleteSubList(gSeen, i, i);
+    }
     i = llListFindList(gAway, [k]);
     if (i >= 0) gAway = llDeleteSubList(gAway, i, i);
 }
@@ -267,6 +304,7 @@ endlive(string why)
     if (!gSharing && gWatchers == []) return;
     all("end");
     gWatchers = [];
+    gSeen = [];
     gAway = [];
     gSharing = FALSE;
     gToggleT = llGetUnixTime();
@@ -284,6 +322,7 @@ grant(key k)
     say(k, "lead|1");
     all("director|" + (string)k + "|" + llKey2Name(k));
     gWatchers = [];
+    gSeen = [];
     gAway = [];
     gSharing = FALSE;
     gHand = gCamOn;
@@ -519,6 +558,8 @@ default
         if (who == gOwner) return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
+        integer wi = llListFindList(gWatchers, [who]);
+        if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);   // a viewer's word: still connected
         if (w == "who")
         {
             if (!near(who)) return;
@@ -568,7 +609,11 @@ default
         else if (w == "join")
         {
             if (!gSharing) return;                          // only a live view can be joined
-            if (llListFindList(gWatchers, [who]) < 0) gWatchers += [who];
+            if (llListFindList(gWatchers, [who]) < 0)
+            {
+                gWatchers += [who];
+                gSeen += [llGetUnixTime()];
+            }
             show(llKey2Name(who) + " watches");
             if (gLastCam != "") say(who, "cam|" + gLastCam);
         }
@@ -604,6 +649,7 @@ default
                 dialog("lead", llKey2Name(who) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
             }
         }
+        else if (wi >= 0 && w == "hb") return;            // a viewer's heartbeat (seen above)
         else if (who != gHost) return;
         // from the director you follow
         else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
@@ -698,9 +744,19 @@ default
                     drop(k);
                     show(llKey2Name(k) + " left");
                 }
+                else if (now - llList2Integer(gSeen, i) > LOST)
+                {
+                    drop(k);
+                    show(llKey2Name(k) + " lost connection");
+                }
             }
         }
         // viewing: the director gone quiet; your own camera (Alt-orbit) = looking around, Esc brings you back
+        if (gHost != NULL_KEY && now - gBeatT >= 10)
+        {
+            gBeatT = now;
+            say(gHost, "hb");                               // your heartbeat: the director sees you are connected
+        }
         if (gHost != NULL_KEY)
         {
             if (now - gHearT > GONE)
@@ -731,7 +787,12 @@ default
             gTextT = 0.0;                                   // the notice gives way to the state again
             refresh();
         }
-        else if (gTextT == 0.0 && ind() != "" && llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0) == "") refresh();
+        else if (gTextT == 0.0 && ind() != "")
+        {
+            // keep the state current; never over another script's short notice (ours start with ● or 👁, or are empty)
+            string cur = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);
+            if (cur != ind() && (cur == "" || llGetSubString(cur, 0, 0) == "●" || llGetSubString(cur, 0, 0) == "👁")) refresh();
+        }
         if (gDlgT > 0 && now - gDlgT > 60)
         {
             gDlgT = 0;
