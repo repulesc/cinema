@@ -56,7 +56,7 @@ You and the friends you picked, framed together. While your group stays in the p
  - You can save up to 10 friends.
  - YOUR OWN VIEW (Only friends, needs the lens script): frame it the usual way (Alt-orbit, mouse wheel, or A / D while seated). When you hold still, "Your view is kept · Esc to continue" shows above the button (a notice, not a menu): press ESC and Take 12 carries on with your view - just as close, as high and aimed at the same faces - in every next cut, following your friends if they move.
  - Sitting or lying, W / S step closer or wider.
- - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
+ - Hold the button > ⋯ More > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
 SHARE THE VIEW
 Let the people with you watch what your camera films. One person leads; everyone watching sees that camera.
@@ -102,7 +102,7 @@ Each tip shows only a few times. After a while Tips turns itself off, and says s
 Tap the button > Help > Tips to turn them off, or back on (they start again from the beginning).
 
 
-=== THE LIVE MENU (hold the button while it rolls) =======
+=== THE LIVE MENU (hold the button > ⋯ More, while it rolls) =
 
 PHOTO     Freeze the view so you can take your pictures in peace. Tap once to carry on.
 SAVE      Keep the view on screen as a favourite spot. Your saved spots come back now and then. (Scenery only.)
@@ -172,7 +172,7 @@ It does not stay inside (a skybox, a mall, a house).
 Auto goes inside when you stand on a build that has a roof over you or no land under it for about 100 m. Some builds are made without physics (their floor, walls and roof cannot be seen by the HUD), and Auto cannot know about those. Set Options > Indoors > Inside: it then always stays inside, near you. With Options > Chat text on, the chat line "scenery: ..." says what it found.
 
 I want to take a picture.
-Hold the button, then choose Photo. Tap once to carry on.
+Hold the button > ⋯ More > Photo. Tap once to carry on.
 
 Is my chat recorded?
 No. In Us the HUD only notices WHO speaks in local chat, to cut to them. It does not read, store or send anything.

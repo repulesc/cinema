@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "5.8.1";
+string VERSION = "5.8.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -152,7 +152,7 @@ pickMenu(integer pg)
     {
         key pk = llList2Key(tmp, i * 2 + 1);
         string nm = llGetSubString(llGetUsername(pk), 0, 21);
-        if (llListFindList(gFKeys, [pk]) >= 0) nm = "✓ " + nm;
+        if (llListFindList(gFKeys, [pk]) >= 0) nm = "✓ " + llGetSubString(nm, 0, 18);    // a label is at most 24 bytes
         gPickK += [pk];
         gPickL += [nm];
         b += [nm];
@@ -310,7 +310,7 @@ onCommand(string msg)
         say("Scenery reach: " + v + " m");
     }
     else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { set("indoors", v); say("Indoors: " + v); }
-    else if (c == "face" && v != "")
+    else if (c == "face" && (v == "all" || (v == (string)n && n >= 0 && n < llGetNumberOfSides())))
     {
         if (v == "all") n = -1;
         set("face", (string)n);
@@ -330,7 +330,7 @@ onCommand(string msg)
         say("Tips: " + v);
     }
     else if (c == "statusline" && (v == "on" || v == "off")) { set("status", (string)(v == "on")); say("Status line: " + v); }
-    else if (c == "trace" || c == "cutmode") { set(c, (string)(v == "on")); say(c + ": " + v); }
+    else if ((c == "trace" || c == "cutmode") && (v == "on" || v == "off")) { set(c, (string)(v == "on")); say(c + ": " + v); }
     else if (c == "chan" && n > 0 && n != 9)
     {
         set("cmd_chan", (string)n);
@@ -383,7 +383,17 @@ default
                 llOwnerSay("[Take 12] Friends list cleared.");
             }
         }
-        else if (num == CFG_CHANGED) loadFriends();
+        else if (num == CFG_CHANGED)
+        {
+            loadFriends();
+            integer ch = (integer)cfg("cmd_chan", "77");
+            if (ch > 0 && ch != gCmdChan)                   // Reset puts it back to 77
+            {
+                gCmdChan = ch;
+                llListenRemove(gCmdListen);
+                gCmdListen = llListen(gCmdChan, "", gOwner, "");
+            }
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "picker");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/picker] v" + VERSION + " saved friends " + (string)llGetListLength(gFKeys) + ", free mem " + (string)llGetFreeMemory());

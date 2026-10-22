@@ -7,7 +7,7 @@
 //  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "5.8.1";
+string  VERSION = "5.8.2";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -15,6 +15,8 @@ integer GONE    = 25;        // s  no camera and no heartbeat from the director:
 
 key     gOwner;
 key     gHost;               // whose view you follow
+string  gHostN;              // ... their name (kept: llKey2Name is "" once they have left the region)
+float   gNoteT;              // a note above the HUD ("... camera is gone") until then + 4 s
 vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
@@ -38,22 +40,23 @@ integer near(key k)
 
 shown()
 {
-    string s = "👁 " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next";
-    if (llGetUnixTime() - gHearT > 15) s = "👁 " + llKey2Name(gHost) + " · no signal…";
-    else if (gIsAway) s = "👁 " + llKey2Name(gHost) + " · looking around (Esc: back)";
+    string s = "👁 " + gHostN + "\ntap: your camera · double-tap: next";
+    if (llGetUnixTime() - gHearT > 15) s = "👁 " + gHostN + " · no signal…";
+    else if (gIsAway) s = "👁 " + gHostN + " · looking around (Esc: back)";
     if (s != gShownS) llSetText(s, <1.0, 1.0, 1.0>, 0.85);
     gShownS = s;
 }
 
-follow(key host)
+follow(key host, string n)
 {
     gHost = host;
+    gHostN = n;
     gIsAway = FALSE;
     gApplied = ZERO_VECTOR;
     gHearT = llGetUnixTime();
     gBeatT = gHearT;
     gShownS = "";
-    say(gHost, "join");
+    say(gHost, "join|W");                                   // W: a Watch, it cannot lead (no "Pass camera" to it)
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
     shown();
     llSetTimerEvent(1.0);
@@ -69,7 +72,8 @@ leave(integer tell, integer clear, string why)
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
     if (clear && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);
     llSetText(why, <1.0, 1.0, 1.0>, 0.85);
-    llSetTimerEvent(4.0);                                   // the note, then a clean screen
+    gNoteT = llGetTime();
+    llSetTimerEvent(1.0);                                   // the note for 4 s, then a clean screen
 }
 
 perms()
@@ -132,7 +136,7 @@ default
         if (gHost != NULL_KEY) shown();
         if (gHost != NULL_KEY)
         {
-            if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, llKey2Name(gHost) + "'s camera is gone");
+            if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, gHostN + "'s camera is gone");
             // your own camera (Alt-orbit) while watching: looking around; Esc puts it back on the shared view
             else if (gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
             {
@@ -152,7 +156,8 @@ default
             }
         }
         if (gTapPend) return;
-        if (gHost == NULL_KEY)
+        if (gHost == NULL_KEY && llGetTime() - gNoteT < 4.0) llSetTimerEvent(1.0);    // the note stays its 4 s
+        else if (gHost == NULL_KEY)
         {
             llSetText("", ZERO_VECTOR, 0.0);
             llSetTimerEvent(0.0);
@@ -177,16 +182,16 @@ default
             if (!near(who)) return;
             string st = "idle";
             string d = "";
-            if (gHost != NULL_KEY) { st = "view"; d = llKey2Name(gHost); }
+            if (gHost != NULL_KEY) { st = "view"; d = gHostN; }
             say(who, "here|W|" + st + "|" + d);
         }
         else if (w == "invite")
         {
-            if (gHost != NULL_KEY) say(who, "busy|watching " + llKey2Name(gHost));
+            if (gHost != NULL_KEY) say(who, "busy|watching " + gHostN);
             else if (near(who))
             {
                 say(who, "ack|1");                           // wearing the Watch is the yes: their view at once
-                follow(who);
+                follow(who, llKey2Name(who));
             }
         }
         else if (who != gHost) return;
@@ -201,8 +206,8 @@ default
                 CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
-        else if (w == "director") follow((key)llList2String(L, 2));   // someone else leads now
-        else if (w == "kick") leave(FALSE, TRUE, llKey2Name(gHost) + " stopped sharing with you");
-        else if (w == "end") leave(FALSE, TRUE, llKey2Name(gHost) + " ended the live view");
+        else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else leads now
+        else if (w == "kick") leave(FALSE, TRUE, gHostN + " stopped sharing with you");
+        else if (w == "end") leave(FALSE, TRUE, gHostN + " ended the live view");
     }
 }

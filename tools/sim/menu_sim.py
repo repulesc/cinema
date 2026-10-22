@@ -62,6 +62,22 @@ check("gSkin = 1;" in ui[ui.index('gPage == "reset"'):], "Reset must go back to 
 check("~tips=1~tipn=0~" in ui and 'cfgWrite("tips", "1");' in ui, "Tips must be on by default")
 hp = ui[ui.index('gPage == "help"'):]
 check(hp.index('cfgWrite("tipn", "0")') < hp.index('toggle("tips"'), "turning Tips on must reset the counts")
+# Seated view: each button saves its own angle (4.8.0-5.8.1 saved the next one: Off was Auto, Lower deleted the key)
+m = re.search(r'cfgSet\("seat_deg", llList2String\(\[(.*?)\], llListFindList\(\[(.*?)\], \[id\]\)( \+ 1)?\)\);', ui)
+vals, ids = re.findall(r'"(\w*)"', m.group(1)), re.findall(r'"(\w*)"', m.group(2))
+off = 1 if m.group(3) else 0
+saved = {i: (vals[ids.index(i) + off] if ids.index(i) + off < len(vals) else "") for i in ids}
+check(saved == {"off": "0", "auto": "45", "high": "60", "low": "30"}, f"Seated view saves {saved}")
+# a click is matched against the labels shown (a menu style changed by chat while a menu is open still works)
+check("gLbl = b;" in ui and "llListFindList(gLbl, [msg])" in ui, "idOf must look the click up in the labels on screen")
+# the Pick page (picker): a saved friend's label, "✓ " + the username, stays within llDialog's 24 bytes
+pk = open(os.path.join(R, "hud", "src", "picker.lsl")).read()
+m = re.search(r'string nm = llGetSubString\(llGetUsername\(pk\), 0, (\d+)\);\s*if \(llListFindList\(gFKeys, \[pk\]\) >= 0\) nm = "✓ " \+ llGetSubString\(nm, 0, (\d+)\);', pk)
+check(m is not None, "picker: the Pick label is not built as expected")
+if m:
+    u = "a" * 31                                                          # usernames: up to 31 ASCII characters
+    plain, saved_l = u[:int(m.group(1)) + 1], "✓ " + u[:int(m.group(1)) + 1][:int(m.group(2)) + 1]
+    check(len(plain.encode()) <= 24 and len(saved_l.encode()) <= 24, f"Pick labels: {len(plain.encode())} / {len(saved_l.encode())} bytes (24 max)")
 print(f"menus: {len(pages)} pages, {len(items)} named buttons, all fit, distinct in Plain / Symbols / Color, Back goes up")
 print("menu checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

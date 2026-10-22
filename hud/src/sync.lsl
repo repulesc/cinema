@@ -15,7 +15,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.8.1";
+string VERSION = "5.8.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -74,10 +74,40 @@ string  gNoteS;              // ... its text
 string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
 
 // ---- above the HUD: the state, and short notices ------------------------------
+// a name, also for someone who has just left the region (llKey2Name is "" then): the last ones seen are remembered
+list    gBook;               // [key, name, ...]
+string name(key k)
+{
+    string n = llKey2Name(k);
+    integer i = llListFindList(gBook, [k]);
+    if (n == "" && i >= 0) return llList2String(gBook, i + 1);
+    if (n != "" && i < 0)
+    {
+        gBook += [k, n];
+        if (llGetListLength(gBook) > 40) gBook = llDeleteSubList(gBook, 0, 1);
+    }
+    return n;
+}
+
+// at most m bytes (a dialog button: 24, a dialog text: 512); emoji are 4 bytes, "·" 2
+string fit(string s, integer m)
+{
+    if (llStringLength(s) > m) s = llGetSubString(s, 0, m - 1);
+    while (TRUE)
+    {
+        string b = llStringToBase64(s);
+        integer n = llStringLength(b) * 3 / 4 - (llGetSubString(b, -1, -1) == "=") - (llGetSubString(b, -2, -1) == "==");
+        if (n <= m) return s;
+        s = llDeleteSubString(s, -1, -1);
+    }
+    return s;
+}
+
 // a short name: "Ana Resident" -> "Ana"
 string sn(key k)
 {
-    string n = llKey2Name(k);
+    string n = name(k);
+    if (n == "") n = "someone";
     integer i = llSubStringIndex(n, " Resident");
     if (i > 0) n = llGetSubString(n, 0, i - 1);
     return n;
@@ -111,7 +141,7 @@ string ind()
         if (gIsAway) return "👁 " + sn(gHost) + " · looking around (Esc: back)";
         return "👁 " + sn(gHost);
     }
-    if (gPendT) return llKey2Name(gOffer) + " invites you · hold to watch";
+    if (gPendT) return name(gOffer) + " invites you · hold to watch";
     return "";
 }
 
@@ -132,7 +162,7 @@ refresh()
 show(string s)
 {
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
-    gNoteS = s;
+    gNoteS = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);     // as kept (cut short past 254 bytes)
     gTextT = llGetTime();
     llSetTimerEvent(1.0);
 }
@@ -168,7 +198,7 @@ dialog(string page, string text, list b)
     gDlg = -1000000 - (integer)llFrand(1000000.0);
     gDlgL = llListen(gDlg, "", gOwner, "");
     gDlgT = llGetUnixTime();
-    llDialog(gOwner, text, b, gDlg);
+    llDialog(gOwner, fit(text, 500), b, gDlg);
     llSetTimerEvent(1.0);
 }
 
@@ -178,16 +208,12 @@ integer near(key k)
     return (llGetListLength(d) > 0 && llVecDist(llList2Vector(d, 0), llGetPos()) <= NEAR);
 }
 
-string nm(key k)
-{
-    return llGetSubString(llKey2Name(k), 0, 19);
-}
 
 string names(list ks)
 {
     list n = [];
     integer i;
-    for (i = 0; i < llGetListLength(ks); i++) n += [llKey2Name(llList2Key(ks, i))];
+    for (i = 0; i < llGetListLength(ks); i++) n += [name(llList2Key(ks, i))];
     return llDumpList2String(n, ", ");
 }
 
@@ -213,8 +239,11 @@ key btnKey(string label)
     return llList2Key(gBtn, i + 1);
 }
 
+list    gW;                  // the viewers on a Take 12 Watch ("join|W"): they cannot lead
 drop(key k)
 {
+    integer w = llListFindList(gW, [k]);
+    if (w >= 0) gW = llDeleteSubList(gW, w, w);
     integer i = llListFindList(gWatchers, [k]);
     if (i >= 0)
     {
@@ -229,7 +258,7 @@ drop(key k)
 // ask who is near; the IDLE (or Invite more) panel opens when they have answered
 who()
 {
-    llRegionSay(SYNC_CH, "T12|who|" + llKey2Name(gOwner));
+    llRegionSay(SYNC_CH, "T12|who|" + name(gOwner));
     gNear = [];
     gWhoT = llGetTime();
     show("Looking for people near you…");
@@ -248,17 +277,18 @@ panelNear()
         key k = llList2Key(gNear, i);
         list I = llParseStringKeepNulls(llList2String(gNear, i + 1), ["|"], []);
         string st = llList2String(I, 1);
-        string d = llKey2Name(k);
+        string d = name(k);
         if (llList2String(I, 0) == "W") d += " (Watch)";
         if (st == "live") d += " (live)";
         else if (st == "view") d += " (watching " + llList2String(I, 2) + ")";
         desc += [d];
         if (llGetListLength(b) < 9)
         {
-            string wl = lb("👁", "◉", "Watch") + " " + nm(k);
-            if ((integer)llLinksetDataReadProtected("cin.skin", PASS)) wl = lb("👁", "◉", nm(k));
+            string wl = fit(lb("👁", "◉", "Watch") + " " + sn(k), 24);
+            if ((integer)llLinksetDataReadProtected("cin.skin", PASS)) wl = fit(lb("👁", "◉", sn(k)), 24);
+            string al = fit("+ " + sn(k), 24);
             if (st == "live" && !gSharing) { b += [wl]; btn(wl, k); }
-            else if (st == "idle" && llListFindList(gWatchers, [k]) < 0) { b += ["+ " + nm(k)]; btn("+ " + nm(k), k); }
+            else if (st == "idle" && llListFindList(gWatchers, [k]) < 0) { b += [al]; btn(al, k); }
         }
     }
     string t = "Share your view.";
@@ -282,11 +312,11 @@ panel()
     }
     else if (gHost != NULL_KEY)
     {
-        string t = "Viewing " + llKey2Name(gHost) + "'s camera.";
+        string t = "Viewing " + name(gHost) + "'s camera.";
         if (gAskT) t += "\nYou asked to lead; waiting for an answer.";
         dialog("view", t, ["Ask to lead", "Leave", lb("⋯", "⋯", "More"), "Close"]);
     }
-    else if (gPendT) dialog("invited", llKey2Name(gOffer) + " invites you to watch their camera.", ["Watch", "No"]);
+    else if (gPendT) dialog("invited", name(gOffer) + " invites you to watch their camera.", ["Watch", "No"]);
     else who();
 }
 
@@ -298,8 +328,9 @@ roster()
     for (i = 0; i < llGetListLength(gWatchers) && i < 11; i++)
     {
         key k = llList2Key(gWatchers, i);
-        b += [nm(k)];
-        btn(nm(k), k);
+        string l = fit(sn(k), 24);
+        b += [l];
+        btn(l, k);
     }
     if (b == []) { panel(); return; }
     dialog("roster", "Who watches you. Pick someone to pass the camera or remove them.", b + ["Back"]);
@@ -309,7 +340,7 @@ roster()
 invite(key k)
 {
     if (llListFindList(gInv, [k]) >= 0 || llListFindList(gWatchers, [k]) >= 0) return;
-    say(k, "invite|" + llKey2Name(gOwner));
+    say(k, "invite|" + name(gOwner));
     gInv += [k];
     gInvT = llGetUnixTime();
 }
@@ -336,6 +367,7 @@ endlive(string why)
     gWatchers = [];
     gSeen = [];
     gAway = [];
+    gW = [];
     gSharing = FALSE;
     gToggleT = llGetUnixTime();
     if (gLeadAsk != NULL_KEY) say(gLeadAsk, "lead|0");
@@ -350,15 +382,15 @@ grant(key k)
     gLeadAsk = NULL_KEY;
     drop(k);
     say(k, "lead|1");
-    all("director|" + (string)k + "|" + llKey2Name(k));
+    all("director|" + (string)k + "|" + name(k));
     gWatchers = [];
     gSeen = [];
     gAway = [];
+    gW = [];
     gSharing = FALSE;
     gHand = gCamOn;
-    watch(k);
-    show(llKey2Name(k) + " leads now");
-    if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");
+    watch(k);                                               // (it stops your camera)
+    show(name(k) + " leads now");
 }
 
 // ---- viewing -------------------------------------------------------------------
@@ -382,7 +414,8 @@ watch(key host)
     say(host, "join");
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);   // any movement key: your camera back
     llMessageLinked(LINK_SET, CMD, "watch", "");
-    show("Watching " + llKey2Name(host) + "\ndouble-tap: next for all · any key: your camera");
+    if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");    // viewing never runs your own camera too
+    show("Watching " + name(host) + "\ndouble-tap: next for all · any key: your camera");
 }
 
 leave(integer tell, integer clear)
@@ -466,7 +499,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/sync] v" + VERSION + " live " + (string)gSharing + ", watching you: " + names(gWatchers)
-                + ", following " + llKey2Name(gHost) + ", lead " + llList2String(LEADS, gLead) + ", free mem " + (string)llGetFreeMemory());
+                + ", following " + name(gHost) + ", lead " + llList2String(LEADS, gLead) + ", free mem " + (string)llGetFreeMemory());
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -500,8 +533,9 @@ default
                         key k = llList2Key(ids, i);
                         if (k != gOwner && near(k))
                         {
-                            b += [nm(k)];
-                            btn(nm(k), k);
+                            string l = fit(sn(k), 24);
+                            b += [l];
+                            btn(l, k);
                         }
                     }
                     if (b == []) note("Nobody within " + (string)llRound(NEAR) + " m.");
@@ -535,7 +569,8 @@ default
             {
                 if (msg == "Back") { panel(); return; }
                 gSel = btnKey(msg);
-                if (gSel != NULL_KEY) dialog("person", llKey2Name(gSel), ["Pass camera", "Remove", "Back"]);
+                if (llListFindList(gW, [gSel]) >= 0) dialog("person", name(gSel) + " (Take 12 Watch: cannot lead)", ["Remove", "Back"]);
+                else if (gSel != NULL_KEY) dialog("person", name(gSel), ["Pass camera", "Remove", "Back"]);
             }
             else if (gPage == "person" && llListFindList(gWatchers, [gSel]) >= 0)
             {
@@ -544,7 +579,7 @@ default
                 {
                     say(gSel, "kick");
                     drop(gSel);
-                    show(llKey2Name(gSel) + " removed");
+                    show(name(gSel) + " removed");
                     refresh();
                 }
                 else roster();
@@ -565,7 +600,7 @@ default
                 {
                     say(gHost, "ask");
                     gAskT = llGetUnixTime();
-                    show("Asked " + llKey2Name(gHost) + " to lead…");
+                    show("Asked " + name(gHost) + " to lead…");
                 }
             }
             else if (gPage == "invited" && gPendT)
@@ -578,7 +613,7 @@ default
                 key k = btnKey(msg);
                 if (k == NULL_KEY) return;
                 llGiveInventory(k, WATCH);
-                note("Take 12 Watch given to " + llKey2Name(k) + ". Once they wear it, hold your button > Go live.");
+                note("Take 12 Watch given to " + name(k) + ". Once they wear it, hold your button > Go live.");
             }
             return;
         }
@@ -596,7 +631,7 @@ default
             string st = "idle";
             string d = "";
             if (gSharing) st = "live";
-            else if (gHost != NULL_KEY) { st = "view"; d = llKey2Name(gHost); }
+            else if (gHost != NULL_KEY) { st = "view"; d = name(gHost); }
             else if (gPendT) st = "pend";
             say(who, "here|T|" + st + "|" + d);
         }
@@ -607,7 +642,7 @@ default
         else if (w == "invite")
         {
             if (gSharing) say(who, "busy|live");
-            else if (gHost != NULL_KEY) say(who, "busy|watching " + llKey2Name(gHost));
+            else if (gHost != NULL_KEY) say(who, "busy|watching " + name(gHost));
             else if (near(who))
             {
                 // someone in your Friends: their view at once. Anyone else: asked, so no stranger takes your camera
@@ -631,36 +666,37 @@ default
             integer i = llListFindList(gInv, [who]);
             if (i < 0) return;
             gInv = llDeleteSubList(gInv, i, i);
-            if (w == "busy") gRes += [llKey2Name(who) + " is busy (" + llList2String(L, 2) + ")"];
-            else if (llList2String(L, 2) == "1") gRes += [llKey2Name(who) + " watches"];
-            else gRes += [llKey2Name(who) + " is asked"];
+            if (w == "busy") gRes += [name(who) + " is busy (" + llList2String(L, 2) + ")"];
+            else if (llList2String(L, 2) == "1") gRes += [name(who) + " watches"];
+            else gRes += [name(who) + " is asked"];
         }
         else if (w == "join")
         {
-            if (!gSharing) return;                          // only a live view can be joined
+            if (!gSharing) { say(who, "end"); return; }     // only a live view can be joined (a late "Watch" after End live)
+            if (llList2String(L, 2) == "W" && llListFindList(gW, [who]) < 0) gW += [who];
             if (llListFindList(gWatchers, [who]) < 0)
             {
                 gWatchers += [who];
                 gSeen += [llGetUnixTime()];
             }
-            show(llKey2Name(who) + " watches");
+            show(name(who) + " watches");
             if (gLastCam != "") say(who, "cam|" + gLastCam);
         }
         else if (w == "leave" && llListFindList(gWatchers, [who]) >= 0)
         {
             drop(who);
-            show(llKey2Name(who) + " left");
+            show(name(who) + " left");
         }
         else if (w == "away" && llListFindList(gWatchers, [who]) >= 0)
         {
             if (llListFindList(gAway, [who]) < 0) gAway += [who];
-            show(llKey2Name(who) + " is looking around");
+            show(name(who) + " is looking around");
         }
         else if (w == "back" && llListFindList(gAway, [who]) >= 0)
         {
             integer i = llListFindList(gAway, [who]);
             gAway = llDeleteSubList(gAway, i, i);
-            show(llKey2Name(who) + " is back");
+            show(name(who) + " is back");
         }
         else if (w == "next" && llListFindList(gWatchers, [who]) >= 0 && llGetUnixTime() - gNextT >= NEXT_GAP)
         {
@@ -675,7 +711,7 @@ default
             {
                 gLeadAsk = who;
                 gLeadT = llGetUnixTime();
-                dialog("lead", llKey2Name(who) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
+                dialog("lead", name(who) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
             }
         }
         else if (wi >= 0 && w == "hb") return;            // a viewer's heartbeat (seen above)
@@ -697,7 +733,7 @@ default
             gAskT = 0;
             if (llList2String(L, 2) != "1")
             {
-                show(llKey2Name(gHost) + " keeps the lead");
+                show(name(gHost) + " keeps the lead");
                 return;
             }
             leave(FALSE, TRUE);                             // you lead now: your camera, everyone follows it
@@ -707,6 +743,7 @@ default
         else if (w == "director")
         {
             gHost = (key)llList2String(L, 2);              // the director changed: follow the new one
+            if (llListFindList(gBook, [gHost]) < 0) gBook += [gHost, llList2String(L, 3)];
             gIsAway = FALSE;
             gApplied = ZERO_VECTOR;
             gHearT = llGetUnixTime();
@@ -715,13 +752,13 @@ default
         }
         else if (w == "kick")
         {
-            string n = llKey2Name(gHost);
+            string n = name(gHost);
             leave(FALSE, TRUE);
             show(n + " stopped sharing with you");
         }
         else if (w == "end")
         {
-            string n = llKey2Name(gHost);
+            string n = name(gHost);
             leave(FALSE, TRUE);
             show(n + " ended the live view");
         }
@@ -739,7 +776,7 @@ default
         if (gInv != [] && now - gInvT >= 3)
         {
             integer i;
-            for (i = 0; i < llGetListLength(gInv); i++) gRes += [llKey2Name(llList2Key(gInv, i)) + " didn't answer (out of range or HUD off)"];
+            for (i = 0; i < llGetListLength(gInv); i++) gRes += [name(llList2Key(gInv, i)) + " didn't answer (out of range or HUD off)"];
             gInv = [];
         }
         if (gRes != [] && gInv == [])
@@ -770,12 +807,12 @@ default
                 if (llGetAgentSize(k) == ZERO_VECTOR)
                 {
                     drop(k);
-                    show(llKey2Name(k) + " left");
+                    show(name(k) + " left");
                 }
                 else if (now - llList2Integer(gSeen, i) > LOST)
                 {
                     drop(k);
-                    show(llKey2Name(k) + " lost connection");
+                    show(name(k) + " lost connection");
                 }
             }
         }
@@ -789,7 +826,7 @@ default
         {
             if (now - gHearT > GONE)
             {
-                string n = llKey2Name(gHost);
+                string n = name(gHost);
                 leave(FALSE, TRUE);
                 show(n + "'s camera is gone");
             }

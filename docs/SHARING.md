@@ -45,7 +45,7 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
 | `here\|<T/W>\|<idle/live/view/pend>\|<director>` | anyone within 20 m → asker | Take 12 or Watch, and their state |
 | `invite\|<name>` | director → one avatar | an invitation |
 | `ack\|1` / `ack\|0` / `busy\|<what>` | invited → director | joined at once (a Watch, or Take 12 with the director in Friends) / asked / busy |
-| `join` `leave` `next` `away` `back` `ask` | viewer → director | joined, left, next view (5 s apart), looking around, back, asks to lead |
+| `join` `leave` `next` `away` `back` `ask` | viewer → director | joined (`join\|W` from a Take 12 Watch: it cannot lead, so the roster offers no Pass camera for it), left, next view (5 s apart), looking around, back, asks to lead. A `join` to someone who is no longer live is answered with `end` |
 | `hb` | viewer → director | the viewer's heartbeat, every 10 s: still connected |
 | `cam\|<pos>\|<focus>\|<lag>` | director → viewers | every camera the director's core sets (cuts and glides) |
 | `hb` | director → viewers | heartbeat, every 10 s |

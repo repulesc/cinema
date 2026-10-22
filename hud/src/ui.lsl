@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "5.8.1";
+string VERSION = "5.8.2";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -38,6 +38,7 @@ integer gMenuT;
 integer gVerAsked;
 integer gSkin;                  // menu style: 0 Plain (words), 1 Symbols (quiet marks), 2 Color (emoji)
 list    gBtn;                   // the ids of the buttons on screen
+list    gLbl;                   // ... and their labels, as shown
 integer gFirst;
 string  gPage;
 
@@ -221,13 +222,8 @@ upsell()
 
 string idOf(string msg)
 {
-    integer i;
-    integer n = llGetListLength(gBtn);
-    for (i = 0; i < n; i++)
-    {
-        string id = llList2String(gBtn, i);
-        if (label(id) == msg) return id;
-    }
+    integer i = llListFindList(gLbl, [msg]);
+    if (i >= 0) return llList2String(gBtn, i);
     return msg;
 }
 
@@ -239,6 +235,7 @@ list order(list ids)
     integer i;
     integer n = llGetListLength(ids);
     for (i = 0; i < n; i++) b += label(llList2String(ids, i));
+    gLbl = b;
     while (llGetListLength(b) % 3) b += " ";
     list o = [];
     for (i = llGetListLength(b) - 3; i >= 0; i -= 3) o += llList2List(b, i, i + 2);
@@ -338,7 +335,7 @@ openMenu(string page)
         if (gUiMode == "scenery") b += ["save"];
         if (gUiMode == "friends") b += ["release"];
         b += ["next", "stop", "modes", "close"];
-        if (gNextCut > 0 && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
+        if (gNextCut > llGetUnixTime() && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
     else if (page == "pace")
     {
@@ -566,7 +563,7 @@ onChoice(string msg)
     }
     else if (gPage == "seat")
     {
-        cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id]) + 1));
+        cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id])));
         note("Seated view: " + seatText());
         openMenu(up(gPage));
     }
@@ -705,6 +702,8 @@ default
             gSkin = (integer)cfgGet("skin");
             gNote = (cfgGet("trace") == "1");
             gFace = (integer)cfgGet("face");
+            gLook = (integer)cfgGet("look");
+            if (LITE) gLook = 0;
             frame(2 * gLook);
         }
         else if (num == STATUS && str == "?")
