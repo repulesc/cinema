@@ -1,5 +1,6 @@
-# The Marketplace texts and the ad boards (5.8): the listings use the names the product has now, the Features lists
-# fit the Marketplace's five slots, the board text matches the listing, and every board exists at its size.
+# The Marketplace texts and the ad boards (5.8, 6.1: the free Take 12 Scenery): the listings use the names the product
+# has now, every Full description fits the Marketplace's 5000 characters, the Features lists fit its five slots, the
+# board text matches the listing, and every board exists at its size.
 import os, re, sys
 from PIL import Image
 
@@ -12,32 +13,42 @@ def check(c, msg):
     if not c: ok = False; print("FAIL", msg)
 
 main, watch = rd("hud", "marketing", "marketplace_listing.md"), rd("watch", "marketing", "marketplace_listing_watch.md")
+free = rd("scenery", "marketing", "marketplace_listing_scenery.md")
+LISTINGS = (("listing", main), ("watch listing", watch), ("scenery listing", free))
 art = rd("tools", "art", "make_adboard.py")
 
 # ---- stale words: the cameras are Scenery, Me, Us, Still; hold opens the Share panel ------------------------------
 STALE = ["Personal, Social, Friends and Frame", "Hold: the live menu", "Friends mode", "Friends in Frame", "Personal shows", "Social is for",
          "Frame holds", "And Frame:", "Typing in chat does not stop Social"]
-for name, text in (("listing", main), ("watch listing", watch)):
+for name, text in LISTINGS:
     for w in STALE: check(w not in text, f"{name}: stale wording '{w}'")
 for w in ("Scenery", "Me shows you", "Us is for", "Still is for", "SHARE THE VIEW", "Take 12 Watch", "Hold: share your view", "Only friends",
           "Your idle time, framed.", "What is new in 6.0", "YOUR LENS"):
     check(w in main, f"listing: missing '{w}'")
 for w in ("Take 12 Watch", "free", "Nothing to click", "Double-tap", "do not need Take 12"):
     check(w.lower() in watch.lower(), f"watch listing: missing '{w}'")
+for w in ("Take 12 Scenery", "Free", "L$0", "More cameras", "Double-tap", "skybox", "Idle start", "Photo hold", "full Take 12"):
+    check(w in free, f"scenery listing: missing '{w}'")
+for w in ("Lite", "Hold: share", "SHARE THE VIEW"):
+    check(w not in free, f"scenery listing: says '{w}' (it has no sharing, and the name Lite is not used)")
+check("Take 12 Scenery" in main, "listing: the full Take 12 should name its free companion")
 
 # ---- the Marketplace Features list takes five --------------------------------------------------------------------
 def block(text, title):
     m = re.search(r"## " + re.escape(title) + r"[^\n]*\n```\n(.*?)\n```", text, re.S)
     return m.group(1) if m else None
-for name, text in (("listing", main), ("watch listing", watch)):
+for name, text in LISTINGS:
     f = block(text, "Features")
     check(f is not None and len([l for l in f.splitlines() if l.strip()]) == 5, f"{name}: the Features list must have exactly 5 lines")
     k = block(text, "Keywords")
     check(k is not None and "\n" not in k.strip() and "take 12" in k, f"{name}: Keywords must be one line, with 'take 12'")
     check(block(text, "Short description") is not None, f"{name}: no short description")
+    d = block(text, "Full description")
+    # the Marketplace takes 5000 characters; keep some room for the (you) fields
+    check(d is not None and len(d) <= 4800, f"{name}: the Full description is {len(d) if d else 0} characters (the Marketplace takes 5000; keep it under 4800)")
 
 # ---- the plain-text rule: no markdown in the copy-paste blocks --------------------------------------------------
-for name, text in (("listing", main), ("watch listing", watch)):
+for name, text in LISTINGS:
     for b in re.findall(r"```\n(.*?)\n```", text, re.S):
         check("**" not in b and not re.search(r"^#+ ", b, re.M), f"{name}: markdown inside a copy-paste block")
 
@@ -48,13 +59,19 @@ check("LENS" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label m
 check("Your lens" in re.search(r"CHIPS = \[(.*?)\]", art).group(1), "boards: a chip for the lens")
 chips = re.search(r"CHIPS = \[(.*?)\]", art).group(1)
 check("Share the view" in chips and "Friends mode" not in chips, f"boards: chips {chips}")
-check("Double-tap to start" in const("HOWTO") and "HOLD  share" in art, "boards: the how-to lines")
+check("Double-tap to start" in const("HOWTO") and 'HOLD  " + ("photo" if FREE else "share")' in art, "boards: the how-to lines")
+fchips = re.search(r"FREE_CHIPS = \[(.*?)\]", art).group(1)
+check(all(c in fchips for c in ("Drone views", "Skybox rooms", "Idle start", "Photo hold")) and "Share" not in fchips, f"free boards: chips {fchips}")
+check('FULL_ONLY = ("SHARE",)' in art, "free boards: only the Share view is dimmed (rooms are in the free build)")
+check("Lite" not in art and "LITE" not in art, "board script: the name Lite is not used")
 for w in STALE: check(w not in art, f"board script: stale wording '{w}'")
 
 SIZES = {("hud", "marketing", "adboard_square_1024.png"): (1024, 1024), ("hud", "marketing", "adboard_wide_1024x512.png"): (1024, 512),
          ("hud", "marketing", "adboard_portrait_3x4_768x1024.png"): (768, 1024), ("hud", "marketing", "adboard_landscape_4x3_1024x768.png"): (1024, 768),
          ("hud", "marketing", "adboard_vendor_1024.png"): (1024, 1024), ("hud", "marketing", "adboard_vendor_512.png"): (512, 512),
          ("watch", "marketing", "adboard_watch_1024.png"): (1024, 1024)}
+for (a, b, n), sz in list(SIZES.items()):
+    if a == "hud": SIZES[("scenery", "marketing", n.replace(".png", "_scenery.png"))] = sz
 for p, sz in SIZES.items():
     path = os.path.join(R, *p)
     check(os.path.exists(path) and Image.open(path).size == sz, f"board {'/'.join(p)} missing or not {sz}")

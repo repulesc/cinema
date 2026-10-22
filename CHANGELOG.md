@@ -1,5 +1,18 @@
 # Changelog
 
+## 6.1.0
+**Take 12 Scenery: the scenery camera on its own, free.**
+- **What it is.** A free (L$0) HUD with the scenery camera of Take 12: drone views, wide horizons and skybox rooms from the inside, idle start, tap / double-tap, Photo hold, Next, Stop, Pace, Indoors, Reach, Alt-cam, the three button looks, the status line, tips and the little clap. Me, Us, Still, sharing, favourites and the seated view stay in the full Take 12. It replaces the old Lite, and the name Lite is gone.
+- **One quiet pointer.** The main menu shows Scenery, Options, More cameras, Help and Close. More cameras opens the full Take 12's listing (`BUY_URL` in `ui.lsl`); the menu text says what the other cameras are. Nothing else asks to buy. Buttons the free build does not have are left out, not shown with a lock.
+- **Hold**, with no sharing, opens the menu: the live menu (Photo, Next, Stop) while it rolls.
+- **Generated, not copied.** `tools/build_scenery.py` writes `scenery/src` (core, ui, scenery, tips) from `hud/src`: `LITE = 1`, plus the free build's own texts (the name, the welcome, the hold help, the notecard name, the Options and Camera page lines, two tips). Every substitution must match exactly once. The full build carries none of those texts, so `ui` stays at 13.4 KB free.
+- **Full Take 12:** no visible change. `ui` leaves out the buttons a build does not have (the full build: More cameras). `scenery` no longer turns rooms off in the free build.
+- **Its own Read Me, listing (L$0) and six boards** (`scenery/`): a FREE ribbon, "SCENERY CAMERA HUD", the Share view dimmed as "Full Take 12", chips Drone views, Skybox rooms, Idle start, Photo hold.
+- **Listings fit the Marketplace.** The Full description takes at most 5000 characters: Take 12's is now 3,586 (it was over), and it names Take 12 Scenery as the free companion. `listing_check` keeps every listing under 4800 and checks the free listing and boards.
+- **CI:** `build_scenery.py --check`, `lslcheck` on `scenery/src`, `free_test` (the free scripts are the full ones with only the switch and the texts changed, rooms on, no favourites, the notecard shipped), and `menu_sim` for both builds' menus.
+- **Removed:** `hud-lite/`, `tools/build_lite.py`, `tools/sim/lite_test.py`.
+- **Version 6.1.0** in all ten scripts (the Watch stays 6.0.1). Re-drop all ten.
+
 ## Marketing for 6.0.1 (no script changes)
 - **Listing:** "Everyone sees the same picture, whatever their own zoom" in SHARE THE VIEW, and in the update message, now "Take 12 6.0.1".
 - **Watch listing:** the same line, plus a Features line, "The same picture as your friend, whatever your zoom".

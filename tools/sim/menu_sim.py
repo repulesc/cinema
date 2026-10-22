@@ -1,4 +1,5 @@
-# The menus (5.6.0, 5.7.0: Symbols by default, Help > Read Me / Tips): Scenery / Me / Us / Still on the main page, Pace and Idle start under Options > Timing, the camera
+# The menus (6.1.0: the free Take 12 Scenery build hides the other cameras and sharing, and shows More cameras;
+# 5.6.0, 5.7.0: Symbols by default, Help > Read Me / Tips): Scenery / Me / Us / Still on the main page, Pace and Idle start under Options > Timing, the camera
 # settings under Options > Camera, the menu style (Plain / Symbols / Color) under Options > Look. Ported from
 # ui.lsl: every page fits a dialog (12 buttons), every button has a name, Back goes to the page above, and in
 # every menu style the labels on a page are distinct (a choice is matched back by its label).
@@ -29,7 +30,20 @@ for m in re.finditer(r'page == "(\w+)"\)\s*\{(.*?)\n    \}', body, re.S):
     ids = []
     for x in bl: ids += re.findall(r'"([^"]*)"', x)
     pages[m.group(1)] = ids
-check(pages.get("main") == ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"], f"main menu: {pages.get('main')}")
+# what each build hides (locked): the full Take 12 only "More cameras"; Take 12 Scenery the other cameras and sharing
+lk = ui[ui.index("integer locked(string id)"):]
+hide_full = set(re.findall(r'if \(!LITE\) return \(id == "(\w+)"\);', lk[:300]))
+hide_free = set(re.findall(r'"(\w+)"', re.search(r'return \(llListFindList\(\[(.*?)\], \[id\]\)', lk).group(1)))
+check(hide_full == {"full"}, f"the full build must hide only More cameras: {hide_full}")
+check(hide_free >= {"personal", "us", "frame", "share", "favs", "save", "modes"} and not hide_free & {"scenery", "photo", "next", "stop", "opts",
+      "timing", "pace", "afk", "camcfg", "indoors", "reach", "look", "help", "readme", "tips", "full", "back", "close"}, f"Take 12 Scenery hides {hide_free}")
+check(all(i in items for i in hide_free | hide_full), "a hidden id is not a menu item")
+check("ids = b;" in ui[ui.index("list order(list ids)"):ui.index("list order(list ids)") + 400] and "if (!locked(" in ui, "order() must leave out what the build hides")
+shown = lambda p, hide: [i for i in pages.get(p, []) if i not in hide]
+check(shown("main", hide_full) == ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"], f"main menu: {shown('main', hide_full)}")
+check(shown("main", hide_free) == ["scenery", "opts", "full", "help", "close"], f"Take 12 Scenery main menu: {shown('main', hide_free)}")
+check(shown("live", hide_free) == ["photo", "next", "stop", "close"] or set(shown("live", hide_free)) == {"photo", "resume", "next", "stop", "close"},
+      f"Take 12 Scenery live menu: {shown('live', hide_free)}")
 check(pages.get("us") == ["everyone", "onlyfr", "flist", "back"], f"Us page: {pages.get('us')}")
 check(pages.get("opts") == ["timing", "camcfg", "look", "favs", "test", "reset", "back"], f"Options: {pages.get('opts')}")
 check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")

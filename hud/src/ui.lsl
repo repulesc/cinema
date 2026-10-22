@@ -7,10 +7,10 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "6.0.1";
+string VERSION = "6.1.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
-integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
-string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
+integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
+string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
 string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Read Me" also works
 
 integer UI_STATE    = 7320;
@@ -27,7 +27,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji (Color style), mark (Symbols style), title (Plain style)
-string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~photo|📷|▣|Photo~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~readme|📖|▤|Read Me~tips|💡|ⓘ|Tips~stline|🏷|≣|Status line~";
+string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~photo|📷|▣|Photo~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~full|🎬|›|More cameras~readme|📖|▤|Read Me~tips|💡|ⓘ|Tips~stline|🏷|≣|Status line~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -156,7 +156,6 @@ checkOwner()
     gNote = (cfgGet("trace") == "1");
     gSkin = (integer)cfgGet("skin");
     gLook = (integer)cfgGet("look");
-    if (LITE) gLook = 0;
     gFace = (integer)cfgGet("face");
     gFirst = (cfgGet("seen_intro") != "1");
     llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
@@ -191,11 +190,11 @@ note(string s)
     if (gNote) llOwnerSay("[Take 12] " + s);
 }
 
-// features that only the full version has (the Lite build shows them with a lock)
+// buttons a build does not show: the full Take 12 has no "More cameras"; Take 12 Scenery only the scenery camera
 integer locked(string id)
 {
-    if (!LITE) return FALSE;
-    return (llListFindList(["personal", "us", "frame", "save", "indoors", "chat", "favs", "look", "th1", "th2"], [id]) >= 0);
+    if (!LITE) return (id == "full");
+    return (llListFindList(["personal", "us", "frame", "share", "favs", "save", "seat", "chat", "modes", "release"], [id]) >= 0);
 }
 
 string label(string id)
@@ -207,16 +206,15 @@ string label(string id)
     r = llGetSubString(r, 0, llSubStringIndex(r, "~") - 1);
     list p = llParseStringKeepNulls(r, ["|"], []);
     string t = llList2String(p, 2);
-    if (locked(id)) return t + " (full)";
     string m = llList2String(p, (gSkin == 1));                  // Color: the emoji; Symbols: the quiet mark
     if (gSkin == 0 || m == "") return t;
     return m + " " + t;
 }
 
-// the Lite build: tell about the full version and open its listing
+// Take 12 Scenery's More cameras: tell about the full version and open its listing
 upsell()
 {
-    llOwnerSay("[Take 12] That is in the full Take 12.");
+    llOwnerSay("[Take 12 Scenery] Me, Us, Still and sharing are in the full Take 12.");
     llLoadURL(gOwner, "Get the full Take 12", BUY_URL);
 }
 
@@ -230,9 +228,12 @@ string idOf(string msg)
 // llDialog fills from the bottom-left: give it the rows bottom-first, padded to full rows
 list order(list ids)
 {
-    gBtn = ids;
     list b = [];
     integer i;
+    for (i = 0; i < llGetListLength(ids); i++) if (!locked(llList2String(ids, i))) b += [llList2String(ids, i)];
+    ids = b;
+    b = [];
+    gBtn = ids;
     integer n = llGetListLength(ids);
     for (i = 0; i < n; i++) b += label(llList2String(ids, i));
     gLbl = b;
@@ -293,7 +294,6 @@ string up(string p)
 string title()
 {
     string h = "Take 12";
-    if (LITE) h = "Take 12 Lite";
     if (gSkin == 2) h = "🎬 " + h;
     string s = "idle";
     if (gUiState == "rolling") s = modeName() + " rolling";
@@ -321,7 +321,7 @@ openMenu(string page)
     if (page == "main")
     {
         text += "Scenery · the place, while you are away\nMe · follows you\nUs · you and the people around you\nStill · a held picture of you";
-        b = ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"];
+        b = ["scenery", "personal", "us", "frame", "share", "opts", "full", "help", "close"];
     }
     else if (page == "us")
     {
@@ -452,7 +452,7 @@ onChoice(string msg)
 {
     string id = idOf(msg);
     if (id == "close" || id == " ") { closeMenu(); return; }
-    if (locked(id)) { closeMenu(); upsell(); return; }
+    if (id == "full") { closeMenu(); upsell(); return; }
     if (id == "back")
     {
         openMenu(up(gPage));
@@ -617,7 +617,8 @@ onDouble()
 // hold: the Share panel (sync), whatever you are doing; its ⋯ More comes back here as livemenu / mainmenu
 onLong()
 {
-    llMessageLinked(LINK_SET, CMD, "share", "");
+    if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));   // Take 12 Scenery: no sharing
+    else llMessageLinked(LINK_SET, CMD, "share", "");
 }
 
 // ============================================================================
@@ -703,7 +704,6 @@ default
             gNote = (cfgGet("trace") == "1");
             gFace = (integer)cfgGet("face");
             gLook = (integer)cfgGet("look");
-            if (LITE) gLook = 0;
             frame(2 * gLook);
         }
         else if (num == STATUS && str == "?")

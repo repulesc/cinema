@@ -96,7 +96,8 @@ check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must b
 check('else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }' in core, "core: Go live must start Social")
 check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState == ST_IDLE && str == "scenery") return;' in core,
       "core: viewing must block the idle start and keep the double-tap")
-check('onLong()\n{\n    llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui, "ui: hold must open the Share panel, always")
+check('onLong()\n{\n    if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));   // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
+      and "integer LITE    = 0;" in ui, "ui: hold must open the Share panel, always (the free Take 12 Scenery has no sharing)")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
 check('"frame", "share", "opts"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
 

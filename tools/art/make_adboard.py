@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Take 12 marketing graphics (Second Life Marketplace + in-world vendor board).
 
-Also writes the Lite versions (a LITE ribbon, Room and Friends dimmed as full-version features) to
-hud-lite/marketing/*_lite.png.
+Also writes the boards of the free Take 12 Scenery (a FREE ribbon, "SCENERY - FREE CAMERA HUD", the Share view dimmed
+as a full-version feature) to scenery/marketing/*_scenery.png.
 Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor (1024 and 512).
 Also the free Take 12 Watch board (watch/marketing/adboard_watch_1024.png).
 Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
@@ -31,8 +31,11 @@ SMALL = "ONE TINY BUTTON  -  NO SETUP  -  SHARE WITH FRIENDS"
 CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Your lens"]
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-LITE = False                      # main() runs the boards twice; True draws the Take 12 Lite versions
-FULL_ONLY = ("ROOM", "SHARE")   # the views Lite does not have
+FREE = False                      # main() runs the boards twice; True draws the free Take 12 Scenery versions
+FREE_DESCRIPTOR = "SCENERY CAMERA HUD"
+FREE_CHIPS = ["Drone views", "Skybox rooms", "Idle start", "Photo hold"]
+FREE_SMALL = "FREE  -  ONE TINY BUTTON  -  NO SETUP"
+FULL_ONLY = ("SHARE",)            # the view Take 12 Scenery does not have
 
 # ---- a tiny 5x7 pixel font (caps) ------------------------------------------------------------
 ROWS = {
@@ -141,7 +144,7 @@ def scene_wide(w, h, r):
         d.line([(0, yy), (w, yy)], fill=base)
         if yy % 2 == 0: d.line([(sx - int(5 * (1 - t) + 2 + (yy % 4)), yy), (sx + int(5 * (1 - t) + 2 + (yy % 3)), yy)], fill=(255, 214, 150))
     d.polygon([(0, h), (0, int(h * .86)), (int(w * .14), int(h * .92)), (int(w * .3), h)], fill=(30, 28, 44))
-    if LENS_TAG and not LITE:                                                                # "85 mm": your lens
+    if LENS_TAG and not FREE:                                                                # "85 mm": your lens
         d.rectangle([2, 2, 2 + 29 + 3, 2 + 9], fill=INK)
         ptext(im, (4, 3), "85 MM", 1, CHALK)
     return im
@@ -208,10 +211,10 @@ def paste_framed(base, im, xy, border=4, label=None, lab_scale=3):
         ptext(base, (x + 8, y + h + border + 6), label, lab_scale, CHALK)
 
 def ribbon(base, box):
-    """the coral LITE ribbon"""
+    """the coral FREE ribbon"""
     d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
     d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
-    sc = max(2, (y1 - y0 - 24) // 7); ptext(base, ((x0 + x1 - pwidth("LITE", sc)) // 2, (y0 + y1 - 7 * sc) // 2), "LITE", sc, INK)
+    sc = max(2, (y1 - y0 - 24) // 7); ptext(base, ((x0 + x1 - pwidth("FREE", sc)) // 2, (y0 + y1 - 7 * sc) // 2), "FREE", sc, INK)
 
 def banner(base, x, y, w, text, scale):
     """a coral band across the top of a view (the new feature)"""
@@ -234,13 +237,15 @@ def stamp(base, box, lines):
         ptext(base, ((x0 + x1 - pwidth(text, sc)) // 2, y), text, sc, INK); y += 7 * sc + 8
 
 def scene_img(lab, fn, gw, gh, sc, seed):
-    """one view; in Lite the views the Lite version does not have are dimmed and marked"""
+    """one view; on the free boards the view Take 12 Scenery does not have is dimmed and marked"""
     im = view(fn, gw, gh, sc, seed)
-    if LITE and lab in FULL_ONLY:
+    if FREE and lab in FULL_ONLY:
         im = Image.blend(im, Image.new("RGB", im.size, BG), 0.72)
         t = 3 if im.width > 300 else 2
         ptext(im, ((im.width - pwidth("FULL VERSION", t)) // 2, im.height // 2 - 7 * t // 2), "FULL VERSION", t, CHALK)
     return im
+
+def desc(): return FREE_DESCRIPTOR if FREE else DESCRIPTOR
 
 def chips(base, y, items, size, x_left, x_right, gap=14, fill=CORAL):
     d = ImageDraw.Draw(base); f = font(size); widths = [d.textlength(t, font=f) + 28 for t in items]
@@ -254,21 +259,21 @@ def square():
     for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)   # faint scanlines
     im.paste(clapper(176), (44, 28), clapper(176))
     ptext(im, (244, 44), NAME, 9, CHALK, shadow=CORAL)
-    ptext(im, (248, 118), DESCRIPTOR, 3, CORAL)
+    ptext(im, (248, 118), desc(), 3, CORAL)
     d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
     d.text((248, 214), HOWTO, font=font(24), fill=(170, 176, 200))
-    if LITE:
-        ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "SCENERY CAMERA + PHOTO HOLD", 2, (170, 176, 200))
+    if FREE:
+        ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
     else:
         looks(im, 664, 30, 96, 14)
         ptext(im, (664, 138), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     gw, gh, sc = 64, 40, 7; px, py = 48, 262
     for i, (lab, fn) in enumerate(SCENES):
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 62)
-        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""))
-    chips(im, 936, ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else CHIPS, 24, 40, S - 40)
-    d.text((S // 2, 996), "THE EASY WAY IN  -  ONE TINY BUTTON  -  NO SETUP" if LITE else SMALL, font=font(16), fill=(120, 126, 150), anchor="mm")
-    if not LITE: newlabel(im, 48 + 64 * 7 + 40, 262, 64 * 7, 40 * 7, 3, NEW)                 # the horizon view's label, in coral
+        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL TAKE 12" if FREE and lab in FULL_ONLY else ""))
+    chips(im, 936, _chip_list(), 24, 40, S - 40)
+    d.text((S // 2, 996), FREE_SMALL if FREE else SMALL, font=font(16), fill=(120, 126, 150), anchor="mm")
+    if not FREE: newlabel(im, 48 + 64 * 7 + 40, 262, 64 * 7, 40 * 7, 3, NEW)                 # the horizon view's label, in coral
     return im
 
 def wide():
@@ -276,14 +281,14 @@ def wide():
     for yy in range(0, H, 4): d.line([(0, yy), (W, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
     im.paste(clapper(128), (40, 30), clapper(128))
     ptext(im, (192, 34), NAME, 7, CHALK, shadow=CORAL)
-    ptext(im, (196, 92), DESCRIPTOR, 2, CORAL)
+    ptext(im, (196, 92), desc(), 2, CORAL)
     d.text((196, 120), TAGLINE, font=font(32), fill=(255, 196, 120))
-    if LITE:
-        ribbon(im, (716, 26, 980, 100)); ptext(im, (716, 114), "SCENERY + PHOTO HOLD", 2, (170, 176, 200))
+    if FREE:
+        ribbon(im, (716, 26, 980, 100)); ptext(im, (716, 114), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
     else:
         looks(im, 716, 26, 80, 12)
         ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    d.text((44, 196), "Drone and wide views, AFK start, Photo hold." if LITE else "Drone views, skyboxes, share with friends.", font=font(22), fill=(170, 176, 200))
+    d.text((44, 196), "Drone views, skybox rooms, idle start." if FREE else "Drone views, skyboxes, share with friends.", font=font(22), fill=(170, 176, 200))
     # film strip along the bottom
     sy, sh = 262, 232; d.rectangle([0, sy, W, sy + sh], fill=INK)
     for x in range(10, W, 36):
@@ -295,9 +300,9 @@ def wide():
         x = 26 + i * (gw * sc + 24); y = sy + 36
         im.paste(scene_img(lab, fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
         ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
-        if lab == "HORIZON" and not LITE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: YOUR LENS", 2)
+        if lab == "HORIZON" and not FREE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: YOUR LENS", 2)
     TAG = LENS_TAG = True
-    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  share", font=font(22), fill=CHALK, anchor="ra", spacing=8)
+    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  " + ("photo" if FREE else "share"), font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
 
 def vendor():
@@ -306,7 +311,7 @@ def vendor():
     for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
     im.paste(clapper(150), (48, 34), clapper(150))
     ptext(im, (232, 40), NAME, 11, CHALK, shadow=CORAL)
-    ptext(im, (236, 128), DESCRIPTOR, 3, CORAL)
+    ptext(im, (236, 128), desc(), 3, CORAL)
     d.text((236, 168), TAGLINE, font=font(38), fill=(255, 196, 120))
     gw, gh, sc = 96, 56, 9                      # the hero: what you see on screen, with the HUD button top right
     hero = view(scene_wide, gw, gh, sc, 31)
@@ -314,16 +319,16 @@ def vendor():
     paste_framed(im, hero, (hx, hy), border=6)
     btn = clapper(72); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
     ptext(im, (hx + gw * sc - 190, hy + 98), "DOUBLE-TAP", 2, CHALK, shadow=INK)
-    if LITE:
-        ribbon(im, (80, 784, 380, 884)); ptext(im, (80, 894), "THE EASY WAY IN", 2, (170, 176, 200))
-        chips(im, 790, ["Drone", "Wide"], 30, 420, S - 60); chips(im, 870, ["AFK start", "Photo hold"], 30, 420, S - 60)
+    if FREE:
+        ribbon(im, (80, 784, 380, 884)); ptext(im, (80, 894), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
+        chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60); chips(im, 870, ["Idle start", "Photo hold"], 30, 420, S - 60)
     else:
         looks(im, 80, 784, 96, 14)
         ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
         chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
         chips(im, 870, ["Share live", "Your lens"], 30, 420, S - 60)
         stamp(im, (730, 44, 976, 126), [("NEW", 3), ("YOUR LENS", 2)])
-    d.text((S // 2, 990), "ONE TINY BUTTON  -  SHARE WITH FRIENDS" if not LITE else "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
+    d.text((S // 2, 990), "ONE TINY BUTTON  -  FREE" if FREE else "ONE TINY BUTTON  -  SHARE WITH FRIENDS", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
 def watch():
@@ -356,14 +361,14 @@ def _base(W, H):
     return im, d
 
 def _chip_list():
-    return ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else CHIPS
+    return FREE_CHIPS if FREE else CHIPS
 
 def portrait():
     """3:4 portrait (768 x 1024): header, one big view, three small views, chips"""
     W, H = 768, 1024; im, d = _base(W, H)
     im.paste(clapper(150), (40, 30), clapper(150))
     ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
-    ptext(im, (220, 112), DESCRIPTOR, 3, CORAL)
+    ptext(im, (220, 112), desc(), 3, CORAL)
     d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
     d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
     gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
@@ -371,14 +376,14 @@ def portrait():
     small = [("DRONE", scene_drone), ("ROOM", scene_room), ("SHARE", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
     for i, (lab, fn) in enumerate(small):
         x = 48 + i * (gw2 * sc2 + 24)
-        paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
-    if LITE:
-        ribbon(im, (48, 884, 200, 930)); ptext(im, (216, 898), "SCENERY + PHOTO HOLD", 2, (170, 176, 200))
+        paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if FREE and lab in FULL_ONLY else ""), lab_scale=2)
+    if FREE:
+        ribbon(im, (48, 884, 200, 930)); ptext(im, (216, 898), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
     else:
         looks(im, 48, 876, 54, 10); ptext(im, (232, 898), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     chips(im, 944, _chip_list(), 20, 30, W - 30, gap=10)
-    d.text((W // 2, 1004), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not LITE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("LENS", 2)])
+    d.text((W // 2, 1004), (FREE_SMALL if FREE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
+    if not FREE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("LENS", 2)])
     return im
 
 def landscape43():
@@ -386,33 +391,31 @@ def landscape43():
     W, H = 1024, 768; im, d = _base(W, H)
     im.paste(clapper(110), (40, 22), clapper(110))
     ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
-    ptext(im, (182, 90), DESCRIPTOR, 2, CORAL)
+    ptext(im, (182, 90), desc(), 2, CORAL)
     d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
     d.text((182, 148), HOWTO, font=font(18), fill=(170, 176, 200))
-    if LITE: ribbon(im, (760, 26, 984, 96))
+    if FREE: ribbon(im, (760, 26, 984, 96))
     else:
         looks(im, 700, 20, 82, 12)
         ptext(im, (700, 108), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     gw, gh, sc = 56, 34, 6; px, py = 156, 186
     for i, (lab, fn) in enumerate(SCENES):
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 48)
-        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
+        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL TAKE 12" if FREE and lab in FULL_ONLY else ""), lab_scale=2)
     chips(im, 690, _chip_list(), 20, 30, W - 30, gap=12)
-    d.text((W // 2, 748), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not LITE: newlabel(im, 156 + 56 * 6 + 40, 186, 56 * 6, 34 * 6, 2, NEW)
+    d.text((W // 2, 748), (FREE_SMALL if FREE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
+    if not FREE: newlabel(im, 156 + 56 * 6 + 40, 186, 56 * 6, 34 * 6, 2, NEW)
     return im
 
 if __name__ == "__main__":
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-    builds = [(False, os.path.join(base, "hud", "marketing"), "")]
-    if "--lite" in sys.argv:                     # Lite is paused (frozen at 4.4.5): its boards are only rebuilt on request
-        builds.append((True, os.path.join(base, "hud-lite", "marketing"), "_lite"))
-    for lite, out, suf in builds:
-        LITE = lite; os.makedirs(out, exist_ok=True)
+    builds = [(False, os.path.join(base, "hud", "marketing"), ""), (True, os.path.join(base, "scenery", "marketing"), "_scenery")]
+    for free, out, suf in builds:
+        FREE = free; os.makedirs(out, exist_ok=True)
         square().save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide().save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
         portrait().save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43().save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
         v = vendor(); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
         print("wrote", os.path.normpath(out))
-        if not lite:
+        if not free:
             wo = os.path.join(base, "watch", "marketing"); os.makedirs(wo, exist_ok=True)
             watch().save(os.path.join(wo, "adboard_watch_1024.png")); print("wrote", os.path.normpath(wo))
