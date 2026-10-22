@@ -78,6 +78,13 @@ For a picture of yourself, or of you and whoever stands right next to you. Still
 Me, Us and Still only start when YOU choose them in the menu.
 
 
+=== TIPS ================================================
+
+While you are new to Take 12, a short tip shows above the button now and then, for a few seconds: where you are and what you can do next (when the camera starts, on Photo, when your camera comes back). It never covers the HUD's own messages.
+Each tip shows only a few times. After a while Tips turns itself off, and says so once in chat.
+Tap the button > Help > Tips to turn them off, or back on (they start again from the beginning).
+
+
 === THE LIVE MENU (hold the button while it rolls) =======
 
 PHOTO     Freeze the view so you can take your pictures in peace. Tap once to carry on.
@@ -98,7 +105,7 @@ IDLE START (Timing) When the scenery camera starts by itself: off, 1 min, 90 s, 
           Once the scenery camera runs, moving the mouse does not stop it: a movement key, typing in chat, or a tap on the button does.
 INDOORS   Auto (default): inside when you stand on a build in the sky, or on a build under a roof (a house, a shop, a trailer, a mall); outdoor views on open land and on roofless decks. Inside: always inside, near you, even where the HUD cannot see the walls. Outside: always outdoor views.
 CHAT CUTS On/Off: Us cuts to whoever speaks.
-LOOK      MENU STYLE: Plain (words only, the default), Symbols (quiet black-and-white marks) or Color (emoji). BUTTON: Classic, Rec (red light) or Viewfinder (cyan). CHAT TEXT is here too.
+LOOK      MENU STYLE: Symbols (quiet black-and-white marks, the default), Plain (words only) or Color (emoji). BUTTON: Classic, Rec (red light) or Viewfinder (cyan). CHAT TEXT is here too.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 SEATED    When you sit or lie down, the camera looks down on you from above, in Me and Us: Auto (45 degrees, default), Higher, Lower or Off.
@@ -122,6 +129,7 @@ pace <seconds>        e.g.  /77 pace 90
 reach <metres>        e.g.  /77 reach 60      (or  /77 reach relearn )
 indoors auto | inside | outside
 friend list | clear
+tips on | off         the short tips above the button
 trace on | off        chat text: a line for every cut and after menu choices (off by default)
 skin plain | symbols | color    the menu style
 face <number>         which face of the HUD carries the picture (only if the picture shows on the wrong side)
@@ -137,7 +145,7 @@ Nothing happens when I double-tap.
 Tap once and use the menu to start Scenery. If that works, your double-taps may be too slow: tap twice quickly, about as fast as a double-click. Then type  /77 status  - you should see a line from every part of the HUD. If one is missing, tell the creator.
 
 The menu buttons show boxes.
-Options > Look > Plain (the default: words only).
+Options > Look > Plain (words only).
 
 The camera stays close to me.
 Some viewers limit how far a script may place the camera. The HUD notices and shortens its distance by itself. If it ever feels too short, Options > Reach > Re-learn.

@@ -1,4 +1,4 @@
-# The menus (5.6.0): Scenery / Me / Us / Still on the main page, Pace and Idle start under Options > Timing, the camera
+# The menus (5.6.0, 5.7.0: Symbols by default, Help > Read Me / Tips): Scenery / Me / Us / Still on the main page, Pace and Idle start under Options > Timing, the camera
 # settings under Options > Camera, the menu style (Plain / Symbols / Color) under Options > Look. Ported from
 # cinema_ui.lsl: every page fits a dialog (12 buttons), every button has a name, Back goes to the page above, and in
 # every menu style the labels on a page are distinct (a choice is matched back by its label).
@@ -32,6 +32,7 @@ for m in re.finditer(r'page == "(\w+)"\)\s*\{(.*?)\n    \}', body, re.S):
 check(pages.get("main") == ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"], f"main menu: {pages.get('main')}")
 check(pages.get("us") == ["everyone", "onlyfr", "flist", "back"], f"Us page: {pages.get('us')}")
 check(pages.get("opts") == ["timing", "camcfg", "look", "favs", "test", "reset", "back"], f"Options: {pages.get('opts')}")
+check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")
 check(pages.get("timing") == ["pace", "afk", "back"], f"Timing: {pages.get('timing')}")
 check(set(pages.get("camcfg", [])) >= {"seat", "indoors", "reach", "altcam", "chat", "phantom", "back"}, f"Camera: {pages.get('camcfg')}")
 check(pages.get("look", [])[:3] == ["sk0", "sk1", "sk2"], f"Look: {pages.get('look')}")
@@ -53,8 +54,14 @@ for grp, parent in re.findall(r'llSubStringIndex\("~([\w~]+)~", "~" \+ p \+ "~"\
 check(up.get("pace") == "timing" and up.get("afk") == "timing", "Pace / Idle start must go back to Timing")
 check(all(up.get(p) == "camcfg" for p in ("seat", "indoors", "reach", "altcam", "chat")), "camera settings must go back to Camera")
 check(all(up.get(p) == "opts" for p in ("timing", "camcfg", "look", "favs", "reset")), "Options groups must go back to Options")
-# the default style is Plain, for everyone (the settings step 6)
-check("~skin=0~" in ui and 'cfgWrite("skin", "0");' in ui and "if (v < 6)" in ui, "the menus must default to Plain")
+check(up.get("help", "main") == "main", "Help must go back to the main menu")
+# the default style is Symbols (the settings step 7 moves the 5.6 Plain default over; a later choice of Plain stays)
+check("~skin=1~" in ui and 'if (cfgGet("skin") == "0") cfgWrite("skin", "1");' in ui and "if (v < 7)" in ui, "the menus must default to Symbols")
+check("gSkin = 1;" in ui[ui.index('gPage == "reset"'):], "Reset must go back to Symbols")
+# Tips: on by default and after the step, and turning them back on starts every tip from zero
+check("~tips=1~tipn=0~" in ui and 'cfgWrite("tips", "1");' in ui, "Tips must be on by default")
+hp = ui[ui.index('gPage == "help"'):]
+check(hp.index('cfgWrite("tipn", "0")') < hp.index('toggle("tips"'), "turning Tips on must reset the counts")
 print(f"menus: {len(pages)} pages, {len(items)} named buttons, all fit, distinct in Plain / Symbols / Color, Back goes up")
 print("menu checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

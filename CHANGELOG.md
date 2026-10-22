@@ -1,5 +1,20 @@
 # Changelog
 
+## 5.7.0
+**Symbols by default, and short tips above the button.**
+- **Menu style:** Symbols (quiet black-and-white marks) is now the default. Plain and Color stay in Options › Look. Settings step 7 moves the 5.6.0 default (Plain) over; picking Plain again keeps it.
+- **Tips** (new script `cinema_tips`, the tenth: add it to the HUD). When something just happens, a two-line tip says where you are and what you can do next:
+  - the HUD is worn;
+  - a camera starts (Scenery, Me, Us, Only friends, Still);
+  - Photo, a pause, your camera coming back;
+  - about 90 s into a run (Hold › More);
+  - sitting in Only friends (W/S);
+  - idle start.
+  - **On screen:** each tip shows for 6 s, in a softer white, at most one per 20 s, and only when nothing else is above the HUD: the LIVE status, "Your view is kept" and Still's framing names always win.
+  - **After a while:** each tip retires after 3 showings. When all have retired, or after 24 tips, Tips turns itself off with one chat line.
+  - **Help is now a small page:** Read Me, and Tips on/off. Turning Tips back on starts every tip from zero. `/77 tips on|off` does the same.
+- **New `tools/sim/tips_sim.py` in CI**, which plays the tips script against the core's states and the other scripts' hover text. `menu_sim` checks the Help page and the Symbols default.
+
 ## 5.6.0
 **Cleaner menus: four cameras with plain names, settings in Options, and menu styles.**
 - **The main menu** is down from 11 buttons to 8: **Scenery · Me · Us · Still**, plus Share, Options, Help and Close. Each camera gets one line of explanation on the page:

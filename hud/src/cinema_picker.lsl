@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from cinema_ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "5.6.0";
+string VERSION = "5.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -281,7 +281,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share stop next photo menu status pace reach indoors face skin trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share stop next photo menu status pace reach indoors face skin tips trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -322,6 +322,12 @@ onCommand(string msg)
     {
         set("skin", (string)llListFindList(["plain", "symbols", "color"], [v]));
         say("Menu style: " + v);
+    }
+    else if (c == "tips" && (v == "on" || v == "off"))
+    {
+        if (v == "on") llLinksetDataWriteProtected("cin.tipn", "0", PASS);   // every tip from the start
+        set("tips", (string)(v == "on"));
+        say("Tips: " + v);
     }
     else if (c == "trace" || c == "cutmode") { set(c, (string)(v == "on")); say(c + ": " + v); }
     else if (c == "chan" && n > 0 && n != 9)

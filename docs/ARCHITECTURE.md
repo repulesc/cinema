@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All nine scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All ten scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -19,6 +19,7 @@ All nine scripts go in the **root prim** of a one-prim HUD. Each must compile cl
 | `cinema_sync.lsl` | **The sharing manager (5.5).** Hold = the Share panel (CMD `share` from the UI's long press and the tap menu). States IDLE / LIVE / VIEWING / INVITED, a `who` check, push invites, pull views, Ask / Always / Never lead, a roster (Pass camera, Remove), heartbeat and timeouts, the state above the HUD. Core starts the camera (CMD `sharecam` → Social) and reports it (CAMSET 7325); `⋯ More` sends CMD `livemenu` / `mainmenu` back to the UI. Everything else, protocol included: `docs/SHARING.md` | – | 396 (19.5 KB est.) |
 | `cinema_frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `cinema_picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `cinema_friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
+| `cinema_tips.lsl` | **New in 5.7: Tips.** Listens to UI_STATE 7320 transitions (a camera starts, Photo, a pause, a stop) and shows a two-line tip above the button for 6 s, only while the hover text is empty (it reads `PRIM_TEXT`, like sync), at most one per 20 s; a tip that finds no free moment in 10 s is dropped, not counted. It clears the text only if its tip is still the text. Each tip retires after 3 showings (`cin.tipn`); when all have retired, or after 24 in all, it writes `tips=0`, sends CFG_CHANGED `tips` and says one line. No menus or listeners | – | 106 (37.9 KB est.) |
 | `cinema_ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
@@ -196,7 +197,8 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
-| `emoji` | 1 | |
+| `skin` | **1** (5.7.0) | menu style: 0 Plain, 1 Symbols, 2 Color (Options › Look, `/77 skin`). Settings step 7 moves the 5.6.0 default (Plain) to Symbols |
+| `tips`, `tipn` | 1, 0 | Tips on, and the showings per tip (one digit each, 12 tips). Help › Tips (or `/77 tips on`) turning them back on writes `tipn` 0 first. Step 7 turns them on for everyone |
 | `peek`, `peek_bail`, `phantom`, `cutmode`, `cmd_chan` | as v3 | `cutmode` is now command-only |
 | `trace` | **0** (4.4.2; it was 1) | "Chat text". Off: no startup lines, no per-cut lines, no echo after menu choices. Errors, warnings and the answers to typed commands always show. A one-time migration (`cfgv` = 2) turned it off on older installs |
 | `friends` | "" | written by the friends script: `key,name;key,name;…`, at most 10 |
