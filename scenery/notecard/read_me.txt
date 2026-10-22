@@ -17,7 +17,7 @@ Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in th
 
 === THE BUTTON ==========================================
 
-The small clapper, with a sun setting on its slate, is the whole HUD. Everything is done with taps.
+The small clapper, with a chalk sun on its slate, is the whole HUD. Everything is done with taps.
 
 TAP
    - when idle: opens the menu

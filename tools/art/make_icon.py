@@ -7,7 +7,7 @@
 Writes hud/art/take12_icon_sheet_512x256.png (upload this one: ALL looks, switchable from the
 menu), hud/art/variants/<look>_256x128.png (single-look, two frames), hud/art/preview.png, and the free
 Take 12 Watch HUD's icon, watch/art/take12_watch_icon_128.png (the clapper with an eye instead of "12"), and
-Take 12 Scenery's sheet and icon in scenery/art/ (the clapper with a sun on the horizon instead of "12", one look).
+Take 12 Scenery's sheet and icon in scenery/art/ (the clapper with a chalk sun instead of "12", one look).
 Pixels are scaled x8 with nearest-neighbour; the background is transparent.
 Edit the palette or the drawing below, re-run, re-upload.
 
@@ -138,13 +138,14 @@ def watch_icon():
     return s
 
 def draw_scenery(open_):
-    """Take 12 Scenery (the free scenery camera): the same clapper, rec look, with a coral sun setting on a chalk
-    horizon in place of the "12", and a faint reflection. Open and clapped, so the little clap still works."""
+    """Take 12 Scenery (the free scenery camera): the same clapper, rec look, with a small chalk sun (a round disc,
+    eight short rays) in place of the "12": the same quiet chalk, so Take 12 stays the colourful one. Open and
+    clapped, so the little clap still works."""
     g = draw(open_, DEFAULT)
     for y in range(11, 15):
         for x in range(2, 14):
             g[y][x] = "D"
-    S = ["....CCCC....", "...CCCCCC...", ".WWWWWWWWWW.", ".....HH....."]
+    S = ["...W.WW.W...", ".W..WWWW..W.", ".W..WWWW..W.", "...W.WW.W..."]
     for r, row in enumerate(S):
         for c, ch in enumerate(row):
             if ch != ".": g[11 + r][2 + c] = ch

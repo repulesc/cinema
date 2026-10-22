@@ -1,5 +1,9 @@
 # Changelog
 
+## Take 12 Scenery's button: a plain chalk sun
+- The coral half-sun on a horizon read as a red dome on the 4-pixel-tall slate. It is now a small chalk sun, a round disc with eight short rays, centred where the "12" sits: the same quiet chalk, so the main Take 12 stays the colourful one.
+- New `scenery/art` texture and icon, and the free boards redrawn; the Read Me, the listing and the build steps say "a chalk sun". Take 12's and the Watch's art and boards are unchanged.
+
 ## Take 12 Scenery: its own button (no change to Take 12's scripts)
 - **The design:** the Take 12 clapper (Rec look, the same chalk and coral) with a coral sun setting on a chalk horizon, and a faint reflection, in place of the "12". It is the same family as the Watch and its eye: recognisable as Take 12, never mistaken for it. Open and clapped frames, so the little clap still works.
 - **One design:** `scenery/art/take12_scenery_icon_sheet_512x256.png` keeps the Take 12 sheet's layout, with the Scenery frames in every look column, so the scripts' frame maths work unchanged. The free build leaves out the Button choice under Options > Look (three build substitutions; `hud/src` is untouched, still 6.1.0). A 128 px icon is there too.
