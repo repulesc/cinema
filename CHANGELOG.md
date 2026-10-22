@@ -1,5 +1,10 @@
 # Changelog
 
+## Marketing for 6.0.1 (no script changes)
+- **Listing:** "Everyone sees the same picture, whatever their own zoom" in SHARE THE VIEW, and in the update message, now "Take 12 6.0.1".
+- **Watch listing:** the same line, plus a Features line, "The same picture as your friend, whatever your zoom".
+- **Watch board:** the "Same picture, any zoom" chip replaces "Follows their cuts", since "See your friend's view." already says that. The Take 12 boards stay as in 6.0.
+
 ## 6.0.1
 **Sharing: the same picture for everyone, each through their own lens.**
 - **The problem.** A viewer received only the director's camera position and focus, and looked through their own zoom. Different zooms gave different pictures. Since 6.0 it was worse: a director zoomed to 85 mm backs the camera off about 4× so the people keep their size for them, and viewers at the normal zoom saw a tiny group.
