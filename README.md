@@ -5,6 +5,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - **Scenery camera (default):** when you go idle, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - **Frame (optional):** a held, well-composed view of you (or you and whoever stands with you) for your own snapshots: Full length, Half length, Close (`docs/FRAME.md`).
+- **Share the view:** hold the button › Go live, and the people near you (Take 12 or the free Take 12 Watch) watch your camera; one leads, any number watch (`docs/SHARING.md`).
 - Tap = menu, double-tap = go, hold = live menu. A movement key gives your camera back instantly.
 
 > **Status:** **v4.6.0** (in `hud/`) works in-world in the tests so far (beta). The Lite build in `hud-lite/` is paused, frozen at 4.4.5. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).

@@ -1,11 +1,12 @@
 # Take 12 Watch (free)
 
-A one-prim HUD for friends who don't own Take 12. While they wear it, the view of someone near them who shares their Take 12 view (long press › Share) comes up at once. Wearing it is the yes; there's nothing to click.
+A one-prim HUD for friends who don't own Take 12. While they wear it, they appear in the Share panel of anyone near them with Take 12, and when that person goes live and invites them, their view comes up at once. Wearing it is the yes; there's nothing to click.
 
 - **Watching:** the camera follows the sharer's cuts. Above the HUD: "Watching Pano · tap: your camera · double-tap: next".
 - **Next view:** double-tap the HUD to cut to the next view for everyone watching.
 - **Look around:** orbit your own camera. The director sees that you're looking around, and Esc brings you back to the shared view.
-- **New director:** when someone with Take 12 takes over (Share › Direct), the Watch follows them by itself.
+- **New director:** when the camera passes to someone else (Pass camera, or Ask to lead), the Watch follows them by itself.
+- **The director gone:** if the director logs off or leaves, the Watch gives your camera back within 25 s.
 - **Leave:** a single tap or any movement key gives you your own camera back.
 
 ## Design

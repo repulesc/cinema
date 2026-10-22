@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION = "5.4.0";
+string VERSION = "5.5.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -320,7 +320,6 @@ openMenu(string page)
         else b = ["photo"];
         if (gUiMode == "scenery") b += ["save"];
         if (gUiMode == "friends") b += ["release"];
-        b += ["share"];
         b += ["next", "stop", "modes", "close"];
         if (gNextCut > 0 && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
@@ -450,7 +449,6 @@ onChoice(string msg)
         else if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
         else if (id == "next" || id == "stop") llMessageLinked(LINK_SET, CMD, id, "");
         else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
-        else if (id == "share") llMessageLinked(LINK_SET, CMD, "share", "");
         else if (id == "modes") openMenu("main");
     }
     else if (gPage == "pace")
@@ -572,10 +570,10 @@ onDouble()
     else llMessageLinked(LINK_SET, CMD, "next", "");
 }
 
+// hold: the Share panel (cinema_sync), whatever you are doing; its ⋯ More comes back here as livemenu / mainmenu
 onLong()
 {
-    if (gUiState == "idle") openMenu("main");
-    else openMenu("live");
+    llMessageLinked(LINK_SET, CMD, "share", "");
 }
 
 // ============================================================================
@@ -702,7 +700,8 @@ default
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == UI_STATE)
+        if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));
+        else if (num == UI_STATE)
         {
             list L = llParseString2List(str, ["|"], []);
             string st = llList2String(L, 0);

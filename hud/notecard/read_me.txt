@@ -58,13 +58,14 @@ You and the friends you picked, framed together. While your group stays in the p
  - Hold the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
 SHARE THE VIEW
-Let the people with you watch what your camera films. One person directs; everyone watching sees that camera.
- - Tap the button > Share (or hold > Share while your camera runs). Your camera starts if it isn't running, and your view is offered to everyone within 20 m. A line tells you who got it.
- - Friends wearing the free Take 12 Watch, or Take 12 with you in their Friends, follow at once. Anyone else with Take 12 sees "... shares a view - double-tap to watch" for 20 seconds.
- - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the director sees it); Esc brings you back. Any movement key gives you your own camera.
- - Take over: if you have Take 12 and watch someone, press Share > Direct. Everyone then follows your camera.
- - Share again while you direct: who watches, Offer again, Stop sharing, Give Watch (hands the free Take 12 Watch to someone near you).
- - When the director stops, sharing ends for everyone.
+Let the people with you watch what your camera films. One person leads; everyone watching sees that camera.
+ - HOLD the button: the Share panel. It first looks who is near you (Take 12 or the free Take 12 Watch).
+ - Go live: your camera starts if it is off (Social) and everyone near you who is free is invited. Or tap + name to invite one person, or 👁 name to watch someone who is already live.
+ - Friends wearing Take 12 Watch, or Take 12 with you in their Friends, join at once. Anyone else sees "... invites you - hold to watch" for 20 seconds (a double-tap also accepts).
+ - Above your button while you share: "● LIVE · 3 watching" and the names of who is connected to your camera, e.g. "Ana · Ben (looking around) · Dee (no signal)". Someone silent for 45 seconds is dropped. While you watch: "👁 Pano" (or "no signal" if the leader goes quiet).
+ - Hold again while live: who watches, Invite more, Roster (pass the camera to someone, or remove them), Lead (when someone asks to lead: Ask / Always / Never), End live.
+ - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
+ - Hold > ⋯ More: the usual menu (photo hold, next, stop, modes).
 
 FRAME
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.

@@ -1,20 +1,21 @@
 // ============================================================================
-//  Take 12  -  cinema_sync.lsl  (v5.4)  - Share the view
-//  One director at a time: everyone watching follows one camera, so two cameras never fight.
-//  The one Share button (tap menu and hold menu) does what fits the moment:
-//    nothing shared yet   starts your camera if needed and offers your view to everyone within 20 m
-//    you share            who watches (and who is looking around), Offer again, Stop sharing, Give Watch
-//    you watch            Direct (your camera becomes the shared one), Leave
-//    an offer is waiting  watch it
-//  Watching: the free Take 12 Watch, or Take 12 with the sharer in its Friends, joins at once; anyone else with Take 12
-//  sees "<name> shares a view - double-tap to watch". A watcher's double-tap cuts for all (5 s apart). A watcher who
-//  orbits their own camera is "looking around" (the director is told); Esc brings them back. Any movement key leaves.
+//  Take 12  -  cinema_sync.lsl  (v5.5)  - the sharing manager
+//  Hold the HUD button: the Share panel, whatever you are doing. One director at a time; any number of viewers.
+//    IDLE      who is near (a quick "who" check), Go live, + <name> (invite one), Watch <live director>, Give Watch
+//    LIVE      who watches / looks around, Invite more, Roster (Pass camera, Remove), Lead: Ask/Always/Never, End live
+//    VIEWING   Ask to lead, Leave
+//    INVITED   Watch, No (a double-tap also watches)
+//  Go live with the camera off starts Social. A Take 12 Watch, or Take 12 with you in its Friends, joins an invite at
+//  once; anyone else is asked. Above the HUD the state stays visible: "● LIVE · 2", "👁 Pano", "Pano invites you".
 //  Channel SYNC_CH, messages "T12|<what>|...":
-//    offer|<name> (llRegionSay)   ack|<1 watching, 0 double-tap>   join  leave  next  away  back  direct   (to the director)
-//    cam|<pos>|<focus>|<lag>   director|<key>|<name>   end                                                (to watchers)
+//    who|<name> (llRegionSay) -> here|<T/W>|<idle/live/view/pend>|<director name>
+//    invite|<name> -> ack|1 (joined) / ack|0 (asked) / busy|<what>
+//    viewer -> director: join leave next away back ask        director -> viewer: cam|<pos>|<focus>|<lag> hb lead|<1/0>
+//    director|<key>|<name> (a hand-over) kick end
+//  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "5.4.0";
+string VERSION = "5.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -24,38 +25,110 @@ integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
 integer SYNC_CH    = -7712120;   // Take 12 and Take 12 Watch share this channel
-float   NEAR       = 20.0;       // m  who is asked
-integer NEXT_GAP   = 5;          // s  two watchers' double-taps close together cut once
+float   NEAR       = 20.0;       // m  who is found and invited
+integer NEXT_GAP   = 5;          // s  two viewers' double-taps close together cut once
+integer WAIT       = 20;         // s  an invite or a lead request waits this long
+integer GONE       = 25;         // s  no camera and no heartbeat from the director: it is gone
+integer QUIET      = 25;         // s  a viewer not heard from this long shows "(no signal)"...
+integer LOST       = 45;         // s  ... and this long is dropped
+integer gBeatT;              // viewing: your last heartbeat to the director
 string  WATCH      = "Take 12 Watch";
+list    LEADS      = ["Ask", "Always", "Never"];
 
 key     gOwner;
-integer gSharing;            // you direct
+integer gSharing;            // LIVE: you direct
 integer gCamOn;              // your own camera runs
 integer gHand;               // you just handed the camera over: your stop is not the end
-list    gWatchers;           // directing: who watches you
+integer gToggleT;            // Go live / End live: repeats within 2 s are ignored
+list    gWatchers;           // LIVE: who watches you
+list    gSeen;               // ... when each was last heard from (their heartbeat), same order as gWatchers
 list    gAway;               // ... and who of them is looking around
-integer gNextT;              // ... the last "next" asked by a watcher
+integer gNextT;              // ... the last "next" asked
+integer gHbT;                // ... the last heartbeat and roster check
 string  gLastCam;            // the camera on your screen now
-key     gHost;               // watching: whose view you follow
+integer gLead;               // 0 Ask, 1 Always, 2 Never
+key     gLeadAsk;            // a viewer asking to lead
+integer gLeadT;
+list    gInv;                // invited, no answer yet
+list    gRes;                // ... the answers
+integer gInvT;
+key     gHost;               // VIEWING: whose view you follow
 vector  gApplied;            // ... the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // ... you are looking around on your own
-key     gOffer;              // the sharer who just asked you
-integer gPendT;              // ... since when (someone not in your Friends: double-tap to watch)
-list    gAck;                // who answered your offer
-integer gAckT;               // ... the offer went out at
+integer gHearT;              // ... the last word from the director
+integer gAskT;               // ... your own lead request, waiting
+key     gOffer;              // INVITED by
+integer gPendT;              // ... since
+list    gNear;               // the "who" check: [key, "<T/W>|<state>|<director>", ...]
+float   gWhoT;               // ... sent at (0 = none running)
 string  gPage;               // our own dialog
-list    gNear;               // give: the avatars listed
+list    gBtn;                // ... [label, key, ...]
+key     gSel;                // roster: the viewer picked
 integer gDlg;
 integer gDlgL;
 integer gDlgT;
-float   gTextT;
+float   gTextT;              // a short notice above the HUD, until it gives way to the state again
+
+// ---- above the HUD: the state, and short notices ------------------------------
+// a short name: "Ana Resident" -> "Ana"
+string sn(key k)
+{
+    string n = llKey2Name(k);
+    integer i = llSubStringIndex(n, " Resident");
+    if (i > 0) n = llGetSubString(n, 0, i - 1);
+    return n;
+}
+
+string ind()
+{
+    integer now = llGetUnixTime();
+    if (gSharing)
+    {
+        // who is connected to your camera, live: names, looking around, no signal
+        integer n = llGetListLength(gWatchers);
+        if (n == 0) return "● LIVE · nobody watching yet";
+        list s = [];
+        integer i;
+        for (i = 0; i < n && i < 4; i++)
+        {
+            key k = llList2Key(gWatchers, i);
+            string t = sn(k);
+            if (now - llList2Integer(gSeen, i) > QUIET) t += " (no signal)";
+            else if (llListFindList(gAway, [k]) >= 0) t += " (looking around)";
+            s += [t];
+        }
+        string r = "● LIVE · " + (string)n + " watching\n" + llDumpList2String(s, " · ");
+        if (n > 4) r += " · +" + (string)(n - 4);
+        return r;
+    }
+    if (gHost != NULL_KEY)
+    {
+        if (now - gHearT > 15) return "👁 " + sn(gHost) + " · no signal…";
+        if (gIsAway) return "👁 " + sn(gHost) + " · looking around (Esc: back)";
+        return "👁 " + sn(gHost);
+    }
+    if (gPendT) return llKey2Name(gOffer) + " invites you · hold to watch";
+    return "";
+}
+
+refresh()
+{
+    if (gTextT == 0.0) llSetText(ind(), <1.0, 1.0, 1.0>, 0.85);
+    llSetTimerEvent(1.0);
+}
 
 show(string s)
 {
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
     gTextT = llGetTime();
     llSetTimerEvent(1.0);
+}
+
+note(string s)
+{
+    llOwnerSay("[Take 12] " + s);
+    show(s);
 }
 
 say(key k, string m)
@@ -86,6 +159,11 @@ integer near(key k)
     return (llGetListLength(d) > 0 && llVecDist(llList2Vector(d, 0), llGetPos()) <= NEAR);
 }
 
+string nm(key k)
+{
+    return llGetSubString(llKey2Name(k), 0, 19);
+}
+
 string names(list ks)
 {
     list n = [];
@@ -94,57 +172,173 @@ string names(list ks)
     return llDumpList2String(n, ", ");
 }
 
-// who watches you, and who is looking around
-string status()
+// a button for a person: the label, and who it stands for
+btn(string label, key k)
 {
-    if (gWatchers == []) return "Your view is shared. Nobody watches yet.";
-    string s = "Watching: " + names(gWatchers);
-    if (gAway != []) s += "\nLooking around: " + names(gAway);
-    return s;
+    gBtn += [label, k];
+}
+
+key btnKey(string label)
+{
+    integer i = llListFindList(gBtn, [label]);
+    if (i < 0) return NULL_KEY;
+    return llList2Key(gBtn, i + 1);
 }
 
 drop(key k)
 {
     integer i = llListFindList(gWatchers, [k]);
-    if (i >= 0) gWatchers = llDeleteSubList(gWatchers, i, i);
+    if (i >= 0)
+    {
+        gWatchers = llDeleteSubList(gWatchers, i, i);
+        gSeen = llDeleteSubList(gSeen, i, i);
+    }
     i = llListFindList(gAway, [k]);
     if (i >= 0) gAway = llDeleteSubList(gAway, i, i);
 }
 
-// ---- directing -------------------------------------------------------------
-offer()
+// ---- the panels --------------------------------------------------------------
+// ask who is near; the IDLE (or Invite more) panel opens when they have answered
+who()
 {
-    llRegionSay(SYNC_CH, "T12|offer|" + llKey2Name(gOwner));
-    gAck = [];
-    gAckT = llGetUnixTime();
-    llSetTimerEvent(1.0);
+    llRegionSay(SYNC_CH, "T12|who|" + llKey2Name(gOwner));
+    gNear = [];
+    gWhoT = llGetTime();
+    show("Looking for people near you…");
 }
 
-// your camera becomes the shared one (offer: also ask everyone near; a hand-over brings its watchers by itself)
-direct(integer ask)
+panelNear()
 {
+    gBtn = [];
+    list b = [];
+    list desc = [];
+    if (gSharing) b = ["Invite all"];
+    else b = ["🔴 Go live"];
+    integer i;
+    for (i = 0; i < llGetListLength(gNear); i += 2)
+    {
+        key k = llList2Key(gNear, i);
+        list I = llParseStringKeepNulls(llList2String(gNear, i + 1), ["|"], []);
+        string st = llList2String(I, 1);
+        string d = llKey2Name(k);
+        if (llList2String(I, 0) == "W") d += " (Watch)";
+        if (st == "live") d += " (live)";
+        else if (st == "view") d += " (watching " + llList2String(I, 2) + ")";
+        desc += [d];
+        if (llGetListLength(b) < 9)
+        {
+            if (st == "live" && !gSharing) { b += ["👁 " + nm(k)]; btn("👁 " + nm(k), k); }
+            else if (st == "idle" && llListFindList(gWatchers, [k]) < 0) { b += ["+ " + nm(k)]; btn("+ " + nm(k), k); }
+        }
+    }
+    string t = "Share your view.";
+    if (gSharing) t = "Invite more people.";
+    if (desc == []) t += "\nNobody near you wears Take 12 or Take 12 Watch yet.";
+    else t += "\nNear you: " + llDumpList2String(desc, ", ");
+    t += "\n+ name: invite one · 👁 name: watch a live view";
+    dialog("near", t, b + ["Give Watch", "⋯ More", "Close"]);
+}
+
+panel()
+{
+    if (gSharing)
+    {
+        string t = "🔴 LIVE · ";
+        if (gWatchers == []) t += "nobody watches yet";
+        else t += "watching: " + names(gWatchers);
+        if (gAway != []) t += "\nlooking around: " + names(gAway);
+        t += "\nWhen someone asks to lead: " + llList2String(LEADS, gLead);
+        dialog("live", t, ["Invite more", "Roster", "Lead: " + llList2String(LEADS, gLead), "End live", "⋯ More", "Close"]);
+    }
+    else if (gHost != NULL_KEY)
+    {
+        string t = "👁 Viewing " + llKey2Name(gHost) + "'s camera.";
+        if (gAskT) t += "\nYou asked to lead; waiting for an answer.";
+        dialog("view", t, ["Ask to lead", "Leave", "⋯ More", "Close"]);
+    }
+    else if (gPendT) dialog("invited", llKey2Name(gOffer) + " invites you to watch their camera.", ["Watch", "No"]);
+    else who();
+}
+
+roster()
+{
+    gBtn = [];
+    list b = [];
+    integer i;
+    for (i = 0; i < llGetListLength(gWatchers) && i < 11; i++)
+    {
+        key k = llList2Key(gWatchers, i);
+        b += [nm(k)];
+        btn(nm(k), k);
+    }
+    if (b == []) { panel(); return; }
+    dialog("roster", "Who watches you. Pick someone to pass the camera or remove them.", b + ["Back"]);
+}
+
+// ---- directing -----------------------------------------------------------------
+invite(key k)
+{
+    if (llListFindList(gInv, [k]) >= 0 || llListFindList(gWatchers, [k]) >= 0) return;
+    say(k, "invite|" + llKey2Name(gOwner));
+    gInv += [k];
+    gInvT = llGetUnixTime();
+}
+
+// your camera becomes the shared one; with "everyone", all the free people found are invited
+golive(integer everyone)
+{
+    if (!gSharing && llGetUnixTime() - gToggleT < 2) return;
+    gToggleT = llGetUnixTime();
     gSharing = TRUE;
-    if (!gCamOn) llMessageLinked(LINK_SET, CMD, "sharecam", "");    // core: your camera, in your last mode
-    if (ask) offer();
-    show("Sharing your view");
+    gHbT = llGetUnixTime();
+    if (!gCamOn) llMessageLinked(LINK_SET, CMD, "sharecam", "");    // core: Social
+    integer i;
+    if (everyone)
+        for (i = 0; i < llGetListLength(gNear); i += 2)
+            if (llList2String(llParseStringKeepNulls(llList2String(gNear, i + 1), ["|"], []), 1) == "idle") invite(llList2Key(gNear, i));
+    refresh();
 }
 
-endShare()
+endlive(string why)
 {
-    if (gSharing || gWatchers != []) show("Sharing ended");
+    if (!gSharing && gWatchers == []) return;
     all("end");
     gWatchers = [];
+    gSeen = [];
     gAway = [];
     gSharing = FALSE;
+    gToggleT = llGetUnixTime();
+    if (gLeadAsk != NULL_KEY) say(gLeadAsk, "lead|0");
+    gLeadAsk = NULL_KEY;
+    show(why);
+    refresh();
 }
 
-// ---- watching --------------------------------------------------------------
-// an offer nobody took up: the double-tap is yours again
+// hand the camera to a viewer: everyone (you too) follows them
+grant(key k)
+{
+    gLeadAsk = NULL_KEY;
+    drop(k);
+    say(k, "lead|1");
+    all("director|" + (string)k + "|" + llKey2Name(k));
+    gWatchers = [];
+    gSeen = [];
+    gAway = [];
+    gSharing = FALSE;
+    gHand = gCamOn;
+    watch(k);
+    show(llKey2Name(k) + " leads now");
+    if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");
+}
+
+// ---- viewing -------------------------------------------------------------------
+// an invite nobody took up: the double-tap is yours again
 unpend()
 {
     if (!gPendT) return;
     gPendT = 0;
     if (gHost == NULL_KEY) llMessageLinked(LINK_SET, CMD, "unwatch", "");
+    refresh();
 }
 
 watch(key host)
@@ -152,7 +346,9 @@ watch(key host)
     gPendT = 0;
     gHost = host;
     gIsAway = FALSE;
+    gAskT = 0;
     gApplied = ZERO_VECTOR;
+    gHearT = llGetUnixTime();
     say(host, "join");
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);   // any movement key: your camera back
     llMessageLinked(LINK_SET, CMD, "watch", "");
@@ -164,12 +360,13 @@ leave(integer tell, integer clear)
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
     gHost = NULL_KEY;
+    gAskT = 0;
     // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
     clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
     if (clear && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays)
     llMessageLinked(LINK_SET, CMD, "unwatch", "");
-    show("Your camera");
+    refresh();
 }
 
 // ============================================================================
@@ -178,6 +375,8 @@ default
     state_entry()
     {
         gOwner = llGetOwner();
+        gLead = llListFindList(LEADS, [llLinksetDataReadProtected("cin.share_lead", PASS)]);
+        if (gLead < 0) gLead = 0;
         llListen(SYNC_CH, "", NULL_KEY, "");
         if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_CONTROL_CAMERA | PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
@@ -191,13 +390,19 @@ default
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
+        if (c & CHANGED_REGION)                             // sharing does not cross regions
+        {
+            unpend();
+            leave(FALSE, TRUE);
+            endlive("Sharing ended (new region)");
+        }
     }
 
     attach(key id)
     {
         if (id != NULL_KEY) return;
-        leave(TRUE, FALSE);                                 // taken off: tell the director, or your watchers
-        endShare();
+        leave(TRUE, FALSE);                                 // taken off: tell the director, or your viewers
+        endlive("");
     }
 
     control(key id, integer level, integer edge)
@@ -212,7 +417,7 @@ default
             gLastCam = str;
             all("cam|" + str);
         }
-        else if (num == START)                              // your own camera starts: stop watching
+        else if (num == START)                              // your own camera starts: stop viewing
         {
             gCamOn = TRUE;
             unpend();
@@ -223,21 +428,15 @@ default
             gCamOn = FALSE;
             gLastCam = "";
             if (gHand) gHand = FALSE;                       // you handed the camera on: not the end
-            else endShare();
+            else endlive("Live view ended");
         }
-        else if (num == CMD && str == "share")              // the one Share button
-        {
-            if (gHost != NULL_KEY) dialog("watch", "You watch " + llKey2Name(gHost) + "'s view.\nDirect: your camera becomes the shared one.", ["Direct", "Leave", "Close"]);
-            else if (gPendT) watch(gOffer);
-            else if (gSharing) dialog("share", status(), ["Offer again", "Stop sharing", "Give Watch"]);
-            else direct(TRUE);
-        }
-        else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while watching
-        else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: watch the offer
+        else if (num == CMD && str == "share") panel();     // hold the HUD button
+        else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while viewing
+        else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: accept the invite
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/sync] v" + VERSION + " sharing " + (string)gSharing + ", " + status() + ", following "
-                + llKey2Name(gHost) + ", free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/sync] v" + VERSION + " live " + (string)gSharing + ", watching you: " + names(gWatchers)
+                + ", following " + llKey2Name(gHost) + ", lead " + llList2String(LEADS, gLead) + ", free mem " + (string)llGetFreeMemory());
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -245,10 +444,16 @@ default
         if (ch == gDlg)
         {
             llListenRemove(gDlgL);
-            if (gPage == "share")
+            gDlgT = 0;
+            if (msg == "⋯ More")
             {
-                if (msg == "Stop sharing") endShare();
-                else if (msg == "Offer again") offer();
+                if (gCamOn) llMessageLinked(LINK_SET, CMD, "livemenu", "");
+                else llMessageLinked(LINK_SET, CMD, "mainmenu", "");
+            }
+            else if (gPage == "near")
+            {
+                if (msg == "🔴 Go live") golive(TRUE);
+                else if (msg == "Invite all") golive(TRUE);
                 else if (msg == "Give Watch")
                 {
                     if (llGetInventoryType(WATCH) != INVENTORY_OBJECT)
@@ -258,44 +463,92 @@ default
                     }
                     list ids = llGetAgentList(AGENT_LIST_REGION, []);
                     list b = [];
-                    gNear = [];
+                    gBtn = [];
                     integer i;
                     for (i = 0; i < llGetListLength(ids) && llGetListLength(b) < 11; i++)
                     {
                         key k = llList2Key(ids, i);
                         if (k != gOwner && near(k))
                         {
-                            gNear += [k];
-                            b += [llGetSubString(llKey2Name(k), 0, 23)];
+                            b += [nm(k)];
+                            btn(nm(k), k);
                         }
                     }
-                    if (b == []) llOwnerSay("[Take 12] Nobody within " + (string)llRound(NEAR) + " m.");
+                    if (b == []) note("Nobody within " + (string)llRound(NEAR) + " m.");
                     else dialog("give", "Give the free Take 12 Watch to:", b);
                 }
+                else
+                {
+                    key k = btnKey(msg);
+                    if (k == NULL_KEY) return;
+                    if (llGetSubString(msg, 0, 0) == "+")   // invite one: you go live for them
+                    {
+                        golive(FALSE);
+                        if (gSharing) invite(k);
+                    }
+                    else watch(k);                          // a live director near you: watch them
+                }
             }
-            else if (gPage == "watch" && gHost != NULL_KEY)
+            else if (gPage == "live")
+            {
+                if (msg == "Invite more") who();
+                else if (msg == "Roster") roster();
+                else if (msg == "End live") endlive("Live view ended");
+                else if (llGetSubString(msg, 0, 4) == "Lead:")
+                {
+                    gLead = (gLead + 1) % 3;
+                    llLinksetDataWriteProtected("cin.share_lead", llList2String(LEADS, gLead), PASS);
+                    panel();
+                }
+            }
+            else if (gPage == "roster")
+            {
+                if (msg == "Back") { panel(); return; }
+                gSel = btnKey(msg);
+                if (gSel != NULL_KEY) dialog("person", llKey2Name(gSel), ["Pass camera", "Remove", "Back"]);
+            }
+            else if (gPage == "person" && llListFindList(gWatchers, [gSel]) >= 0)
+            {
+                if (msg == "Pass camera") grant(gSel);
+                else if (msg == "Remove")
+                {
+                    say(gSel, "kick");
+                    drop(gSel);
+                    show(llKey2Name(gSel) + " removed");
+                    refresh();
+                }
+                else roster();
+            }
+            else if (gPage == "lead" && gLeadAsk != NULL_KEY)
+            {
+                if (msg == "Allow" && llListFindList(gWatchers, [gLeadAsk]) >= 0) grant(gLeadAsk);
+                else
+                {
+                    say(gLeadAsk, "lead|0");
+                    gLeadAsk = NULL_KEY;
+                }
+            }
+            else if (gPage == "view" && gHost != NULL_KEY)
             {
                 if (msg == "Leave") leave(TRUE, TRUE);
-                else if (msg == "Direct")
+                else if (msg == "Ask to lead" && !gAskT)
                 {
-                    say(gHost, "direct");                   // the director hands everyone over to you
-                    leave(FALSE, TRUE);
-                    direct(FALSE);
+                    say(gHost, "ask");
+                    gAskT = llGetUnixTime();
+                    show("Asked " + llKey2Name(gHost) + " to lead…");
                 }
+            }
+            else if (gPage == "invited" && gPendT)
+            {
+                if (msg == "Watch") watch(gOffer);
+                else unpend();
             }
             else if (gPage == "give")
             {
-                integer i;
-                for (i = 0; i < llGetListLength(gNear); i++)
-                {
-                    key k = llList2Key(gNear, i);
-                    if (llGetSubString(llKey2Name(k), 0, 23) == msg)
-                    {
-                        llGiveInventory(k, WATCH);
-                        llOwnerSay("[Take 12] Take 12 Watch given to " + llKey2Name(k) + ". Once they wear it, press Share.");
-                        return;
-                    }
-                }
+                key k = btnKey(msg);
+                if (k == NULL_KEY) return;
+                llGiveInventory(k, WATCH);
+                note("Take 12 Watch given to " + llKey2Name(k) + ". Once they wear it, hold your button > Go live.");
             }
             return;
         }
@@ -305,32 +558,62 @@ default
         if (who == gOwner) return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
-        if (w == "offer")
+        integer wi = llListFindList(gWatchers, [who]);
+        if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);   // a viewer's word: still connected
+        if (w == "who")
         {
-            if (gHost != NULL_KEY || gSharing || !near(who)) return;
-            gOffer = who;
-            // someone in your Friends: their view at once. Anyone else: a double-tap, so no stranger takes your camera
-            if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)
+            if (!near(who)) return;
+            string st = "idle";
+            string d = "";
+            if (gSharing) st = "live";
+            else if (gHost != NULL_KEY) { st = "view"; d = llKey2Name(gHost); }
+            else if (gPendT) st = "pend";
+            say(who, "here|T|" + st + "|" + d);
+        }
+        else if (w == "here")
+        {
+            if (gWhoT > 0.0 && llListFindList(gNear, [who]) < 0 && near(who)) gNear += [who, llDumpList2String(llList2List(L, 2, 4), "|")];
+        }
+        else if (w == "invite")
+        {
+            if (gSharing) say(who, "busy|live");
+            else if (gHost != NULL_KEY) say(who, "busy|watching " + llKey2Name(gHost));
+            else if (near(who))
             {
-                say(who, "ack|1");
-                watch(who);
-            }
-            else
-            {
-                say(who, "ack|0");
-                if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");         // core: keep the double-tap for this
-                gPendT = llGetUnixTime();
-                show(llList2String(L, 2) + " shares a view\ndouble-tap to watch");
+                // someone in your Friends: their view at once. Anyone else: asked, so no stranger takes your camera
+                if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)
+                {
+                    say(who, "ack|1");
+                    watch(who);
+                }
+                else
+                {
+                    say(who, "ack|0");
+                    if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");     // core: keep the double-tap for this
+                    gOffer = who;
+                    gPendT = llGetUnixTime();
+                    gTextT = 0.0;
+                    refresh();
+                }
             }
         }
-        else if (w == "ack")
+        else if (w == "ack" || w == "busy")
         {
-            if (gAckT) gAck += [llKey2Name(who) + llList2String([" (double-tap)", ""], (integer)llList2String(L, 2))];   // the answers to your offer
+            integer i = llListFindList(gInv, [who]);
+            if (i < 0) return;
+            gInv = llDeleteSubList(gInv, i, i);
+            if (w == "busy") gRes += [llKey2Name(who) + " is busy (" + llList2String(L, 2) + ")"];
+            else if (llList2String(L, 2) == "1") gRes += [llKey2Name(who) + " watches"];
+            else gRes += [llKey2Name(who) + " is asked"];
         }
         else if (w == "join")
         {
-            if (llListFindList(gWatchers, [who]) < 0) gWatchers += [who];
-            gSharing = TRUE;
+            if (!gSharing) return;                          // only a live view can be joined
+            if (llListFindList(gWatchers, [who]) < 0)
+            {
+                gWatchers += [who];
+                gSeen += [llGetUnixTime()];
+            }
             show(llKey2Name(who) + " watches");
             if (gLastCam != "") say(who, "cam|" + gLastCam);
         }
@@ -355,30 +638,23 @@ default
             gNextT = llGetUnixTime();
             llMessageLinked(LINK_SET, CMD, "next", "");
         }
-        else if (w == "direct" && llListFindList(gWatchers, [who]) >= 0)
+        else if (w == "ask" && llListFindList(gWatchers, [who]) >= 0)
         {
-            // a watcher takes over: everyone (you too) now follows their camera
-            drop(who);
-            all("director|" + (string)who + "|" + llKey2Name(who));
-            gWatchers = [];
-            gAway = [];
-            gSharing = FALSE;
-            gHand = gCamOn;
-            watch(who);
-            show(llKey2Name(who) + " directs now");
-            if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");
+            if (gLeadAsk != NULL_KEY || gLead == 2) say(who, "lead|0");   // Never, or someone else is already asking
+            else if (gLead == 1) grant(who);
+            else
+            {
+                gLeadAsk = who;
+                gLeadT = llGetUnixTime();
+                dialog("lead", llKey2Name(who) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
+            }
         }
-        else if (who == gHost && w == "director")
+        else if (wi >= 0 && w == "hb") return;            // a viewer's heartbeat (seen above)
+        else if (who != gHost) return;
+        // from the director you follow
+        else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
         {
-            key d = (key)llList2String(L, 2);              // the director changed: follow the new one
-            gHost = d;
-            gIsAway = FALSE;
-            gApplied = ZERO_VECTOR;
-            say(d, "join");
-            show(llList2String(L, 3) + " directs now");
-        }
-        else if (who == gHost && w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
-        {
+            gHearT = llGetUnixTime();
             float lag = (float)llList2String(L, 4);
             gApplied = (vector)llList2String(L, 2);
             gApplyT = llGetTime() + lag + 2.0;
@@ -386,47 +662,143 @@ default
                 CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
                 CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
         }
-        else if (who == gHost && w == "end") leave(FALSE, TRUE);
+        else if (w == "hb") gHearT = llGetUnixTime();
+        else if (w == "lead")
+        {
+            gAskT = 0;
+            if (llList2String(L, 2) != "1")
+            {
+                show(llKey2Name(gHost) + " keeps the lead");
+                return;
+            }
+            leave(FALSE, TRUE);                             // you lead now: your camera, everyone follows it
+            golive(FALSE);
+            show("You lead now");
+        }
+        else if (w == "director")
+        {
+            gHost = (key)llList2String(L, 2);              // the director changed: follow the new one
+            gIsAway = FALSE;
+            gApplied = ZERO_VECTOR;
+            gHearT = llGetUnixTime();
+            say(gHost, "join");
+            show(llList2String(L, 3) + " leads now");
+        }
+        else if (w == "kick")
+        {
+            string n = llKey2Name(gHost);
+            leave(FALSE, TRUE);
+            show(n + " stopped sharing with you");
+        }
+        else if (w == "end")
+        {
+            string n = llKey2Name(gHost);
+            leave(FALSE, TRUE);
+            show(n + " ended the live view");
+        }
     }
 
     timer()
     {
-        if (gPendT && llGetUnixTime() - gPendT > 20) unpend();
-        if (gAckT && llGetUnixTime() - gAckT >= 2)
+        integer now = llGetUnixTime();
+        if (gWhoT > 0.0 && llGetTime() - gWhoT > 1.5)
         {
-            gAckT = 0;                                      // two seconds: who got your offer
-            string r = "Nobody near you wears Take 12 or Take 12 Watch (within " + (string)llRound(NEAR) + " m).";
-            if (gAck != []) r = "Offered to: " + llDumpList2String(gAck, ", ");
-            llOwnerSay("[Take 12] " + r);
-            show(r);
-        }
-        // watching: did you take your own camera (Alt-orbit)? Esc puts it back on the shared view
-        if (gHost != NULL_KEY && gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
-        {
-            float d = llVecDist(llGetCameraPos(), gApplied);
-            if (!gIsAway && d > 0.6)
-            {
-                gIsAway = TRUE;
-                say(gHost, "away");
-                show("Looking around · Esc: back to " + llKey2Name(gHost) + "'s view");
-            }
-            else if (gIsAway && d < 0.3)
-            {
-                gIsAway = FALSE;
-                say(gHost, "back");
-                show("Back with " + llKey2Name(gHost));
-            }
-        }
-        if (gTextT > 0.0 && llGetTime() - gTextT > 5.0 + 3.0 * (gHost != NULL_KEY) + 15.0 * (gPendT != 0))
-        {
+            gWhoT = 0.0;                                    // the "who" check is in: the panel
             gTextT = 0.0;
-            llSetText("", ZERO_VECTOR, 0.0);
+            refresh();
+            panelNear();
         }
-        if (gDlgT > 0 && llGetUnixTime() - gDlgT > 60)
+        if (gInv != [] && now - gInvT >= 3)
+        {
+            integer i;
+            for (i = 0; i < llGetListLength(gInv); i++) gRes += [llKey2Name(llList2Key(gInv, i)) + " didn't answer (out of range or HUD off)"];
+            gInv = [];
+        }
+        if (gRes != [] && gInv == [])
+        {
+            note(llDumpList2String(gRes, " · "));
+            gRes = [];
+        }
+        if (gPendT && now - gPendT > WAIT) unpend();
+        if (gLeadAsk != NULL_KEY && now - gLeadT > WAIT)
+        {
+            say(gLeadAsk, "lead|0");                        // no answer: declined
+            gLeadAsk = NULL_KEY;
+        }
+        if (gAskT && now - gAskT > WAIT + 5)
+        {
+            gAskT = 0;
+            show("No answer to your lead request");
+        }
+        // directing: a heartbeat, and anyone who has left the region leaves the roster
+        if (gSharing && now - gHbT >= 10)
+        {
+            gHbT = now;
+            all("hb");
+            integer i;
+            for (i = llGetListLength(gWatchers) - 1; i >= 0; i--)
+            {
+                key k = llList2Key(gWatchers, i);
+                if (llGetAgentSize(k) == ZERO_VECTOR)
+                {
+                    drop(k);
+                    show(llKey2Name(k) + " left");
+                }
+                else if (now - llList2Integer(gSeen, i) > LOST)
+                {
+                    drop(k);
+                    show(llKey2Name(k) + " lost connection");
+                }
+            }
+        }
+        // viewing: the director gone quiet; your own camera (Alt-orbit) = looking around, Esc brings you back
+        if (gHost != NULL_KEY && now - gBeatT >= 10)
+        {
+            gBeatT = now;
+            say(gHost, "hb");                               // your heartbeat: the director sees you are connected
+        }
+        if (gHost != NULL_KEY)
+        {
+            if (now - gHearT > GONE)
+            {
+                string n = llKey2Name(gHost);
+                leave(FALSE, TRUE);
+                show(n + "'s camera is gone");
+            }
+            else if (gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
+            {
+                float d = llVecDist(llGetCameraPos(), gApplied);
+                if (!gIsAway && d > 0.6)
+                {
+                    gIsAway = TRUE;
+                    say(gHost, "away");
+                    refresh();
+                }
+                else if (gIsAway && d < 0.3)
+                {
+                    gIsAway = FALSE;
+                    say(gHost, "back");
+                    refresh();
+                }
+            }
+        }
+        if (gTextT > 0.0 && llGetTime() - gTextT > 4.0)
+        {
+            gTextT = 0.0;                                   // the notice gives way to the state again
+            refresh();
+        }
+        else if (gTextT == 0.0 && ind() != "")
+        {
+            // keep the state current; never over another script's short notice (ours start with ● or 👁, or are empty)
+            string cur = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);
+            if (cur != ind() && (cur == "" || llGetSubString(cur, 0, 0) == "●" || llGetSubString(cur, 0, 0) == "👁")) refresh();
+        }
+        if (gDlgT > 0 && now - gDlgT > 60)
         {
             gDlgT = 0;
             llListenRemove(gDlgL);
         }
-        if (gTextT == 0.0 && gDlgT == 0 && !gPendT && !gAckT && gHost == NULL_KEY) llSetTimerEvent(0.0);
+        if (ind() == "" && gTextT == 0.0 && gWhoT == 0.0 && gInv == [] && gRes == [] && gDlgT == 0 && gLeadAsk == NULL_KEY)
+            llSetTimerEvent(0.0);
     }
 }
