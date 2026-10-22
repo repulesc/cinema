@@ -4,9 +4,10 @@
 //  tap a name to add or remove (up to 10 friends, saved in protected Linkset Data
 //  as "key,name;key,name;..."). Starting Friends mode is CMD "friends" to core;
 //  the camera work is in cinema_friends.lsl.
+//  Also the chat commands (/77 ...): they moved here from cinema_ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "5.5.0";
+string VERSION = "5.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -21,6 +22,8 @@ integer MAX_F  = 10;
 
 key     gOwner;
 integer gEmoji;
+integer gCmdChan;
+integer gCmdListen;
 list    gFKeys;
 list    gFNames;
 integer gListen;
@@ -43,7 +46,7 @@ loadFriends()
 {
     gFKeys = [];
     gFNames = [];
-    gEmoji = (cfg("emoji", "1") != "0");
+    gEmoji = (cfg("skin", "0") == "2");                 // emoji only in the Color menu style
     list L = llParseString2List(cfg("friends", ""), [";"], []);
     integer i;
     for (i = 0; i < llGetListLength(L); i++)
@@ -112,7 +115,7 @@ integer hereNow()
 friendsPage()
 {
     loadFriends();
-    string head = "Take 12";
+    string head = "Friends";
     if (gEmoji) head = "💞 Friends";
     string text = head + " · " + (string)llGetListLength(gFKeys) + " saved · " + (string)hereNow() + " here now\n";
     if (llGetListLength(gFKeys) == 0) text += "Nobody yet: use Pick to choose from the people near you.";
@@ -203,7 +206,7 @@ onChoice(string msg)
         else if (msg == lb("➕", "Pick")) pickMenu(0);
         else if (msg == lb("➖", "Remove")) removeMenu(0);
         else if (msg == lb("🗑", "Clear")) openMenu("clear", "Remove all saved friends?", [lb("✔", "Yes, clear"), lb("↩", "Back")]);
-        else if (msg == lb("↩", "Back")) { closeMenu(); llMessageLinked(LINK_SET, UI_MENU, "main", ""); }
+        else if (msg == lb("↩", "Back")) { closeMenu(); llMessageLinked(LINK_SET, UI_MENU, "us", ""); }
     }
     else if (gPage == "clear")
     {
@@ -262,12 +265,85 @@ onChoice(string msg)
 }
 
 // ============================================================================
+// ============================================================================
+//  chat commands: /77 <command>
+// ============================================================================
+set(string k, string v)
+{
+    llLinksetDataWriteProtected("cin." + k, v, PASS);
+    llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
+}
+
+say(string s)
+{
+    llOwnerSay("[Take 12] " + s);
+}
+
+help()
+{
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share stop next photo menu status pace reach indoors face skin trace chan reset (details: Read Me).");
+}
+
+onCommand(string msg)
+{
+    list a = llParseString2List(llToLower(llStringTrim(msg, STRING_TRIM)), [" "], []);
+    string c = llList2String(a, 0);
+    string v = llList2String(a, 1);
+    integer n = (integer)v;
+    integer m = llListFindList(["me", "us", "still"], [c]);             // the menu names work too
+    if (m >= 0) c = llList2String(["personal", "social", "frame"], m);
+    if (llListFindList(["scenery", "personal", "social", "friends", "frame", "share", "stop", "next", "photo", "fav", "grab"], [c]) >= 0)
+        llMessageLinked(LINK_SET, CMD, c, "");
+    else if (c == "menu" || c == "reset") llMessageLinked(LINK_SET, UI_MENU, llList2String(["main", "reset"], c == "reset"), "");
+    else if (c == "status")
+    {
+        say("commands on /" + (string)gCmdChan);
+        llMessageLinked(LINK_SET, STATUS, "?", "");
+    }
+    else if ((c == "pace" || c == "hold") && n >= 10 && n <= 600) { set("hold", (string)n); say("Pace: about " + v + " s per view"); }
+    else if (c == "reach" && (v == "relearn" || (n >= 20 && n <= 250)))
+    {
+        if (v == "relearn") v = cfg("reach_set", "100");
+        set("reach_set", v);
+        set("reach", v);
+        set("reach_ok", "0");
+        say("Scenery reach: " + v + " m");
+    }
+    else if (c == "indoors" && (v == "auto" || v == "inside" || v == "outside")) { set("indoors", v); say("Indoors: " + v); }
+    else if (c == "face" && v != "")
+    {
+        if (v == "all") n = -1;
+        set("face", (string)n);
+        say("Picture face: " + v);
+    }
+    else if (c == "friend" && v == "list") llMessageLinked(LINK_SET, UI_FRIENDS, "list", "");
+    else if (c == "friend" && v == "clear") llMessageLinked(LINK_SET, UI_FRIENDS, "clear", "");
+    else if (c == "skin" && llListFindList(["plain", "symbols", "color"], [v]) >= 0)
+    {
+        set("skin", (string)llListFindList(["plain", "symbols", "color"], [v]));
+        say("Menu style: " + v);
+    }
+    else if (c == "trace" || c == "cutmode") { set(c, (string)(v == "on")); say(c + ": " + v); }
+    else if (c == "chan" && n > 0 && n != 9)
+    {
+        set("cmd_chan", (string)n);
+        gCmdChan = n;
+        llListenRemove(gCmdListen);
+        gCmdListen = llListen(gCmdChan, "", gOwner, "");
+        say("Commands now on /" + v);
+    }
+    else help();
+}
+
 default
 {
     state_entry()
     {
         gOwner = llGetOwner();
         loadFriends();
+        gCmdChan = (integer)cfg("cmd_chan", "77");
+        if (gCmdChan <= 0) gCmdChan = 77;
+        gCmdListen = llListen(gCmdChan, "", gOwner, "");
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "picker");
     }
 
@@ -309,6 +385,7 @@ default
     listen(integer channel, string name, key id, string msg)
     {
         if (id != gOwner) return;
+        if (channel == gCmdChan) { onCommand(msg); return; }
         gMenuT = llGetUnixTime();
         onChoice(msg);
     }

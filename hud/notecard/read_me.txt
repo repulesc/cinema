@@ -12,7 +12,7 @@ Take 12 moves your camera off your avatar to the places a camera operator would 
 
 That is it. Your camera lifts off and starts showing you the place. Press any movement key, or tap the button once, and your own camera is right back.
 
-Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in the menu) the scenery camera starts by itself. See AFK below for the mouse check.
+Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in the menu) the scenery camera starts by itself. See IDLE START below for the mouse check.
 
 
 === THE BUTTON ==========================================
@@ -29,26 +29,27 @@ DOUBLE-TAP  (two quick taps)
    - while rolling or frozen: cuts to the next view, now
 
 HOLD  (about 1 second)
-   - when idle: opens the menu
-   - while rolling: opens the live menu (see below)
+   - always: the Share panel (see SHARE THE VIEW). Its "More" button opens the live menu (see below).
 
 The button always looks the same, idle or rolling. (Its look: Options > Look.)
 
 
 === THE CAMERAS ========================================
 
+Four on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you) and STILL (a held picture of you).
+
 SCENERY  (the main one, and the only one that starts by itself)
 Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
 
-PERSONAL
+ME
 Composed shots of you that follow you as you walk.
 
-SOCIAL
+US  (tap the button > Us > Everyone near)
 You and the people around you: over-the-shoulder shots when you talk with someone, and group shots when more people join. It cuts to whoever speaks in local chat. When YOU type, it cuts to you, and keeps rolling.
 
 In Social and Friends, when everyone stands close together, the camera now and then comes in for a close view of your faces, among the wider ones.
 
-FRIENDS
+US, ONLY FRIENDS  (tap the button > Us > Only friends; Us > Friends list to pick them)
 You and the friends you picked, framed together. While your group stays in the picture, the camera glides gently to keep it there. If someone walks out of the picture for about a second, it cuts to a wider shot that holds everyone.
  - Tap the button > Friends > Pick. Everyone within 20 m is listed. Tap a name to add them. Tap a name with a check mark to take them off again.
  - Friends > Remove lists everyone you saved (even if they are not here), so you can remove just one person.
@@ -67,9 +68,9 @@ Let the people with you watch what your camera films. One person leads; everyone
  - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
  - Hold > ⋯ More: the usual menu (photo hold, next, stop, modes).
 
-FRAME
+STILL
 For a picture of yourself, or of you and whoever stands right next to you. Frame places the camera well and holds it still: no cuts, and it never moves by itself.
- - Tap the button > Frame. DOUBLE-TAP for the next framing: Full length, Half length, Close.
+ - Tap the button > Still. DOUBLE-TAP for the next framing: Full length, Half length, Close.
  - Adjust with your movement keys: W / S closer / further, A / D round you, E / C higher / lower. You stand still meanwhile. The next framing starts fresh.
  - Tap once to leave.
  - For closer close-ups, zoom the viewer in (Ctrl+0 a few times; Ctrl+9 sets it back). The camera follows the zoom by itself.
@@ -86,15 +87,18 @@ STOP      Give your camera back.
 MODES     Switch to another camera.
 
 
-=== SETTINGS (tap the button > Options, Pace, AFK) =======
+=== SETTINGS (tap the button > Options) =================
 
-PACE      How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Still 120 s. Personal, Social and Friends hold a shot for about three quarters of it, and also wait longer before they cut to a speaker or to someone who arrives.
-AFK       When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 3 min (default), 5 min or 10 min with no keys, no typing and no camera moves.
+Options has three groups: TIMING (Pace, Idle start), CAMERA (Seated view, Indoors, Reach, Alt-cam, Chat cuts, Phantom) and LOOK (Menu style, Button, Chat text), plus Favourites, Test cam and Reset.
+
+
+PACE      (Timing) How long each view is held: Lively 30 s, Easy 45 s, Calm 60 s (default), Slow 90 s, Slowest 120 s. Personal, Social and Friends hold a shot for about three quarters of it, and also wait longer before they cut to a speaker or to someone who arrives.
+IDLE START (Timing) When the scenery camera starts by itself: off, 1 min, 90 s, 2 min, 3 min (default), 5 min or 10 min with no keys, no typing and no camera moves.
           MOUSE CHECK (on by default): it also waits until your viewer marks you Away. A script cannot see the mouse, but the viewer can: any mouse movement keeps you from going Away. Set your viewer's own "Away" timer short (in its Preferences, e.g. 2 or 3 minutes), or the scenery camera waits for it. If your viewer never sets you Away, turn the mouse check off.
           Once the scenery camera runs, moving the mouse does not stop it: a movement key, typing in chat, or a tap on the button does.
 INDOORS   Auto (default): inside when you stand on a build in the sky, or on a build under a roof (a house, a shop, a trailer, a mall); outdoor views on open land and on roofless decks. Inside: always inside, near you, even where the HUD cannot see the walls. Outside: always outdoor views.
 CHAT CUTS On/Off: Social and Friends cut to whoever speaks.
-LOOK      Pick the look of the button: Classic, Rec (red light) or Viewfinder (cyan). Options > Look also holds EMOJI.
+LOOK      MENU STYLE: Plain (words only, the default), Symbols (quiet black-and-white marks) or Color (emoji). BUTTON: Classic, Rec (red light) or Viewfinder (cyan). CHAT TEXT is here too.
 CHAT TEXT The HUD is quiet in chat by default (only errors, warnings and answers to your commands). Options > Chat text > on gives one line per cut, which explains what it found and why, and a line after each menu choice.
 ALT-CAM   What happens if you Alt-orbit your camera: pause (default), end, or ignore.
 SEATED    When you sit or lie down, the camera looks down on you from above, in Social, Personal and Friends: Auto (45 degrees, default), Higher, Lower or Off.

@@ -7,7 +7,7 @@
 //  Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "5.5.0";
+string  VERSION = "5.6.0";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;

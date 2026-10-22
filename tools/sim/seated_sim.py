@@ -22,7 +22,7 @@ for name in ("people", "friends"):
     check("if (gOSit) gSeatR = 0.45;" in src and "closeView(" in src, f"{name}: close view for lying people changed")
 ui = open(os.path.join(R, "hud", "src", "cinema_ui.lsl")).read()
 check('seat_deg=45' in ui, "ui: default seat angle missing")
-check('"look", "seat", "test", "reset", "back"' in ui, "ui: the Seated view button is not on the Options page")
+check('"seat", "indoors", "reach", "altcam", "chat", "phantom", "back"' in ui, "ui: the Seated view button is not on the Options page")
 
 def shot(el_deg, de, eye_z, roof=None):
     """camera z and the focus z, as the script computes them; returns (cam_z, foc_z, pitch)."""
