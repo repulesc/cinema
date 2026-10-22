@@ -4,7 +4,7 @@ The scenery camera of Take 12, on its own, for L$0: a free way in to the full Ta
 
 - **What it has:** the scenery camera (drone views, wide horizons, skybox rooms from the inside), idle start, tap / double-tap, Photo hold (hold the button while it rolls), Next, Stop, Pace, Indoors, Reach, Alt-cam, the menu styles, the status line with your lens, tips and the little clap.
 - **What it leaves to the full Take 12:** Me, Us, Still, sharing, favourite spots, the seated view and the three button looks.
-- **Its own button:** the Take 12 clapper (Rec look) with a small chalk sun in place of the "12", like the Watch's eye. One design; Options > Look has no Button choice.
+- **Its own button:** the Take 12 clapper and "12" in sepia, like an old film, with only the red recording light in colour. The full Take 12 is the colour picture; Scenery is the same camera in sepia. One design; Options > Look has no Button choice.
 - **The one pointer:** a "More cameras" button on the main menu opens the full Take 12's Marketplace listing. Nothing else asks you to buy.
 - **Hold:** with no sharing, holding the button opens the menu (the live menu while it rolls: Photo, Next, Stop).
 

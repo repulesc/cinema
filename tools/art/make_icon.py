@@ -7,7 +7,7 @@
 Writes hud/art/take12_icon_sheet_512x256.png (upload this one: ALL looks, switchable from the
 menu), hud/art/variants/<look>_256x128.png (single-look, two frames), hud/art/preview.png, and the free
 Take 12 Watch HUD's icon, watch/art/take12_watch_icon_128.png (the clapper with an eye instead of "12"), and
-Take 12 Scenery's sheet and icon in scenery/art/ (the clapper with a chalk sun instead of "12", one look).
+Take 12 Scenery's sheet and icon in scenery/art/ (the same clapper and "12" in sepia, with the red light, one look).
 Pixels are scaled x8 with nearest-neighbour; the background is transparent.
 Edit the palette or the drawing below, re-run, re-upload.
 
@@ -27,6 +27,8 @@ PAL = {
     "H": (138, 144, 166, 255),   # chalk lines
     "C": (255, 90, 95, 255),     # coral accent
     "B": (110, 214, 246, 255),   # cyan (viewfinder variant)
+    "S": (214, 196, 160, 255),   # sepia cream (Take 12 Scenery)
+    "U": (58, 46, 38, 255),      # sepia slate (Take 12 Scenery)
 }
 
 def blank():
@@ -137,18 +139,17 @@ def watch_icon():
     s.paste(frame_img(draw_watch()), (PAD, PAD))
     return s
 
+SEPIA = {"W": "S", "D": "U"}    # Take 12 Scenery: chalk -> cream, slate -> dark sepia
+
 def draw_scenery(open_):
-    """Take 12 Scenery (the free scenery camera): the same clapper, rec look, with a small chalk sun (a round disc,
-    eight short rays) in place of the "12": the same quiet chalk, so Take 12 stays the colourful one. Open and
-    clapped, so the little clap still works."""
-    g = draw(open_, DEFAULT)
-    for y in range(11, 15):
-        for x in range(2, 14):
-            g[y][x] = "D"
-    S = ["...W.WW.W...", ".W..WWWW..W.", ".W..WWWW..W.", "...W.WW.W..."]
-    for r, row in enumerate(S):
-        for c, ch in enumerate(row):
-            if ch != ".": g[11 + r][2 + c] = ch
+    """Take 12 Scenery (the free scenery camera): the same clapper and "12", in sepia, like an old film, with only
+    the red recording light left in colour. The full Take 12 stays the colour picture. Open and clapped, so the
+    little clap still works."""
+    g = draw(open_, "classic")
+    g[13][11] = g[13][12] = "D"                  # no Classic grey line: the red light instead
+    g = [[SEPIA.get(ch, ch) for ch in row] for row in g]
+    for (x, y) in [(11, 12), (12, 12), (11, 13), (12, 13)]:
+        g[y][x] = "C"
     return g
 
 def scenery_icon():

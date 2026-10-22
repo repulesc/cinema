@@ -48,7 +48,7 @@ ALSO
 - Pace: 30 s to 2 min per view.
 - A quiet line above the button says when the camera runs, with your lens; nothing there means it is your own camera.
 - Short tips while you are new to it; they turn themselves off.
-- One small pixel-art clapper with a chalk sun on its slate, and a tiny clap now and then while the camera runs.
+- One small pixel-art clapper in sepia, with a red recording light and a tiny clap now and then while the camera runs.
 
 WANT MORE CAMERAS?
 Take 12 Scenery is the scenery camera of Take 12. The full Take 12 adds Me (shots of you, following you), Us (you and the people around you, or only the friends you pick, in one frame), Still (a held picture of you, with the classic portrait lens), your lens in every camera, and Share the view: go live, and your friends watch your camera. Tap the button > More cameras.
