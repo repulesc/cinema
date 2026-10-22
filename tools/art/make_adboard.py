@@ -4,6 +4,7 @@
 Also writes the Lite versions (a LITE ribbon, Room and Friends dimmed as full-version features) to
 hud-lite/marketing/*_lite.png.
 Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor (1024 and 512).
+Also the free Take 12 Watch board (watch/marketing/adboard_watch_1024.png).
 Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
 hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner) and
 hud/marketing/adboard_vendor_1024.png + adboard_vendor_512.png (a bolder, simpler square for
@@ -25,10 +26,13 @@ NAME = "TAKE 12"
 DESCRIPTOR = "CINEMATIC CAMERA HUD"
 TAGLINE = "Your idle time, framed."
 HOWTO = "Double-tap to start. Any key brings you back."
+NEW = "NEW: SHARE THE VIEW"                                  # the banner/stamp for the 5.5+ feature (Share the view)
+SMALL = "ONE TINY BUTTON  -  NO SETUP  -  SHARE WITH FRIENDS"
+CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Photo hold"]
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 LITE = False                      # main() runs the boards twice; True draws the Take 12 Lite versions
-FULL_ONLY = ("ROOM", "FRIENDS")   # the views Lite does not have
+FULL_ONLY = ("ROOM", "SHARE")   # the views Lite does not have
 
 # ---- a tiny 5x7 pixel font (caps) ------------------------------------------------------------
 ROWS = {
@@ -156,6 +160,8 @@ def scene_room(w, h, r):
     d.point((int(w * .46), int(h * .8)), fill=CORAL); d.point((int(w * .46), int(h * .79)), fill=CORAL)      # you, small
     return im
 
+TAG = True          # the "LIVE" tag on the share view (the wide strip puts a label there instead)
+
 def scene_friends(w, h, r):
     im = Image.new("RGB", (w, h)); d = ImageDraw.Draw(im); hz = int(h * .6)
     bands(d, w, hz, hz, [(44, 52, 112), (66, 70, 132), (104, 88, 150), (160, 110, 150), (222, 140, 130)])
@@ -168,9 +174,13 @@ def scene_friends(w, h, r):
     bx0, by0, bx1, by1 = int(w * .1), int(h * .36), int(w * .9), int(h * .94)               # the viewfinder brackets
     for (ax, ay, sx_, sy_) in ((bx0, by0, 1, 1), (bx1, by0, -1, 1), (bx0, by1, 1, -1), (bx1, by1, -1, -1)):
         d.line([(ax, ay), (ax + 6 * sx_, ay)], fill=CHALK); d.line([(ax, ay), (ax, ay + 6 * sy_)], fill=CHALK)
+    if TAG:                                                                                  # the HUD's own text: "● LIVE"
+        d.rectangle([2, 2, 2 + 4 + 2 + 23 + 3, 2 + 9], fill=INK)
+        d.rectangle([4, 5, 6, 7], fill=CORAL)
+        ptext(im, (9, 3), "LIVE", 1, CHALK)
     return im
 
-SCENES = [("DRONE", scene_drone), ("WIDE", scene_wide), ("ROOM", scene_room), ("FRIENDS", scene_friends)]
+SCENES = [("DRONE", scene_drone), ("WIDE", scene_wide), ("ROOM", scene_room), ("SHARE", scene_friends)]
 
 def view(fn, gw, gh, scale, seed):
     return fn(gw, gh, random.Random(seed)).resize((gw * scale, gh * scale), Image.NEAREST)
@@ -197,6 +207,26 @@ def ribbon(base, box):
     d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
     d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
     sc = max(2, (y1 - y0 - 24) // 7); ptext(base, ((x0 + x1 - pwidth("LITE", sc)) // 2, (y0 + y1 - 7 * sc) // 2), "LITE", sc, INK)
+
+def banner(base, x, y, w, text, scale):
+    """a coral band across the top of a view (the new feature)"""
+    d = ImageDraw.Draw(base); h = 7 * scale + 16
+    d.rectangle([x - 4, y - 4, x + w + 3, y + h - 1], fill=CORAL, outline=INK, width=4)
+    ptext(base, (x + (w - pwidth(text, scale)) // 2, y + 6), text, scale, INK)
+
+def newlabel(base, x, y, w, h, scale, text, border=4):
+    """the label strip under a framed view (see paste_framed), in coral: the new feature"""
+    d = ImageDraw.Draw(base); y0 = y + h + border
+    d.rectangle([x - border, y0, x + w + border - 1, y0 + 6 * scale + 12], fill=CORAL)
+    ptext(base, (x + 8, y0 + 6), text, scale, INK)
+
+def stamp(base, box, lines):
+    """a coral stamp, lines = [(text, scale), ...] centred"""
+    d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
+    d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
+    total = sum(7 * sc for _, sc in lines) + 8 * (len(lines) - 1); y = (y0 + y1 - total) // 2
+    for text, sc in lines:
+        ptext(base, ((x0 + x1 - pwidth(text, sc)) // 2, y), text, sc, INK); y += 7 * sc + 8
 
 def scene_img(lab, fn, gw, gh, sc, seed):
     """one view; in Lite the views the Lite version does not have are dimmed and marked"""
@@ -231,8 +261,9 @@ def square():
     for i, (lab, fn) in enumerate(SCENES):
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 62)
         paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""))
-    chips(im, 936, ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else ["Drone views", "Skybox rooms", "Friends mode", "Photo hold"], 24, 40, S - 40)
-    d.text((S // 2, 996), "THE EASY WAY IN  -  ONE TINY BUTTON  -  NO SETUP" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS", font=font(16), fill=(120, 126, 150), anchor="mm")
+    chips(im, 936, ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else CHIPS, 24, 40, S - 40)
+    d.text((S // 2, 996), "THE EASY WAY IN  -  ONE TINY BUTTON  -  NO SETUP" if LITE else SMALL, font=font(16), fill=(120, 126, 150), anchor="mm")
+    if not LITE: newlabel(im, 48 + 64 * 7 + 40, 262 + 40 * 7 + 62, 64 * 7, 40 * 7, 3, NEW)   # the share view's label, in coral
     return im
 
 def wide():
@@ -247,17 +278,21 @@ def wide():
     else:
         looks(im, 716, 26, 80, 12)
         ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    d.text((44, 196), "Drone and wide views, AFK start, Photo hold." if LITE else "Drone views, skyboxes, your friends.", font=font(22), fill=(170, 176, 200))
+    d.text((44, 196), "Drone and wide views, AFK start, Photo hold." if LITE else "Drone views, skyboxes, share with friends.", font=font(22), fill=(170, 176, 200))
     # film strip along the bottom
     sy, sh = 262, 232; d.rectangle([0, sy, W, sy + sh], fill=INK)
     for x in range(10, W, 36):
         d.rounded_rectangle([x, sy + 8, x + 18, sy + 22], radius=3, fill=BG); d.rounded_rectangle([x, sy + sh - 22, x + 18, sy + sh - 8], radius=3, fill=BG)
     gw, gh, sc = 56, 36, 4
+    global TAG
+    TAG = False                                                  # the strip puts the view's name there instead
     for i, (lab, fn) in enumerate(SCENES):
         x = 26 + i * (gw * sc + 24); y = sy + 36
         im.paste(scene_img(lab, fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
         ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
-    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  live menu", font=font(22), fill=CHALK, anchor="ra", spacing=8)
+        if lab == "SHARE" and not LITE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: SHARE", 2)
+    TAG = True
+    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  share", font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
 
 def vendor():
@@ -281,8 +316,31 @@ def vendor():
         looks(im, 80, 784, 96, 14)
         ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
         chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
-        chips(im, 870, ["Friends", "Photo hold"], 30, 420, S - 60)
-    d.text((S // 2, 990), "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
+        chips(im, 870, ["Share live", "Photo hold"], 30, 420, S - 60)
+        stamp(im, (730, 44, 976, 126), [("NEW", 3), ("SHARE THE VIEW", 2)])
+    d.text((S // 2, 990), "ONE TINY BUTTON  -  SHARE WITH FRIENDS" if not LITE else "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
+    return im
+
+def watch():
+    """the free Take 12 Watch: one big view, as the Watch shows it (the HUD's own text above the icon)"""
+    S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
+    for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
+    w = icon.watch_icon().resize((176, 176), Image.NEAREST); im.paste(w, (40, 26), w)
+    ptext(im, (236, 40), "TAKE 12 WATCH", 7, CHALK, shadow=CORAL)
+    ptext(im, (240, 112), "FOR FRIENDS OF TAKE 12", 3, CORAL)
+    d.text((240, 156), "See your friend's view.", font=font(38), fill=(255, 196, 120))
+    d.text((240, 206), "Wear it. Nothing to click.", font=font(22), fill=(170, 176, 200))
+    stamp(im, (820, 40, 980, 124), [("FREE", 5)])
+    gw, gh, sc = 96, 56, 9
+    hero = scene_wide(gw, gh, random.Random(31)).resize((gw * sc, gh * sc), Image.NEAREST)   # their camera, with the Watch's own text
+    t = "WATCHING PANO"; ImageDraw.Draw(hero).rectangle([20, 20, 20 + pwidth(t, 3) + 24, 20 + 7 * 3 + 20], fill=INK)
+    ptext(hero, (32, 30), t, 3, CHALK); hx, hy = 80, 246
+    paste_framed(im, hero, (hx, hy), border=6)
+    btn = icon.watch_icon().resize((72, 72), Image.NEAREST); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
+    ptext(im, (hx + gw * sc - 112, hy + 98), "WEAR IT", 2, CHALK, shadow=INK)
+    chips(im, 800, ["Nothing to click", "Follows their cuts"], 30, 80, S - 80)
+    chips(im, 880, ["Tap: your camera", "Double-tap: next"], 30, 80, S - 80)
+    d.text((S // 2, 990), "ONE TINY BUTTON  -  NO TAKE 12 NEEDED", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
 def _base(W, H):
@@ -291,7 +349,7 @@ def _base(W, H):
     return im, d
 
 def _chip_list():
-    return ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else ["Drone views", "Skybox rooms", "Friends mode", "Photo hold"]
+    return ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else CHIPS
 
 def portrait():
     """3:4 portrait (768 x 1024): header, one big view, three small views, chips"""
@@ -312,7 +370,8 @@ def portrait():
     else:
         looks(im, 48, 876, 54, 10); ptext(im, (232, 898), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     chips(im, 944, _chip_list(), 20, 30, W - 30, gap=10)
-    d.text((W // 2, 1004), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS"), font=font(14), fill=(120, 126, 150), anchor="mm")
+    d.text((W // 2, 1004), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
+    if not LITE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("SHARE", 2)])
     return im
 
 def landscape43():
@@ -332,7 +391,8 @@ def landscape43():
         x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 48)
         paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
     chips(im, 690, _chip_list(), 20, 30, W - 30, gap=12)
-    d.text((W // 2, 748), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else "ONE TINY BUTTON  -  NO SETUP  -  STILL, CONTEMPLATIVE CUTS"), font=font(14), fill=(120, 126, 150), anchor="mm")
+    d.text((W // 2, 748), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
+    if not LITE: newlabel(im, 156 + 56 * 6 + 40, 186 + 34 * 6 + 48, 56 * 6, 34 * 6, 2, NEW)
     return im
 
 if __name__ == "__main__":
@@ -346,3 +406,6 @@ if __name__ == "__main__":
         portrait().save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43().save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
         v = vendor(); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
         print("wrote", os.path.normpath(out))
+        if not lite:
+            wo = os.path.join(base, "watch", "marketing"); os.makedirs(wo, exist_ok=True)
+            watch().save(os.path.join(wo, "adboard_watch_1024.png")); print("wrote", os.path.normpath(wo))
