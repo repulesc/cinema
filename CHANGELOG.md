@@ -16,6 +16,15 @@
 - **Scenery stays wide.** Zooming gives a telephoto detail of the same view.
 - **A new tip, "Your lens":** Ctrl+0 / Ctrl+8 / Ctrl+9, once per run when the lens is outside the camera's range.
 - **Memory:** `friends` is at 12.5 KB free by the stricter estimate (two trace details shortened).
+- **The button comes alive, quietly.** While a camera runs, the clapper gives a tiny clap: the sheet's own clapped frame, for a quarter of a second, when it starts and then every 8–12 s. It is still with your own camera, in Photo and in a pause. There is no new texture to upload: it uses the clapped frames that are already on the sheet. It is drawn by `tips`, which has the room (ui is kept above 13 KB), with exactly ui's `frame()` maths.
+- **Ads for 6.0:**
+  - the coral label now reads **NEW: YOUR LENS**, under the sunset view (now HORIZON), which carries the HUD's own "85 MM" readout;
+  - "Your lens" replaces the Photo hold chip;
+  - the vendor and portrait stamps say Your lens.
+- **The listing:**
+  - lens-aware short description, a Features line (Your lens, everywhere), lens keywords and a promo line;
+  - the clap in Good to know and in What is new;
+  - the lens line in the shot list.
 - **Docs:** a new Read Me section, YOUR LENS. ARCHITECTURE (FOVMSG, GLIDE), FRAME.md, the listing (YOUR LENS, "What is new in 6.0") and `listing_check` are updated.
 - **Tests:**
   - **new `tools/sim/zoom_sim.py`:** size and angle kept over every lens pair, the fallback, the close-view table, and the scripts' handlers;

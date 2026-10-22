@@ -7,6 +7,8 @@
 //     nothing with your own camera, and only the 👁 block while you watch someone;
 //   - a tip, for 6 s, when something just happened (each retires after 3 showings; after all, or 24 in all, Tips
 //     turns itself off; Help > Tips brings them back, from zero).
+//  The button, while a camera runs: a tiny clap (the sheet's clapped frame, a quarter of a second) when it starts,
+//  then every 8-12 s; perfectly still with your own camera, in Photo and in a pause. Same frame maths as ui's frame().
 //  Short notices of other scripts (lens, Frame, sync: "Your view is kept", "Half length", "Ana joined") take the whole
 //  text for their few seconds: whatever is on screen that this script did not write is left alone, and when its
 //  script clears it, the status comes back within a second.
@@ -80,6 +82,10 @@ integer gMore;               // the "Hold > More" tip was offered this run
 integer gSat;                // ... and the sitting one
 integer gLensTip;            // ... and the lens one
 float   gFov = 1.047198;     // your lens (field of view, radians)
+integer gLook = 1;           // the button: its look (frames 2n open, 2n+1 clapped) and face, as ui draws it
+integer gFace = ALL_SIDES;
+float   gClapT;              // filming: the next tiny clap (0 = the button is still)
+float   gClapEnd;            // ... the clapped frame shows until then
 
 string cfg(string k)
 {
@@ -91,6 +97,9 @@ load()
     gOn = (cfg("tips") != "0");
     gStat = (cfg("status") != "0");
     gSkin = (integer)cfg("skin");
+    gLook = (integer)cfg("look");
+    gFace = ALL_SIDES;
+    if (cfg("face") != "") gFace = (integer)cfg("face");
     gN = cfg("tipn");
     while (llStringLength(gN) < llGetListLength(TIPS)) gN += "0";
 }
@@ -250,10 +259,21 @@ onState(string st, string mode)
     gMode = mode;
 }
 
+// the button: open (shut = FALSE) or clapped, on the sprite sheet (4 x 2 frames, row 0 on top)
+clap(integer shut)
+{
+    integer k = 2 * gLook + shut;
+    float oy = 0.25;
+    if (k > 3) oy = -0.25;
+    llScaleTexture(0.25, 0.5, gFace);
+    llOffsetTexture(((float)(k % 4) + 0.5) / 4.0 - 0.5, oy, gFace);
+}
+
 tick()
 {
     draw();
-    if (gWant >= 0 || gShowT > 0.0) llSetTimerEvent(0.5);
+    if (gClapEnd > 0.0) llSetTimerEvent(0.25);
+    else if (gWant >= 0 || gShowT > 0.0 || gClapT > 0.0) llSetTimerEvent(0.5);
     else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);    // back within a second after a notice
     else llSetTimerEvent(0.0);
 }
@@ -288,6 +308,13 @@ default
             string mode = llList2String(L, 1);
             if (st != gSt || (st == "rolling" && mode != gMode)) onState(st, mode);
             gWhy = llList2String(L, 3);
+            if (st != "rolling")
+            {
+                gClapT = 0.0;                               // still: your own camera, Photo, a pause
+                if (gClapEnd > 0.0) clap(FALSE);
+                gClapEnd = 0.0;
+            }
+            else if (gClapT == 0.0) gClapT = llGetTime();   // the camera rolls: a clap now
             if (mode != "friends") gLed = FALSE;
         }
         else if (num == STILL) gStill = str;
@@ -304,7 +331,7 @@ default
             if (i > 0) gKind = llGetSubString(str, 0, i - 1);
             gSync = llDeleteSubString(str, 0, i);                  // not llGetSubString(str, i + 1, -1): on "|" that is "|"
         }
-        else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "all")) load();
+        else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "look" || str == "face" || str == "all")) load();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tips");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tips] v" + VERSION + " status line " + llList2String(["off", "on"], gStat) + ", tips "
@@ -320,6 +347,17 @@ default
         {
             gTip = "";
             gShowT = 0.0;
+        }
+        if (gClapEnd > 0.0 && now >= gClapEnd)
+        {
+            gClapEnd = 0.0;
+            clap(FALSE);
+        }
+        else if (gClapT > 0.0 && now >= gClapT)
+        {
+            clap(TRUE);                                     // the tiny clap, a quarter of a second
+            gClapEnd = now + 0.25;
+            gClapT = now + 8.0 + llFrand(4.0);
         }
         if (gRollT > 0.0 && gSt == "rolling" && gWant < 0 && gShowT == 0.0)
         {

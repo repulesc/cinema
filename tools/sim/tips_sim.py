@@ -6,7 +6,7 @@
 # Notices: another script's text is never overwritten, the status comes back once it is cleared.
 # Tips (5.7.0): one per camera, short, under the status line, 20 s apart, each retires after 3 showings, Tips turns
 # itself off (all retired, or 24 in all) with one chat line, turning Tips back on starts from zero.
-import os, re, math
+import os, re, math, random
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 src = open(os.path.join(R, "hud", "src", "tips.lsl")).read()
@@ -80,6 +80,7 @@ class Hud:
         s.st = ""; s.mode = ""; s.why = ""; s.led = False; s.still = ""; s.kind = ""; s.syncb = ""; s.tip = ""; s.last = ""
         s.want_i = -1; s.wantT = 0; s.showT = 0.0; s.lastT = -100.0
         s.rollT = 0.0; s.more = False; s.sat = False; s.sitting = False; s.lens_tip = False; s.fov = math.radians(60)
+        s.clapT = 0.0; s.clapEnd = 0.0; s.claps = []; s.shut = False; s.rnd = random.Random(7)
         s.load()
     def load(s):
         s.on = s.lsd["tips"] != "0"; s.stat = s.lsd["status"] != "0"; s.skin = int(s.lsd["skin"])
@@ -122,7 +123,8 @@ class Hud:
         s.gtext = t; s.text = llSetText(t); s.last = s.text
     def after(s):                            # the script's tick(): draw, then how often the timer runs (0 = stopped)
         s.draw()
-        s.rate = 0.5 if (s.want_i >= 0 or s.showT > 0) else (1.0 if (s.last != "" or s.rollT > 0 or s.syncb != "") else 0.0)
+        if s.clapEnd > 0: s.rate = 0.25; return
+        s.rate = 0.5 if (s.want_i >= 0 or s.showT > 0 or s.clapT > 0) else (1.0 if (s.last != "" or s.rollT > 0 or s.syncb != "") else 0.0)
     def show(s, i):
         assert s.free(), "a tip over another script's text"
         s.tip = TIPS[i]
@@ -152,6 +154,11 @@ class Hud:
                 elif st == "armed" and s.lsd["afk_on"] == "1": s.want(11)
             s.st = st; s.mode = mode
         s.why = why
+        if st != "rolling":
+            s.clapT = 0.0
+            if s.clapEnd > 0: s.shut = False
+            s.clapEnd = 0.0
+        elif s.clapT == 0.0: s.clapT = s.t
         if mode != "friends": s.led = False
         s.after()
     def lens(s, dist): s.led = dist > 0; s.after()
@@ -165,6 +172,9 @@ class Hud:
         s.after()
     def tick(s):
         now = s.t
+        if s.clapEnd > 0 and now >= s.clapEnd: s.clapEnd = 0.0; s.shut = False
+        elif s.clapT > 0 and now >= s.clapT:
+            s.shut = True; s.claps.append(now); s.clapEnd = now + 0.25; s.clapT = now + 8.0 + s.rnd.random() * 4.0
         if s.showT > 0 and now - s.showT >= HOLD: s.tip = ""; s.showT = 0.0
         if s.rollT > 0 and s.st == "rolling" and s.want_i < 0 and s.showT == 0:
             m = MODES.index(s.mode) if s.mode in MODES else -1
@@ -177,8 +187,8 @@ class Hud:
             elif now - s.wantT >= LATE and now - s.lastT >= GAP and s.free(): s.show(s.want_i)
         s.after()
     def run(s, sec):                         # only a running timer ticks
-        for _ in range(int(sec * 2)):
-            s.t += 0.5
+        for _ in range(int(sec * 4)):
+            s.t += 0.25
             if s.rate > 0 and s.t - s.tickT >= s.rate - 1e-9: s.tickT = s.t; s.tick()
     def attach(s): s.want(0); s.after()
 
@@ -246,6 +256,23 @@ check([i for _, i in h.log][-2:] == [3, 12], f"the lens tip must follow the Us t
 h.run(60); check([i for _, i in h.log].count(12) == 1, "the lens tip must come once per run")
 h = Hud(); h.zoom(35); h.state("armed"); h.run(30); h.state("rolling", "social"); h.run(60)
 check(12 not in [i for _, i in h.log], "no lens tip when the lens is in range")
+
+# ---- the button: a tiny clap while filming (the sheet's clapped frame), still otherwise --------------------------
+ui = open(os.path.join(R, "hud", "src", "ui.lsl")).read()
+body = lambda src_, name: re.sub(r"\s+", " ", re.search(name + r"\(integer \w+\)\s*\{(.*?)\n\}", src_, re.S).group(1))
+check(body(src, "clap").replace("integer k = 2 * gLook + shut;", "").strip() == body(ui, "frame").strip(),
+      "tips' clap must draw the sheet exactly as ui's frame()")
+for frag in ('else if (gClapT == 0.0) gClapT = llGetTime();   // the camera rolls: a clap now', 'gClapT = now + 8.0 + llFrand(4.0);',
+             'gClapEnd = now + 0.25;', 'if (gClapEnd > 0.0) llSetTimerEvent(0.25);', 'str == "look" || str == "face"'):
+    check(frag in src, f"tips: missing {frag}")
+h = Hud(on="0"); h.state("armed"); h.run(30); check(h.claps == [], "the button must be still with your own camera")
+h.state("rolling", "scenery"); h.run(0.25); check(len(h.claps) == 1 and h.shut, "a clap when the camera starts")
+h.run(0.5); check(not h.shut, "the clap must last a quarter of a second")
+h.run(60); n = len(h.claps); gaps = [b - a for a, b in zip(h.claps, h.claps[1:])]
+check(6 <= n <= 9 and all(7.9 <= g <= 12.6 for g in gaps), f"claps every 8-12 s while filming: {n}, gaps {gaps}")
+h.state("frozen", "scenery"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.shut, "no clap during Photo")
+h.state("rolling", "scenery"); h.run(1); check(len(h.claps) == n + 1, "the clap comes back when filming resumes")
+h.state("off"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.shut, "still again when your camera is back")
 
 # ---- sharing -----------------------------------------------------------------------------------------------------
 h = Hud(on="0"); h.state("rolling", "social"); h.sharing("live", "● LIVE · 2 watching\nAna · Ben"); h.run(1)

@@ -4,7 +4,7 @@
 |---|---|
 | `marketplace_listing.md` | Copy-paste text for the Marketplace listing (5.8): name ideas, description, features, tags, promo lines, the "what is new" update message, image list |
 | `legacy/` | The earlier listings and intros (4.4, 4.8) |
-| `adboard_square_1024.png` | Square ad board for the Marketplace main image (with the coral "NEW: SHARE THE VIEW" label) |
+| `adboard_square_1024.png` | Square ad board for the Marketplace main image (with the coral "NEW: YOUR LENS" label and the "85 MM" lens readout) |
 | `adboard_portrait_3x4_768x1024.png` | **3:4 portrait** ad (one big view, three small views, chips) |
 | `adboard_landscape_4x3_1024x768.png` | 4:3 landscape ad, in case a listing shows the picture the other way round |
 | `adboard_wide_1024x512.png` | Wide ad board for an in-world vendor or banner |

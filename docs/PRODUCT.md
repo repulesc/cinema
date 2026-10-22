@@ -15,7 +15,7 @@ A movement key, a tap or typing gives your camera back.
 ## Principles
 A guide for every feature, not ad copy.
 1. **It decides; you accept or skip.** Take 12 chooses the view. Your part is a double-tap at most.
-2. **Calm.** Long holds, few cuts, a quiet chat, a small button that stays the same.
+2. **Calm.** Long holds, few cuts, a quiet chat, a small button that stays still with your own camera (6.0: a tiny clap now and then while filming).
 3. **No settings on screen.** No numbers, no jargon. Details live in the Read Me.
 4. **One button.** Everything else is optional.
 5. **Restraint.** A feature earns its place by making the experience easier, not by being a feature.
@@ -27,7 +27,7 @@ The tone of every text follows the product: plain, understated, no slogans. Thin
 |---|---|
 | Icon | A **deliberately pixel-art clapperboard**: 16×16, a few colours with a dark 1 px outline, fun rather than serious. The textures are in `hud/art/`; "Rec" is the default |
 | Size and place | About 40 px, **top right** by default. You can move it like any HUD |
-| Feedback | **None on the button (4.7).** The button is the plain logo at full strength, the same idle or rolling: the screen itself shows that the camera runs. (The old 40 % fade washed the small icon out on busy scenes, and HUDs are not in snapshots anyway.) |
+| Feedback | **A tiny clap while filming (6.0).** The button is the plain logo at full strength. While a camera runs, `tips` shows the sheet's clapped frame for a quarter second when it starts and then every 8–12 s; with your own camera, in Photo and in a pause it is still. (4.7 removed the 40 % fade, which washed the small icon out on busy scenes; HUDs are not in snapshots anyway.) |
 
 ## Gestures
 | Gesture | Idle | Rolling | Photo hold |

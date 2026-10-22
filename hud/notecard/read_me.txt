@@ -31,7 +31,7 @@ DOUBLE-TAP  (two quick taps)
 HOLD  (about 1 second)
    - always: the Share panel (see SHARE THE VIEW). Its "More" button opens the live menu (see below).
 
-The button always looks the same, idle or rolling. (Its look: Options > Look.)
+While a camera runs, the clapper gives a tiny clap now and then; with your own camera it is still. (Its look: Options > Look.)
 
 
 === THE CAMERAS ========================================

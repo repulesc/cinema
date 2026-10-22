@@ -3,7 +3,7 @@
 The Marketplace description is plain text. Copy each block below as it is: no bold, no headings, only "-" lists.
 Fields marked (you) need your own details (price, creator, support contact).
 
-This is the 5.8 text. The 4.8 listing is kept in `legacy/` ("your idle time, on film" is in the older ones: it was
+This is the 6.0 text. The 4.8 listing is kept in `legacy/` ("your idle time, on film" is in the older ones: it was
 replaced because "film" and "filming" made people think the HUD records video, which it does not).
 The free Take 12 Watch has its own listing: `watch/marketing/marketplace_listing_watch.md`.
 
@@ -21,7 +21,7 @@ Take 12 - Cinematic Camera HUD: Drone Views, Skybox Rooms, Share Your View
 
 ## Short description (the line search results show; keep it first)
 ```
-A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically, a new one every minute. Share your view live with friends. One button. Any movement key brings your camera back.
+A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically and framed for your lens, a new one every minute. Share your view live with friends. One button. Any movement key brings your camera back.
 ```
 
 ## Full description
@@ -84,7 +84,7 @@ WHO IT IS FOR
 - Friends who want to watch the same view at the same time, on a tour or at an event.
 
 GOOD TO KNOW
-- One small button, a pixel-art clapper in three looks. It stays the same while the camera runs. (Second Life leaves HUDs out of snapshots unless you ask for them.)
+- One small button, a pixel-art clapper in three looks. While the camera runs it gives a tiny clap now and then; with your own camera it is still. (Second Life leaves HUDs out of snapshots unless you ask for them.)
 - Wear it on a HUD point (Top Right is usual) and allow camera control once.
 - It only moves your view, inside the region you are in. Nothing is recorded. When you share, only the camera position goes to the people you invite.
 - The Take 12 Watch is free, for friends who do not own Take 12. The Share panel can hand one to a friend near you.
@@ -97,14 +97,14 @@ GOOD TO KNOW
 ```
 Automatic camera views from beyond your avatar's back
 Scenery: drone and horizon views up to 100 m, skybox aware
+Your lens, everywhere: every camera frames for your zoom
 Share your view live with friends: free Take 12 Watch for them
-Me, Us and Still cameras; frame it yourself and it keeps your view
 One button: tap, double-tap, hold; any movement key to return
 ```
 
 ## Keywords
 ```
-take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud, share, watch, share view, live view, group view, tour
+take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud, share, watch, share view, live view, group view, tour, lens, zoom, telephoto, portrait lens, focal length
 ```
 
 ## Short promo lines (group notices, social posts)
@@ -113,7 +113,8 @@ Your idle time, framed.
 Your camera, off your avatar's back.
 See your region from the sky, the horizon and the corner of the room. Automatically.
 One button: drone views, skybox rooms, friends in one frame.
-New: hold the button, go live, and your friends watch your view.
+New: your zoom is your lens, and every camera frames for it.
+Hold the button, go live, and your friends watch your view.
 ```
 
 ## One line "what is it?" (for a vendor or a friend)
@@ -128,6 +129,7 @@ Take 12 6.0: your lens, everywhere.
 - A longer lens brings more close views of faces, a wider one more of the place.
 - The line above the button shows your lens and the range each camera likes.
 - Still names the classic portrait lens for each framing (50, 85, 105 mm), and Shift + A/D slides you across the picture.
+- While the camera runs, the little clapper gives a tiny clap now and then.
 Get the new version from your Marketplace purchases (Update), and read the new notecard.
 ```
 
@@ -157,9 +159,9 @@ The boards use drawn pixel-art "views", **not real screenshots**. Marketplace bu
 3. A group of friends framed together (Us > Only friends).
 4. The seated view from above (sit on a bed or a sofa with a friend).
 5. Sharing: the Share panel open (hold the button), or the "LIVE - 2 watching" text above the HUD.
-6. The status line above the button, for example "Scenery - auto".
+6. The line above the button with your lens, for example "Us - auto - 50 mm" (zoom in first with Ctrl+0).
 7. The menu open on screen: Tap shows the main menu, in the Symbols style.
 
 Tips for the snapshots: use Photo hold for a steady shot, hide your UI (Ctrl+Alt+F1 in Firestorm) except for the shots that show the HUD text, and use a high-quality setting. Keep the same look: square, with a little room around the subject.
 
-The boards say "Your idle time, framed.", "Double-tap to start. Any key brings you back." and a "NEW: SHARE THE VIEW" ribbon. To change a line, edit the `NAME`, `DESCRIPTOR`, `TAGLINE`, `HOWTO` and `NEW` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. Still is not on the boards on purpose: they sell the automatic camera and sharing. (Lite's boards are paused with Lite; add `--lite` to rebuild them.)
+The boards say "Your idle time, framed.", "Double-tap to start. Any key brings you back." and a coral "NEW: YOUR LENS" label under the horizon view, which shows the HUD's own lens readout ("85 MM"). To change a line, edit the `NAME`, `DESCRIPTOR`, `TAGLINE`, `HOWTO` and `NEW` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. Still is not on the boards on purpose: they sell the automatic camera and sharing. (Lite's boards are paused with Lite; add `--lite` to rebuild them.)

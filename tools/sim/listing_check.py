@@ -44,7 +44,8 @@ for name, text in (("listing", main), ("watch listing", watch)):
 # ---- the boards say what the listing says ------------------------------------------------------------------------
 const = lambda n: re.search(r"^" + n + r' = "(.*?)"', art, re.M).group(1)
 check(const("TAGLINE") in main, "listing: the boards' tagline is not in the listing")
-check("SHARE" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label must mention sharing")
+check("LENS" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label must name the newest feature (6.0: your lens)")
+check("Your lens" in re.search(r"CHIPS = \[(.*?)\]", art).group(1), "boards: a chip for the lens")
 chips = re.search(r"CHIPS = \[(.*?)\]", art).group(1)
 check("Share the view" in chips and "Friends mode" not in chips, f"boards: chips {chips}")
 check("Double-tap to start" in const("HOWTO") and "HOLD  share" in art, "boards: the how-to lines")

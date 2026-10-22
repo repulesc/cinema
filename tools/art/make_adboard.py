@@ -26,9 +26,9 @@ NAME = "TAKE 12"
 DESCRIPTOR = "CINEMATIC CAMERA HUD"
 TAGLINE = "Your idle time, framed."
 HOWTO = "Double-tap to start. Any key brings you back."
-NEW = "NEW: SHARE THE VIEW"                                  # the banner/stamp for the 5.5+ feature (Share the view)
+NEW = "NEW: YOUR LENS"                                       # the banner/stamp for the newest feature (6.0: your lens, everywhere)
 SMALL = "ONE TINY BUTTON  -  NO SETUP  -  SHARE WITH FRIENDS"
-CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Photo hold"]
+CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Your lens"]
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 LITE = False                      # main() runs the boards twice; True draws the Take 12 Lite versions
@@ -127,6 +127,8 @@ def scene_drone(w, h, r):
     d.rectangle([int(w * .3), int(h * .38), int(w * .3), int(h * .38)], fill=CORAL)      # you, tiny
     return im
 
+LENS_TAG = True     # the HUD's own lens readout on the horizon view (the Watch board draws its own text there)
+
 def scene_wide(w, h, r):
     im = Image.new("RGB", (w, h)); d = ImageDraw.Draw(im); hz = int(h * .58)
     bands(d, w, hz, hz, [(255, 214, 140), (255, 182, 122), (246, 148, 114), (224, 120, 122), (170, 102, 150), (112, 92, 158)])
@@ -139,6 +141,9 @@ def scene_wide(w, h, r):
         d.line([(0, yy), (w, yy)], fill=base)
         if yy % 2 == 0: d.line([(sx - int(5 * (1 - t) + 2 + (yy % 4)), yy), (sx + int(5 * (1 - t) + 2 + (yy % 3)), yy)], fill=(255, 214, 150))
     d.polygon([(0, h), (0, int(h * .86)), (int(w * .14), int(h * .92)), (int(w * .3), h)], fill=(30, 28, 44))
+    if LENS_TAG and not LITE:                                                                # "85 mm": your lens
+        d.rectangle([2, 2, 2 + 29 + 3, 2 + 9], fill=INK)
+        ptext(im, (4, 3), "85 MM", 1, CHALK)
     return im
 
 def scene_room(w, h, r):
@@ -180,7 +185,7 @@ def scene_friends(w, h, r):
         ptext(im, (9, 3), "LIVE", 1, CHALK)
     return im
 
-SCENES = [("DRONE", scene_drone), ("WIDE", scene_wide), ("ROOM", scene_room), ("SHARE", scene_friends)]
+SCENES = [("DRONE", scene_drone), ("HORIZON", scene_wide), ("ROOM", scene_room), ("SHARE", scene_friends)]
 
 def view(fn, gw, gh, scale, seed):
     return fn(gw, gh, random.Random(seed)).resize((gw * scale, gh * scale), Image.NEAREST)
@@ -263,7 +268,7 @@ def square():
         paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""))
     chips(im, 936, ["Drone views", "Wide views", "AFK start", "Photo hold"] if LITE else CHIPS, 24, 40, S - 40)
     d.text((S // 2, 996), "THE EASY WAY IN  -  ONE TINY BUTTON  -  NO SETUP" if LITE else SMALL, font=font(16), fill=(120, 126, 150), anchor="mm")
-    if not LITE: newlabel(im, 48 + 64 * 7 + 40, 262 + 40 * 7 + 62, 64 * 7, 40 * 7, 3, NEW)   # the share view's label, in coral
+    if not LITE: newlabel(im, 48 + 64 * 7 + 40, 262, 64 * 7, 40 * 7, 3, NEW)                 # the horizon view's label, in coral
     return im
 
 def wide():
@@ -284,14 +289,14 @@ def wide():
     for x in range(10, W, 36):
         d.rounded_rectangle([x, sy + 8, x + 18, sy + 22], radius=3, fill=BG); d.rounded_rectangle([x, sy + sh - 22, x + 18, sy + sh - 8], radius=3, fill=BG)
     gw, gh, sc = 56, 36, 4
-    global TAG
-    TAG = False                                                  # the strip puts the view's name there instead
+    global TAG, LENS_TAG
+    TAG = LENS_TAG = False                                       # the strip puts the view's name there instead
     for i, (lab, fn) in enumerate(SCENES):
         x = 26 + i * (gw * sc + 24); y = sy + 36
         im.paste(scene_img(lab, fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
         ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
-        if lab == "SHARE" and not LITE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: SHARE", 2)
-    TAG = True
+        if lab == "HORIZON" and not LITE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: YOUR LENS", 2)
+    TAG = LENS_TAG = True
     d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  share", font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
 
@@ -316,8 +321,8 @@ def vendor():
         looks(im, 80, 784, 96, 14)
         ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
         chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
-        chips(im, 870, ["Share live", "Photo hold"], 30, 420, S - 60)
-        stamp(im, (730, 44, 976, 126), [("NEW", 3), ("SHARE THE VIEW", 2)])
+        chips(im, 870, ["Share live", "Your lens"], 30, 420, S - 60)
+        stamp(im, (730, 44, 976, 126), [("NEW", 3), ("YOUR LENS", 2)])
     d.text((S // 2, 990), "ONE TINY BUTTON  -  SHARE WITH FRIENDS" if not LITE else "ONE TINY BUTTON  -  STILL, CONTEMPLATIVE CUTS", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
@@ -332,6 +337,8 @@ def watch():
     d.text((240, 206), "Wear it. Nothing to click.", font=font(22), fill=(170, 176, 200))
     stamp(im, (820, 40, 980, 124), [("FREE", 5)])
     gw, gh, sc = 96, 56, 9
+    global LENS_TAG
+    LENS_TAG = False
     hero = scene_wide(gw, gh, random.Random(31)).resize((gw * sc, gh * sc), Image.NEAREST)   # their camera, with the Watch's own text
     t = "WATCHING PANO"; ImageDraw.Draw(hero).rectangle([20, 20, 20 + pwidth(t, 3) + 24, 20 + 7 * 3 + 20], fill=INK)
     ptext(hero, (32, 30), t, 3, CHALK); hx, hy = 80, 246
@@ -360,8 +367,8 @@ def portrait():
     d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
     d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
     gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
-    paste_framed(im, scene_img("WIDE", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="WIDE")
-    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("FRIENDS", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
+    paste_framed(im, scene_img("HORIZON", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="HORIZON")
+    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("SHARE", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
     for i, (lab, fn) in enumerate(small):
         x = 48 + i * (gw2 * sc2 + 24)
         paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
@@ -371,7 +378,7 @@ def portrait():
         looks(im, 48, 876, 54, 10); ptext(im, (232, 898), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
     chips(im, 944, _chip_list(), 20, 30, W - 30, gap=10)
     d.text((W // 2, 1004), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not LITE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("SHARE", 2)])
+    if not LITE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("LENS", 2)])
     return im
 
 def landscape43():
@@ -392,7 +399,7 @@ def landscape43():
         paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL" if LITE and lab in FULL_ONLY else ""), lab_scale=2)
     chips(im, 690, _chip_list(), 20, 30, W - 30, gap=12)
     d.text((W // 2, 748), ("THE EASY WAY IN  -  ONE TINY BUTTON" if LITE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not LITE: newlabel(im, 156 + 56 * 6 + 40, 186 + 34 * 6 + 48, 56 * 6, 34 * 6, 2, NEW)
+    if not LITE: newlabel(im, 156 + 56 * 6 + 40, 186, 56 * 6, 34 * 6, 2, NEW)
     return im
 
 if __name__ == "__main__":
