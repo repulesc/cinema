@@ -7,7 +7,7 @@
 //  cinema_friends.
 // ============================================================================
 
-string VERSION = "5.6.0";
+string VERSION = "5.7.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the Lite build (tools/build_lite.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing, shown by the Lite upgrade buttons
@@ -24,10 +24,10 @@ integer CMD         = 7371;
 float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
 float LONG_HOLD = 0.8;      // s  hold this long = long press
 
-string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=0~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
+string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji (Color style), mark (Symbols style), title (Plain style)
-string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~photo|📷|▣|Photo~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~";
+string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~photo|📷|▣|Photo~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~readme|📖|▤|Read Me~tips|💡|ⓘ|Tips~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -145,10 +145,12 @@ checkOwner()
         cfgWrite("afk_away", "1");
         cfgWrite("cfgv", "5");
     }
-    if (v < 6)                                     // 5.6.0: menus in plain words by default (Options > Look > Menu style)
+    if (v < 7)                                     // 5.7.0: menus with quiet symbols by default, and the tips on
     {
-        cfgWrite("skin", "0");
-        cfgWrite("cfgv", "6");
+        if (cfgGet("skin") == "0") cfgWrite("skin", "1");
+        cfgWrite("tips", "1");
+        cfgWrite("tipn", "0");
+        cfgWrite("cfgv", "7");
     }
     gNote = (cfgGet("trace") == "1");
     gSkin = (integer)cfgGet("skin");
@@ -353,6 +355,11 @@ openMenu(string page)
         text += "Timing · how long views last, when the idle camera starts\nCamera · seated view, indoors, reach, Alt-cam, chat cuts\nLook · menu style, button, chat text";
         b = ["timing", "camcfg", "look", "favs", "test", "reset", "back"];
     }
+    else if (page == "help")
+    {
+        text += "Read Me · the whole guide, as a notecard\nTips · short hints above the button, now " + onoff("tips");
+        b = ["readme", "tips", "back"];
+    }
     else if (page == "timing")
     {
         text += "Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)\nIdle start: " + afkText();
@@ -461,8 +468,7 @@ onChoice(string msg)
             closeMenu();
             llMessageLinked(LINK_SET, CMD, id, "");
         }
-        else if (id == "us" || id == "opts") openMenu(id);
-        else if (id == "help") { giveHelp(); closeMenu(); }
+        else openMenu(id);
     }
     else if (gPage == "live")
     {
@@ -479,6 +485,13 @@ onChoice(string msg)
         if (id == "everyone") llMessageLinked(LINK_SET, CMD, "social", "");
         else if (id == "onlyfr") llMessageLinked(LINK_SET, CMD, "friends", "");
         else if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");
+    }
+    else if (gPage == "help")
+    {
+        if (id == "readme") { giveHelp(); closeMenu(); return; }
+        if (cfgGet("tips") != "1") cfgWrite("tipn", "0");    // back on: every tip from the start
+        toggle("tips", "Tips");
+        openMenu("help");
     }
     else if (gPage == "timing") openMenu(id);
     else if (gPage == "pace")
@@ -574,7 +587,7 @@ onChoice(string msg)
         if (id == "yes")
         {
             initDefaults(TRUE);
-            gSkin = 0;
+            gSkin = 1;
             llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
             note("Settings reset to defaults.");
         }
