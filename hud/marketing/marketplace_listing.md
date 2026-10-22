@@ -55,6 +55,9 @@ Hold the button and choose Go live. Everyone near you who wears Take 12 or the f
 - Pass the camera to a friend, or let anyone ask to lead. You decide: ask me each time, always, or never.
 - It stays inside the region, and ends for everyone when you stop.
 
+YOUR LENS
+Your viewer's zoom is your lens, and Take 12 frames for it in every camera. Zoom in, and the camera glides back so everyone keeps their size: the flatter, natural faces of a portrait lens. A longer lens also brings more close views of faces, a wider one more of the place. The line above the button shows your lens and the range each camera likes, and Still names the exact portrait lens for each framing.
+
 ALWAYS KNOW WHAT IS ON
 - A quiet line above the button says which camera runs and who is in charge: "Scenery - auto", "Only friends - your view", "Photo - held". Nothing above the button means it is your own camera.
 - Short tips show up while you are new to it, and turn themselves off.
@@ -116,6 +119,16 @@ New: hold the button, go live, and your friends watch your view.
 ## One line "what is it?" (for a vendor or a friend)
 ```
 Take 12 is a one-button HUD that moves your camera off your avatar to drone views, wide horizons and skybox corners by itself, lets your friends watch the same view, and gives your camera back with any movement key.
+```
+
+## What is new in 6.0 (the Marketplace update message, or a group notice for existing buyers)
+```
+Take 12 6.0: your lens, everywhere.
+- Your viewer's zoom (Ctrl+0 / Ctrl+8) is your lens, and every camera now frames for it: zoom in while Me, Us or Only friends runs and the camera glides back, so everyone keeps their size with the flatter faces of a portrait lens.
+- A longer lens brings more close views of faces, a wider one more of the place.
+- The line above the button shows your lens and the range each camera likes.
+- Still names the classic portrait lens for each framing (50, 85, 105 mm), and Shift + A/D slides you across the picture.
+Get the new version from your Marketplace purchases (Update), and read the new notecard.
 ```
 
 ## What is new in 5.8 (the Marketplace update message, or a group notice for existing buyers)

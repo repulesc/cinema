@@ -36,13 +36,13 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | 7306 MOVING | core → active | – | movement key in a following mode |
 | 7310 SHOT | worker → core | `"<pos>|<focus>|<hold>|<type>"` | a hard cut |
 | 7311 NO_SHOT | worker → core | reason | core covers it with a basic shot |
-| **7312 GLIDE** | friends, frame → core | `"<pos>|<focus>"` or `"<pos>|<focus>|<lag>"` | a slow move, see §5 (Frame: 0.35 s for nudges and zoom changes) |
+| **7312 GLIDE** | friends, frame, people → core | `"<pos>|<focus>"` or `"<pos>|<focus>|<lag>"` | a slow move, see §5 (Frame: 0.35 s for nudges and zoom changes) |
 | 7313 ACK | worker → core | mode | |
 | 7314 REACH_FAIL | core → scenery | `<asked>\|<allowed>` distances from you | |
 | **7315 SPEAKER** | core → active | owner key | you started typing (Social and Friends only) |
 | **7316 FAV** | core → scenery | `"<pos>|<focus>"` | save the shot on screen as a favourite |
 | **7317 NUDGE** | core → frame | control level bits | Frame: the movement keys held now (sent on each change); core holds the keys with pass-on off in this mode only |
-| **7318 FOVMSG** | core → frame | radians | Frame: the viewer's field of view changed (checked every 0.5 s) |
+| **7318 FOVMSG** | core → all cameras, tips | radians | the viewer's field of view changed (checked every 0.5 s while a camera runs, not in a Photo hold). 6.0: Me / Us (people) and Only friends dolly the camera along its line to the focus by k = tan(old/2) / tan(new/2), as a GLIDE (same picture, new perspective), or cut when there is no room; Follow my lead (lens) scales your distance by k; tips shows your lens against the camera's range; the close-view chance follows the lens (`+ clamp((mm − 35)/120, −0.15, +0.30)`). Checked in tools/sim/zoom_sim.py |
 | **7319 LENS** | lens → friends | `<distance>\|<angle down rad>\|<from rad>\|<aim>\|<cut now>` | 5.1 Follow my lead: distance 0 = automatic. Friends plans its group shot from it: subject + aim, that distance and angle, from that side |
 | **7325 CAMSET** | core → sync | `<pos>\|<focus>\|<lag>` | 5.2: every camera core puts on screen (cuts and glides), relayed to watchers |
 | **7324 LEAD** | core → lens | `<cam>\|<focus>` | 5.1: in Friends, your own camera held still for 1.5 s; core holds it as the shot |

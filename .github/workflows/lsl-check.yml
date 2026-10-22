@@ -30,4 +30,5 @@ jobs:
           python3 tools/sim/sync_sim.py
           python3 tools/sim/menu_sim.py
           python3 tools/sim/tips_sim.py
+          python3 tools/sim/zoom_sim.py
           python3 tools/sim/listing_check.py

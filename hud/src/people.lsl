@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "5.9.0";
+string VERSION = "6.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -18,6 +18,8 @@ integer RESUME     = 7305;
 integer MOVING     = 7306;
 integer SPEAKER    = 7315;
 integer SHOT       = 7310;
+integer GLIDE      = 7312;   // people -> core: the dolly when you zoom
+integer FOVMSG     = 7318;   // core -> cameras: your lens changed (radians)
 integer NO_SHOT    = 7311;
 integer ACK        = 7313;
 integer CFG_CHANGED= 7330;
@@ -104,6 +106,7 @@ integer gCurType;
 integer gFaceOwner;          // you face the camera in this shot (not the over-the-shoulder foreground)
 integer gShotT;
 vector  gCurCam;
+vector  gCurFoc;             // ... and its focus: a zoom moves the camera along this line
 vector  gCurV;
 integer gGrpAtShot;
 vector  gOwnerAtShot;
@@ -298,7 +301,8 @@ float needAt(float az)
 // people close together: now and then a close view of faces and shoulders (the caller remembers it, so two in a row never happen)
 integer closeView(float spread)
 {
-    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit) return FALSE;   // seated: more often
+    // seated: more often; and the longer your lens (mm = 12 / tanV), the more often, like a camera operator would
+    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)) return FALSE;
     gVNeed = 0.75 / tanV * MARGIN;
     gPLo = 1.2;
     gPEye += 0.15;                                      // a little headroom for a taller neighbour
@@ -602,6 +606,7 @@ nextShot()
     v.z = 0.0;
     gCurV = llVecNorm(v);
     gCurCam = cam;
+    gCurFoc = foc;
     gShotT = llGetUnixTime();
     gHaveShot = TRUE;
     gCurType = type;
@@ -716,6 +721,21 @@ default
             gHaveShot = FALSE;
             gWaitFirst = FALSE;
             llSetTimerEvent(0.0);
+        }
+        else if (num == FOVMSG)
+        {
+            // your lens changed: the same picture, a new perspective - the camera dollies along its line to the focus
+            float k = tanV;
+            gFov = (float)str;
+            loadCfg();
+            if (!gActive || !gHaveShot) return;
+            vector nc = gCurFoc + (gCurCam - gCurFoc) * (k / tanV);
+            if (llVecDist(nc, gOP) > 30.0 || llList2Integer(ray(gCurFoc, nc), 0)) nextShot();   // no room: a new shot for this lens
+            else
+            {
+                gCurCam = nc;
+                llMessageLinked(LINK_SET, GLIDE, (string)gCurCam + "|" + (string)gCurFoc + "|1.5", "");
+            }
         }
         else if (num == CFG_CHANGED)
         {

@@ -20,7 +20,7 @@ STALE = ["Personal, Social, Friends and Frame", "Hold: the live menu", "Friends 
 for name, text in (("listing", main), ("watch listing", watch)):
     for w in STALE: check(w not in text, f"{name}: stale wording '{w}'")
 for w in ("Scenery", "Me shows you", "Us is for", "Still is for", "SHARE THE VIEW", "Take 12 Watch", "Hold: share your view", "Only friends",
-          "Your idle time, framed.", "What is new in 5.8"):
+          "Your idle time, framed.", "What is new in 6.0", "YOUR LENS"):
     check(w in main, f"listing: missing '{w}'")
 for w in ("Take 12 Watch", "free", "Nothing to click", "Double-tap", "do not need Take 12"):
     check(w.lower() in watch.lower(), f"watch listing: missing '{w}'")

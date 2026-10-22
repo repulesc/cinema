@@ -1,5 +1,27 @@
 # Changelog
 
+## 6.0.0
+**Your lens, everywhere.** The viewer's zoom is your lens, and every camera now frames for it, with one rule: **the lens changes the perspective, never the size of the picture.**
+- **Zoom while a camera runs, and the picture keeps its size.**
+  - **Me, Us and Only friends** dolly the camera along its line to the focus by `k = tan(old/2) / tan(new/2)`, as a glide (FOVMSG → GLIDE). A subject at the focus keeps its exact size, the angle down is unchanged, and the next shots are planned for the new lens. With no room (a wall, or past 25–30 m), they cut to a fresh shot for that lens.
+  - **Follow my lead** scales your own distance by the same k (capped at 25 m), so a view you framed survives a zoom.
+  - **core** now reports the zoom in every camera (before: only in Still) and accepts glides from Me and Us.
+- **The lens shapes the shot mix,** like a camera operator: the close-view chance gets `+ clamp((mm − 35)/120, −0.15, +0.30)`, which gives about 43 % at 21 mm, 68 % at 50 mm and 85 % from 85 mm. Never two close views in a row, as before. A long lens leaves the far wide group shots to the existing fallbacks (fewer people, nearest first).
+- **The status line shows your lens and the range each camera likes:**
+  - Scenery ≤ 28 mm;
+  - Me 35–50;
+  - Us 24–50;
+  - Only friends 35–85.
+  In range it reads `… · 35 mm ✓`, else `… · 21 mm · try 24`. Still keeps its exact guide.
+- **Scenery stays wide.** Zooming gives a telephoto detail of the same view.
+- **A new tip, "Your lens":** Ctrl+0 / Ctrl+8 / Ctrl+9, once per run when the lens is outside the camera's range.
+- **Memory:** `friends` is at 12.5 KB free by the stricter estimate (two trace details shortened).
+- **Docs:** a new Read Me section, YOUR LENS. ARCHITECTURE (FOVMSG, GLIDE), FRAME.md, the listing (YOUR LENS, "What is new in 6.0") and `listing_check` are updated.
+- **Tests:**
+  - **new `tools/sim/zoom_sim.py`:** size and angle kept over every lens pair, the fallback, the close-view table, and the scripts' handlers;
+  - **`tips_sim`:** lens text per camera, ranges, the lens tip, Still and Photo unchanged;
+  - **`framing_sim`** follows the close-view rule.
+
 ## 5.9.0
 **Still, for real portraits: a lens guide, and Shift + A/D to slide the picture.**
 - **The lens guide.** Each framing names the lens a photographer would use: Full length 50 mm, Half length 85 mm, Close 105 mm. The line above the button shows it next to yours, live, as you zoom:

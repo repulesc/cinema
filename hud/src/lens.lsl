@@ -7,13 +7,14 @@
 //  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "5.9.0";
+string VERSION = "6.0.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
 integer SHOT       = 7310;   // friends -> core  "<cam>|<focus>|<hold>|<type>|<subject>" (the subject: where it aimed)
 integer GLIDE      = 7312;
 integer NUDGE      = 7317;
+integer FOVMSG     = 7318;   // core -> cameras: your lens changed (radians)
 integer LENS       = 7319;   // lens -> friends  "<distance>|<angle down rad>|<from rad>|<aim>|<cut now>"; distance 0 = automatic
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": your own view, held still
 integer MSG_VER    = 7360;
@@ -32,6 +33,7 @@ vector  gAim;                // where you aimed, from the subject Friends planne
 integer gPrev;               // keys held at the last NUDGE
 integer gSit;
 vector  gLC;                 // the last view you led with
+float   gF = 1.047198;       // your lens (field of view, radians)
 integer gTold;               // the Esc tip was given (once per rez)
 float   gTextT;
 
@@ -87,7 +89,10 @@ default
     {
         if (num == START)
         {
-            gActive = (llList2String(llParseString2List(str, ["|"], []), 0) == "friends");
+            list S = llParseString2List(str, ["|"], []);
+            gActive = (llList2String(S, 0) == "friends");
+            gF = (float)llList2String(S, 1);
+            if (gF < 0.05) gF = 1.047198;
             gPrev = 0;
             if (!gActive) return;
             gSit = llGetAgentInfo(gOwner) & AGENT_SITTING;
@@ -104,6 +109,18 @@ default
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/lens] v" + VERSION + " lead " + (string)gS + " m, " + (string)llRound(gEl * RAD_TO_DEG)
                 + " deg down, free mem " + (string)llGetFreeMemory());
+        else if (num == FOVMSG)
+        {
+            // your lens changed: your view keeps its size (the camera backs off for a longer lens), a new perspective
+            float f = (float)str;
+            if (gActive && gS > 0.0 && f > 0.05)
+            {
+                gS = gS * llTan(gF * 0.5) / llTan(f * 0.5);
+                if (gS > 25.0) gS = 25.0;                   // as far as Friends places a camera
+                send(FALSE);
+            }
+            if (f > 0.05) gF = f;
+        }
         else if (!gActive) return;
         else if (num == SHOT)
         {

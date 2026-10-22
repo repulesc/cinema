@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.9.0";
+string VERSION = "6.0.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -18,7 +18,7 @@ integer RESUME     = 7305;
 integer MOVING     = 7306;
 integer SHOT       = 7310;   // worker -> core   "<pos>|<focus>|<hold>|<type>"
 integer NO_SHOT    = 7311;
-integer GLIDE      = 7312;   // friends -> core  "<pos>|<focus>"
+integer GLIDE      = 7312;   // friends, frame, people -> core  "<pos>|<focus>" or "<pos>|<focus>|<lag>"
 integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
@@ -26,7 +26,7 @@ integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
 integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
-integer FOVMSG     = 7318;   // core -> frame    the viewer's field of view changed (radians)
+integer FOVMSG     = 7318;   // core -> cameras, tips  the viewer's field of view changed (radians): your lens
 integer UI_STATE   = 7320;   // core -> ui, tips  "<state>|<mode>|<nextCutUnix>|<why>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
@@ -396,14 +396,11 @@ activeTick(float dt)
         resume();
     }
     if (gState == ST_FREEZE) return;                // photo hold: no cuts, no checks
-    if (gMode == "frame")
+    float fv = llGetCameraFOV();                    // the zoom is your lens: every camera keeps its picture for it
+    if (llFabs(fv - gFovSent) > 0.004)
     {
-        float fv = llGetCameraFOV();                // the zoom: Frame re-places the shot for it
-        if (llFabs(fv - gFovSent) > 0.004)
-        {
-            gFovSent = fv;
-            llMessageLinked(LINK_SET, FOVMSG, (string)fv, "");
-        }
+        gFovSent = fv;
+        llMessageLinked(LINK_SET, FOVMSG, (string)fv, "");
     }
 
     // worker slow or absent: cover with a basic shot so the camera never sits idle
@@ -634,9 +631,9 @@ default
         }
         else if (num == GLIDE)
         {
-            // friends: slowly move the camera to keep the group framed; frame: nudges and zoom changes.
-            // The viewer eases it using the lag ("<pos>|<focus>" or "<pos>|<focus>|<lag>").
-            if (gState == ST_ROLL && (gMode == "friends" || gMode == "frame"))
+            // friends: slowly move the camera to keep the group framed; frame: nudges and zoom changes; people and
+            // friends: the dolly when you zoom. The viewer eases it using the lag ("<pos>|<focus>" or "<pos>|<focus>|<lag>").
+            if (gState == ST_ROLL && gMode != "scenery")
             {
                 list L = llParseStringKeepNulls(str, ["|"], []);
                 vector gp = (vector)llList2String(L, 0);

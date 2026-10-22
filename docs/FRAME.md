@@ -48,6 +48,10 @@ fractions are corrected from them.
   units, edge = 1). The view turns by `atan(x · tan(FOV/2) · FIT)`, so you land at screen x (+ right); groups turn the
   same way. The next framing clears it with the other nudges.
 
+## The same rule everywhere (6.0)
+Since 6.0 every camera follows the zoom with the rule Frame started with: the lens changes the perspective, never
+the size. See ARCHITECTURE (FOVMSG) and tools/sim/zoom_sim.py.
+
 ## Left out on purpose
 Picking another person, landscapes, photo shapes, menus of its own. They live in
 `lab/frame-full-4.5.0/`, the starting point for a possible later composition tool.
