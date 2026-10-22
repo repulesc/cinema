@@ -1,5 +1,25 @@
 # Changelog
 
+## 5.5.0
+**Sharing, HUD-first: hold the button, Go live.** Starting a shared view took a walk through several menus. Now:
+- **Hold the HUD button** opens the **Share panel**, whatever you're doing. Going live is two actions: hold, then **🔴 Go live**. With your camera off, it starts Social.
+- **The panel shows who is near** (a quick check, about 1.5 s): who has Take 12 or the Watch HUD, who is busy watching someone, who is live.
+  - **+ name** invites one person.
+  - **👁 name** watches someone who is already live.
+  - **Give Watch** hands out the free HUD.
+  - **⋯ More** opens the old live menu (photo hold, next, stop, modes, release) or the main menu.
+- **While live:** who watches and who is looking around, Invite more, a **Roster** (Pass camera, Remove), **Lead: Ask / Always / Never**, and End live.
+- **While viewing:** **Ask to lead**. The director gets Allow / Decline, which is declined automatically after 20 s. On Allow, everyone follows the new director.
+- **Invites:** a Watch HUD, or Take 12 with you in its Friends, joins at once. Anyone else sees "Pano invites you · hold to watch" for 20 s. After an invite you get a line saying who watches, who was asked, who is busy and who didn't answer.
+- **Above the HUD, always:** "● LIVE · 2", "👁 Pano" or "Pano invites you".
+- **Reliability:**
+  - a heartbeat: viewers drop out 25 s after a director vanishes;
+  - viewers who leave the region are dropped from the roster;
+  - a teleport ends sharing;
+  - repeated Go live / End live within 2 s is ignored;
+  - a second lead request while one is waiting is declined.
+- **The protocol changed (v2):** everyone sharing must update, including the Watch HUD. Design and protocol: `docs/SHARING.md`.
+
 ## 5.4.0
 **Share the view: one director at a time, one Share button, and you always know who sees what.**
 - **One Share button**, now in the tap menu as well as the hold menu. It does what fits the moment:

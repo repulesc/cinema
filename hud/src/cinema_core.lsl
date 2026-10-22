@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "5.4.0";
+string VERSION = "5.5.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the Lite build (tools/build_lite.py) sets this to 1: scenery camera only
 
@@ -676,7 +676,7 @@ default
                 }
             }
             else if (str == "watch" || str == "unwatch") gWatch = (str == "watch");
-            else if (str == "sharecam") { if (gState == ST_IDLE) engage(gMode); }    // Share: your camera, in your last mode
+            else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }  // Go live with the camera off: Social
             else if (gWatch && gState == ST_IDLE && str == "scenery") return;   // watching: the double-tap cuts for all (sync)
             else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame") engage(str);
             else if (str == "photo")

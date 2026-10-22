@@ -1,22 +1,24 @@
 // ============================================================================
-//  Take 12 Watch  -  take12_watch.lsl  (v5.4)  - free, one script, one prim HUD
-//  For friends without Take 12: when someone near you shares their Take 12 view, your camera follows their cuts at
-//  once (wearing it is the yes). Double-tap this HUD: the next view, for everyone watching. Orbit your own camera to
-//  look around (the director is told); Esc brings you back. A single tap or any movement key: your own camera back.
-//  When another Take 12 owner takes over as director, you follow them by yourself.
-//  Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl.
+//  Take 12 Watch  -  take12_watch.lsl  (v5.5)  - free, one script, one prim HUD
+//  For friends without Take 12: when someone near you goes live with Take 12 and invites you, your camera follows
+//  theirs at once (wearing it is the yes). Double-tap this HUD: the next view, for everyone watching. Orbit your own
+//  camera to look around (the director is told); Esc brings you back. A single tap or any movement key: your own
+//  camera back. A new director (a hand-over) is followed by itself. It cannot lead: it has no camera of its own.
+//  Speaks the same "T12|..." messages on the same channel as cinema_sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "5.4.0";
+string  VERSION = "5.5.0";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
+integer GONE    = 25;        // s  no camera and no heartbeat from the director: it is gone
 
 key     gOwner;
 key     gHost;               // whose view you follow
 vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
+integer gHearT;              // the last word from the director
 float   gTapT;
 integer gTaps;
 integer gTapPend;
@@ -34,8 +36,8 @@ integer near(key k)
 
 shown()
 {
-    string s = "Watching " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next";
-    if (gIsAway) s = "Looking around · Esc: back to " + llKey2Name(gHost) + "'s view";
+    string s = "👁 " + llKey2Name(gHost) + "\ntap: your camera · double-tap: next";
+    if (gIsAway) s = "👁 " + llKey2Name(gHost) + " · looking around (Esc: back)";
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
 }
 
@@ -44,12 +46,14 @@ follow(key host)
     gHost = host;
     gIsAway = FALSE;
     gApplied = ZERO_VECTOR;
+    gHearT = llGetUnixTime();
     say(gHost, "join");
+    if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
     shown();
-    llSetTimerEvent(0.25);
+    llSetTimerEvent(1.0);
 }
 
-leave(integer tell, integer clear)
+leave(integer tell, integer clear, string why)
 {
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
@@ -58,7 +62,8 @@ leave(integer tell, integer clear)
     clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
     if (clear && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);
-    llSetText("", ZERO_VECTOR, 0.0);
+    llSetText(why, <1.0, 1.0, 1.0>, 0.85);
+    llSetTimerEvent(4.0);                                   // the note, then a clean screen
 }
 
 perms()
@@ -84,11 +89,12 @@ default
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
+        if (c & CHANGED_REGION) leave(FALSE, TRUE, "");     // sharing does not cross regions
     }
 
     attach(key id)
     {
-        if (id == NULL_KEY) leave(TRUE, FALSE);             // taken off: only tell the director
+        if (id == NULL_KEY) leave(TRUE, FALSE, "");         // taken off: only tell the director
         else perms();
     }
 
@@ -108,34 +114,43 @@ default
         if (gTapPend && llGetTime() - gTapT > TAP_GAP)
         {
             gTapPend = FALSE;
-            if (gHost == NULL_KEY) llOwnerSay("Take 12 Watch: when someone near you shares their Take 12 view, it comes up here by itself.");
+            if (gHost == NULL_KEY) llOwnerSay("Take 12 Watch: when someone near you goes live with Take 12, their view comes up here by itself.");
             else if (gTaps >= 2) say(gHost, "next");         // double-tap: the next view for everyone
-            else leave(TRUE, TRUE);                           // tap: your own camera back
+            else leave(TRUE, TRUE, "Your camera");           // tap: your own camera back
         }
-        // your own camera (Alt-orbit) while watching: looking around; Esc puts it back on the shared view
-        if (gHost != NULL_KEY && gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
+        if (gHost != NULL_KEY)
         {
-            float d = llVecDist(llGetCameraPos(), gApplied);
-            if (!gIsAway && d > 0.6)
+            if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, llKey2Name(gHost) + "'s camera is gone");
+            // your own camera (Alt-orbit) while watching: looking around; Esc puts it back on the shared view
+            else if (gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
             {
-                gIsAway = TRUE;
-                say(gHost, "away");
-                shown();
-            }
-            else if (gIsAway && d < 0.3)
-            {
-                gIsAway = FALSE;
-                say(gHost, "back");
-                shown();
+                float d = llVecDist(llGetCameraPos(), gApplied);
+                if (!gIsAway && d > 0.6)
+                {
+                    gIsAway = TRUE;
+                    say(gHost, "away");
+                    shown();
+                }
+                else if (gIsAway && d < 0.3)
+                {
+                    gIsAway = FALSE;
+                    say(gHost, "back");
+                    shown();
+                }
             }
         }
-        if (gHost == NULL_KEY && !gTapPend) llSetTimerEvent(0.0);
-        else if (!gTapPend) llSetTimerEvent(1.0);
+        if (gTapPend) return;
+        if (gHost == NULL_KEY)
+        {
+            llSetText("", ZERO_VECTOR, 0.0);
+            llSetTimerEvent(0.0);
+        }
+        else llSetTimerEvent(1.0);
     }
 
     control(key id, integer level, integer edge)
     {
-        if (edge & level) leave(TRUE, TRUE);
+        if (edge & level) leave(TRUE, TRUE, "Your camera");
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -145,15 +160,27 @@ default
         if (who == gOwner) return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
-        if (w == "offer" && gHost == NULL_KEY && near(who))
+        if (w == "who")
         {
-            say(who, "ack|1");                               // so the director sees who got it
-            follow(who);                                     // wearing the Watch is the yes: their view at once
-            if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);
+            if (!near(who)) return;
+            string st = "idle";
+            string d = "";
+            if (gHost != NULL_KEY) { st = "view"; d = llKey2Name(gHost); }
+            say(who, "here|W|" + st + "|" + d);
         }
-        else if (who == gHost && w == "director") follow((key)llList2String(L, 2));   // someone else directs now
-        else if (who == gHost && w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
+        else if (w == "invite")
         {
+            if (gHost != NULL_KEY) say(who, "busy|watching " + llKey2Name(gHost));
+            else if (near(who))
+            {
+                say(who, "ack|1");                           // wearing the Watch is the yes: their view at once
+                follow(who);
+            }
+        }
+        else if (who != gHost) return;
+        else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
+        {
+            gHearT = llGetUnixTime();
             float lag = (float)llList2String(L, 4);
             gApplied = (vector)llList2String(L, 2);
             gApplyT = llGetTime() + lag + 2.0;
@@ -161,6 +188,13 @@ default
                 CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
                 CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
         }
-        else if (who == gHost && w == "end") leave(FALSE, TRUE);
+        else if (w == "hb") gHearT = llGetUnixTime();
+        else if (w == "director")
+        {
+            follow((key)llList2String(L, 2));                // someone else leads now
+            llSetText(llList2String(L, 3) + " leads now", <1.0, 1.0, 1.0>, 0.85);
+        }
+        else if (w == "kick") leave(FALSE, TRUE, llKey2Name(gHost) + " stopped sharing with you");
+        else if (w == "end") leave(FALSE, TRUE, llKey2Name(gHost) + " ended the live view");
     }
 }
