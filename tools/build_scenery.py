@@ -27,24 +27,17 @@ SUBS = {
         ('string h = "Take 12";', 'string h = "Take 12 Scenery";'),
         ('llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: connect with people near you. Commands: /" + cfgGet("cmd_chan") + " help");',
          'llOwnerSay("[Take 12 Scenery] Tap: menu. Double-tap: scenery, or the next view. Any movement key: your camera back.");'),
-        ('"Scenery · the place, while you are away\\nMe · follows you\\nUs · you and the people around you\\nStill · a held picture of you\\nFreehand · you frame it, it holds the shot\\nFrame · the picture format on your screen"',
-         '"Scenery · the place, while you are away\\nMore cameras · Me, Us, Still, Freehand and Connect, in the full Take 12"'),
+        ('"Framing · you, or you and the people with you, composed\\nFreehand · you frame it, it holds it\\nConnect · one camera for everyone near you\\nScenery · the place, while you are away\\nFormat · the shape of the picture"',
+         '"Scenery · the place, while you are away\\nMore cameras · Framing, Freehand and Connect, in the full Take 12"'),
         ('"Welcome to Take 12\\nTap: menu\\nDouble-tap: scenery, or the next view\\nHold: connect with people near you\\nAny movement key: your camera back"',
          '"Welcome to Take 12 Scenery\\nTap: menu\\nDouble-tap: scenery, or the next view\\nAny movement key: your camera back"'),
-        ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
-        ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
+        ('\\nLook · the button, the line above it, its size\\nCamera · seated view, Alt-cam, chat cuts', '\\nLook · the line above the button, chat text\\nCamera · Alt-cam, phantom'),
+        ('"Seated view: " + seatText() + " · Alt-cam: "', '"Alt-cam: "'),
         ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
-        # Photo hold stays here (6.6 took it out of the full menu: the full HUD has Freehand and the HOLD key)
-        ('~resume|▶|›|Resume~', '~photo|📷|▣|Photo~resume|▶|›|Resume~'),
-        ('if (gUiState == "frozen") b = ["resume"];         // held (the HOLD key while live, /77 photo): carry on',
-         'if (gUiState == "frozen") b = ["resume"]; else b = ["photo"];'),
-        ('if (id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");', 'if (id == "photo" || id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");'),
-        # no Frame (crop.lsl is not part of it)
-        ('b = ["scenery", "personal", "us", "frame", "free", "crop", "share", "opts", "full", "help", "close"];', 'b = ["scenery", "personal", "us", "frame", "free", "share", "opts", "full", "help", "close"];'),
-        # one button design (scenery/art): no Button choice under Options > Look
-        ('Look · menu style, button, chat text', 'Look · menu style, status line, chat text'),
-        (' + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', ''),
-        ('b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "size", "trace", "back"];', 'b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];'),   # no Size either (no keys.lsl)
+        # one button design (scenery/art): no Button choice under Look; no Size (no keys.lsl); Frame, Framing,
+        # Freehand and Connect are hidden by locked()
+        ('text += "Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', 'text += "Look"'),
+        ('b = ["th0", "th1", "th2", "stline", "size", "trace", "back"];', 'b = ["stline", "trace", "back"];'),
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: connect"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),

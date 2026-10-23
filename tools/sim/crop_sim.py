@@ -83,9 +83,9 @@ labels = ["Off", " ", "Back", "‹ Back", "↩ Back"] + ["✓ " + n for n in NAM
 check(all(len(l.encode()) <= 24 for l in labels) and 3 + len(NAMES) <= 12, "the Frame menu must fit llDialog")
 check("llDetectedLinkNumber(0) > 1) return;" in ui[ui.index("touch_start"):ui.index("touch_end")] and
       "llDetectedLinkNumber(0) > 1) return;" in ui[ui.index("touch_end"):], "ui must ignore touches on the bars")
-check('"crop"' in re.search(r'b = \["scenery".*?\];', ui).group(0) and '|| id == "crop")' in ui and "~crop|" in ui, "ui: Frame on the main page, routed to crop")
+check('"crop"' in re.search(r'b = \["framing".*?\];', ui).group(0) and '|| id == "crop")' in ui and "~crop|◰|Format~" in ui, "ui: Format (7.0; Frame before) on the main page, routed to crop")
 check('else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");' in picker, "picker: /77 crop")
-check('"frame", "free", "crop", "share"' in build and "crop.lsl is not part of it" in build, "the free build leaves Frame out")
+check('"crop"' in ui[ui.index("integer locked(string id)"):ui.index("string label(")] and "crop.lsl" not in build.split("FILES")[0], "the free build leaves Format out (locked in ui; crop.lsl is not part of it)")
 print(f"frame: {len(NAMES)} formats x {len(WINDOWS)} windows, the picture exact and centred, bars tile the screen; {len(POINTS)} HUD points")
 print("frame checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

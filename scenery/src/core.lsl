@@ -7,7 +7,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 1;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -23,7 +23,6 @@ integer GLIDE      = 7312;   // friends, frame, people -> core  "<pos>|<focus>" 
 integer ACK        = 7313;
 integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the viewer allowed>"
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
-integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
 integer FITKEY     = 7396;   // core -> fit  "<Page Up 16 / Page Down 32 held>": Fit (fit.lsl)
 integer FIT        = 7397;   // fit -> core  "<dz>": the shot on screen moves dz metres up
@@ -34,7 +33,7 @@ integer UI_STATE   = 7320;   // core -> ui, tips  "<state>|<mode>|<nextCutUnix>|
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;   // ui -> core  scenery / personal / social / friends / frame / stop / next / photo / fav / grab
+integer CMD        = 7371;   // ui -> core  scenery / social / friends / frame / free / stop / next / grab
 integer CTL = 831;           // CONTROL_FWD | BACK | LEFT | RIGHT | ROT_LEFT | ROT_RIGHT | UP | DOWN
 
 float FIRST_WAIT  = 1.5;     // s  wait for the first shot, then cut to a basic shot
@@ -49,7 +48,6 @@ integer ST_ROLL  = 2;
 integer ST_PAUSE = 3;
 integer ST_PEEK  = 4;
 integer ST_TEST  = 5;
-integer ST_FREEZE= 6;
 
 key     gOwner;
 integer gNeed;
@@ -79,7 +77,6 @@ integer gWarned;
 integer gVerify;              // first camera check after a cut still pending
 integer gFb;
 integer gPending;
-integer gFrozen;              // photo hold is on
 integer gGlided;              // a glide moved the camera since the last cut
 integer gTypeSent;
 integer gNextCut;
@@ -203,13 +200,6 @@ glide(vector gp, vector gf, float lag)
     gLast = (string)gp + "|" + (string)gf + "|" + llList2String(O, 2) + "|" + llList2String(O, 3);
 }
 
-// put the stored shot back on screen (photo hold on / off) without touching state
-reapply()
-{
-    list L = llParseStringKeepNulls(gLast, ["|"], []);
-    if (gLast != "") setCam((vector)llList2String(L, 0), (vector)llList2String(L, 1));
-}
-
 // first surface found going down at (x, y) from zTop to zBottom; zBottom if none
 float surfaceAt(float x, float y, float zTop, float zBottom)
 {
@@ -280,7 +270,7 @@ integer fitOK(integer info)
     return (gState != ST_IDLE && llListFindList(["personal", "social", "friends", "frame"], [gMode]) >= 0 && !(info & AGENT_FLYING));
 }
 
-// the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still.
+// the movement keys: passed on to your avatar (7.0: in Framing › Me too, which follows you as you walk; it hears NUDGE).
 // Friends, seated: W/S (FWD 1, BACK 2) are kept back for closer/wider (they do not move a seated avatar)
 takeCtl(integer pass)
 {
@@ -306,7 +296,6 @@ bail(string why)
     gAsking = FALSE;
     gPending = FALSE;
     gPauseWhy = "";
-    gFrozen = FALSE;
     gTypeSent = FALSE;
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
@@ -327,7 +316,6 @@ engage(string mode)
     if (gState != ST_IDLE) llMessageLinked(LINK_SET, STOP, "switch", "");
     gMode = mode;
     gWhy = "";
-    gFrozen = FALSE;
     gState = ST_WAIT;
     gWorkerOK = FALSE;
     gWarned = FALSE;
@@ -337,7 +325,7 @@ engage(string mode)
     gLastAct = llGetUnixTime();
     gLastTick = llGetTime();
     gFovSent = llGetCameraFOV();
-    takeCtl(mode != "frame");
+    takeCtl(TRUE);
     askWorker("start");
     setUi("rolling");
     if (gTrace) llOwnerSay("[Take 12] " + mode + " camera on");
@@ -357,13 +345,6 @@ resume()
     string why = gPauseWhy;
     gPauseWhy = "";
     llMessageLinked(LINK_SET, RESUME, why, "");
-    if (gFrozen && why != "tp")
-    {
-        gState = ST_FREEZE;                         // back to the frozen shot
-        reapply();
-        return;
-    }
-    gFrozen = FALSE;
     gState = ST_WAIT;
     if (why != "tp" && gLast != "") applyShot(gLast);
     else if (gWorkerOK)
@@ -413,7 +394,7 @@ activeTick(float dt)
     }
     else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
-    if ((gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) || fitOK(info) != gFitCtl) takeCtl(gMode != "frame");
+    if ((gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) || fitOK(info) != gFitCtl) takeCtl(TRUE);
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -424,7 +405,6 @@ activeTick(float dt)
         if (gPauseWhy == "tp" && llGetUnixTime() < gResumeAt) return;
         resume();
     }
-    if (gState == ST_FREEZE) return;                // photo hold: no cuts, no checks
     float fv = llGetCameraFOV();                    // the zoom is your lens: every camera keeps its picture for it
     if (llFabs(fv - gFovSent) > 0.004)
     {
@@ -590,7 +570,7 @@ default
         gPermOK = ((p & gNeed) == gNeed);
         if (gPermOK)
         {
-            takeCtl(gState == ST_IDLE || gMode != "frame");
+            takeCtl(TRUE);
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
@@ -665,7 +645,6 @@ default
         if (num == SHOT)
         {
             gWorkerOK = TRUE;
-            if (gState == ST_FREEZE) return;         // frozen: the shot on screen stays
             if (gState == ST_WAIT || gState == ST_ROLL) applyShot(str);
             else if (gState == ST_PAUSE || gState == ST_PEEK)
             {
@@ -710,7 +689,7 @@ default
         }
         else if (num == CMD)
         {
-            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free" || str == "fav")) return;
+            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free")) return;
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
@@ -727,40 +706,12 @@ default
                 }
             }
             else if (str == "watch" || str == "unwatch") gWatch = (str == "watch");
-            else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }  // Go live with the camera off: Social
+            else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }  // My turn after Scenery: Us
             else if (gWatch && gState == ST_IDLE && str == "scenery") return;   // watching: the double-tap cuts for all (sync)
-            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free") engage(str);
-            else if (str == "photo")
-            {
-                if ((gState == ST_ROLL || gState == ST_PEEK) && gLast != "")
-                {
-                    gFrozen = TRUE;
-                    gState = ST_FREEZE;
-                    llMessageLinked(LINK_SET, PAUSE, "photo", "");
-                    reapply();
-                    setUi("frozen");
-                }
-                else if (gState == ST_FREEZE)
-                {
-                    gFrozen = FALSE;
-                    gState = ST_ROLL;
-                    gAsking = FALSE;
-                    gHold = 8.0;
-                    llMessageLinked(LINK_SET, RESUME, "photo", "");
-                    reapply();
-                    gNextCut = llGetUnixTime() + 8;
-                    setUi("rolling");
-                }
-            }
+            else if (str == "personal") engage("frame");                // 7.0: Me is Framing › Me (Still's composer, with walking)
+            else if (str == "scenery" || str == "social" || str == "friends" || str == "frame" || str == "free") engage(str);
             else if (str == "next")
             {
-                if (gState == ST_FREEZE)
-                {
-                    gFrozen = FALSE;
-                    gState = ST_ROLL;
-                    llMessageLinked(LINK_SET, RESUME, "photo", "");
-                    setUi("rolling");
-                }
                 if (gState == ST_PEEK)
                 {
                     gState = ST_ROLL;                   // you asked for the next shot: the peek pause ends
@@ -769,20 +720,11 @@ default
                 }
                 if (gState == ST_ROLL) askWorker("skip");
             }
-            else if (str == "fav")
-            {
-                if (gMode == "scenery" && gLast != "" && (gState == ST_ROLL || gState == ST_FREEZE || gState == ST_PEEK))
-                {
-                    list F = llParseStringKeepNulls(gLast, ["|"], []);
-                    llMessageLinked(LINK_SET, FAV, llList2String(F, 0) + "|" + llList2String(F, 1), "");
-                }
-                else if (gMode != "free") llOwnerSay("[Take 12] Save spot works while the scenery camera is rolling.");   // Freehand saves its own
-            }
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
         {
-            llOwnerSay("[Take 12/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test,6 frozen)"
+            llOwnerSay("[Take 12/core] v" + VERSION + " mode " + gMode + ", state " + (string)gState + " (0 idle,1 waiting,2 rolling,3 paused,4 peek,5 test)"
                 + ", permissions " + (string)gPermOK + ", worker answered " + (string)gWorkerOK
                 + ", shot type " + (string)gType + ", free mem " + (string)llGetFreeMemory());
         }

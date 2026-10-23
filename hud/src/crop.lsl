@@ -11,7 +11,7 @@
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -153,7 +153,7 @@ menu()
         if (llList2Float(RATIOS, i) == gR) n = "✓ " + n;
         b += [n];
     }
-    string back = llList2String(["Back", "‹ Back", "↩ Back"], (integer)cfg("skin"));
+    string back = "‹ Back";
     llDialog(gOwner, t, ["Off", " ", back] + llList2List(b, 3, 5) + llList2List(b, 0, 2), gChan);
 }
 

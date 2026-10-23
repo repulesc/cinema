@@ -2,19 +2,19 @@
 //  Take 12  -  tips.lsl  (v5.8)  - the text above the button: status, sharing, tips
 //  The one owner of the text above the HUD. It shows, top to bottom:
 //   - the sharing block from sync (TEXT 7380): "● LIVE · 2 watching / Ana · Ben", "👁 Pano", an invitation;
-//   - the status line while a camera runs: the mode and who is in charge ("◇ Scenery · auto", "♡ Only friends ·
-//     your view", "◇ Scenery · started while you were idle", "▣ Photo · held", "... · paused · Esc to carry on");
+//   - the status line while a camera runs: the mode and who is in charge ("◇ Scenery · auto", "♡ Friends ·
+//     your view", "◇ Scenery · started while you were idle", "... · paused · Esc to carry on"; 7.0: no Photo);
 //     nothing with your own camera, and only the 👁 block while you watch someone;
 //   - a tip, for 6 s, when something just happened (each retires after 3 showings; after all, or 24 in all, Tips
 //     turns itself off; Help > Tips brings them back, from zero).
 //  The button, while a camera runs: a tiny clap (the sheet's clapped frame, a quarter of a second) when it starts,
-//  then every 8-12 s; perfectly still with your own camera, in Photo and in a pause. Same frame maths as ui's frame().
+//  then every 8-12 s; perfectly still with your own camera and in a pause. Same frame maths as ui's frame().
 //  Short notices of other scripts (lens, Frame, sync: "Your view is kept", "Half length", "Ana joined") take the whole
 //  text for their few seconds: whatever is on screen that this script did not write is left alone, and when its
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -34,7 +34,7 @@ float   LATE = 1.5;           // s after the event
 float   WAIT = 10.0;          // s a tip waits for a free moment, then it is dropped (not counted)
 float   GAP  = 20.0;          // s between two tips
 
-// 0 hello  1 scenery  2 me  3 us  4 only friends  5 still  6 photo  7 paused  8 back  9 more  10 sitting: Fit  11 idle start
+// 0 hello  1 scenery  2 me  3 us  4 friends  5 me (Framing)  6 connected  7 paused  8 back  9 more  10 sitting: Fit  11 idle start
 // 12 your lens  13 freehand
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
@@ -42,9 +42,9 @@ list TIPS = [
     "Scenery\ndouble-tap: next view · any key: your camera",
     "Me\nwalk around, it follows you · tap: menu",
     "Us\nit cuts to whoever speaks · double-tap: next",
-    "Only friends\nframe it yourself, then Esc: it keeps your view",
-    "Still\nW/S A/D adjust · Page Up / Down: you up or down",
-    "Photo\ntake your pictures · tap › Resume",
+    "Friends\nframe it yourself, then Esc: it keeps your view",
+    "Me\nwalk: it follows · stand: it holds the picture",
+    "Connected\nwhoever films leads · hold: the Connect panel",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
     "Tap while it rolls\ntap: next, stop, connect, cameras",
@@ -53,8 +53,8 @@ list TIPS = [
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
     "Freehand\nframe it, hold still: it holds · Esc: back to it"];
 list MODES = ["scenery", "personal", "social", "friends", "frame", "free"];   // tips 1 to 5, and 13
-list NAMES = ["Scenery", "Me", "Us", "Only friends", "Still", "Freehand"];
-list MARKS = ["◇", "○", "◎", "♡", "□", "✥"];
+list NAMES = ["Scenery", "Me", "Us", "Friends", "Me", "Freehand"];      // 7.0: Me is Framing › Me (frame)
+list MARKS = ["◇", "○", "◎", "♡", "○", "✥"];
 // your lens (35 mm equivalent) and the range each camera suggests: Scenery wide, people 24-85 (Still has its own guide;
 // Freehand: every lens is yours)
 list LO = [0, 35, 24, 35, 0, 0];
@@ -63,7 +63,6 @@ list HI = [28, 50, 50, 85, 999, 999];
 key     gOwner;
 integer gOn;                 // Tips on
 integer gStat;               // the status line on
-integer gSkin;               // the menu style: 0 Plain shows no marks
 string  gN;                  // showings per tip, one digit each
 string  gSt;                 // the last state, mode and why from core
 string  gMode;
@@ -103,7 +102,6 @@ load()
 {
     gOn = (cfg("tips") != "0");
     gStat = (cfg("status") != "0");
-    gSkin = (integer)cfg("skin");
     gLook = (integer)cfg("look");
     gFace = ALL_SIDES;
     if (cfg("face") != "") gFace = (integer)cfg("face");
@@ -162,7 +160,7 @@ string lensTxt(integer m)
 string line()
 {
     integer m = llListFindList(MODES, [gMode]);
-    if (m < 0 || (gSt != "rolling" && gSt != "frozen" && gSt != "peek")) return "";
+    if (m < 0 || (gSt != "rolling" && gSt != "peek")) return "";
     if (!gStat && !(gMode == "frame" && gSt == "rolling")) return "";    // Still's lens guide shows even then
     string s = llList2String(NAMES, m);
     string k = llList2String(MARKS, m);
@@ -172,17 +170,10 @@ string line()
     else if (gMode == "friends" && gLed) w = "your view";
     else if (gMode == "free") w = "held";
     else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";
-    if (gSt == "frozen")
-    {
-        s = "Photo";
-        k = "▣";
-        w = "held";
-    }
-    else if (gSt == "peek" && gMode == "free") w = "framing · hold still" + lensTxt(m);   // your lens while you frame
+    if (gSt == "peek" && gMode == "free") w = "framing · hold still" + lensTxt(m);   // your lens while you frame
     else if (gSt == "peek") w = "paused · Esc to carry on";
     else if (gMode != "frame") w += lensTxt(m);
-    if (gSkin) s = k + " " + s;
-    return s + " · " + w;
+    return k + " " + s + " · " + w;
 }
 
 // sharing block, status line, tip: written only when it changed, and never over another script's notice
@@ -242,12 +233,12 @@ show(integer i)
 onState(string st, string mode)
 {
     integer rolling = (st == "rolling");
-    integer idle = (st != "rolling" && st != "frozen" && st != "peek");
-    integer was = (gSt == "rolling" || gSt == "frozen" || gSt == "peek");
+    integer idle = (st != "rolling" && st != "peek");
+    integer was = (gSt == "rolling" || gSt == "peek");
     gTip = "";                                              // a shown tip is about what was
     gShowT = 0.0;
     if (gWant != 0 || !idle) gWant = -1;                    // the hello waits through the start-up states
-    if (rolling && (!was || mode != gMode))                 // a new run (not the end of a Photo or a pause)
+    if (rolling && (!was || mode != gMode))                 // a new run (not the end of a pause)
     {
         gRollT = llGetTime();
         gMore = FALSE;
@@ -256,7 +247,6 @@ onState(string st, string mode)
         integer m = llListFindList(MODES, [mode]);
         if (m >= 0) want(m + 1 + 7 * (m == 5));             // Freehand: tip 13
     }
-    else if (st == "frozen") want(6);
     else if (st == "peek" && mode != "free") want(7);       // Freehand: framing is the point, not a pause
     else if (idle && was)
     {
@@ -319,7 +309,7 @@ default
             gWhy = llList2String(L, 3);
             if (st != "rolling")
             {
-                gClapT = 0.0;                               // still: your own camera, Photo, a pause
+                gClapT = 0.0;                               // still: your own camera, a pause
                 if (gClapEnd > 0.0) clap(FALSE);
                 gClapEnd = 0.0;
             }
@@ -336,8 +326,10 @@ default
         else if (num == TEXT)
         {
             integer i = llSubStringIndex(str, "|");
+            string was = gKind;
             gKind = "";
             if (i > 0) gKind = llGetSubString(str, 0, i - 1);
+            if (was == "" && (gKind == "live" || gKind == "view")) want(6);     // connected: what it means
             gSync = llDeleteSubString(str, 0, i);                  // not llGetSubString(str, i + 1, -1): on "|" that is "|"
         }
         else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "look" || str == "face" || str == "all")) load();

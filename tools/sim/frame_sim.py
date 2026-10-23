@@ -105,7 +105,7 @@ for i, (cam, (f1, y1), (f2, y2)) in enumerate(GRP):
             check(y_of(h, zc, D, phi, fov) <= 0.97, f"group {NAMES[i]}: a head is cut")
             check(y_of(BODY["eyes"] * h, zc, D, phi, fov) > -0.6, f"group {NAMES[i]}: someone's eyes near the bottom")
 
-# ---- 5.9: the lens guide and Shift + A/D ------------------------------------------------------------------------
+# ---- 5.9: the lens guide; 7.0: walking ----------------------------------------------------------------------------
 REC = [50, 85, 105]                                           # the classic lens per framing (35 mm equivalent)
 check([int(v) for v in lsl_list("LENSES")] == REC, f"LENSES differ: {lsl_list('LENSES')}")
 mm_of = lambda fov: round(12.0 / math.tan(fov / 2))
@@ -119,11 +119,26 @@ for i, (cam, side, x, (f1, y1), (f2, y2)) in enumerate(PORT):
     for h in HEIGHTS:
         zc = cam * h; sol = solve(BODY[f1] * h, y1, BODY[f2] * h, y2, zc, fov_of_mm(REC[i]))
         check(sol is not None and sol[0] >= DMIN, f"{NAMES[i]} at {REC[i]} mm, {h} m: closer than DMIN")
-# Shift + A/D: Second Life sends Shift + A/D as strafe (CONTROL_LEFT/RIGHT); plain A/D (ROT) still walks round you
-for frag in ("if (gKeys & CONTROL_ROT_LEFT) gNAz += 3.0;", "if (gKeys & CONTROL_ROT_RIGHT) gNAz -= 3.0;",
-             "if (gKeys & CONTROL_LEFT) gNX -= 0.02;", "if (gKeys & CONTROL_RIGHT) gNX += 0.02;", "x += gNX;",
-             "float SLIDE  = 0.6;", "gNX = 0.0;", "llAtan2(gNX * t * gAsp, 1.0)", "llAtan2(x * t * gAsp, 1.0)"):
+# 7.0 Framing › Me: it MOVES, THEN HOLDS. No nudges (Freehand is the manual camera): the keys walk you, the camera
+# travels with you (camera and focus move by your step, so the picture stays), and 1 s after you let go, once you
+# stand still, it composes again in front of you (a glide, the people near you looked at again)
+for gone in ("gNDist", "gNAz", "gNX", "SLIDE", "resetNudges", "step()"):
+    check(gone not in LSL, f"frame: the nudges are gone in 7.0 ({gone})")
+for frag in ("llAtan2(x * t * gAsp, 1.0)", "if (gKeys) gWalk = TRUE;", "if (gWalk) walk();", "gCam += m;", "gFoc += m;",
+             "else if (llGetTime() - gStillT > 1.0 && llVecMag(llList2Vector(d, 1)) < 0.2)", "gWith = nearby(P);", "shoot(FALSE);",
+             "gCam = llList2Vector(s, 0);", "gAt = llList2Vector(llGetObjectDetails(gOwner, [OBJECT_POS]), 0);"):
     check(frag in LSL, f"frame: missing {frag}")
+core = open(os.path.join(R, "hud", "src", "core.lsl")).read()
+check('takeCtl(mode != "frame")' not in core and "takeCtl(TRUE);" in core and 'else if (str == "personal") engage("frame");' in core,
+      "core: Framing › Me walks you (the keys pass on) and /77 me starts it")
+# a port of walk(): you walk 3 m in 3 s; the camera keeps the same offset all along, then composes once you stand
+cam, foc, at = [10.0, 0.0, 1.5], [0.0, 0.0, 1.5], [0.0, 0.0, 1.0]
+off0 = [c - a for c, a in zip(cam, at)]
+for step in range(15):                                        # 5 ticks a second
+    P = [0.2 * (step + 1), 0.0, 1.0]
+    m = [p - a for p, a in zip(P, at)]
+    if math.dist(P, at) > 0.05: cam = [c + d for c, d in zip(cam, m)]; foc = [f + d for f, d in zip(foc, m)]; at = P
+check(all(abs((c - a) - o) < 1e-9 for c, a, o in zip(cam, at, off0)), "walking: the camera must keep its offset from you")
 # the view turns by atan(x * t * aspect): you land at screen x (+ = right) of the picture's half-width; 6.6: the
 # picture's real aspect (the Frame format, or your window), so Half length's 0.236 is exactly the golden line
 def load(a, r):                                               # frame.lsl load(): (gAsp, gFit, gTS)

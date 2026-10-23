@@ -22,7 +22,7 @@
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
