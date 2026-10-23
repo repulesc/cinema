@@ -11,6 +11,7 @@ What we build: `docs/PRODUCT.md`. How: `docs/ARCHITECTURE.md`. v3 is frozen and 
 | 4.0 · Phase C | In-world test by the user, then tuning | User, then Sonnet | ⏳ next |
 | 4.4.x | Beta polish from in-world tests: indoor mode, quiet chat, calm people cameras, reach learning, people framing, clearer texts | Opus | ⏳ ongoing |
 | Frame | A slim, held picture of you (or you and the people with you): Full length, Half length, Close. 4.6.0 (`frame.lsl`). Next: in-world test, body calibration | Opus | ⏳ in-world test |
+| Soft keys | Up to five quiet keys beside the clapper, only in a few busy moments. Concept and mockup in `lab/softkeys/` | – | 💭 to decide |
 | Composition tool (later) | A fuller, more serious version, starting from `lab/frame-full-4.5.0/` (subjects, landscapes, photo shapes, lens guidance). Only after Take 12 is out of beta | – | 💤 later |
 | Take 12 Scenery | The free scenery camera (L$0), generated from `hud/src` (6.1.0, `scenery/`). Replaces the old Lite. Next: set `BUY_URL`, build it in-world, list it | Opus | ⏳ ready to build |
 | Later | Backlog at the bottom, only on request | – | – |
