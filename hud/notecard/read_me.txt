@@ -27,7 +27,7 @@ DOUBLE-TAP  (a double-click)
    - while a camera runs: the next view, now
 
 HOLD  (about 1 second, until the clapper claps)
-   - a shortcut to the Share panel (see SHARE THE VIEW). Share is in both menus too.
+   - a shortcut to the Connect panel (see CONNECT). Connect is in both menus too.
 
 ANY MOVEMENT KEY
    - your own camera, instantly
@@ -61,18 +61,19 @@ You and the friends you picked, framed together. While your group stays in the p
  - Sitting or lying, W / S step closer or wider.
  - Tap the button > Release to let go of your view and go back to automatic framing (sitting down, standing up or a friend coming or going does it too).
 
-SHARE THE VIEW
-Let the people with you watch what your camera films. One person leads; everyone watching sees that camera.
- - HOLD the button: the Share panel. It first looks who is near you (Take 12 or the free Take 12 Watch).
- - Go live: your camera starts if it is off (Us) and everyone near you who is free is invited. Or tap + name to invite one person, or 👁 name to watch someone who is already live.
- - Friends wearing Take 12 Watch, or Take 12 with you in their Friends list, join at once. Anyone else sees "... invites you - hold to watch" for 20 seconds (a double-tap also accepts).
- - Above your button while you share: "● LIVE · 3 watching" and the names of who is connected to your camera, e.g. "Ana · Ben (looking around) · Dee (no signal)". Someone silent for 45 seconds is dropped. While you watch: "👁 Pano" (or "no signal" if the leader goes quiet).
- - Hold again while live: who watches, Invite more, Roster (pass the camera to someone, or remove them), Lead (when someone asks to lead: Ask / Always / Never), End live.
- - End live always asks first ("End the live view for 3 people?"), so it never happens by accident.
- - If your camera stops while you are live (Stop, a movement key in Scenery, typing), the live view only PAUSES: your viewers keep your last shot, and above your button: "● LIVE · paused · double-tap: carry on". Start a camera again and they follow it again. Live ends only with End live, leaving the region, or taking the HUD off.
+CONNECT
+Connect with the people near you, and watch one camera together. Once you are connected, WHOEVER FILMS LEADS: start any camera, and everyone connected sees it. When nobody films, everyone has their own camera, still connected.
+ - HOLD the button (or tap > Connect): the Connect panel. It first looks who is near you wearing Take 12 or the free Take 12 Watch.
+ - + name connects you with one person, + Everyone with all of them. Someone already connected shows as ⇄ Join name.
+ - Friends wearing the Take 12 Watch, or Take 12 with you in their Friends list, are connected at once. Anyone else sees "... wants to connect · double-tap: yes" for 20 seconds (a double-tap or the panel says yes).
+ - Connecting starts no camera. Start any camera (or double-tap) and the others see it: "⇄ You film · Ana, Ben see it" above your button. They see "⇄ Pano films".
+ - MY TURN: while you watch, start any camera (the menu, a double-tap when nobody films, or Hold > My turn), and you film: everyone, Pano too, now sees yours.
+ - A MOVEMENT KEY while you watch gives you your own camera for a moment; stand still for 4 seconds and the shared view is back. Orbit your camera to look around; Esc brings you back.
+ - Double-tap while you watch: the next view, for everyone.
  - Everyone sees the same picture, whatever their zoom: each viewer's camera stands where their own lens shows it the same size.
- - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
- - Tap the button: the usual menu (next, stop, share, modes).
+ - Your camera stopping never disconnects anyone: nobody films for a while, that is all.
+ - DISCONNECT (Hold > Disconnect, or the key): you leave; the others stay connected. If you were the one holding it, another Take 12 keeps the others connected. If only Take 12 Watches would be left, it asks first ("Ana and Ben will lose the view").
+ - Above your button the names show "(own camera)" or "(no signal)"; someone silent for 45 seconds is dropped. Leaving the region or taking the HUD off disconnects you.
 
 STILL
 For a picture of yourself, or of you and whoever stands right next to you. Still places the camera well and holds it still: no cuts, and it never moves by itself.
@@ -109,8 +110,8 @@ Second Life plays your pose in your viewer, so no script can see where your body
 === THE KEYS (only if your HUD has the keys strip) ==========
 
 In a few busy moments, a short row of quiet keys appears beside the button. Everything else stays in the menus.
-   Live, as the director   NEXT · HOLD · INVITE · END     HOLD freezes the shot for everyone; END asks first
-   Watching someone         NEXT · ASK · LEAVE             NEXT cuts for everyone; ASK asks to lead
+   Connected, holding it    NEXT · INVITE · DISCONNECT    INVITE: connect more people
+   Connected, watching      NEXT · MY TURN · DISCONNECT   NEXT cuts for everyone; MY TURN: you film
    Freehand                 SAVE · VIEW A · VIEW B · STOP  the saved view in use is underlined
    Still                    FULL · HALF · CLOSE            the framing in use is underlined
 The rest of the time the keys are gone, and the button is alone again.
@@ -136,11 +137,11 @@ While Take 12 films, a short line above the button always says which camera runs
    ◇ Scenery · started while you were idle   the idle start began it
    ○ Me · auto        ◎ Us · auto            □ Still · Close · 105 mm ✓
    ♡ Only friends · auto                     or  · your view  (after you framed it yourself)
-   ▣ Photo · held                            (HOLD while live) tap > Resume to carry on
+   ▣ Photo · held                            (/77 photo) tap > Resume to carry on
    ◇ Scenery · paused · Esc to carry on      you moved the camera yourself
 
 Nothing above the button means: it is your own camera.
-While you share, "● LIVE · 2 watching" and the names sit on top of it. While you watch someone, you see only "👁 Pano".
+While you are connected, "⇄ You film · Ana, Ben see it" or "⇄ Pano films" sits on top of it.
 Short messages ("Your view is kept", "Half length", "Ana watches") show for a few seconds, then the line comes back.
 Options > Look > Status line turns it off (or /77 statusline off).
 
@@ -177,11 +178,11 @@ Tap the button > Help > Tips to turn them off, or back on (they start again from
 
 === THE LIVE MENU (tap the button while a camera runs) =====
 
-RESUME    Only while the shot is held (the HOLD key while live): carry on.
+RESUME    Only while the shot is held (/77 photo): carry on.
 SAVE      Keep the view on screen as a favourite spot. Your saved spots come back now and then. (Scenery only.)
 NEXT      Cut to the next view now.
 STOP      Give your camera back.
-SHARE     The Share panel (as a hold does).
+CONNECT   The Connect panel (as a hold does).
 MODES     Switch to another camera.
 
 
@@ -214,7 +215,7 @@ Any movement key (Scenery), tapping the button, or starting to type (Scenery and
 
 Everything above is in the menu. If you like typing, these work on channel 77 (for example  /77 scenery ).
 
-scenery  me  us  friends  still  share  stop  next  photo  fav  menu  status
+scenery  me  us  friends  still  connect  size  stop  next  photo  fav  menu  status
 crop 4:5 | 3:2 | 1:1 | 4:3 | 2.39:1 | 9:16 | off     Frame (also crop flip, crop back)
 (personal, social and frame still work too)
 pace <seconds>        e.g.  /77 pace 90

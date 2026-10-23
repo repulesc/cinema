@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -281,7 +281,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share crop size stop next photo menu status pace reach indoors face skin tips statusline trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still connect crop size stop next photo menu status pace reach indoors face skin tips statusline trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -290,8 +290,8 @@ onCommand(string msg)
     string c = llList2String(a, 0);
     string v = llList2String(a, 1);
     integer n = (integer)v;
-    integer m = llListFindList(["me", "us", "still"], [c]);             // the menu names work too
-    if (m >= 0) c = llList2String(["personal", "social", "frame"], m);
+    integer m = llListFindList(["me", "us", "still", "connect"], [c]);  // the menu names work too
+    if (m >= 0) c = llList2String(["personal", "social", "frame", "share"], m);
     if (llListFindList(["scenery", "personal", "social", "friends", "frame", "share", "stop", "next", "photo", "fav", "grab"], [c]) >= 0)
         llMessageLinked(LINK_SET, CMD, c, "");
     else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");          // Frame: 4:5, off, flip, back (crop)

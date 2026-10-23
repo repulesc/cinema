@@ -22,14 +22,14 @@ STALE = ["Personal, Social, Friends and Frame", "Hold: the live menu", "Friends 
          "Frame holds", "And Frame:", "Typing in chat does not stop Social"]
 for name, text in LISTINGS:
     for w in STALE: check(w not in text, f"{name}: stale wording '{w}'")
-for w in ("Scenery", "Me shows you", "Us is for", "Still is for", "SHARE THE VIEW", "Take 12 Watch", "Hold: share your view", "Only friends",
+for w in ("Scenery", "Me shows you", "Us is for", "Still is for", "CONNECT", "Take 12 Watch", "Hold: connect", "whoever films leads", "Only friends",
           "Your idle time, framed.", "What is new in 6.0", "YOUR LENS"):
     check(w in main, f"listing: missing '{w}'")
 for w in ("Take 12 Watch", "free", "Nothing to click", "Double-tap", "do not need Take 12"):
     check(w.lower() in watch.lower(), f"watch listing: missing '{w}'")
 for w in ("Take 12 Scenery", "Free", "L$0", "More cameras", "Double-tap", "skybox", "Idle start", "Photo hold", "full Take 12"):
     check(w in free, f"scenery listing: missing '{w}'")
-for w in ("Lite", "Hold: share", "SHARE THE VIEW", "three looks"):
+for w in ("Lite", "Hold: share", "Hold: connect", "SHARE THE VIEW", "three looks"):
     check(w not in free, f"scenery listing: says '{w}' (it has no sharing, and the name Lite is not used)")
 check("Take 12 Scenery" in main, "listing: the full Take 12 should name its free companion")
 
@@ -58,11 +58,11 @@ check(const("TAGLINE") in main, "listing: the boards' tagline is not in the list
 check("LENS" in const("NEW") and "NEW" in const("NEW"), "boards: the NEW label must name the newest feature (6.0: your lens)")
 check("Your lens" in re.search(r"CHIPS = \[(.*?)\]", art).group(1), "boards: a chip for the lens")
 chips = re.search(r"CHIPS = \[(.*?)\]", art).group(1)
-check("Share the view" in chips and "Friends mode" not in chips, f"boards: chips {chips}")
-check("Double-tap to start" in const("HOWTO") and 'HOLD  " + ("photo" if FREE else "share")' in art, "boards: the how-to lines")
+check("Connect" in chips and "Share the view" not in chips and "Friends mode" not in chips, f"boards: chips {chips}")
+check("Double-tap to start" in const("HOWTO") and 'HOLD  " + ("photo" if FREE else "connect")' in art, "boards: the how-to lines")
 fchips = re.search(r"FREE_CHIPS = \[(.*?)\]", art).group(1)
-check(all(c in fchips for c in ("Drone views", "Skybox rooms", "Idle start", "Photo hold")) and "Share" not in fchips, f"free boards: chips {fchips}")
-check('FULL_ONLY = ("SHARE",)' in art, "free boards: only the Share view is dimmed (rooms are in the free build)")
+check(all(c in fchips for c in ("Drone views", "Skybox rooms", "Idle start", "Photo hold")) and "Connect" not in fchips, f"free boards: chips {fchips}")
+check('FULL_ONLY = ("CONNECT",)' in art, "free boards: only the Share view is dimmed (rooms are in the free build)")
 check("Lite" not in art and "LITE" not in art, "board script: the name Lite is not used")
 for w in STALE: check(w not in art, f"board script: stale wording '{w}'")
 

@@ -16,7 +16,7 @@ Take 12 Watch
 
 ## Short description (the line search results show; keep it first)
 ```
-Free. A tiny HUD for friends of Take 12: when someone near you goes live with Take 12, your camera follows theirs. Nothing to click. Tap to get your own camera back.
+Free. A tiny HUD for friends of Take 12: when someone near you connects with Take 12, you see the camera of whoever films. Nothing to click. Tap to disconnect.
 ```
 
 ## Full description
@@ -25,15 +25,15 @@ Take 12 Watch lets you see what a friend's Take 12 camera sees, while they show 
 
 HOW IT WORKS
 - Wear the Watch on a HUD point (Top Right is usual) and allow camera control once.
-- When a friend near you goes live with Take 12 and invites you, your camera follows theirs at once. Wearing the Watch is your yes: there is nothing to click.
-- Above the Watch you see whose view you are watching: "Pano".
+- When a friend near you connects with you from Take 12, you are connected at once. Wearing the Watch is your yes: there is nothing to click. Whoever films, you see it; when nobody films, you have your own camera.
+- Above the Watch you see who films: "Pano films".
 - You see the same picture as your friend, whatever your own zoom: the Watch places the camera so your lens shows it the same size.
 
 YOU ARE IN CONTROL
-- Tap the Watch, or press any movement key: your own camera is back.
+- Tap the Watch: disconnect, your own camera is back. Any movement key: your own camera for a moment, then the shared view again.
 - Double-tap the Watch: the next view, for everyone who watches.
 - Orbit your own camera to look around. Your friend sees that you are looking around, and Esc brings you back to the shared view.
-- If your friend passes the camera to someone else, the Watch follows the new person by itself.
+- When someone else connected starts filming, the Watch follows them by itself.
 - If your friend logs off or leaves, the Watch gives your camera back within 25 seconds.
 
 GOOD TO KNOW
@@ -56,7 +56,7 @@ Follows the camera when your friend passes it on
 
 ## Keywords
 ```
-take 12, take12, watch, viewer, share view, live view, camera, camera hud, free, hud, friends, tour, group view, follow camera
+take 12, take12, watch, viewer, connect, share view, live view, camera, camera hud, free, hud, friends, tour, group view, follow camera
 ```
 
 ## Short promo lines
@@ -68,5 +68,5 @@ A tiny free HUD: your camera follows a friend's Take 12.
 
 ## One line "what is it?"
 ```
-Take 12 Watch is a free one-button HUD: when a friend near you goes live with Take 12, your camera follows theirs, and any movement key gives yours back.
+Take 12 Watch is a free one-button HUD: when a friend near you connects with Take 12, you see the camera of whoever films, and a tap gives yours back.
 ```

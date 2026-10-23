@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -38,7 +38,7 @@ float   GAP  = 20.0;          // s between two tips
 // 12 your lens  13 freehand
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
-    "Take 12\nTap: menu · Double-tap: scenery · Hold: share",
+    "Take 12\nTap: menu · Double-tap: scenery · Hold: connect",
     "Scenery\ndouble-tap: next view · any key: your camera",
     "Me\nwalk around, it follows you · tap: menu",
     "Us\nit cuts to whoever speaks · double-tap: next",
@@ -47,7 +47,7 @@ list TIPS = [
     "Photo\ntake your pictures · tap › Resume",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
-    "Tap while it rolls\ntap: next, stop, share, cameras",
+    "Tap while it rolls\ntap: next, stop, connect, cameras",
     "Sitting\nsitting: Page Up / Down move you in the picture",
     "Idle start\nstay idle ",
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
@@ -77,7 +77,7 @@ string  gText;               // the text this script composed last
 string  gLast;               // ... and as it reads back from the prim (cut short past 254 bytes)
 // 6.7.1: every script answers ui's version check (MSG_VER "?"); one that stays silent is missing or stopped, and
 // without it a menu can do nothing at all (Share did, when share.lsl was not in the HUD). Said once, in chat.
-string  NEED = "core scenery people friends picker frame free lens sync share crop keys fit";
+string  NEED = "core scenery people friends picker frame free lens sync connect crop keys fit";
 list    gHeard;              // who answered
 float   gVerT;               // ... since the check (0: none running)
 integer gWant = -1;          // the tip waiting for a free moment

@@ -1,5 +1,19 @@
 # Changelog
 
+## 6.8.0
+**Connect: connect first, then whoever films leads.** Sharing is re-thought: you connect with the people near you, and once connected, everyone sees the camera of whoever films.
+- **Connect** (hold the button, or tap › Connect): + name connects you with one person, + Everyone with all of them, ⇄ Join name joins someone already connected. Friends on the Take 12 Watch, or with you in their Friends list, connect at once; anyone else sees "… wants to connect · double-tap: yes". **Connecting starts no camera.**
+- **Whoever films leads.** Start any camera and everyone connected sees it ("⇄ You film · Ana, Ben see it"). While you watch, starting a camera is **My turn**: the lead comes to you, and everyone (the one who filmed before too) sees yours. Two at once: the last one to start leads. When nobody films, everyone has their own camera and stays connected ("⇄ Connected · nobody films · double-tap: film").
+- **A movement key while watching** no longer disconnects you: it gives you your own camera for a moment, and the shared view is back after 4 s still.
+- **Disconnect** (Hold › Disconnect, or the key) is the only way out: you leave and the others stay. The one holding the connection hands it to another Take 12 (no camera starts for them); with only Watches left, it asks first.
+- **Simpler panels** (`share.lsl` is now **`connect.lsl`**: delete `share` from the HUD): no Go live, End live, roster, Pass camera or lead requests (Ask / Always / Never). Holding it: Film / Next, + Invite, Disconnect. Watching: My turn, Next, Disconnect.
+- **Keys:** holding it NEXT · INVITE · DISCONNECT; watching NEXT · MY TURN · DISCONNECT (the HOLD key is gone, like Photo from the menu). **Re-upload `hud/art/take12_keys_512x1024.png`** as `take12_keys`: the atlas has new rows.
+- **The Watch (6.8.0)** speaks the same way: "⇄ Pano films", a tap disconnects, a movement key gives your camera for a moment, nobody filming gives your own camera.
+- **Fix found by the sim:** when the lead changed twice within a second, someone joining the one in between was told "disconnected"; now they are pointed to whoever films (`director|…`).
+- **Words:** Share, Go live and End live became Connect and Disconnect everywhere: the menus, the Read Me (CONNECT), `docs/CONNECT.md` (was SHARING.md), the listings and the boards (regenerated). `/77 connect` opens the panel.
+- **Checks:** `sync_sim` plays the new flow in a small region: connect without a camera, at once / asked, my turn, two at once, nobody filming, your camera for a moment, every Disconnect, an older hub, heartbeats, toggles; `keys_sim`, `listing_check`, `free_test` follow.
+- **Version 6.8.0** in all fifteen scripts and the Watch.
+
 ## 6.7.1
 **Fit the right way up, faster; a bigger button; a missing script says so.**
 - **Fit:** Page Up now raises the camera and Page Down lowers it (6.7.0 moved you up in the picture, which read as the camera going down). A tap is 5 cm (was 2). Hold for more: it starts at 10 cm/s, for precision, and speeds up to 50 cm/s after about 2 s; up to 1.5 m either way. Shift + Page Up can't be done: Second Life doesn't tell scripts about Shift, so the hold is the big move. Your 6.7.0 fits start over (they had the other sign).

@@ -17,12 +17,12 @@ Take 12 - Cinematic Camera HUD
 ```
 Longer title, if you want more search words in it:
 ```
-Take 12 - Cinematic Camera HUD: Drone Views, Skybox Rooms, Share Your View
+Take 12 - Cinematic Camera HUD: Drone Views, Skybox Rooms, Connect With Friends
 ```
 
 ## Short description (the line search results show; keep it first)
 ```
-A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically and framed for your lens, a new one every minute. Share your view live with friends. One button. Any movement key brings your camera back.
+A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically and framed for your lens, a new one every minute. Connect with friends and watch one camera together. One button. Any movement key brings your camera back.
 ```
 
 ## Full description
@@ -44,12 +44,12 @@ FRAME IT YOURSELF
 Freehand is for photographers: frame the shot yourself, of people or of an object, hold still for a second and Take 12 holds it like a tripod. Walk into your picture, pose, zoom: the subject keeps its size as the lens changes. Two saved views per region.
 In Only friends, set the view up with your own camera and press Esc: Take 12 carries on with your view, following your friends. Sitting or lying down, the camera looks down on you from above.
 
-SHARE THE VIEW
-Hold the button and choose Go live. Everyone near you who wears Take 12 or the free Take 12 Watch follows your camera at once, with nothing to click.
-- Above your button: who is connected, live.
+CONNECT
+Hold the button and connect with the people near you who wear Take 12 or the free Take 12 Watch. Once connected, whoever films leads: start any camera and everyone sees it. Nobody filming, everyone has their own camera, still connected.
+- Above your button: who is connected, and who films.
 - Everyone sees the same picture, whatever their own zoom.
-- Double-tap while watching: the next view, for everyone.
-- Pass the camera, or let a friend ask to lead: ask me, always or never.
+- Double-tap while watching: the next view, for everyone. My turn: you film, everyone sees yours.
+- A movement key gives you your own camera for a moment; stand still and the shared view is back.
 
 YOUR LENS
 Your viewer's zoom is your lens, and every camera frames for it. Zoom in and the camera glides back, so everyone keeps their size with the flatter faces of a portrait lens. A longer lens brings more close views, a wider one more of the place. Still names the classic lens for each framing (50, 85, 105 mm) and shows yours live.
@@ -66,7 +66,7 @@ ALSO
 CONTROLS
 - Tap: the menu, always (while the camera runs, the live menu).
 - Double-tap: start Scenery, or the next view.
-- Hold: share your view.
+- Hold: connect with the people near you.
 - Any movement key: your camera, instantly.
 
 WHO IT IS FOR
@@ -75,7 +75,7 @@ Explorers, photographers, anyone who likes to sit back in a beautiful place and 
 GOOD TO KNOW
 - One small pixel-art clapper in three looks; while the camera runs it gives a tiny clap now and then.
 - Wear it on a HUD point (Top Right is usual) and allow camera control once.
-- It only moves your view, inside your region. Nothing is recorded; when you share, only the camera position goes to the people you invite.
+- It only moves your view, inside your region. Nothing is recorded; when you are connected, only the camera position goes to the people you connected with.
 - Free companions: Take 12 Watch for your friends, and Take 12 Scenery, the scenery camera on its own, to try first.
 - Read Me notecard included.
 - Permissions: (you)
@@ -87,13 +87,13 @@ GOOD TO KNOW
 Automatic camera views from beyond your avatar's back
 Scenery: drone and horizon views up to 100 m, skybox aware
 Your lens, everywhere: every camera frames for your zoom
-Share your view live with friends: free Take 12 Watch for them
+Connect with friends: one camera for all, the free Take 12 Watch for them
 One button: tap, double-tap, hold; any movement key to return
 ```
 
 ## Keywords
 ```
-take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud, share, watch, share view, live view, group view, tour, lens, zoom, telephoto, portrait lens, focal length
+take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud, connect, share, watch, share view, live view, group view, tour, lens, zoom, telephoto, portrait lens, focal length
 ```
 
 ## Short promo lines (group notices, social posts)
@@ -103,7 +103,7 @@ Your camera, off your avatar's back.
 See your region from the sky, the horizon and the corner of the room. Automatically.
 One button: drone views, skybox rooms, friends in one frame.
 New: your zoom is your lens, and every camera frames for it.
-Hold the button, go live, and your friends watch your view.
+Hold the button, connect, and your friends see whoever films.
 ```
 
 ## One line "what is it?" (for a vendor or a friend)
@@ -148,7 +148,7 @@ The boards use drawn pixel-art "views", **not real screenshots**. Marketplace bu
 2. A corner view inside a skybox (Scenery, room mode).
 3. A group of friends framed together (Us > Only friends).
 4. The seated view from above (sit on a bed or a sofa with a friend).
-5. Sharing: the Share panel open (hold the button), or the "LIVE - 2 watching" text above the HUD.
+5. Connect: the Connect panel open (hold the button), or the "⇄ You film · Ana, Ben see it" text above the HUD.
 6. The line above the button with your lens, for example "Us - auto - 50 mm" (zoom in first with Ctrl+0).
 7. The menu open on screen: Tap shows the main menu, in the Symbols style.
 

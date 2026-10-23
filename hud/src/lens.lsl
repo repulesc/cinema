@@ -7,7 +7,7 @@
 //  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
