@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All eleven scripts go in the **root prim** of the HUD (since 6.2 it may carry four linked boxes for Frame, see `crop.lsl`). Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All twelve scripts go in the **root prim** of the HUD (since 6.2 it may carry four linked boxes for Frame, see `crop.lsl`). Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -53,6 +53,8 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
 | **7381 STILL** | frame → tips | `"<framing>\|<recommended mm>\|<your mm>"` | 5.9: Still's lens guide, sent at each shot and glide and at once on FOVMSG |
+| **7392 SHARE_UI** | sync → share | `"<camOn>\|<live/view/inv/lead/near>\|…"` | 6.2: open a Share panel (share.lsl draws it) |
+| **7393 SHARE_DO** | share → sync | `golive`, `invite\|<key>`, `watch\|<key>`, `who`, `end`, `lead`, `panel`, `pass\|<key>`, `kick\|<key>`, `allow`, `decline`, `leave`, `ask`, `accept`, `no`, `note\|<text>` | 6.2: the choice made in a panel |
 | **7390 CROP** | crop → cameras | `"<format>\|<window>"` (width / height; format 0 = off) | 6.2: for composing inside the frame (step 2) |
 | **7380 TEXT** | sync → tips | `"<live/view/inv or empty>\|<the sharing block>"` | 5.8: tips stacks it above the status line |
 | 7370 STATUS | ui → all | `?` | every script prints one line |

@@ -16,7 +16,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 ## Repository layout
 | Path | Contents |
 |---|---|
-| `hud/src/` | The eleven HUD scripts |
+| `hud/src/` | The twelve HUD scripts |
 | `hud/art/` | The button texture `take12_icon_sheet_512x256.png` (all three looks, switchable in the menu), single-look variants and a preview |
 | `scenery/` | **Take 12 Scenery** (free): the scenery camera on its own. `scenery/src` is generated from `hud/src` (`tools/build_scenery.py`); its own notecard, listing text, ad boards and build steps (`scenery/README.md`) |
 | `legacy/v3/` | The frozen, working v3.0.0: scripts, docs and build steps |
@@ -44,7 +44,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
    - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
-3. **Delete all old scripts from the prim** (v3 or earlier, and the `cinema_*` ones from before 5.8.1), then add the eleven from `hud/src/` to the root prim: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `lens`, `sync`, `tips`, `crop`. Each prints a `ready` line with its free memory.
+3. **Delete all old scripts from the prim** (v3 or earlier, and the `cinema_*` ones from before 5.8.1), then add the twelve from `hud/src/` to the root prim: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `lens`, `sync`, `share`, `tips`, `crop`. Each prints a `ready` line with its free memory.
    - **For Frame (6.2):** rez four small boxes (any size), select them, select the button prim last (so it stays the root), and link them (Ctrl+L). `crop` makes them dark, see-through bars and places them itself; it never touches the button. Without the boxes everything else works, and Frame says what is missing. (Detach the HUD to link, then wear it again.)
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
 5. Create a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.

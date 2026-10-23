@@ -9,6 +9,7 @@ import os, re
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 rd = lambda *p: open(os.path.join(R, *p)).read()
 sync, watch = rd("hud", "src", "sync.lsl"), rd("watch", "take12_watch.lsl")
+share = rd("hud", "src", "share.lsl")      # 6.2.0: the Share panel, split out of sync (which ran out of memory)
 core, ui = rd("hud", "src", "core.lsl"), rd("hud", "src", "ui.lsl")
 ok = True
 def check(c, msg):
@@ -72,10 +73,29 @@ check('s = "👁 " + gHostN + " · no signal…";' in watch, "watch: no signal i
 # 5.8.2: a Watch says so when it joins (it cannot lead), and keeps the director's name (llKey2Name is "" once they left)
 check('say(gHost, "join|W");' in watch and 'gHostN = n;' in watch, "watch: join|W / the kept name")
 check('if (llList2String(L, 2) == "W" && llListFindList(gW, [who]) < 0) gW += [who];' in sync
-      and 'if (llListFindList(gW, [gSel]) >= 0) dialog("person", name(gSel) + " (Take 12 Watch: cannot lead)", ["Remove", "Back"]);' in sync,
+      and 'if (llListFindList(gW, [(string)gSel]) >= 0) dialog("person", name(gSel) + " (Take 12 Watch: cannot lead)", ["Remove", "Back"]);' in share
+      and 'llDumpList2String(gW, ",")' in sync,
       "sync: no Pass camera for a Watch viewer")
 check('if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");    // viewing never runs your own camera too' in sync, "sync: watching must stop your own camera")
-check('llDialog(gOwner, fit(text, 500), b, gDlg);' in sync and sync.count("fit(") >= 6, "sync: dialog text and person labels must be cut to their byte limits")
+check('llDialog(gOwner, fit(text, 500), b, gDlg);' in share and share.count("fit(") >= 6, "share: dialog text and person labels must be cut to their byte limits")
+# 6.2.0: the panels live in share.lsl; sync only says what to show and acts on the choice
+check("llDialog" not in sync and "llListen(SYNC_CH" in sync, "sync: no dialogs of its own any more (memory)")
+for page in ('ui("live|"', 'ui("view|"', 'ui("inv|"', 'ui("lead|"', 'ui("near|"'):
+    check(page in sync, f"sync: missing {page}")
+for page in ('p == "live"', 'p == "view"', 'p == "inv"', 'p == "lead"', 'p == "near"'):
+    check(page in share, f"share: no panel for {page}")
+DO = re.findall(r'go\("(\w+)', share) + re.findall(r'go\(llList2String\(\["(\w+)", "(\w+)"\]', share)
+DO = set(x for d in DO for x in (d if isinstance(d, tuple) else (d,)))
+for d in DO:
+    check(f'a == "{d}"' in sync, f"sync: share asks for '{d}', sync does not act on it")
+check('else if (num == SHARE_DO) act(str);' in sync and 'if (num == SHARE_UI) open(' in share, "the two halves must be wired")
+def fit(s, m):     # share's fit(), ported: llStringToBase64 length * 3 / 4 - 2 is never over the true byte count
+    import base64
+    s = s[:m]
+    while len(base64.b64encode(s.encode())) * 3 // 4 - 2 > m: s = s[:-1]
+    return s
+for t in ("a" * 30, "👁 " + "é" * 20, "◉ Watch " + "Анастасия Resident", "x" * 24, "✓" * 9):
+    check(len(fit(t, 24).encode()) <= 24 and (len(t.encode()) > 24 or fit(t, 24) == t), f"share: fit() cut {t!r} wrong")
 check('gNoteS = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);' in sync, "sync: a notice must be read back (254-byte cut)")
 check("llKey2Name(" not in sync.replace("string n = llKey2Name(k);", ""), "sync: names must go through name() (kept after someone left)")
 check("llDialog" not in watch and '"ask"' not in watch, "watch: no dialogs, and it cannot lead")
@@ -83,7 +103,7 @@ for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|
           'if (!gSharing) { say(who, "end"); return; }     // only a live view can be joined (a late "Watch" after End live)', 'if (gLeadAsk != NULL_KEY || gLead == 2) say(who, "lead|0");',
           "llGetUnixTime() - gNextT >= NEXT_GAP", "integer NEXT_GAP   = 5;", "integer WAIT       = 20;", "integer GONE       = 25;",
           'if (gHand) gHand = FALSE;', 'llMessageLinked(LINK_SET, CMD, "sharecam", "");', 'say(k, "lead|1");', 'say(gLeadAsk, "lead|0");',
-          'all("director|"', 'say(gSel, "kick");', 'all("hb");', "if (llGetAgentSize(k) == ZERO_VECTOR)",
+          'all("director|"', 'say(k, "kick");', 'all("hb");', "if (llGetAgentSize(k) == ZERO_VECTOR)",
           "if (!gSharing && llGetUnixTime() - gToggleT < 2) return;", 'list    LEADS      = ["Ask", "Always", "Never"];',
           'llLinksetDataWriteProtected("cin.share_lead"', "didn't answer (out of range or HUD off)",
           'if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)',
