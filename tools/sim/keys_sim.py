@@ -95,7 +95,7 @@ for b in SIZES:
 check('if (cfg("size") == "") size(1);' in keys and "llSetScale(<s.x, e, e>);" in keys and 'llLinksetDataWriteProtected("cin.size", (string)i, PASS);' in keys,
       "keys.lsl: Size scales the button (Medium when never set) and keeps it")
 check('else if (num == CMD && str == "size") menu();' in keys and 'size(llListFindList(["s", "m", "l"], [llGetSubString(str, 5, 5)]));' in keys
-      and 'if (msg == "Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");' in keys, "keys.lsl: the Size menu and /77 size")
+      and 'if (msg == "‹ Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");' in keys, "keys.lsl: the Size menu and /77 size")
 ui = rd("hud", "src", "ui.lsl")
 check('"stline", "size", "trace", "back"' in ui and 'else if (id == "size") llMessageLinked(LINK_SET, CMD, "size", "");' in ui and "~size|" in ui,
       "ui: Options > Look > Size, drawn by keys.lsl")

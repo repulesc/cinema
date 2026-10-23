@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.0.2 (UI review and debug)
+**A professional pass over every screen, then a debugging pass.** Findings fixed:
+- **One word for one thing:** the Pace page said "Still 120" next to a Slowest button (Still is gone), and "view" in one place, "shot" in another: now "shot" and "Slowest". Format's own menu and chat line still said Frame: now Format.
+- **Marks mean something:** the quiet marks are now only on the doors, the cameras and the transport controls (Next, Stop, Save, Release, Connect); settings pages are plain words (they mixed marked and unmarked buttons on one page). The live menu's way back was "○ Cameras" (the Framing mark): now "☰ Menu". The dialog title no longer says "rolling".
+- **No near-misses:** Connect's Disconnect had the × of Close next to it: now plain "Disconnect". Size's Back is "‹ Back" like every other.
+- **Plain words:** "Test cam" is "Test camera"; Phantom says what it does ("see-through objects block the camera too").
+- **Debug:** holding a connection with nobody filming, the NEXT key did nothing (core ignores next with no camera): it now films, like the double-tap. The Read Me said any movement key gives your camera back, but in Framing the keys walk you: corrected.
+- **Version 7.0.2** in all fifteen scripts.
+
 ## 7.0.1 (the boards and the listings)
 **The ads as minimal as the product.** The old boards were a maximalist collage: four views, chips, stamps, three clapper looks and three lines of type in one picture.
 - **One frame per board:** a single quiet picture fills it (Take 12: a dusk horizon; Take 12 Scenery: the drone view; the Watch: friends at dusk), golden-line ticks barely visible at its edges, the clapper in a corner, the name and one line: "A camera for Second Life." / "Free. The place, while you are away." / "Free. See your friend's camera." Every ratio and the vendor boards (bigger type) are the same frame (`tools/art/make_adboard.py`, rewritten).

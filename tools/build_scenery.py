@@ -33,7 +33,7 @@ SUBS = {
          '"Welcome to Take 12 Scenery\\nTap: menu\\nDouble-tap: scenery, or the next view\\nAny movement key: your camera back"'),
         ('\\nLook · the button, the line above it, its size\\nCamera · seated view, Alt-cam, chat cuts', '\\nLook · the line above the button, chat text\\nCamera · Alt-cam, phantom'),
         ('"Seated view: " + seatText() + " · Alt-cam: "', '"Alt-cam: "'),
-        ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
+        ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom (see-through objects block the camera too): "', '+ "\\nPhantom (see-through objects block the camera too): "'),
         # one button design (scenery/art): no Button choice under Look; no Size (no keys.lsl); Frame, Framing,
         # Freehand and Connect are hidden by locked()
         ('text += "Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', 'text += "Look"'),

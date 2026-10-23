@@ -13,7 +13,7 @@
 //  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.0";
+string VERSION = "7.0.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -99,7 +99,7 @@ menu()
     gL = llListen(gChan, "", gOwner, "");
     llSetTimerEvent(60.0);
     integer i = (integer)cfg("size");
-    llDialog(gOwner, "Size of the button and the keys\nNow: " + llList2String(SIZES, i), SIZES + ["Back"], gChan);
+    llDialog(gOwner, "Size of the button and the keys\nNow: " + llList2String(SIZES, i), SIZES + ["‹ Back"], gChan);
 }
 
 // which keys, now
@@ -183,7 +183,7 @@ default
         llListenRemove(gL);
         gL = 0;
         llSetTimerEvent(0.0);
-        if (msg == "Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");
+        if (msg == "‹ Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");
         else
         {
             size(llListFindList(SIZES, [msg]));

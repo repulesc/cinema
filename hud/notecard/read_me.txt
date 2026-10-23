@@ -6,7 +6,7 @@ A camera for Second Life, from beyond your avatar's back. It only moves your vie
 
 1. Wear the HUD (Attach To HUD > Top Right) and accept the camera permission once.
 2. Tap the small clapper: the menu.
-3. Any movement key, or a tap > Stop, gives your own camera back.
+3. Tap > Stop gives your own camera back (in Scenery any movement key does too; in Framing the keys walk you and the camera comes along).
 
 Stay idle for 3 minutes and the scenery camera starts by itself.
 
@@ -74,7 +74,7 @@ High drone views over the area, wide views across the horizon, the corners of a 
  PACE      how long each shot is held (30 s to 2 min)
  LOOK      the button (Classic, Rec, Viewfinder), the line above it, Size (Small, Medium, Large), chat text
  CAMERA    seated view (looking down on you when you sit), Alt-cam (what an Alt-orbit does), chat cuts, phantom
- TEST CAM  a 3-second check that the HUD can move your camera
+ TEST CAMERA  a 3-second check that the HUD can move your camera
  RESET     factory settings
 
 

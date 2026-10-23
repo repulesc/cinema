@@ -305,7 +305,8 @@ for frag in ('else if (w == "ask" && llListFindList(gWatchers, [who]) >= 0 && ll
              'if (!gAskT && gOwnT == 0.0) place(FALSE);', 'if (gCam != "" && !gHeld && !gAskT) place(FALSE);',
              'if (!gAskT && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();',
              'if (llListFindList(gW, [llList2Key(gWatchers, i)]) < 0)', 'else ui("end|" + llDumpList2String(gWatchers, ","));',
-             'say(who, "director|" + (string)gHost + "|" + name(gHost));'):
+             'say(who, "director|" + (string)gHost + "|" + name(gHost));',
+             'else if (num == CMD && str == "next" && gSharing && !gCamOn) film();'):
     check(frag in sync, f"sync: the port is stale: {frag}")
 for frag in ('if (gOwnT == 0.0) place(FALSE);', 'if (llGetPermissions() & PERMISSION_CONTROL_CAMERA) llClearCameraParams();',
              'gOwnT = 0.0;                                     // still again: back on the shared view', '"Disconnected"'):
