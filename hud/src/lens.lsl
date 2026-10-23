@@ -7,7 +7,7 @@
 //  up go back to the automatic framing.
 // ============================================================================
 
-string VERSION = "6.2.0";
+string VERSION = "6.3.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -152,7 +152,7 @@ default
             gFoc = q;
             lead(c, q);
             show("Your view is kept · Esc to continue");
-            if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Hold the button > Release to go back.");
+            if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Tap the button > Release to go back.");
             gTold = TRUE;
             send(FALSE);                                    // it is on screen already
         }

@@ -10,7 +10,7 @@ Take 12 Scenery moves your camera off your avatar to the places a camera operato
 2. Accept the camera permission when asked. (It is needed to move your view. It is only asked once.)
 3. DOUBLE-TAP the small clapper button.
 
-That is it. Your camera lifts off and starts showing you the place. Press any movement key, or tap the button once, and your own camera is right back.
+That is it. Your camera lifts off and starts showing you the place. Press any movement key and your own camera is right back.
 
 Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in the menu) the scenery camera starts by itself. See IDLE START below for the mouse check.
 
@@ -19,18 +19,15 @@ Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in th
 
 The small sepia clapper, with its red light, is the whole HUD. Everything is done with taps.
 
-TAP
-   - when idle: opens the menu
-   - while rolling: stops (your camera is back)
-   - while frozen (Photo): carries on
+TAP  (one click)
+   - always a menu: when idle, the menu; while the camera runs (or in Photo), the live menu: Photo, Next, Stop
 
-DOUBLE-TAP  (two quick taps)
+DOUBLE-TAP  (a double-click)
    - when idle: starts the scenery camera
-   - while rolling or frozen: cuts to the next view, now
+   - while the camera runs, or in Photo: the next view, now
 
-HOLD  (about 1 second)
-   - while rolling: the live menu (Photo, Next, Stop)
-   - when idle: the menu
+ANY MOVEMENT KEY
+   - your own camera, instantly
 
 While the camera runs, the clapper gives a tiny clap now and then; with your own camera it is still.
 
@@ -48,7 +45,7 @@ While the camera runs, a short line above the button says so:
 
    ◇ Scenery · auto · 21 mm ✓                you started it
    ◇ Scenery · started while you were idle   the idle start began it
-   ▣ Photo · held                            tap to carry on
+   ▣ Photo · held                            tap > Resume to carry on
    ◇ Scenery · paused · Esc to carry on      you moved the camera yourself
 
 Nothing above the button means: it is your own camera.
@@ -58,9 +55,9 @@ Options > Look > Status line turns the line off.
 While you are new to it, a short tip shows there now and then. Each shows only a few times, then Tips turns itself off. Help > Tips turns them on or off.
 
 
-=== THE LIVE MENU (hold the button while it rolls) ======
+=== THE LIVE MENU (tap the button while it rolls) =======
 
-PHOTO     Freeze the view so you can take your pictures in peace. Tap once to carry on.
+PHOTO     Freeze the view so you can take your pictures in peace. Tap the button > Resume to carry on.
 NEXT      Cut to the next view now.
 STOP      Give your camera back.
 

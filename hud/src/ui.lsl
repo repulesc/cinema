@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "6.2.0";
+string VERSION = "6.3.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -118,7 +118,7 @@ giveHelp()
     }
     if (card != "") llGiveInventory(gOwner, card);
     else llOwnerSay("[Take 12] No Read Me notecard in this prim. Add one with \"Read Me\" in its name.");
-    llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");
+    llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");
 }
 
 // new owner (or first run): wipe whatever was configured before
@@ -334,7 +334,7 @@ openMenu(string page)
         else b = ["photo"];
         if (gUiMode == "scenery") b += ["save"];
         if (gUiMode == "friends") b += ["release"];
-        b += ["next", "stop", "modes", "close"];
+        b += ["next", "stop", "share", "modes", "close"];
         if (gNextCut > llGetUnixTime() && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
     else if (page == "pace")
@@ -412,7 +412,7 @@ openMenu(string page)
     }
     else
     {
-        text = "Welcome to Take 12\nDouble-tap: scenery\nTap: menu (rolling: stop)\nHold: share your view";
+        text = "Welcome to Take 12\nTap: menu\nDouble-tap: scenery, or the next view\nHold: share your view\nAny movement key: your camera back";
         b = ["gotit", "help"];
     }
     llDialog(gOwner, text, order(b), gChan);
@@ -472,7 +472,7 @@ onChoice(string msg)
         closeMenu();
         if (id == "photo" || id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");
         else if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
-        else if (id == "next" || id == "stop") llMessageLinked(LINK_SET, CMD, id, "");
+        else if (id == "next" || id == "stop" || id == "share") llMessageLinked(LINK_SET, CMD, id, "");
         else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
         else if (id == "modes") openMenu("main");
     }
@@ -601,11 +601,10 @@ onChoice(string msg)
 // ============================================================================
 //  touch gestures
 // ============================================================================
+// tap: always a menu. Idle: the main menu; a camera running (or Photo): the live menu. Any movement key stops it
 onTap()
 {
-    if (gUiState == "rolling") llMessageLinked(LINK_SET, CMD, "stop", "");
-    else if (gUiState == "frozen") llMessageLinked(LINK_SET, CMD, "photo", "");
-    else openMenu("main");
+    openMenu(llList2String(["main", "live"], gUiState != "idle"));
 }
 
 onDouble()
@@ -614,10 +613,10 @@ onDouble()
     else llMessageLinked(LINK_SET, CMD, "next", "");
 }
 
-// hold: the Share panel (sync), whatever you are doing; its ⋯ More comes back here as livemenu / mainmenu
+// hold: a shortcut to the Share panel (share.lsl); Share is in both menus too. Its ⋯ More comes back here
 onLong()
 {
-    if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));   // Take 12 Scenery: no sharing
+    if (LITE) onTap();                                      // Take 12 Scenery: no sharing
     else llMessageLinked(LINK_SET, CMD, "share", "");
 }
 
@@ -669,7 +668,7 @@ default
     {
         if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) > 1) return;
         gHeld = FALSE;
-        if (gLongDone) { nextTimer(); return; }
+        if (gLongDone) { frame(2 * gLook); nextTimer(); return; }
         if (gDbl)
         {
             gDbl = FALSE;
@@ -731,6 +730,7 @@ default
         if (gHeld && !gLongDone && !gDbl && now - gDown >= LONG_HOLD)
         {
             gLongDone = TRUE;
+            frame(2 * gLook + 1);                           // the clapper claps: the hold has taken, let go
             onLong();
         }
         if (gTapN && now - gTapT > TAP_GAP)

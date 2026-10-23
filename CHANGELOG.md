@@ -1,5 +1,15 @@
 # Changelog
 
+## 6.3.0
+**One meaning per gesture.** From in-world testing: a tap meant three things (menu, stop, carry on), and while a camera ran the menu hid behind Hold › ⋯ More.
+- **Tap: always a menu.** Idle: the menu. A camera running, or Photo: the live menu (Resume first in Photo). Stopping is any movement key, or Stop in the live menu.
+- **Double-tap: go / next,** as before: idle, Scenery; running or in Photo, the next view.
+- **Hold: a shortcut to the Share panel.** Share is now in the live menu too, so nobody has to know the hold. When the hold has taken (0.8 s), the clapper claps, so you know you can let go.
+- **Texts:** the welcome, the help line, the tips ("tap: menu", "tap › Resume", "Tap while it rolls"), the Release hint, both Read Mes and both listings.
+- **Take 12 Scenery:** the same map (its hold opens the menu, as a tap does).
+- **Checks:** `sync_sim` checks that a tap never stops the camera, Share is in both menus and the hold claps; `free_test` and `tips_sim` follow.
+- **Version 6.3.0** in all twelve scripts.
+
 ## 6.2.0
 **Frame: the picture format on your screen.** The first step of the composition work.
 - **Tap › Frame**, then 3:2, 4:5, 1:1, 4:3, 2.39:1 or 9:16: the screen outside the picture is dimmed (black at 60 %), like a camera's viewfinder. The picture is centred and as large as the window allows. Off takes it away.

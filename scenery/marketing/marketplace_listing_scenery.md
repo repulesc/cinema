@@ -39,8 +39,7 @@ THE SCENERY CAMERA
 
 ONE BUTTON
 - Double-tap: start, or the next view.
-- Tap: the menu; while the camera runs, stop.
-- Hold: Photo, Next, Stop.
+- Tap: the menu, always (while the camera runs: Photo, Next, Stop).
 - Any movement key: your camera, instantly.
 
 ALSO

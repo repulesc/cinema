@@ -30,7 +30,7 @@ for s, n in ((ui, "ui"), (tips, "tips")):
         check(bad not in s, f"{n}: the free build still says '{bad}'")
 check('string h = "Take 12 Scenery";' in ui and "Welcome to Take 12 Scenery" in ui and "More cameras · Me, Us, Still and sharing, in the full Take 12" in ui,
       "ui: the free names and the More cameras line")
-check('if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));' in ui, "Hold must open the menu in the free build (there is no sharing)")
+check('if (LITE) onTap();' in ui, "Hold must open the menu in the free build (there is no sharing)")
 check('if (id == "full") { closeMenu(); upsell(); return; }' in ui and "llLoadURL(gOwner" in ui, "More cameras must open the full Take 12's listing")
 check('if (gIndoors == "outside") raw = FALSE;' in sc, "scenery: skybox rooms must work in the free build")
 check("!LITE && gCuts % 4 == 3" in sc and "num == FAV && !LITE" in sc, "scenery: no favourites in the free build")
@@ -47,7 +47,7 @@ nc = re.search(r'string NOTECARD = "([^"]+)";', ui).group(1)
 check(nc == "Take 12 Scenery - Read Me" and "Read Me" in nc, f"ui: notecard name {nc}")
 check(os.path.exists(os.path.join(R, "scenery", "notecard", "read_me.txt")), "scenery/notecard/read_me.txt is missing")
 card = rd("scenery", "notecard", "read_me.txt")
-check(card.startswith("Take 12 Scenery") and "Lite" not in card and "HOLD" in card and "full Take 12" in card and "Viewfinder" not in card, "the free Read Me")
+check(card.startswith("Take 12 Scenery") and "Lite" not in card and "DOUBLE-TAP" in card and "ANY MOVEMENT KEY" in card and "full Take 12" in card and "Viewfinder" not in card, "the free Read Me")
 vers = {re.search(r'string VERSION = "([^"]+)";', rd("hud", "src", n)).group(1) for n in os.listdir(os.path.join(R, "hud", "src"))}
 check(len(vers) == 1, f"hud/src: every script must carry the same version (the ui warns otherwise): {vers}")
 # the tips keep their numbers (tips.lsl picks them by index)

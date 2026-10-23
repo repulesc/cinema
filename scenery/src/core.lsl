@@ -7,7 +7,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "6.2.0";
+string VERSION = "6.3.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 1;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
