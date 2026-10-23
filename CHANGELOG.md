@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.2.0
+**Frame: the picture format on your screen.** The first step of the composition work.
+- **Tap › Frame**, then 3:2, 4:5, 1:1, 4:3, 2.39:1 or 9:16: the screen outside the picture is dimmed (black at 60 %), like a camera's viewfinder. The picture is centred and as large as the window allows. Off takes it away.
+- **Exact on any window.** It reads your window with `llGetCameraAspect()` and follows a resize within 2 s. HUD space is 1.0 tall and as wide as the window; the bars are placed from the screen centre whatever HUD point the button is worn on.
+- **Never in a snapshot:** viewers leave HUDs out. The Read Me says how to take the photo in the same ratio.
+- **The cameras get your real window.** `cin.aspect` is now measured (it assumed 16:9), so Me, Us and Only friends fit people for your screen. They also receive the format (CROP 7390), for composing inside the frame in the next step.
+- **New script `crop.lsl`** (eleven in all) and **four boxes** linked to the HUD (build step 3). Clicking a bar does nothing (ui ignores touches on links 2–5). `/77 crop <format|off|flip|back>`; flip and back are fallbacks if a viewer places HUDs differently.
+- **Take 12 Scenery** has no Frame (no `crop.lsl`; the button is taken out by the build).
+- **Checks:** `crop_sim` (every format on 16:9, 16:10, 21:9, 4:3 and 5:4 windows: the exact ratio, centred, the bars tiling the rest with no overlap; the screen centre from every HUD point; the menu, ui, picker and the free build), and `menu_sim`, `sync_sim`, `free_test` updated.
+- **Version 6.2.0** in all eleven scripts.
+
 ## Take 12 Scenery's button: the same clapper in sepia
 - A sun on the 4-pixel-tall slate never read well (a red dome, then a pattern). The free button is now the Take 12 clapper and its "12" in sepia, like an old film, with only the red recording light left in colour: the same logo and feel, a step below the full Take 12, which stays the colour picture. None of Take 12's three looks is sepia, so the two are never confused.
 - New `scenery/art` texture and icon, and the free boards redrawn with it; the Read Me, the listing and the build steps describe it. Take 12's and the Watch's art and boards are unchanged.

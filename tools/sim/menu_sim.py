@@ -40,8 +40,9 @@ check(hide_free >= {"personal", "us", "frame", "share", "favs", "save", "modes"}
 check(all(i in items for i in hide_free | hide_full), "a hidden id is not a menu item")
 check("ids = b;" in ui[ui.index("list order(list ids)"):ui.index("list order(list ids)") + 400] and "if (!locked(" in ui, "order() must leave out what the build hides")
 shown = lambda p, hide: [i for i in pages.get(p, []) if i not in hide]
-check(shown("main", hide_full) == ["scenery", "personal", "us", "frame", "share", "opts", "help", "close"], f"main menu: {shown('main', hide_full)}")
-check(shown("main", hide_free) == ["scenery", "opts", "full", "help", "close"], f"Take 12 Scenery main menu: {shown('main', hide_free)}")
+check(shown("main", hide_full) == ["scenery", "personal", "us", "frame", "crop", "share", "opts", "help", "close"], f"main menu: {shown('main', hide_full)}")
+check([i for i in shown("main", hide_free) if i != "crop"] == ["scenery", "opts", "full", "help", "close"], f"Take 12 Scenery main menu: {shown('main', hide_free)}")
+# (the free build's Frame button is taken out by tools/build_scenery.py: it has no crop.lsl; free_test checks the result)
 check(shown("live", hide_free) == ["photo", "next", "stop", "close"] or set(shown("live", hide_free)) == {"photo", "resume", "next", "stop", "close"},
       f"Take 12 Scenery live menu: {shown('live', hide_free)}")
 check(pages.get("us") == ["everyone", "onlyfr", "flist", "back"], f"Us page: {pages.get('us')}")

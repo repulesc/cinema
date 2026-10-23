@@ -27,13 +27,15 @@ SUBS = {
         ('string h = "Take 12";', 'string h = "Take 12 Scenery";'),
         ('llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");',
          'llOwnerSay("[Take 12 Scenery] Double-tap: scenery. Tap: menu (rolling: stop). Hold: photo, next, stop.");'),
-        ('"Scenery · the place, while you are away\\nMe · follows you\\nUs · you and the people around you\\nStill · a held picture of you"',
+        ('"Scenery · the place, while you are away\\nMe · follows you\\nUs · you and the people around you\\nStill · a held picture of you\\nFrame · the picture format on your screen"',
          '"Scenery · the place, while you are away\\nMore cameras · Me, Us, Still and sharing, in the full Take 12"'),
         ('"Welcome to Take 12\\nDouble-tap: scenery\\nTap: menu (rolling: stop)\\nHold: share your view"',
          '"Welcome to Take 12 Scenery\\nDouble-tap: scenery\\nTap: menu (rolling: stop)\\nHold: photo, next, stop"'),
         ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
         ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
         ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
+        # no Frame (crop.lsl is not part of it)
+        ('b = ["scenery", "personal", "us", "frame", "crop", "share", "opts", "full", "help", "close"];', 'b = ["scenery", "personal", "us", "frame", "share", "opts", "full", "help", "close"];'),
         # one button design (scenery/art): no Button choice under Options > Look
         ('Look · menu style, button, chat text', 'Look · menu style, status line, chat text'),
         (' + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', ''),

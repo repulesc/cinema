@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "6.1.0";
+string VERSION = "6.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -281,7 +281,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share stop next photo menu status pace reach indoors face skin tips statusline trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still share crop stop next photo menu status pace reach indoors face skin tips statusline trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -294,6 +294,7 @@ onCommand(string msg)
     if (m >= 0) c = llList2String(["personal", "social", "frame"], m);
     if (llListFindList(["scenery", "personal", "social", "friends", "frame", "share", "stop", "next", "photo", "fav", "grab"], [c]) >= 0)
         llMessageLinked(LINK_SET, CMD, c, "");
+    else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");          // Frame: 4:5, off, flip, back (crop)
     else if (c == "menu" || c == "reset") llMessageLinked(LINK_SET, UI_MENU, llList2String(["main", "reset"], c == "reset"), "");
     else if (c == "status")
     {

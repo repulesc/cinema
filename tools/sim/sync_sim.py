@@ -99,7 +99,7 @@ check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState =
 check('onLong()\n{\n    if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));   // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
       and "integer LITE    = 0;" in ui, "ui: hold must open the Share panel, always (the free Take 12 Scenery has no sharing)")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
-check('"frame", "share", "opts"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
+check('"frame", "crop", "share", "opts"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
 
 # ---- a small region (the logic of both scripts, ported) -----------------------------------------------------------
 class Region:
