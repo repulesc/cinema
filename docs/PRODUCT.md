@@ -1,5 +1,7 @@
 # Take 12: Product Spec (v4)
 
+> **7.0 note:** the product is now one menu with six doors: Framing (Me · Us · Friends), Freehand, Connect, Scenery, Format, Settings (see README and the Read Me). Personal, Social, Friends, Frame and Still below are the v4–6 names; Photo hold and favourite spots were removed in 7.0. This spec is kept for its reasoning.
+
 This is the source of truth for what the v4 HUD is. v3.0.0 is frozen and working in `legacy/v3/`. The older people-centred versions are in `legacy/v1-v2/`. The quiz answers this spec is built from are at the bottom.
 
 ## The idea in one paragraph

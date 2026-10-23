@@ -3,10 +3,10 @@
 The Marketplace description is plain text. Copy each block below as it is: no bold, no headings, only "-" lists.
 Fields marked (you) need your own details (price, creator, support contact).
 
-This is the 6.0.1 text. The 4.8 listing is kept in `legacy/` ("your idle time, on film" is in the older ones: it was
-replaced because "film" and "filming" made people think the HUD records video, which it does not).
-The free Take 12 Watch has its own listing: `watch/marketing/marketplace_listing_watch.md`, and the free Take 12 Scenery its own:
-`scenery/marketing/marketplace_listing_scenery.md`. The Marketplace takes 5000 characters in the Full description; `tools/sim/listing_check.py` keeps each under 4800.
+This is the 7.0 text: short, like the product. Older listings are kept in `legacy/`. The free Take 12 Watch has its
+own listing (`watch/marketing/marketplace_listing_watch.md`), and so does the free Take 12 Scenery
+(`scenery/marketing/marketplace_listing_scenery.md`). `tools/sim/listing_check.py` keeps each Full description well
+under the Marketplace's 5000 characters.
 
 ---
 
@@ -15,143 +15,84 @@ Use the same text for the Marketplace title, the box and the folder, so buyers f
 ```
 Take 12 - Cinematic Camera HUD
 ```
-Longer title, if you want more search words in it:
-```
-Take 12 - Cinematic Camera HUD: Drone Views, Skybox Rooms, Connect With Friends
-```
 
 ## Short description (the line search results show; keep it first)
 ```
-A camera HUD that takes your view off your avatar's back: drone views, wide horizons, skybox corners and group shots, chosen automatically and framed for your lens, a new one every minute. Connect with friends and watch one camera together. One button. Any movement key brings your camera back.
+A camera for Second Life. It frames you and the people with you, holds your own shots like a tripod, connects your friends to one camera, and shows the place while you are away. One button.
 ```
 
 ## Full description
 ```
-See your Second Life from somewhere other than behind your own back, and let your friends watch it with you.
+A camera for Second Life.
 
-Take 12 lifts your camera off your avatar and places it where a camera operator would: high above the region, out across the horizon, in a corner of your skybox, or around you and your friends. It chooses each view by itself, holds it for about a minute, then cuts to the next. A double-tap starts it or skips ahead, a tap stops it, and any movement key gives your camera back at once.
+Take 12 moves your view off your avatar's back and composes it the way a photographer would: eyes on the golden line, room to look into, air around a full-length picture. One small button. Any movement key gives your camera back.
 
-FOUR CAMERAS
-Scenery shows the place: drone views looking down over your area and wide views along the horizon, up to 100 m away, always with a clear view. In a skybox it stays inside, with views from the corners and of you, small in the space. It starts with a double-tap, or by itself when you are idle.
+FRAMING
+Me, Us or Friends. It follows you as you walk and holds a composed picture when you stand. Page Up and Page Down set the height for the way you sit; it remembers each seat.
 
-Me shows you: composed shots from different sides, re-framed as you walk.
-
-Us is for when you are with people. Everyone near: over-the-shoulder and group shots, with a cut to whoever speaks in local chat. Only friends: pick up to 10 friends, and the camera keeps you all in one frame and glides as the group moves.
-
-Still is for a picture of yourself, or of you and a friend: full length, half length or close, held still. Adjust with your movement keys; Shift + A/D slides you across the picture.
-
-FRAME IT YOURSELF
-Freehand is for photographers: frame the shot yourself, of people or of an object, hold still for a second and Take 12 holds it like a tripod. Walk into your picture, pose, zoom: the subject keeps its size as the lens changes. Two saved views per region.
-In Only friends, set the view up with your own camera and press Esc: Take 12 carries on with your view, following your friends. Sitting or lying down, the camera looks down on you from above.
+FREEHAND
+Frame it yourself with Second Life's camera. Hold still for a second and Take 12 holds it, like a tripod.
 
 CONNECT
-Hold the button and connect with the people near you who wear Take 12 or the free Take 12 Watch. Once connected, whoever films leads: start any camera and everyone sees it. Nobody filming, everyone has their own camera, still connected.
-- Above your button: who is connected, and who films.
-- Everyone sees the same picture, whatever their own zoom.
-- Double-tap while watching: the next view, for everyone. My turn: you film, everyone sees yours.
-- A movement key gives you your own camera for a moment; stand still and the shared view is back.
+Connect with the people near you. Whoever films leads: everyone connected sees that camera. Friends without Take 12 wear the free Take 12 Watch.
 
-YOUR LENS
-Your viewer's zoom is your lens, and every camera frames for it. Zoom in and the camera glides back, so everyone keeps their size with the flatter faces of a portrait lens. A longer lens brings more close views, a wider one more of the place. Still names the classic lens for each framing (50, 85, 105 mm) and shows yours live.
+SCENERY
+While you are away: drone views, wide horizons, the corners of a skybox. It starts by itself when you go idle.
 
-ALWAYS KNOW WHAT IS ON
-- A quiet line above the button says which camera runs and who is in charge. Nothing there means it is your own camera.
-- Short tips while you are new to it; they turn themselves off.
-- Menus in quiet symbols, plain words or colour.
+FORMAT
+3:2, 4:5, 2.39:1 and more: the screen outside the picture is dimmed, and Framing composes inside it.
 
-ALSO
-- Photo hold: freeze the view while you take snapshots.
-- Favourite spots, Pace (30 s to 2 min per view), idle start after 3 minutes (adjustable, or off).
+Your viewer's zoom is your lens: every camera frames for it.
 
-CONTROLS
-- Tap: the menu, always (while the camera runs, the live menu).
-- Double-tap: start Scenery, or the next view.
-- Hold: connect with the people near you.
-- Any movement key: your camera, instantly.
+- It only moves your view, inside your region. Nothing is recorded.
+- Works on any HUD point; your own camera is always restored.
 
-WHO IT IS FOR
-Explorers, photographers, anyone who likes to sit back in a beautiful place and watch it, couples and groups who want to see themselves together, and friends who want to share one view on a tour or at an event.
-
-GOOD TO KNOW
-- One small pixel-art clapper in three looks; while the camera runs it gives a tiny clap now and then.
-- Wear it on a HUD point (Top Right is usual) and allow camera control once.
-- It only moves your view, inside your region. Nothing is recorded; when you are connected, only the camera position goes to the people you connected with.
-- Free companions: Take 12 Watch for your friends, and Take 12 Scenery, the scenery camera on its own, to try first.
-- Read Me notecard included.
-- Permissions: (you)
-- Support: (you)
+In the box: the Take 12 HUD, the Read Me, and the free Take 12 Watch to give to friends.
+Try the scenery camera first, free: Take 12 Scenery.
+Creator: (you)  ·  Support: (you)
 ```
 
 ## Features (the Marketplace "Features" list takes 5)
 ```
-Automatic camera views from beyond your avatar's back
-Scenery: drone and horizon views up to 100 m, skybox aware
-Your lens, everywhere: every camera frames for your zoom
-Connect with friends: one camera for all, the free Take 12 Watch for them
-One button: tap, double-tap, hold; any movement key to return
+Framing: you and the people with you, composed on the golden lines
+Freehand: frame it yourself, Take 12 holds it like a tripod
+Connect: whoever films leads; the free Take 12 Watch for friends
+Scenery: drone views, horizons and skybox rooms while you are away
+One button; any movement key gives your camera back
 ```
 
 ## Keywords
 ```
-take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, camera control, drone camera, drone view, scenery, skybox, afk, photography, snapshot, view, friends, social, group shot, photo, hud, connect, share, watch, share view, live view, group view, tour, lens, zoom, telephoto, portrait lens, focal length
+take 12, take12, camera, camera hud, cinematic camera, auto camera, portrait, photography, photo, snapshot, framing, golden ratio, composition, tripod, freehand, drone camera, drone view, scenery, skybox, afk, friends, group shot, connect, share view, watch, lens, zoom, hud
 ```
 
 ## Short promo lines (group notices, social posts)
 ```
-Your idle time, framed.
-Your camera, off your avatar's back.
-See your region from the sky, the horizon and the corner of the room. Automatically.
-One button: drone views, skybox rooms, friends in one frame.
-New: your zoom is your lens, and every camera frames for it.
-Hold the button, connect, and your friends see whoever films.
+A camera for Second Life.
+Framed like a photographer would. One button.
+Connect, and whoever films leads.
 ```
 
 ## One line "what is it?" (for a vendor or a friend)
 ```
-Take 12 is a one-button HUD that moves your camera off your avatar to drone views, wide horizons and skybox corners by itself, lets your friends watch the same view, and gives your camera back with any movement key.
+Take 12 is a one-button camera HUD: it frames you and your friends, holds your own shots, connects everyone to one camera, and shows the place while you are away.
 ```
 
-## What is new in 6.0 (the Marketplace update message, or a group notice for existing buyers)
+## What is new in 7.0 (the Marketplace update message, or a group notice for existing buyers)
 ```
-Take 12 6.0.1: your lens, everywhere.
-- Your viewer's zoom (Ctrl+0 / Ctrl+8) is your lens, and every camera now frames for it: zoom in while Me, Us or Only friends runs and the camera glides back, so everyone keeps their size with the flatter faces of a portrait lens.
-- A longer lens brings more close views of faces, a wider one more of the place.
-- The line above the button shows your lens and the range each camera likes.
-- Still names the classic portrait lens for each framing (50, 85, 105 mm), and Shift + A/D slides you across the picture.
-- While the camera runs, the little clapper gives a tiny clap now and then.
-- Sharing: everyone who watches sees the same picture, whatever their own zoom (6.0.1).
-Get the new version from your Marketplace purchases (Update), and read the new notecard.
-```
-
-## What is new in 5.8 (the Marketplace update message, or a group notice for existing buyers)
-```
-Take 12 5.8: share your view.
-- Hold the button and choose Go live: friends with Take 12, or the free Take 12 Watch, follow your camera at once. You see who is connected above your button.
-- Plain names for the cameras: Scenery, Me, Us, Still. Options are grouped in Timing, Camera and Look.
-- A quiet line above the button says which camera runs and who is in charge. Short tips for new users.
-- Frame Only friends yourself, press Esc, and it keeps your view. A top-down view when you sit or lie down.
-- Menus now come in quiet symbols (the default), plain words or colour.
+Take 12 7.0: one product.
+- Six doors on the menu: Framing, Freehand, Connect, Scenery, Format, Settings.
+- Framing (Me, Us, Friends) follows you as you walk and holds a composed picture when you stand.
+- Connect: connect with the people near you; whoever films leads.
+- Page Up / Page Down set the camera's height for your pose, remembered per seat.
 Get the new version from your Marketplace purchases (Update), and read the new notecard.
 ```
 
 ---
 
 ## Images
-- **`adboard_square_1024.png`**: the main Marketplace image (square), with all three clapper looks.
-- **`adboard_portrait_3x4_768x1024.png`** (3:4) and **`adboard_landscape_4x3_1024x768.png`** (4:3): the same ad in the two other ratios.
-- **`adboard_wide_1024x512.png`**: an in-world vendor board or banner.
-- **`adboard_vendor_1024.png`** and **`adboard_vendor_512.png`**: a simpler, bolder square for vendor displays, where the picture shows small. Use the 512 for vendors that want a smaller texture.
-- The Take 12 Watch has its own board: `watch/marketing/adboard_watch_1024.png`.
+- **`adboard_square_1024.png`**: the main Marketplace image. One quiet frame (a dusk horizon), the clapper, the name and one line.
+- **`adboard_portrait_3x4_768x1024.png`**, **`adboard_landscape_4x3_1024x768.png`**, **`adboard_wide_1024x512.png`**: the same frame in other ratios.
+- **`adboard_vendor_1024.png`** / **`adboard_vendor_512.png`**: the same, with bigger type for vendor displays.
 
-The boards use drawn pixel-art "views", **not real screenshots**. Marketplace buyers trust real pictures, so add 5 to 8 real snapshots as extra listing images:
-1. A drone view over your favourite region, and a wide horizon at sunrise or sunset (Scenery).
-2. A corner view inside a skybox (Scenery, room mode).
-3. A group of friends framed together (Us > Only friends).
-4. The seated view from above (sit on a bed or a sofa with a friend).
-5. Connect: the Connect panel open (hold the button), or the "⇄ You film · Ana, Ben see it" text above the HUD.
-6. The line above the button with your lens, for example "Us - auto - 50 mm" (zoom in first with Ctrl+0).
-7. The menu open on screen: Tap shows the main menu, in the Symbols style.
-
-Tips for the snapshots: use Photo hold for a steady shot, hide your UI (Ctrl+Alt+F1 in Firestorm) except for the shots that show the HUD text, and use a high-quality setting. Keep the same look: square, with a little room around the subject.
-
-The boards say "Your idle time, framed.", "Double-tap to start. Any key brings you back." and a coral "NEW: YOUR LENS" label under the horizon view, which shows the HUD's own lens readout ("85 MM"). To change a line, edit the `NAME`, `DESCRIPTOR`, `TAGLINE`, `HOWTO` and `NEW` constants (and the chip texts) in `tools/art/make_adboard.py` and run `python3 tools/art/make_adboard.py`. Still is not on the boards on purpose: they sell the automatic camera and sharing. The same run draws the free Take 12 Scenery's boards (`scenery/marketing/`).
+The boards are drawn pixel art, not screenshots. Add 4 to 6 real snapshots as extra images, one idea each: a Framing portrait on the golden line, a group in Us, a Freehand shot, a drone view, and the Format bars on screen. Hide your UI for them (Ctrl+Alt+F1 in Firestorm). The boards' text is in `tools/art/make_adboard.py` (`NAME`, `TAGLINE`); run `python3 tools/art/make_adboard.py` after a change.

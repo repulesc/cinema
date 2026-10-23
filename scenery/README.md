@@ -2,11 +2,11 @@
 
 The scenery camera of Take 12, on its own, for L$0: a free way in to the full Take 12.
 
-- **What it has:** the scenery camera (drone views, wide horizons, skybox rooms from the inside), idle start, tap / double-tap, Photo hold (hold the button while it rolls), Next, Stop, Pace, Indoors, Reach, Alt-cam, the menu styles, the status line with your lens, tips and the little clap.
-- **What it leaves to the full Take 12:** Me, Us, Still, sharing, favourite spots, the seated view and the three button looks.
+- **What it has:** the scenery camera (drone views, wide horizons, skybox rooms from the inside), idle start, tap / double-tap, Next, Stop, Pace, Indoors, Reach, Alt-cam, the status line with your lens, tips and the little clap. (7.0: no Photo hold, in either build.)
+- **What it leaves to the full Take 12:** Framing (Me, Us, Friends), Freehand, Connect, Format, the seated view, Size and the three button looks.
 - **Its own button:** the Take 12 clapper and "12" in sepia, like an old film, with only the red recording light in colour. The full Take 12 is the colour picture; Scenery is the same camera in sepia. One design; Options > Look has no Button choice.
 - **The one pointer:** a "More cameras" button on the main menu opens the full Take 12's Marketplace listing. Nothing else asks you to buy.
-- **Hold:** with no sharing, holding the button opens the menu (the live menu while it rolls: Photo, Next, Stop).
+- **Hold:** with no Connect, holding the button opens the menu (the live menu while it rolls: Next, Stop).
 
 ## The scripts are generated
 `scenery/src/` is generated from `hud/src/` by `tools/build_scenery.py`: the same `core`, `ui`, `scenery` and `tips`, with `integer LITE = 1;` and a few texts of its own ("Take 12 Scenery", the welcome, the hold help, the notecard name). Never edit `scenery/src` by hand. After changing `hud/src`:

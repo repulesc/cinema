@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.0.1 (the boards and the listings)
+**The ads as minimal as the product.** The old boards were a maximalist collage: four views, chips, stamps, three clapper looks and three lines of type in one picture.
+- **One frame per board:** a single quiet picture fills it (Take 12: a dusk horizon; Take 12 Scenery: the drone view; the Watch: friends at dusk), golden-line ticks barely visible at its edges, the clapper in a corner, the name and one line: "A camera for Second Life." / "Free. The place, while you are away." / "Free. See your friend's camera." Every ratio and the vendor boards (bigger type) are the same frame (`tools/art/make_adboard.py`, rewritten).
+- **The listings are short:** the full Take 12's Full description is a third of what it was (one short paragraph per door), and the free Scenery's and the Watch's too.
+- `listing_check` follows: the 7.0 names, nothing the product no longer has (Photo hold, Still, Only friends, Go live), short descriptions, each board's line in its listing.
+- No script changes (still 7.0.0).
+
 ## 7.0.0
 **One product.** The menu was a phone menu from the 2000s: about 25 entries on 6 pages, features that overlapped, and "Frame" meaning two things. 7.0 keeps what works and folds it into six doors.
 - **The menu:** Framing · Freehand · Connect / Scenery · Format · Settings / Help · Close.
