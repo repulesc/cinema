@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "7.1.2";
+string VERSION = "7.1.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

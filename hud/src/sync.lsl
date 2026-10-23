@@ -24,7 +24,7 @@
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.2";
+string VERSION = "7.1.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -212,6 +212,16 @@ place(integer again)
 say(key k, string m)
 {
     llRegionSayTo(k, SYNC_CH, "T12|" + m);
+    if (gDebug && m != "hb" && llGetSubString(m, 0, 2) != "hb|") dbg("→ " + sn(k) + ": " + m);
+}
+
+// 7.1.3, /77 debug on: every Connect message and change of state in your chat (not kept past a reset)
+integer gDebug;
+dbg(string s)
+{
+    if (gDebug) llOwnerSay("[T12 sync " + (string)(llGetUnixTime() % 1000) + "] " + s + "  · hub " + (string)gSharing
+        + " host " + sn(gHost) + " ask " + (string)(gAskT > 0) + " own " + (string)(gOwnT > 0.0) + " held " + (string)gHeld
+        + " away " + (string)gIsAway + " cam " + (string)gCamOn);
 }
 
 all(string m)
@@ -333,8 +343,10 @@ invite(key k)
 golive(integer everyone)
 {
     if (!gSharing && llGetUnixTime() - gToggleT < 2) return;
+    if (gHost != NULL_KEY) leave(TRUE, FALSE);              // 7.1.3: one role at a time (the emulator found both at once)
     gToggleT = llGetUnixTime();
     gSharing = TRUE;
+    dbg("holding the connection");
     gHbT = llGetUnixTime();
     integer i;
     if (everyone)
@@ -346,6 +358,7 @@ golive(integer everyone)
 endlive(string why)
 {
     if (!gSharing && gWatchers == []) return;
+    dbg("ending the connection: " + why);
     all("end");
     gWatchers = [];
     gSeen = [];
@@ -401,6 +414,7 @@ unpend()
 
 watch(key host)
 {
+    if (gSharing) endlive("");                              // 7.1.3: joining someone ends the connection you held
     gPendT = 0;
     gHost = host;
     gHeld = FALSE;
@@ -411,6 +425,7 @@ watch(key host)
     gApplied = ZERO_VECTOR;
     gHearT = llGetUnixTime();
     say(host, "join");
+    dbg("following " + sn(host));
     if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);   // any movement key: your camera back
     llMessageLinked(LINK_SET, CMD, "watch", "");
     if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");    // viewing never runs your own camera too
@@ -421,6 +436,7 @@ leave(integer tell, integer clear)
 {
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
+    dbg("leaving " + sn(gHost) + ", clear " + (string)clear);
     gHost = NULL_KEY;
     gHeld = FALSE;
     gCam = "";
@@ -445,6 +461,7 @@ default
     {
         gOwner = llGetOwner();
         llListen(SYNC_CH, "", NULL_KEY, "");
+        llRegionSay(SYNC_CH, "T12|reset");                  // 7.1.3: a restarted HUD knows nobody: whoever was connected lets go now
         if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_CONTROL_CAMERA | PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
     }
@@ -535,9 +552,23 @@ default
         else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while watching
         else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: accept the invite
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
+        else if (num == CMD && llGetSubString(str, 0, 5) == "debug|")
+        {
+            gDebug = (integer)llGetSubString(str, 6, -1);
+            llOwnerSay("[Take 12] Connect debug " + llList2String(["off", "on: every message and state change in your chat"], gDebug));
+            dbg("now");
+        }
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/sync] v" + VERSION + " hub " + (string)gSharing + ", connected with you: " + (string)llGetListLength(gWatchers)
-                + ", following " + name(gHost) + ", free mem " + (string)llGetFreeMemory());
+        {
+            string ws = "";
+            integer i;
+            for (i = 0; i < llGetListLength(gWatchers); i++)
+                ws += " " + sn(llList2Key(gWatchers, i)) + "(" + (string)(llGetUnixTime() - llList2Integer(gSeen, i)) + "s)";
+            llOwnerSay("[Take 12/sync] v" + VERSION + " hub " + (string)gSharing + ", connected with you:" + ws
+                + "; following " + sn(gHost) + " (heard " + (string)(llGetUnixTime() - gHearT) + " s ago), ask " + (string)(gAskT > 0)
+                + " own " + (string)(gOwnT > 0.0) + " held " + (string)gHeld + " looking around " + (string)gIsAway
+                + ", camera " + (string)gCamOn + ", free mem " + (string)llGetFreeMemory());
+        }
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -548,6 +579,7 @@ default
         if (who == gOwner) return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
+        if (gDebug && w != "hb" && w != "who" && w != "here") dbg("← " + sn(who) + ": " + llGetSubString(msg, 4, 60));
         integer wi = llListFindList(gWatchers, [who]);
         if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);   // a viewer's word: still connected
         if (w == "who")
@@ -614,7 +646,7 @@ default
             else if (gLastCam != "") say(who, "cam|" + gLastCam);
             say(who, "fmt|" + gFmt);
         }
-        else if (w == "leave" && llListFindList(gWatchers, [who]) >= 0)
+        else if ((w == "leave" || w == "reset") && llListFindList(gWatchers, [who]) >= 0)
         {
             drop(who);
             show(sn(who) + " disconnected");
@@ -706,7 +738,7 @@ default
             leave(FALSE, TRUE);
             show(n + " disconnected you");
         }
-        else if (w == "end")
+        else if (w == "end" || w == "reset")
         {
             string n = sn(gHost);
             leave(FALSE, TRUE);

@@ -61,5 +61,6 @@ Want the v3 version instead? See [`legacy/v3/README.md`](legacy/v3/README.md).
 - `tools/lslcheck.sh`: compile-checks every script and estimates its free memory (keep `ui` at 13 KB or more, the others at 12.5 KB or more).
 - `python3 tools/build_scenery.py --check`: the free Take 12 Scenery is up to date with `hud/src`.
 - `tools/sim/*.py`: the camera maths, the menus, the tips, sharing, the listings and the free build (`free_test.py`).
+- `python3 tools/sim/connect_emu.py [runs] [seed]` (7.1.3): runs the **real scripts** in an LSL emulator (`tools/emu/`: LSL-PyOptimizer's parser and built-ins, a small region, avatars, worn HUDs, chat, link messages, timers, controls, the camera). Fixed Connect scenarios on two and three HUDs and a Watch, then a fuzzer of random taps, holds, menu and panel choices, keys, Alt-orbits, restarts and lost messages, with invariants on what each HUD believes. A failure prints the steps that led to it.
 
 GitHub Actions runs all of them on every push.
