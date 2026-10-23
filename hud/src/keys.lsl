@@ -11,7 +11,7 @@
 //  Frame, mirrors both). Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "6.6.0";
+string VERSION = "6.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."

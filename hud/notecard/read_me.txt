@@ -77,7 +77,7 @@ Let the people with you watch what your camera films. One person leads; everyone
 STILL
 For a picture of yourself, or of you and whoever stands right next to you. Still places the camera well and holds it still: no cuts, and it never moves by itself.
  - Tap the button > Still. DOUBLE-TAP for the next framing: Full length, Half length, Close.
- - Adjust with your movement keys: W / S closer / further, A / D round you, E / C higher / lower. You stand still meanwhile. The next framing starts fresh.
+ - Adjust with your movement keys: W / S closer / further, A / D round you. You stand still meanwhile. The next framing starts fresh. PAGE UP / PAGE DOWN move you up or down in the picture (FIT, below).
  - SHIFT + A / D (or Shift + the left / right arrows) slides you left or right in the picture, for example to the other golden line, without moving the camera round you.
  - THE LENS: the line above the button names the lens a photographer would use for this framing, and yours:
       □ Still · Close · 105 mm · now 21 · Ctrl+0
@@ -96,6 +96,14 @@ For the photographer: you frame the shot, of yourself, of people, or of an objec
  - Stop: tap > Stop. (Movement keys do not stop Freehand: they move you.)
 
 Me, Us, Still and Freehand only start when YOU choose them in the menu.
+
+FIT: PAGE UP / PAGE DOWN  (Me, Us, Only friends, Still)
+Second Life plays your pose in your viewer, so no script can see where your body really is: in a deep sofa, on a bar stool, sitting on the ground, in high heels. When the framing is off, show it once, by eye:
+ - PAGE UP moves you up in the picture, PAGE DOWN down (or E / C). A tap is a small step; hold for a smooth move. The camera glides at once, and every next shot is framed with it.
+ - Above the button: "Fit +12 cm · this seat".
+ - It is kept for this seat (and where on it you sit, so each side of a sofa has its own; the last 20 seats), for sitting on the ground, and for standing. Sit there again and you are framed right from the first shot.
+ - Back to automatic: press until it says "Fit 0 · automatic".
+ - While a people camera runs, these keys never make you jump; when you fly, they fly.
 
 
 === THE KEYS (only if your HUD has the keys strip) ==========

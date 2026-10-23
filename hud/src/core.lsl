@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "6.6.0";
+string VERSION = "6.7.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -24,6 +24,8 @@ integer REACH_FAIL = 7314;   // core -> scenery  "<asked distance>|<distance the
 integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started typing)
 integer FAV        = 7316;   // core -> scenery  "<pos>|<focus>"
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
+integer FITKEY     = 7396;   // core -> fit  "<Page Up 16 / Page Down 32 held>": Fit (fit.lsl)
+integer FIT        = 7397;   // fit -> core  "<dz>": the shot on screen moves dz metres up
 integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>|<lens>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> cameras, tips  the viewer's field of view changed (radians): your lens
@@ -60,6 +62,8 @@ integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gWatch;               // you are watching someone's shared view: no idle start, double-tap cuts for all (sync)
 integer gSitCtl;              // friends: the controls were taken seated
+integer gFitCtl;              // Page Up / Down are Fit's (a people camera runs, you are not flying)
+float   gFitShift;            // m  Fit moved the shot on screen since its camera planned it (added to that camera's glides)
 float   gLeadT;               // friends: your own camera, and since when it is still
 vector  gLeadP;
 rotation gLeadR;
@@ -175,6 +179,7 @@ applyShot(string s)
     list L = llParseStringKeepNulls(s, ["|"], []);
     gHold = (float)llList2String(L, 2);
     gType = (integer)llList2String(L, 3);
+    gFitShift = 0.0;                                // a new shot is planned with Fit already
     gLast = s;
     gPending = FALSE;
     gAsking = FALSE;
@@ -182,6 +187,19 @@ applyShot(string s)
     gNextCut = llGetUnixTime() + llRound(gHold);
     gState = ST_ROLL;
     setUi("rolling");
+}
+
+// move the camera on screen, eased by the viewer over the lag (glides: friends, frame, the dolly, Fit)
+glide(vector gp, vector gf, float lag)
+{
+    llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
+    gShotPos = gp;
+    gShotFoc = gf;
+    llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
+    gGlideUntil = llGetTime() + 3.0;
+    gGlided = TRUE;
+    list O = llParseStringKeepNulls(gLast, ["|"], []);
+    gLast = (string)gp + "|" + (string)gf + "|" + llList2String(O, 2) + "|" + llList2String(O, 3);
 }
 
 // put the stored shot back on screen (photo hold on / off) without touching state
@@ -255,6 +273,12 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
+// Page Up / Down (UP 16, DOWN 32) belong to Fit while a people camera runs, unless you fly: never a jump
+integer fitOK(integer info)
+{
+    return (gState != ST_IDLE && llListFindList(["personal", "social", "friends", "frame"], [gMode]) >= 0 && !(info & AGENT_FLYING));
+}
+
 // the movement keys: passed on to your avatar, except in Frame, where they nudge the camera and you stand still.
 // Friends, seated: W/S (FWD 1, BACK 2) are kept back for closer/wider (they do not move a seated avatar)
 takeCtl(integer pass)
@@ -266,6 +290,10 @@ takeCtl(integer pass)
         llTakeControls(CTL & ~3, TRUE, TRUE);
         llTakeControls(3, TRUE, FALSE);
     }
+    integer was = gFitCtl;
+    gFitCtl = fitOK(llGetAgentInfo(gOwner));
+    if (gFitCtl) llTakeControls(48, TRUE, FALSE);  // last, so no request above passes them on again
+    else if (was) llMessageLinked(LINK_SET, FITKEY, "0", "");   // flying or stopped while held: let go
 }
 
 // ---- lifecycle ------------------------------------------------------------------
@@ -282,7 +310,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
     llMessageLinked(LINK_SET, STOP, why, "");
-    if (gPermOK && (gMode == "frame" || gMode == "friends")) takeCtl(TRUE);
+    if (gPermOK) takeCtl(TRUE);                     // the keys back to your avatar (Frame, seated friends, Fit)
     setUi(idleUi());
     llSetTimerEvent(2.0);
 }
@@ -384,7 +412,7 @@ activeTick(float dt)
     }
     else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
-    if (gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) takeCtl(TRUE);
+    if ((gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) || fitOK(info) != gFitCtl) takeCtl(gMode != "frame");
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -600,6 +628,13 @@ default
             bail("key");
             return;
         }
+        if (gFitCtl && (edge & 48)) llMessageLinked(LINK_SET, FITKEY, (string)(level & 48), "");
+        if (gFitCtl)
+        {
+            level = level & ~48;                        // Page Up / Down are Fit's, not a nudge or a walk
+            edge = edge & ~48;
+            if (!(level | edge)) return;
+        }
         if (gMode == "frame" || gMode == "friends")
         {
             if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "");   // Frame steps while held; lens frames Friends
@@ -645,19 +680,18 @@ default
             if (gState == ST_ROLL && gMode != "scenery")
             {
                 list L = llParseStringKeepNulls(str, ["|"], []);
-                vector gp = (vector)llList2String(L, 0);
-                vector gf = (vector)llList2String(L, 1);
+                vector d = <0.0, 0.0, gFitShift * (gMode != "frame")>;     // Still re-solves with Fit itself
                 float lag = 1.5;
                 if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
-                llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
-                gShotPos = gp;
-                gShotFoc = gf;
-                llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
-                gGlideUntil = llGetTime() + 3.0;
-                gGlided = TRUE;
-                list O = llParseStringKeepNulls(gLast, ["|"], []);
-                gLast = (string)gp + "|" + (string)gf + "|" + llList2String(O, 2) + "|" + llList2String(O, 3);
+                glide((vector)llList2String(L, 0) + d, (vector)llList2String(L, 1) + d, lag);
             }
+        }
+        else if (num == FIT)
+        {
+            // Fit: the shot on screen moves up or down at once; the camera script plans its next shot with it
+            vector d = <0.0, 0.0, (float)str>;
+            gFitShift += d.z;
+            if (gState == ST_ROLL && gMode != "scenery") glide(gShotPos + d, gShotFoc + d, 0.2);
         }
         else if (num == NO_SHOT)
         {
