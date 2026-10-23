@@ -7,11 +7,13 @@
 //    Watching someone        NEXT · ASK · LEAVE
 //    Freehand                SAVE · VIEW A · VIEW B · STOP   (the view in use lit)
 //    Still                   FULL · HALF · CLOSE             (the framing in use lit)
-//  Anything else: no keys. Placed left of the button, as tall as it; the HUD's +Y is left (/77 crop flip, shared with
-//  Frame, mirrors both). Checked in tools/sim/keys_sim.py.
+//  Anything else: no keys. Placed left of the button, 1.2 times as tall as it (so the labels read); the HUD's +Y is
+//  left (/77 crop flip, shared with Frame, mirrors both).
+//  6.7.1, Size: Options > Look > Size (or /77 size s|m|l): the button 0.04, 0.06 or 0.08 (Small, Medium, Large;
+//  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "6.7.0";
+string VERSION = "6.7.1";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -23,6 +25,7 @@ integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|...": th
 integer STILL      = 7381;   // frame -> tips  "<framing>|...": Still's framing
 integer SHARE_DO   = 7393;   // here -> sync: a choice of the Share panel
 integer KEYS       = 7395;   // free -> here  "free|<saved view in use, -1 none>"
+integer UI_MENU    = 7321;   // here -> ui: back to a menu page
 
 string  STRIP = "Take 12 keys";
 string  TEX   = "take12_keys";
@@ -35,6 +38,8 @@ string  LIVE = "C:next;C:photo;S:who;S:endask";
 string  FREE = "C:fav;C:view|0;C:view|1;C:stop";
 string  STIL = "C:framing|0;C:framing|1;C:framing|2";
 list    STILLS = ["Full length", "Half length", "Close"];
+list    SIZES  = ["Small", "Medium", "Large"];
+list    EDGES  = [0.04, 0.06, 0.08];   // m  the button's height (and width) for each size
 
 key     gOwner;
 integer gLink;               // the strip (0: none linked)
@@ -44,6 +49,8 @@ string  gMode;
 string  gShare;              // live / view / inv / ""
 integer gPick = -1;          // Freehand: the saved view in use
 integer gStill;              // Still: the framing
+integer gChan;               // the Size dialog
+integer gL;
 
 string cfg(string k)
 {
@@ -73,6 +80,27 @@ find()
     gRow = -2;
 }
 
+// the button's size: 0 Small, 1 Medium, 2 Large
+size(integer i)
+{
+    if (i < 0 || i > 2) return;
+    float e = llList2Float(EDGES, i);
+    vector s = llGetScale();
+    llSetScale(<s.x, e, e>);
+    llLinksetDataWriteProtected("cin.size", (string)i, PASS);
+    gRow = -2;                                              // the keys follow
+}
+
+menu()
+{
+    if (gL) llListenRemove(gL);
+    gChan = -(integer)(llFrand(1000000000.0) + 1000.0);
+    gL = llListen(gChan, "", gOwner, "");
+    llSetTimerEvent(60.0);
+    integer i = (integer)cfg("size");
+    llDialog(gOwner, "Size of the button and the keys\nNow: " + llList2String(SIZES, i), SIZES + ["Back"], gChan);
+}
+
 // which keys, now
 integer pick()
 {
@@ -97,14 +125,15 @@ show(integer r)
     }
     integer n = llList2Integer(ROWS, r);
     vector s = llGetScale();
-    float h = s.z;
-    if (s.y > h) h = s.y;
+    float b = s.z;
+    if (s.y > b) b = s.y;
+    float h = 1.2 * b;                                      // a little taller than the button: the labels read
     float w = n * h * 0.791667;                             // a key: 76 x 96
     integer sy = 1;
     list c = llParseString2List(cfg("crop_s"), ["|"], []);
     if (llGetListLength(c) == 2) sy = (integer)llList2String(c, 0);
     rotation q = llGetLocalRot();
-    vector off = <0.0, sy * (h * 0.5 + 0.004 + w * 0.5), 0.0>;
+    vector off = <0.0, sy * (b * 0.5 + 0.004 + w * 0.5), 0.0>;
     string tex = TEX;
     if (llGetInventoryType(TEX) != INVENTORY_TEXTURE) tex = llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_TEXTURE, 0]), 0);
     llSetLinkPrimitiveParamsFast(gLink, [PRIM_POS_LOCAL, off / q, PRIM_ROT_LOCAL, ZERO_ROTATION / q, PRIM_SIZE, <0.01, w, h>,
@@ -127,6 +156,7 @@ default
     state_entry()
     {
         gOwner = llGetOwner();
+        if (cfg("size") == "") size(1);                     // never set: Medium
         find();
         show(-1);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "keys");
@@ -145,6 +175,27 @@ default
             find();                                         // (also when the strip is linked after it was named)
             show(pick());
         }
+    }
+
+    listen(integer ch, string name, key id, string msg)
+    {
+        llListenRemove(gL);
+        gL = 0;
+        llSetTimerEvent(0.0);
+        if (msg == "Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");
+        else
+        {
+            size(llListFindList(SIZES, [msg]));
+            show(pick());
+            menu();                                         // see it, try another
+        }
+    }
+
+    timer()
+    {
+        if (gL) llListenRemove(gL);
+        gL = 0;
+        llSetTimerEvent(0.0);
     }
 
     touch_start(integer n)
@@ -174,6 +225,8 @@ default
         }
         else if (num == KEYS) gPick = (integer)llList2String(llParseStringKeepNulls(str, ["|"], []), 1);
         else if (num == CFG_CHANGED && (str == "all" || str == "crop_s")) gRow = -2;
+        else if (num == CMD && str == "size") menu();
+        else if (num == CMD && llGetSubString(str, 0, 4) == "size|") size(llListFindList(["s", "m", "l"], [llGetSubString(str, 5, 5)]));
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "keys");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/keys] v" + VERSION + " strip " + llList2String(["not linked", "link " + (string)gLink], gLink > 0)

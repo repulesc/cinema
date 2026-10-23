@@ -44,11 +44,12 @@ SUBS = {
         # one button design (scenery/art): no Button choice under Options > Look
         ('Look · menu style, button, chat text', 'Look · menu style, status line, chat text'),
         (' + " · Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)', ''),
-        ('b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "trace", "back"];', 'b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];'),
+        ('b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "size", "trace", "back"];', 'b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];'),   # no Size either (no keys.lsl)
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: share"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
         ('"Tap while it rolls\\ntap: next, stop, share, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
+        ('string  NEED = "core scenery people friends picker frame free lens sync share crop keys fit";', 'string  NEED = "core scenery";'),
     ],
 }
 FILES = list(SUBS)

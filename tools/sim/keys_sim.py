@@ -81,12 +81,24 @@ check('llMessageLinked(LINK_SET, KEYS, "free|" + (string)gPick, "");' in free, "
 check('else if (num == STILL)' in keys and '"Full length", "Half length", "Close"' in keys, "keys.lsl: Still's framing")
 
 # ---- the strip: beside the button, never on it; Frame's bars leave it alone --------------------------------------
-check("vector off = <0.0, sy * (h * 0.5 + 0.004 + w * 0.5), 0.0>;" in keys, "keys.lsl: the strip's place")
-h = 0.04
-for n in (3, 4, 5):
-    w = n * h * 0.791667
-    right_edge = (h * 0.5 + 0.004 + w * 0.5) - w / 2
-    check(right_edge > h / 2, f"{n} keys overlap the button")
+check("vector off = <0.0, sy * (b * 0.5 + 0.004 + w * 0.5), 0.0>;" in keys and "float h = 1.2 * b;" in keys, "keys.lsl: the strip's place, 1.2 times the button's height")
+# 6.7.1 Size: Small / Medium / Large, the keys with the button, never on it
+SIZES = [float(x) for x in re.search(r"list    EDGES  = \[([0-9., ]+)\];", keys).group(1).split(",")]
+check(SIZES == [0.04, 0.06, 0.08], f"sizes {SIZES}")
+for b in SIZES:
+    h = 1.2 * b
+    for n in (3, 4, 5):
+        w = n * h * 0.791667
+        right_edge = (b * 0.5 + 0.004 + w * 0.5) - w / 2
+        check(right_edge > b / 2, f"{n} keys overlap the {b} button")
+check('if (cfg("size") == "") size(1);' in keys and "llSetScale(<s.x, e, e>);" in keys and 'llLinksetDataWriteProtected("cin.size", (string)i, PASS);' in keys,
+      "keys.lsl: Size scales the button (Medium when never set) and keeps it")
+check('else if (num == CMD && str == "size") menu();' in keys and 'size(llListFindList(["s", "m", "l"], [llGetSubString(str, 5, 5)]));' in keys
+      and 'if (msg == "Back") llMessageLinked(LINK_SET, UI_MENU, "look", "");' in keys, "keys.lsl: the Size menu and /77 size")
+ui = rd("hud", "src", "ui.lsl")
+check('"stline", "size", "trace", "back"' in ui and 'else if (id == "size") llMessageLinked(LINK_SET, CMD, "size", "");' in ui and "~size|" in ui,
+      "ui: Options > Look > Size, drawn by keys.lsl")
+check('else if (c == "size") llMessageLinked(LINK_SET, CMD, "size|" + v, "");' in rd("hud", "src", "picker.lsl"), "picker: /77 size")
 check('if (llSubStringIndex(m, "keys") >= 0) gLink = i;' in keys and 'string  STRIP = "Take 12 keys";' in keys
       and "if (!gLink && llGetNumberOfPrims() >= 6) gLink = f;" in keys and "PRIM_NAME, STRIP" in keys, "keys.lsl: finds its strip by name, or the box Frame leaves")
 check('llSubStringIndex(m, "keys") < 0' in rd("hud", "src", "crop.lsl"), "crop.lsl must not take the strip as a bar")
