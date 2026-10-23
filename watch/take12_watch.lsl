@@ -7,7 +7,7 @@
 //  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/SHARING.md).
 // ============================================================================
 
-string  VERSION = "6.0.1";
+string  VERSION = "6.5.0";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -22,6 +22,7 @@ float   gMyFov;              // your lens when it was placed
 vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
+integer gHeld;               // the director paused (6.5): their last shot stays
 integer gHearT;              // the last word from the director
 integer gBeatT;              // your last heartbeat to the director (it sees you are connected)
 string  gShownS;             // the text above the HUD now
@@ -73,6 +74,7 @@ shown()
     string s = "👁 " + gHostN + "\ntap: your camera · double-tap: next";
     if (llGetUnixTime() - gHearT > 15) s = "👁 " + gHostN + " · no signal…";
     else if (gIsAway) s = "👁 " + gHostN + " · looking around (Esc: back)";
+    else if (gHeld) s = "👁 " + gHostN + " · paused";
     if (s != gShownS) llSetText(s, <1.0, 1.0, 1.0>, 0.85);
     gShownS = s;
 }
@@ -80,6 +82,7 @@ shown()
 follow(key host, string n)
 {
     gHost = host;
+    gHeld = FALSE;
     gHostN = n;
     gCam = "";
     gIsAway = FALSE;
@@ -232,9 +235,16 @@ default
         {
             gHearT = llGetUnixTime();
             gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
+            gHeld = FALSE;
             place(FALSE);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
+        else if (w == "pause")
+        {
+            gHearT = llGetUnixTime();
+            gHeld = TRUE;                                   // the director paused: their last shot stays
+            shown();
+        }
         else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else leads now
         else if (w == "kick") leave(FALSE, TRUE, gHostN + " stopped sharing with you");
         else if (w == "end") leave(FALSE, TRUE, gHostN + " ended the live view");

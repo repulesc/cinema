@@ -4,13 +4,13 @@
 //  itself (the protocol, the roster, the camera); this script only draws its panels and hands the choice back.
 //    sync -> here  SHARE_UI "<camOn>|<page>|..."  (what the panel needs to know, when it should open)
 //      live|<lead 0-2>|<watchers,>|<looking around,>|<on a Watch,>    view|<host>|<asked>    inv|<from>
-//      near|<live>|<watchers,>|<key,T~idle~director,...>              lead|<asker>
-//    here -> sync  SHARE_DO "golive" "invite|<key>" "watch|<key>" "who" "end" "lead" "panel" "pass|<key>" "kick|<key>"
+//      near|<live>|<watchers,>|<key,T~idle~director,...>              lead|<asker>      end|<watching> (End live asks)
+//    here -> sync  SHARE_DO "golive" "invite|<key>" "watch|<key>" "who" "endask" "end" "lead" "panel" "pass|<key>" "kick|<key>"
 //      "allow" "decline" "leave" "ask" "accept" "no" "note|<text>"
 //  Give Watch (the free viewer HUD, from the HUD's contents) is all here. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer MSG_VER    = 7360;
@@ -139,6 +139,14 @@ open(list P)
         dialog("view", t, ["Ask to lead", "Leave", more, "Close"]);
     }
     else if (p == "inv") dialog("invited", name((key)llList2String(P, 2)) + " invites you to watch their camera.", ["Watch", "No"]);
+    else if (p == "end")                                    // End live asks first: never by accident (6.5)
+    {
+        integer n = (integer)llList2String(P, 2);
+        string t = "End the live view?\nNobody watches yet.";
+        if (n == 1) t = "End the live view for the person watching?\nThey get their own camera back.";
+        if (n > 1) t = "End the live view for " + (string)n + " people?\nThey get their own camera back.";
+        dialog("end", t, ["End live", "Keep"]);
+    }
     else if (p == "lead") dialog("lead", name((key)llList2String(P, 2)) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
     else if (p == "near")
     {
@@ -241,7 +249,7 @@ choose(string msg)
     {
         if (msg == "Invite more") go("who");
         else if (msg == "Roster") roster();
-        else if (msg == "End live") go("end");
+        else if (msg == "End live") go("endask");
         else if (llGetSubString(msg, 0, 4) == "Lead:") go("lead");
     }
     else if (gPage == "roster")
@@ -258,6 +266,7 @@ choose(string msg)
         else if (msg == "Remove") go("kick|" + (string)gSel);
         else roster();
     }
+    else if (gPage == "end" && msg == "End live") go("end");
     else if (gPage == "lead") go(llList2String(["decline", "allow"], msg == "Allow"));
     else if (gPage == "view") go(llList2String(["leave", "ask"], msg == "Ask to lead"));
     else if (gPage == "invited") go(llList2String(["no", "accept"], msg == "Watch"));

@@ -1,5 +1,21 @@
 # Changelog
 
+## 6.5.0
+**The keys, and a live view that never ends by accident.**
+- **Soft keys.** In a few busy moments a short row of quiet keys appears beside the button, and only then:
+  - Live, as the director: NEXT · HOLD · INVITE · END (HOLD freezes the shot for everyone, END asks first);
+  - watching someone: NEXT · ASK · LEAVE;
+  - Freehand: SAVE · VIEW A · VIEW B · STOP (the view in use underlined);
+  - Still: FULL · HALF · CLOSE (the framing in use underlined).
+  Thin line icons in chalk on near-black keys, a coral underline the only accent. Everything else stays in the menus.
+- **One prim.** The keys are one strip prim (`Take 12 keys`) showing a row of one texture (`hud/art/take12_keys_512x1024.png`, made by `tools/art/make_keys.py`); where you click on it says which key. New script `keys.lsl` (fourteen in all). Without the strip, nothing changes: the menus do it all.
+- **Live pauses, it does not end.** Your camera stopping while you are live (Stop, a movement key in Scenery, typing) used to end the live view for everyone. Now it pauses it: viewers keep your last shot, held, and see "· paused"; you see "● LIVE · paused · double-tap: carry on". Start a camera again and they follow again. The `pause` message is new; older viewers just keep the last shot.
+- **End live asks first:** "End the live view for 3 people?" End live / Keep, from the Share panel and from the END key.
+- **Frame's bars** are now any four children but the keys strip (they were links 2–5).
+- **The Watch (6.5.0)** shows "· paused" too.
+- **Checks:** `keys_sim` (every row's window exact on the atlas, touches map to keys, every key's action answered by its script, the strip beside the button; a camera stop pauses and never ends live, End live asks, both viewers show the pause); `crop_sim` follows.
+- **Version 6.5.0** in all fourteen scripts and the Watch.
+
 ## 6.4.0
 **Freehand: you frame it, Take 12 holds it.** For photographers, of people or of objects.
 - **Tap › Freehand.** Frame with Second Life's own camera (Alt-click to aim, Ctrl+Alt-drag to orbit, the wheel, Ctrl+0 / Ctrl+8 for the lens, Frame for the format). Hold the view still for a second and it is held: "✥ Freehand · held · 85 mm" above the button, and a clap.

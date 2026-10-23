@@ -35,3 +35,4 @@ jobs:
           python3 tools/sim/free_test.py
           python3 tools/sim/crop_sim.py
           python3 tools/sim/free_sim.py
+          python3 tools/sim/keys_sim.py

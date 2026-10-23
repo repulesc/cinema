@@ -1,4 +1,6 @@
-# Soft keys (concept, not in the HUD)
+# Soft keys (concept; built in 6.5 as `hud/src/keys.lsl`)
+
+Chosen: one strip prim, the three moments below (Live, Freehand, Still), plus the viewer's NEXT · ASK · LEAVE. The real texture is `hud/art/take12_keys_512x1024.png` (`tools/art/make_keys.py`). This folder keeps the concept and its first mockup.
 
 ![mockup](softkeys_mockup.png)
 

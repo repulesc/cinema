@@ -11,7 +11,7 @@
 //  Checked in tools/sim/free_sim.py.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -25,7 +25,8 @@ integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|...": the dolly onl
 integer CAMSET     = 7325;   // core -> all  "<pos>|<focus>|<lag>|<lens>": the camera on screen
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;
+integer CMD        = 7371;   // ... "fav" = Save; "view|<0/1>" = that saved view (the keys)
+integer KEYS       = 7395;   // here -> keys  "free|<saved view in use, -1 none>": the key lit
 
 key     gOwner;
 integer gActive;             // Freehand is running
@@ -50,6 +51,12 @@ string slot()
 list views()
 {
     return llParseString2List(cfg(slot()), [";"], []);
+}
+
+// the keys (keys.lsl) light the saved view in use
+lit()
+{
+    llMessageLinked(LINK_SET, KEYS, "free|" + (string)gPick, "");
 }
 
 // a short notice above the button, read back as Second Life keeps it; tips draws the line again afterwards
@@ -92,6 +99,7 @@ save()
     if (llGetListLength(v) > 2) v = llDeleteSubList(v, 0, 0);
     llLinksetDataWriteProtected("cin." + slot(), llDumpList2String(v, ";"), PASS);
     gPick = llGetListLength(v) - 1;
+    lit();
     show("Saved: View " + llList2String(["A", "B"], gPick) + "\ndouble-tap: your saved views");
 }
 
@@ -106,6 +114,20 @@ recall()
         return;
     }
     gPick = (gPick + 1) % llGetListLength(v);
+    at(gPick);
+}
+
+// a saved view (a key, or the double-tap's next one)
+at(integer i)
+{
+    list v = views();
+    if (i >= llGetListLength(v))
+    {
+        show("No View " + llList2String(["A", "B"], i) + " here yet · Save one first");
+        return;
+    }
+    gPick = i;
+    lit();
     list p = llParseString2List(llList2String(v, gPick), ["|"], []);
     shot((vector)llList2String(p, 0), (vector)llList2String(p, 1));
     show("View " + llList2String(["A", "B"], gPick));
@@ -165,6 +187,7 @@ default
             if (!gActive) return;
             llMessageLinked(LINK_SET, ACK, "free", "");
             gPick = -1;
+            lit();
             here();                                         // your view as it is: held, no jump
         }
         else if (num == STOP) gActive = FALSE;
@@ -188,6 +211,7 @@ default
         else if (num == UI_STATE) gHeld = (llGetSubString(str, 0, 7) == "rolling|");
         else if (num == FOVMSG) zoom((float)str);
         else if (num == CMD && str == "fav") save();
+        else if (num == CMD && llGetSubString(str, 0, 4) == "view|") at((integer)llGetSubString(str, 5, -1));
     }
 
     timer()

@@ -26,8 +26,8 @@ def cut(r, a):
     elif r > a: th = (1.0 - a / r) * 0.5
     return [((r + sw) * 0.5, 0.0, sw, 1.0), (-(r + sw) * 0.5, 0.0, sw, 1.0), (0.0, 0.5 - th * 0.5, a, th), (0.0, th * 0.5 - 0.5, a, th)]
 for line in ("if (r > 0.0 && r < a) sw = (a - r) * 0.5;", "else if (r > a) th = (1.0 - a / r) * 0.5;",
-             "bar(2, (r + sw) * 0.5, 0.0, sw, 1.0);", "bar(3, -(r + sw) * 0.5, 0.0, sw, 1.0);",
-             "bar(4, 0.0, 0.5 - th * 0.5, a, th);", "bar(5, 0.0, th * 0.5 - 0.5, a, th);"):
+             "bar(llList2Integer(gBars, 0), (r + sw) * 0.5, 0.0, sw, 1.0);", "bar(llList2Integer(gBars, 1), -(r + sw) * 0.5, 0.0, sw, 1.0);",
+             "bar(llList2Integer(gBars, 2), 0.0, 0.5 - th * 0.5, a, th);", "bar(llList2Integer(gBars, 3), 0.0, th * 0.5 - 0.5, a, th);"):
     check(line in crop, f"crop.lsl: cut() no longer reads '{line}'")
 
 def rect(y, z, w, h): return (y - w / 2, y + w / 2, z - h / 2, z + h / 2)
@@ -72,6 +72,7 @@ for p, y, z in zip(POINTS, ys, zs):
 check("if (p < 0) return ZERO_VECTOR;" in crop, "Center and Center 2 are the screen centre itself")
 check("(at - p) / r" in crop and "ZERO_ROTATION / r" in crop and "<p.x + gSX * DEPTH, y * gSY, z>" in crop,
       "bars must be placed through the root's own position and rotation, square to the screen, behind the button")
+check('if (llGetLinkName(i) != "Take 12 keys")' in crop and "gBars += [i];" in crop, "the bars are any four children but the keys strip (6.5)")
 check("llGetCameraAspect()" in crop and "PERMISSION_TRACK_CAMERA" in crop, "the window is measured")
 check('set("aspect", (string)a);' in crop and 'llMessageLinked(LINK_SET, CFG_CHANGED, "aspect", "");' in crop, "the cameras get your window")
 

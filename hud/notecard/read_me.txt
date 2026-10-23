@@ -66,6 +66,8 @@ Let the people with you watch what your camera films. One person leads; everyone
  - Friends wearing Take 12 Watch, or Take 12 with you in their Friends list, join at once. Anyone else sees "... invites you - hold to watch" for 20 seconds (a double-tap also accepts).
  - Above your button while you share: "● LIVE · 3 watching" and the names of who is connected to your camera, e.g. "Ana · Ben (looking around) · Dee (no signal)". Someone silent for 45 seconds is dropped. While you watch: "👁 Pano" (or "no signal" if the leader goes quiet).
  - Hold again while live: who watches, Invite more, Roster (pass the camera to someone, or remove them), Lead (when someone asks to lead: Ask / Always / Never), End live.
+ - End live always asks first ("End the live view for 3 people?"), so it never happens by accident.
+ - If your camera stops while you are live (Stop, a movement key in Scenery, typing), the live view only PAUSES: your viewers keep your last shot, and above your button: "● LIVE · paused · double-tap: carry on". Start a camera again and they follow it again. Live ends only with End live, leaving the region, or taking the HUD off.
  - Everyone sees the same picture, whatever their zoom: each viewer's camera stands where their own lens shows it the same size.
  - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
  - Tap the button: the usual menu (photo hold, next, stop, modes).
@@ -92,6 +94,16 @@ For the photographer: you frame the shot, of yourself, of people, or of an objec
  - Stop: tap > Stop. (Movement keys do not stop Freehand: they move you.)
 
 Me, Us, Still and Freehand only start when YOU choose them in the menu.
+
+
+=== THE KEYS (only if your HUD has the keys strip) ==========
+
+In a few busy moments, a short row of quiet keys appears beside the button. Everything else stays in the menus.
+   Live, as the director   NEXT · HOLD · INVITE · END     HOLD freezes the shot for everyone; END asks first
+   Watching someone         NEXT · ASK · LEAVE             NEXT cuts for everyone; ASK asks to lead
+   Freehand                 SAVE · VIEW A · VIEW B · STOP  the saved view in use is underlined
+   Still                    FULL · HALF · CLOSE            the framing in use is underlined
+The rest of the time the keys are gone, and the button is alone again.
 
 
 === FRAME: THE PICTURE FORMAT =============================

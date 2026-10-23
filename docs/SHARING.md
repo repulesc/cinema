@@ -49,6 +49,7 @@ LEAD      (to the director)  "Ana asks to lead the camera."  [Allow] [Decline]
 | `hb` | viewer → director | the viewer's heartbeat, every 10 s: still connected |
 | `cam\|<pos>\|<focus>\|<lag>\|<lens>` | director → viewers | every camera the director's core sets (cuts and glides), with the director's field of view (6.0.1; older directors send no lens) |
 | `hb` | director → viewers | heartbeat, every 10 s |
+| `pause` | director → viewers | 6.5: the director's camera stopped. Viewers keep the last shot and show "· paused"; the next `cam` carries on. Older viewers ignore it (they keep the last shot anyway) |
 | `lead\|1` / `lead\|0` | director → viewer | you lead now (a request allowed, or Pass camera) / declined |
 | `director\|<key>\|<name>` | old director → viewers | the camera passed: follow this one |
 | `kick` / `end` | director → viewer(s) | removed / the live view ended |
@@ -95,3 +96,7 @@ the picture keeps its size for them, which without this would leave viewers at t
 - **Teleport:** a region change ends viewing, and ends LIVE.
 - **Timeouts:** an invite waits 20 s, a lead request 20 s, the viewer's own request 25 s, a dialog listener 60 s.
 - **Rapid toggling:** Go live right after End live (under 2 s) is ignored. Duplicate join, invite and ask messages change nothing.
+
+## Ending live is deliberate (6.5)
+- The director's camera stopping (Stop, a movement key in Scenery, typing) no longer ends the live view: sync sends `pause` and shows "● LIVE · paused · double-tap: carry on"; a camera starting again carries on. `gLastCam` is kept, so a late joiner still gets the held shot.
+- Live ends only with **End live**, which asks first (share.lsl's `end` page: "End the live view for 3 people?" End live / Keep), and when you change region or take the HUD off.
