@@ -6,11 +6,11 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - **Frame (optional):** a held, well-composed view of you (or you and whoever stands with you) for your own snapshots: Full length, Half length, Close (`docs/FRAME.md`).
 - **Freehand (6.4):** you frame the shot with Second Life's own camera, of people or of an object; held still for a second, Take 12 holds it like a tripod, and a zoom keeps the subject's size.
-- **Share the view:** hold the button › Go live, and the people near you (Take 12 or the free Take 12 Watch) watch your camera; one leads, any number watch (`docs/SHARING.md`).
+- **Connect (6.8):** hold the button and connect with the people near you (Take 12 or the free Take 12 Watch); once connected, whoever films leads and everyone sees that camera (`docs/CONNECT.md`).
 - Tap = a menu (always), double-tap = go / next view, hold = share (a shortcut; the clapper claps when it takes). A movement key gives your camera back instantly.
 - **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
-> **Status:** **v6.7.1** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v6.8.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -45,7 +45,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
    - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
-3. **Delete all old scripts from the prim** (v3 or earlier, and the `cinema_*` ones from before 5.8.1), then add the fifteen from `hud/src/` to the root prim: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `free`, `lens`, `sync`, `share`, `tips`, `crop`, `keys`, `fit`. Each prints a `ready` line with its free memory.
+3. **Delete all old scripts from the prim** (v3 or earlier, and the `cinema_*` ones from before 5.8.1), then add the fifteen from `hud/src/` to the root prim: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `free`, `lens`, `sync`, `connect`, `tips`, `crop`, `keys`, `fit` (6.8: `share` became `connect`; delete `share`). Each prints a `ready` line with its free memory.
    - **For the keys (6.5):** rez one more box (any size), name it exactly `Take 12 keys`, and link it with the others (the button selected last). Upload `hud/art/take12_keys_512x1024.png` (keep the alpha) and drop it into the HUD's contents named `take12_keys`. `keys` sizes, places and textures the strip itself; without it, everything stays in the menus.
    - **For Frame (6.2):** rez four small boxes (any size), select them, select the button prim last (so it stays the root), and link them (Ctrl+L). `crop` makes them dark, see-through bars and places them itself; it never touches the button. Without the boxes everything else works, and Frame says what is missing. (Detach the HUD to link, then wear it again.)
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").

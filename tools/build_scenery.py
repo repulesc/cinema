@@ -25,11 +25,11 @@ SUBS = {
         LITE,
         ('string NOTECARD = "Take 12 - Read Me";', 'string NOTECARD = "Take 12 Scenery - Read Me";'),
         ('string h = "Take 12";', 'string h = "Take 12 Scenery";'),
-        ('llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");',
+        ('llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: connect with people near you. Commands: /" + cfgGet("cmd_chan") + " help");',
          'llOwnerSay("[Take 12 Scenery] Tap: menu. Double-tap: scenery, or the next view. Any movement key: your camera back.");'),
         ('"Scenery · the place, while you are away\\nMe · follows you\\nUs · you and the people around you\\nStill · a held picture of you\\nFreehand · you frame it, it holds the shot\\nFrame · the picture format on your screen"',
-         '"Scenery · the place, while you are away\\nMore cameras · Me, Us, Still, Freehand and sharing, in the full Take 12"'),
-        ('"Welcome to Take 12\\nTap: menu\\nDouble-tap: scenery, or the next view\\nHold: share your view\\nAny movement key: your camera back"',
+         '"Scenery · the place, while you are away\\nMore cameras · Me, Us, Still, Freehand and Connect, in the full Take 12"'),
+        ('"Welcome to Take 12\\nTap: menu\\nDouble-tap: scenery, or the next view\\nHold: connect with people near you\\nAny movement key: your camera back"',
          '"Welcome to Take 12 Scenery\\nTap: menu\\nDouble-tap: scenery, or the next view\\nAny movement key: your camera back"'),
         ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
         ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
@@ -47,9 +47,9 @@ SUBS = {
         ('b = ["sk0", "sk1", "sk2", "th0", "th1", "th2", "stline", "size", "trace", "back"];', 'b = ["sk0", "sk1", "sk2", "stline", "trace", "back"];'),   # no Size either (no keys.lsl)
     ],
     "tips.lsl": [
-        ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: share"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
-        ('"Tap while it rolls\\ntap: next, stop, share, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
-        ('string  NEED = "core scenery people friends picker frame free lens sync share crop keys fit";', 'string  NEED = "core scenery";'),
+        ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: connect"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
+        ('"Tap while it rolls\\ntap: next, stop, connect, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
+        ('string  NEED = "core scenery people friends picker frame free lens sync connect crop keys fit";', 'string  NEED = "core scenery";'),
     ],
 }
 FILES = list(SUBS)

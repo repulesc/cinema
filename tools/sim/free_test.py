@@ -28,7 +28,7 @@ ui, tips, sc, core = (rd("scenery", "src", n) for n in ("ui.lsl", "tips.lsl", "s
 for s, n in ((ui, "ui"), (tips, "tips")):
     for bad in ("Hold: share", "share your view", "Commands: /", "other cameras", 'text += "Seated view'):
         check(bad not in s, f"{n}: the free build still says '{bad}'")
-check('string h = "Take 12 Scenery";' in ui and "Welcome to Take 12 Scenery" in ui and "More cameras · Me, Us, Still, Freehand and sharing, in the full Take 12" in ui,
+check('string h = "Take 12 Scenery";' in ui and "Welcome to Take 12 Scenery" in ui and "More cameras · Me, Us, Still, Freehand and Connect, in the full Take 12" in ui,
       "ui: the free names and the More cameras line")
 check('if (LITE) onTap();' in ui, "Hold must open the menu in the free build (there is no sharing)")
 check('if (id == "full") { closeMenu(); upsell(); return; }' in ui and "llLoadURL(gOwner" in ui, "More cameras must open the full Take 12's listing")

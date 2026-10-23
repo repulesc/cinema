@@ -1,14 +1,14 @@
 # The soft keys (6.5.0, keys.lsl) and the safer live view. One strip prim shows a row of the key atlas
 # (hud/art/take12_keys_512x1024.png) with repeats and offsets; the touch position says which key. Checked here:
 # every row's window lands exactly on its keys, a touch maps to the key under it, each key's action is answered by
-# the script it goes to, the strip sits beside the button; and sharing: your camera stopping pauses live (never ends
-# it), End live asks first, viewers (Take 12 and the Watch) show "paused".
+# the script it goes to, the strip sits beside the button; and Connect (6.8): your camera stopping never disconnects,
+# Disconnect asks first when only Watches would be left, and both HUDs show that nobody films.
 import os, re, sys
 from PIL import Image
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 rd = lambda *p: open(os.path.join(R, *p)).read()
-keys, core, sync, share, free, frame = (rd("hud", "src", n) for n in ("keys.lsl", "core.lsl", "sync.lsl", "share.lsl", "free.lsl", "frame.lsl"))
+keys, core, sync, share, free, frame = (rd("hud", "src", n) for n in ("keys.lsl", "core.lsl", "sync.lsl", "connect.lsl", "free.lsl", "frame.lsl"))
 watch = rd("watch", "take12_watch.lsl")
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(R, "tools", "art"))
@@ -49,15 +49,16 @@ check("integer k = (integer)(st.x * llList2Integer(ROWS, gRow));" in keys and "i
 
 # ---- which keys, when ----------------------------------------------------------------------------------------------
 names = [r[0] for r in mk.ROWS]
-check(names == ["live", "liveh", "watch", "free", "freeA", "freeB", "full", "half", "close"], f"atlas rows {names}")
-for frag in ('if (gShare == "live") return (gSt == "frozen");', 'if (gShare == "view") return 2;',
-             'if (on && gMode == "free") return 4 + gPick;', 'if (gSt == "rolling" && gMode == "frame") return 6 + gStill;', "return -1;"):
+check(names == ["live", "watch", "free", "freeA", "freeB", "full", "half", "close"], f"atlas rows {names} (6.8: Connect)")
+for frag in ('if (gShare == "live") return 0;', 'if (gShare == "view") return 1;',
+             'if (on && gMode == "free") return 3 + gPick;', 'if (gSt == "rolling" && gMode == "frame") return 5 + gStill;', "return -1;"):
     check(frag in keys, f"keys.lsl: pick() no longer reads {frag}")
 
 # ---- every key's action is answered ----------------------------------------------------------------------------
 acts = {"LIVE": re.search(r'string  LIVE = "([^"]+)";', keys).group(1), "FREE": re.search(r'string  FREE = "([^"]+)";', keys).group(1),
-        "STIL": re.search(r'string  STIL = "([^"]+)";', keys).group(1), "WATCH": "C:scenery;S:ask;S:leave"}
-check('"C:scenery;S:ask;S:leave"' in keys, "keys.lsl: the viewer's keys")
+        "STIL": re.search(r'string  STIL = "([^"]+)";', keys).group(1), "WATCH": re.search(r'string  WTCH = "([^"]+)";', keys).group(1)}
+check(acts["LIVE"] == "C:next;S:who;S:disconnect" and acts["WATCH"] == "C:scenery;S:film;S:disconnect", f"keys.lsl: the Connect keys {acts}")
+check('string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, STIL, STIL, STIL], gRow);' in keys, "keys.lsl: each row's actions")
 for name, row in acts.items():
     n = len(row.split(";"))
     check(n in ROWS, f"{name}: {n} actions")
@@ -128,16 +129,15 @@ for what, names in CASES.items():
     check(len(b) == 4 and k not in b, f"{what}: bars {b}, strip {k}")
     check((k > 0) == (len(names) >= 5), f"{what}: strip {k}")
 
-# ---- sharing: a camera stop pauses, End live asks ---------------------------------------------------------------
+# ---- Connect: a camera stop never disconnects; the last Take 12 leaving the Watches asks first ---------------------
 stop = sync[sync.index("else if (num == STOP && str != \"switch\")"):sync.index("else if (num == CMD && str == \"share\")")]
-check("endlive(" not in stop and 'all("pause");' in stop, "sync: your camera stopping must pause live, never end it")
-check('else if (a == "endask" && gSharing) ui("end|"' in sync and 'p == "end"' in share and '["End live", "Keep"]' in share
-      and 'else if (msg == "End live") go("endask");' in share and 'else if (gPage == "end" && msg == "End live") go("end");' in share,
-      "End live must ask first, in the panel and on the key")
-check('if (!gCamOn) r = "● LIVE · paused · double-tap: carry on' in sync, "the director sees the pause")
-for name, s in (("sync", sync), ("watch", watch)):
-    check('w == "pause"' in s and 'gHeld = TRUE;' in s and " · paused\"" in s, f"{name}: a viewer must show the pause")
-check("gHeld = FALSE;" in watch[watch.index('w == "cam"'):watch.index('w == "hb"')], "watch: the next camera ends the pause")
-print(f"keys: {len(ROWS)} rows of at most {max(ROWS)} keys, windows exact, touches map, every action answered; live pauses, End live asks")
+check("endlive(" not in stop and 'all("pause");' in stop, "sync: your camera stopping must never disconnect")
+check('else ui("end|" + llDumpList2String(gWatchers, ","));' in sync and 'p == "end"' in share and '["Disconnect", "Keep"]' in share,
+      "Disconnect with only Watches left must ask first, in the panel and on the key")
+check('if (!gCamOn) return "⇄ Connected · " + r + "\\nnobody films · double-tap: film";' in sync, "the hub sees that nobody films")
+for name, s_ in (("sync", sync), ("watch", watch)):
+    check('w == "pause"' in s_ and 'gHeld = TRUE;' in s_ and "nobody films" in s_, f"{name}: connected, nobody films must show")
+check("gHeld = FALSE;" in watch[watch.index('w == "cam"'):watch.index('w == "hb"')], "watch: the next camera follows again")
+print(f"keys: {len(ROWS)} rows of at most {max(ROWS)} keys, windows exact, touches map, every action answered; a stop never disconnects, Disconnect asks")
 print("keys checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

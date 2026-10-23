@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Take 12 marketing graphics (Second Life Marketplace + in-world vendor board).
 
-Also writes the boards of the free Take 12 Scenery (a FREE ribbon, "SCENERY - FREE CAMERA HUD", the Share view dimmed
+Also writes the boards of the free Take 12 Scenery (a FREE ribbon, "SCENERY - FREE CAMERA HUD", the Connect view dimmed
 as a full-version feature) to scenery/marketing/*_scenery.png.
 Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor (1024 and 512).
 Also the free Take 12 Watch board (watch/marketing/adboard_watch_1024.png).
@@ -27,15 +27,15 @@ DESCRIPTOR = "CINEMATIC CAMERA HUD"
 TAGLINE = "Your idle time, framed."
 HOWTO = "Double-tap to start. Any key brings you back."
 NEW = "NEW: YOUR LENS"                                       # the banner/stamp for the newest feature (6.0: your lens, everywhere)
-SMALL = "ONE TINY BUTTON  -  NO SETUP  -  SHARE WITH FRIENDS"
-CHIPS = ["Drone views", "Skybox rooms", "Share the view", "Your lens"]
+SMALL = "ONE TINY BUTTON  -  NO SETUP  -  CONNECT WITH FRIENDS"
+CHIPS = ["Drone views", "Skybox rooms", "Connect", "Your lens"]
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FREE = False                      # main() runs the boards twice; True draws the free Take 12 Scenery versions
 FREE_DESCRIPTOR = "FREE CAMERA HUD"       # under the two-line TAKE 12 / SCENERY title
 FREE_CHIPS = ["Drone views", "Skybox rooms", "Idle start", "Photo hold"]
 FREE_SMALL = "FREE  -  ONE TINY BUTTON  -  NO SETUP"
-FULL_ONLY = ("SHARE",)            # the view Take 12 Scenery does not have
+FULL_ONLY = ("CONNECT",)          # the view Take 12 Scenery does not have
 
 # ---- a tiny 5x7 pixel font (caps) ------------------------------------------------------------
 ROWS = {
@@ -168,7 +168,7 @@ def scene_room(w, h, r):
     d.point((int(w * .46), int(h * .8)), fill=CORAL); d.point((int(w * .46), int(h * .79)), fill=CORAL)      # you, small
     return im
 
-TAG = True          # the "LIVE" tag on the share view (the wide strip puts a label there instead)
+TAG = True          # the "LIVE" tag on the Connect view (the wide strip puts a label there instead)
 
 def scene_friends(w, h, r):
     im = Image.new("RGB", (w, h)); d = ImageDraw.Draw(im); hz = int(h * .6)
@@ -188,7 +188,7 @@ def scene_friends(w, h, r):
         ptext(im, (9, 3), "LIVE", 1, CHALK)
     return im
 
-SCENES = [("DRONE", scene_drone), ("HORIZON", scene_wide), ("ROOM", scene_room), ("SHARE", scene_friends)]
+SCENES = [("DRONE", scene_drone), ("HORIZON", scene_wide), ("ROOM", scene_room), ("CONNECT", scene_friends)]
 
 def view(fn, gw, gh, scale, seed):
     return fn(gw, gh, random.Random(seed)).resize((gw * scale, gh * scale), Image.NEAREST)
@@ -300,7 +300,7 @@ def wide():
     else:
         looks(im, 716, 26, 80, 12)
         ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    d.text((44, 196), "Drone views, skybox rooms, idle start." if FREE else "Drone views, skyboxes, share with friends.", font=font(22), fill=(170, 176, 200))
+    d.text((44, 196), "Drone views, skybox rooms, idle start." if FREE else "Drone views, skyboxes, connect with friends.", font=font(22), fill=(170, 176, 200))
     # film strip along the bottom
     sy, sh = 262, 232; d.rectangle([0, sy, W, sy + sh], fill=INK)
     for x in range(10, W, 36):
@@ -314,7 +314,7 @@ def wide():
         ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
         if lab == "HORIZON" and not FREE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: YOUR LENS", 2)
     TAG = LENS_TAG = True
-    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  " + ("photo" if FREE else "share"), font=font(22), fill=CHALK, anchor="ra", spacing=8)
+    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  " + ("photo" if FREE else "connect"), font=font(22), fill=CHALK, anchor="ra", spacing=8)
     return im
 
 def vendor():
@@ -340,9 +340,9 @@ def vendor():
         looks(im, 80, 784, 96, 14)
         ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
         chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
-        chips(im, 870, ["Share live", "Your lens"], 30, 420, S - 60)
+        chips(im, 870, ["Connect", "Your lens"], 30, 420, S - 60)
         stamp(im, (730, 44, 976, 126), [("NEW", 3), ("YOUR LENS", 2)])
-    d.text((S // 2, 990), "ONE TINY BUTTON  -  FREE" if FREE else "ONE TINY BUTTON  -  SHARE WITH FRIENDS", font=font(20), fill=(120, 126, 150), anchor="mm")
+    d.text((S // 2, 990), "ONE TINY BUTTON  -  FREE" if FREE else "ONE TINY BUTTON  -  CONNECT WITH FRIENDS", font=font(20), fill=(120, 126, 150), anchor="mm")
     return im
 
 def watch():
@@ -389,7 +389,7 @@ def portrait():
         d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
     gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
     paste_framed(im, scene_img("HORIZON", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="HORIZON")
-    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("SHARE", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
+    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("CONNECT", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
     for i, (lab, fn) in enumerate(small):
         x = 48 + i * (gw2 * sc2 + 24)
         paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if FREE and lab in FULL_ONLY else ""), lab_scale=2)

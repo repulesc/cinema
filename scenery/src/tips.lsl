@@ -15,7 +15,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view

@@ -3,8 +3,8 @@
 //  One strip prim linked to the HUD, named "Take 12 keys", shows a row of the key atlas (hud/art/
 //  take12_keys_512x1024.png, in the HUD's contents as "take12_keys") with repeats and offsets; the touch position
 //  on it (llDetectedTouchST) says which key. Without the strip everything stays in the menus.
-//    Live, as the director   NEXT · HOLD · INVITE · END      (END asks first)
-//    Watching someone        NEXT · ASK · LEAVE
+//    Connected, holding it   NEXT · INVITE · DISCONNECT      (6.8: Connect; the Watches only: DISCONNECT asks)
+//    Connected, watching     NEXT · MY TURN · DISCONNECT     (MY TURN: you film, everyone sees yours)
 //    Freehand                SAVE · VIEW A · VIEW B · STOP   (the view in use lit)
 //    Still                   FULL · HALF · CLOSE             (the framing in use lit)
 //  Anything else: no keys. Placed left of the button, 1.2 times as tall as it (so the labels read); the HUD's +Y is
@@ -13,7 +13,7 @@
 //  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -21,9 +21,9 @@ integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
-integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|...": the sharing state
+integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|...": the connection
 integer STILL      = 7381;   // frame -> tips  "<framing>|...": Still's framing
-integer SHARE_DO   = 7393;   // here -> sync: a choice of the Share panel
+integer SHARE_DO   = 7393;   // here -> sync: a choice of the Connect panel
 integer KEYS       = 7395;   // free -> here  "free|<saved view in use, -1 none>"
 integer UI_MENU    = 7321;   // here -> ui: back to a menu page
 
@@ -32,9 +32,10 @@ string  TEX   = "take12_keys";
 float   CW    = 0.1484375;   // a key cell on the atlas: 76 x 96 of 512 x 1024
 float   RH    = 0.09375;
 // the rows of the atlas, top first (tools/art/make_keys.py): how many keys, and what each does
-// C: a command (core, free, frame), S: a choice for sync (share.lsl's SHARE_DO), one row per entry, ";" between keys
-list    ROWS = [4, 4, 3, 4, 4, 4, 3, 3, 3];
-string  LIVE = "C:next;C:photo;S:who;S:endask";
+// C: a command (core, free, frame), S: a choice for sync (connect.lsl's SHARE_DO), one row per entry, ";" between keys
+list    ROWS = [3, 3, 4, 4, 4, 3, 3, 3];
+string  LIVE = "C:next;S:who;S:disconnect";
+string  WTCH = "C:scenery;S:film;S:disconnect";
 string  FREE = "C:fav;C:view|0;C:view|1;C:stop";
 string  STIL = "C:framing|0;C:framing|1;C:framing|2";
 list    STILLS = ["Full length", "Half length", "Close"];
@@ -105,10 +106,10 @@ menu()
 integer pick()
 {
     integer on = (gSt == "rolling" || gSt == "frozen" || gSt == "peek");
-    if (gShare == "live") return (gSt == "frozen");
-    if (gShare == "view") return 2;
-    if (on && gMode == "free") return 4 + gPick;
-    if (gSt == "rolling" && gMode == "frame") return 6 + gStill;
+    if (gShare == "live") return 0;
+    if (gShare == "view") return 1;
+    if (on && gMode == "free") return 3 + gPick;
+    if (gSt == "rolling" && gMode == "frame") return 5 + gStill;
     return -1;
 }
 
@@ -144,7 +145,7 @@ show(integer r)
 // a key: the action in its row
 press(integer i)
 {
-    string row = llList2String([LIVE, LIVE, "C:scenery;S:ask;S:leave", FREE, FREE, FREE, STIL, STIL, STIL], gRow);
+    string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, STIL, STIL, STIL], gRow);
     string a = llList2String(llParseString2List(row, [";"], []), i);
     if (llGetSubString(a, 0, 0) == "S") llMessageLinked(LINK_SET, SHARE_DO, llDeleteSubString(a, 0, 1), "");
     else llMessageLinked(LINK_SET, CMD, llDeleteSubString(a, 0, 1), "");

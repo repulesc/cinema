@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "6.7.1";
+string VERSION = "6.8.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -27,7 +27,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items: id, emoji (Color style), mark (Symbols style), title (Plain style)
-string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|👁|◉|Share~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~full|🎬|›|More cameras~crop|◰|◰|Frame~free|✋|✥|Freehand~readme|📖|▤|Read Me~tips|💡|ⓘ|Tips~stline|🏷|≣|Status line~size|🔍|⊕|Size~";
+string ITEMS = "~scenery|🏞|◇|Scenery~personal|🚶|○|Me~frame|🖼|□|Still~pace|⏳||Pace~afk|💤||Idle start~opts|⚙|≡|Options~help|❔|?|Help~close|✖|×|Close~back|↩|‹|Back~resume|▶|›|Resume~save|⭐|☆|Save~next|⏭|»|Next~stop|⏹|■|Stop~modes|🎬|◇|Modes~lively|⚡||Lively~easy|🙂||Easy~calm|🍃||Calm~slow|🌙||Slow~still|🗿||Slowest~indoors|🏠||Indoors~chat|💬||Chat cuts~favs|⭐|☆|Favourites~altcam|👁||Alt-cam~phantom|🧱||Phantom~reach|📏||Reach~trace|📝||Chat text~look|🎨|◐|Look~th0|||Classic~th1|||Rec~th2|||Viewfinder~test|🧪|◌|Test cam~reset|♻|↺|Reset~gotit|👍||Got it~off|||Off~a60|||1 min~a90|||90 s~a120|||2 min~a180|||3 min~a300|||5 min~a600|||10 min~mcheck|||Mouse check~auto|||Auto~inside|||Inside~outside|||Outside~on|||On~here|||Clear here~all|||Clear all~pause|||Pause~end|||End~ignore|||Ignore~seat|🪑||Seated view~high|||Higher~low|||Lower~r50|||50 m~r100|||100 m~r150|||150 m~r200|||200 m~relearn|||Re-learn~yes|||Yes, reset~release|🔓|↺|Release~share|🔗|⇄|Connect~us|👥|◎|Us~everyone|👥|◎|Everyone near~onlyfr|💞|♡|Only friends~flist|💞|♡|Friends list~timing|⏳|◷|Timing~camcfg|🎥|⌖|Camera~sk0|||Plain~sk1|||Symbols~sk2|||Color~full|🎬|›|More cameras~crop|◰|◰|Frame~free|✋|✥|Freehand~readme|📖|▤|Read Me~tips|💡|ⓘ|Tips~stline|🏷|≣|Status line~size|🔍|⊕|Size~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -118,7 +118,7 @@ giveHelp()
     }
     if (card != "") llGiveInventory(gOwner, card);
     else llOwnerSay("[Take 12] No Read Me notecard in this prim. Add one with \"Read Me\" in its name.");
-    llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");
+    llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: connect with people near you. Commands: /" + cfgGet("cmd_chan") + " help");
 }
 
 // new owner (or first run): wipe whatever was configured before
@@ -411,7 +411,7 @@ openMenu(string page)
     }
     else
     {
-        text = "Welcome to Take 12\nTap: menu\nDouble-tap: scenery, or the next view\nHold: share your view\nAny movement key: your camera back";
+        text = "Welcome to Take 12\nTap: menu\nDouble-tap: scenery, or the next view\nHold: connect with people near you\nAny movement key: your camera back";
         b = ["gotit", "help"];
     }
     llDialog(gOwner, text, order(b), gChan);
@@ -613,7 +613,7 @@ onDouble()
     else llMessageLinked(LINK_SET, CMD, "next", "");
 }
 
-// hold: a shortcut to the Share panel (share.lsl); Share is in both menus too. Its ⋯ More comes back here
+// hold: a shortcut to the Connect panel (connect.lsl); Connect is in both menus too. Its ⋯ More comes back here
 onLong()
 {
     if (LITE) onTap();                                      // Take 12 Scenery: no sharing

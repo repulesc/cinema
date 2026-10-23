@@ -1,13 +1,14 @@
 // ============================================================================
-//  Take 12 Watch  -  take12_watch.lsl  (v5.5)  - free, one script, one prim HUD
-//  For friends without Take 12: when someone near you goes live with Take 12 and invites you, your camera follows
-//  theirs at once (wearing it is the yes). Double-tap this HUD: the next view, for everyone watching. Orbit your own
-//  camera to look around (the director is told); Esc brings you back. A single tap or any movement key: your own
-//  camera back. A new director (a hand-over) is followed by itself. It cannot lead: it has no camera of its own.
-//  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/SHARING.md).
+//  Take 12 Watch  -  take12_watch.lsl  (v6.8)  - free, one script, one prim HUD
+//  For friends without Take 12: when someone near you connects with Take 12, you are connected at once (wearing it is
+//  the yes) and see the camera of whoever films. Nobody filming: your own camera, still connected. Double-tap this
+//  HUD: the next view, for everyone. Orbit your own camera to look around; Esc brings you back. Any movement key:
+//  your own camera for a moment (4 s still and the shared view is back). A single tap: disconnect. Whoever starts
+//  filming next is followed by itself. It cannot film: it has no camera of its own.
+//  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/CONNECT.md).
 // ============================================================================
 
-string  VERSION = "6.5.0";
+string  VERSION = "6.8.0";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -22,7 +23,8 @@ float   gMyFov;              // your lens when it was placed
 vector  gApplied;            // the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // you are looking around on your own
-integer gHeld;               // the director paused (6.5): their last shot stays
+integer gHeld;               // nobody films: your own camera, still connected
+float   gOwnT;               // a movement key: your own camera since (0: following)
 integer gHearT;              // the last word from the director
 integer gBeatT;              // your last heartbeat to the director (it sees you are connected)
 string  gShownS;             // the text above the HUD now
@@ -71,10 +73,11 @@ integer near(key k)
 
 shown()
 {
-    string s = "👁 " + gHostN + "\ntap: your camera · double-tap: next";
-    if (llGetUnixTime() - gHearT > 15) s = "👁 " + gHostN + " · no signal…";
-    else if (gIsAway) s = "👁 " + gHostN + " · looking around (Esc: back)";
-    else if (gHeld) s = "👁 " + gHostN + " · paused";
+    string s = "⇄ " + gHostN + " films\ndouble-tap: next · tap: disconnect";
+    if (llGetUnixTime() - gHearT > 15) s = "⇄ " + gHostN + " · no signal…";
+    else if (gHeld) s = "⇄ Connected with " + gHostN + " · nobody films";
+    else if (gOwnT > 0.0) s = "⇄ " + gHostN + " films · your camera for a moment";
+    else if (gIsAway) s = "⇄ " + gHostN + " films · looking around (Esc: back)";
     if (s != gShownS) llSetText(s, <1.0, 1.0, 1.0>, 0.85);
     gShownS = s;
 }
@@ -86,6 +89,7 @@ follow(key host, string n)
     gHostN = n;
     gCam = "";
     gIsAway = FALSE;
+    gOwnT = 0.0;
     gApplied = ZERO_VECTOR;
     gHearT = llGetUnixTime();
     gBeatT = gHearT;
@@ -159,9 +163,9 @@ default
         if (gTapPend && llGetTime() - gTapT > TAP_GAP)
         {
             gTapPend = FALSE;
-            if (gHost == NULL_KEY) llOwnerSay("Take 12 Watch: when someone near you goes live with Take 12, their view comes up here by itself.");
+            if (gHost == NULL_KEY) llOwnerSay("Take 12 Watch: when someone near you connects with Take 12, their camera comes up here by itself.");
             else if (gTaps >= 2) say(gHost, "next");         // double-tap: the next view for everyone
-            else leave(TRUE, TRUE, "Your camera");           // tap: your own camera back
+            else leave(TRUE, TRUE, "Disconnected");          // tap: disconnect, your own camera back
         }
         if (gHost != NULL_KEY && gCam != "" && llFabs(llGetCameraFOV() - gMyFov) > 0.004) place(TRUE);   // you zoomed: same picture
         if (gHost != NULL_KEY && llGetUnixTime() - gBeatT >= 10)
@@ -169,12 +173,18 @@ default
             gBeatT = llGetUnixTime();
             say(gHost, "hb");                                // your heartbeat: the director sees you are connected
         }
+        if (gHost != NULL_KEY && gOwnT > 0.0 && llGetTime() - gOwnT > 4.0)
+        {
+            gOwnT = 0.0;                                     // still again: back on the shared view
+            say(gHost, "back");
+            if (gCam != "" && !gHeld) place(FALSE);
+        }
         if (gHost != NULL_KEY) shown();
         if (gHost != NULL_KEY)
         {
-            if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, gHostN + "'s camera is gone");
+            if (llGetUnixTime() - gHearT > GONE) leave(FALSE, TRUE, gHostN + " is gone · disconnected");
             // your own camera (Alt-orbit) while watching: looking around; Esc puts it back on the shared view
-            else if (gApplied != ZERO_VECTOR && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
+            else if (gApplied != ZERO_VECTOR && gOwnT == 0.0 && !gHeld && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
             {
                 float d = llVecDist(llGetCameraPos(), gApplied);
                 if (!gIsAway && d > 0.6)
@@ -201,9 +211,18 @@ default
         else llSetTimerEvent(1.0);
     }
 
+    // a movement key: your own camera for a moment; you stay connected
     control(key id, integer level, integer edge)
     {
-        if (edge & level) leave(TRUE, TRUE, "Your camera");
+        if (gHost == NULL_KEY || !(level | edge)) return;
+        if (gOwnT == 0.0)
+        {
+            if (llGetPermissions() & PERMISSION_CONTROL_CAMERA) llClearCameraParams();
+            say(gHost, "away");
+            gOwnT = llGetTime();
+            shown();
+        }
+        gOwnT = llGetTime();
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -223,7 +242,7 @@ default
         }
         else if (w == "invite")
         {
-            if (gHost != NULL_KEY) say(who, "busy|watching " + gHostN);
+            if (gHost != NULL_KEY) say(who, "busy|connected with " + gHostN);
             else if (near(who))
             {
                 say(who, "ack|1");                           // wearing the Watch is the yes: their view at once
@@ -236,17 +255,18 @@ default
             gHearT = llGetUnixTime();
             gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
             gHeld = FALSE;
-            place(FALSE);
+            if (gOwnT == 0.0) place(FALSE);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
         else if (w == "pause")
         {
             gHearT = llGetUnixTime();
-            gHeld = TRUE;                                   // the director paused: their last shot stays
+            gHeld = TRUE;                                   // nobody films: your own camera, still connected
+            if (llGetPermissions() & PERMISSION_CONTROL_CAMERA) llClearCameraParams();
             shown();
         }
-        else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else leads now
-        else if (w == "kick") leave(FALSE, TRUE, gHostN + " stopped sharing with you");
-        else if (w == "end") leave(FALSE, TRUE, gHostN + " ended the live view");
+        else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else films now
+        else if (w == "kick") leave(FALSE, TRUE, gHostN + " disconnected you");
+        else if (w == "end") leave(FALSE, TRUE, gHostN + " disconnected");
     }
 }

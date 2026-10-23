@@ -50,7 +50,7 @@ ALSO
 - One small pixel-art clapper in sepia, with a red recording light and a tiny clap now and then while the camera runs.
 
 WANT MORE CAMERAS?
-Take 12 Scenery is the scenery camera of Take 12. The full Take 12 adds Me (shots of you, following you), Us (you and the people around you, or only the friends you pick, in one frame), Still (a held picture of you, with the classic portrait lens), your lens in every camera, and Share the view: go live, and your friends watch your camera. Tap the button > More cameras.
+Take 12 Scenery is the scenery camera of Take 12. The full Take 12 adds Me (shots of you, following you), Us (you and the people around you, or only the friends you pick, in one frame), Still (a held picture of you, with the classic portrait lens), your lens in every camera, and Connect: connect with friends, and everyone sees the camera of whoever films. Tap the button > More cameras.
 
 GOOD TO KNOW
 - Wear it on a HUD point (Top Right is usual) and allow camera control once.
@@ -90,7 +90,7 @@ Take 12 Scenery is a free one-button HUD that moves your camera off your avatar 
 ---
 
 ## Images
-- **`adboard_square_1024_scenery.png`**: the main Marketplace image (square). The Share view is dimmed and marked "Full Take 12".
+- **`adboard_square_1024_scenery.png`**: the main Marketplace image (square). The Connect view is dimmed and marked "Full Take 12".
 - **`adboard_portrait_3x4_768x1024_scenery.png`** (3:4) and **`adboard_landscape_4x3_1024x768_scenery.png`** (4:3): the same in the two other ratios.
 - **`adboard_wide_1024x512_scenery.png`**: an in-world vendor board or banner, next to the full Take 12's.
 - **`adboard_vendor_1024_scenery.png`** and **`adboard_vendor_512_scenery.png`**: the simpler square for vendor displays.
