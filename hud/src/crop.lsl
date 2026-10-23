@@ -3,7 +3,7 @@
 //  Darkens your screen outside a chosen picture format (3:2, 4:5, 1:1, 4:3, 2.39:1, 9:16), like a camera's
 //  viewfinder, with four bars: four boxes linked to the HUD (any links but the root and the keys strip). Snapshots
 //  leave HUDs out, so the bars never spoil a picture: set the snapshot size to the same ratio.
-//  HUD space is 1.0 tall and as wide as your window (llGetCameraAspect), +Y to the left, +Z up; every HUD point has
+//  HUD space is 1.0 tall and as wide as your window (llGetCameraAspect), +Y to the left, +Z up, +X into the screen; every HUD point has
 //  its origin at its own corner, edge or the centre. The bars are placed from the screen centre, through the root's
 //  own position and rotation, so the button can sit anywhere.
 //  Also measures your window for the cameras (cin.aspect; they assumed 16:9) and tells them the format (CROP).
@@ -25,13 +25,13 @@ integer CROP        = 7390;   // here -> cameras  "<format>|<window>" (format 0 
 list    NAMES  = ["3:2", "4:5", "1:1", "4:3", "2.39:1", "9:16"];
 list    RATIOS = [1.5, 0.8, 1.0, 1.333333, 2.39, 0.5625];
 float   DIM    = 0.6;         // how dark outside the frame (1 = black)
-float   DEPTH  = 0.02;        // m  the bars sit this far behind the button
+float   DEPTH  = 0.02;        // m  the bars sit this far behind the button (HUD +X points into the screen)
 
 key     gOwner;
 float   gR;                  // the format (width / height), 0 = off
 float   gA = 1.777778;       // your window
 integer gSY = 1;             // HUD +Y is to the left (/77 crop flip if a viewer differs)
-integer gSX = -1;            // ... and the bars go behind the button (/77 crop back flips it)
+integer gSX = 1;             // ... and the bars go behind the button, so it stays clickable (/77 crop back flips it)
 list    gBars;               // the four bars' link numbers (any child but the keys strip, keys.lsl)
 integer gChan;
 integer gL;                  // the menu's listener (0: closed)
