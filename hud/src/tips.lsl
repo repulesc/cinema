@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.7.0";
+string VERSION = "6.7.1";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -75,6 +75,11 @@ string  gSync;
 string  gTip;                // the tip on screen ("" = none)
 string  gText;               // the text this script composed last
 string  gLast;               // ... and as it reads back from the prim (cut short past 254 bytes)
+// 6.7.1: every script answers ui's version check (MSG_VER "?"); one that stays silent is missing or stopped, and
+// without it a menu can do nothing at all (Share did, when share.lsl was not in the HUD). Said once, in chat.
+string  NEED = "core scenery people friends picker frame free lens sync share crop keys fit";
+list    gHeard;              // who answered
+float   gVerT;               // ... since the check (0: none running)
 integer gWant = -1;          // the tip waiting for a free moment
 float   gWantT;
 float   gShowT;
@@ -278,7 +283,7 @@ tick()
     draw();
     if (gClapEnd > 0.0) llSetTimerEvent(0.25);
     else if (gWant >= 0 || gShowT > 0.0 || gClapT > 0.0) llSetTimerEvent(0.5);
-    else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);    // back within a second after a notice
+    else if (gLast != "" || gRollT > 0.0 || gSync != "" || gVerT > 0.0) llSetTimerEvent(1.0);    // back within a second after a notice
     else llSetTimerEvent(0.0);
 }
 
@@ -336,7 +341,13 @@ default
             gSync = llDeleteSubString(str, 0, i);                  // not llGetSubString(str, i + 1, -1): on "|" that is "|"
         }
         else if (num == CFG_CHANGED && (str == "tips" || str == "status" || str == "skin" || str == "look" || str == "face" || str == "all")) load();
-        else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tips");
+        else if (num == MSG_VER && str == "?")
+        {
+            llMessageLinked(LINK_SET, MSG_VER, VERSION, "tips");
+            gHeard = [];
+            gVerT = llGetTime();
+        }
+        else if (num == MSG_VER) gHeard += [(string)id];
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tips] v" + VERSION + " status line " + llList2String(["off", "on"], gStat) + ", tips "
                 + llList2String(["off", "on"], gOn) + ", seen " + gN + ", free mem " + (string)llGetFreeMemory());
@@ -347,6 +358,17 @@ default
     timer()
     {
         float now = llGetTime();
+        if (gVerT > 0.0 && now - gVerT > 4.0)
+        {
+            gVerT = 0.0;
+            list N = llParseString2List(NEED, [" "], []);
+            list m = [];
+            integer i;
+            for (i = 0; i < llGetListLength(N); i++)
+                if (llListFindList(gHeard, [llList2String(N, i)]) < 0) m += [llList2String(N, i)];
+            if (m != []) llOwnerSay("[Take 12] Missing or stopped: " + llDumpList2String(m, ", ") + ". Add them from the same release "
+                + "(or Build > Scripts > Set Scripts to Running in Selection): without them some menus do nothing.");
+        }
         if (gShowT > 0.0 && now - gShowT >= HOLD)
         {
             gTip = "";

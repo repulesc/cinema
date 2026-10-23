@@ -10,7 +10,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - Tap = a menu (always), double-tap = go / next view, hold = share (a shortcut; the clapper claps when it takes). A movement key gives your camera back instantly.
 - **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
-> **Status:** **v6.7.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v6.7.1** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 
@@ -41,7 +41,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 
 ## Building the HUD in-world (v4)
 1. **Upload the texture** `hud/art/take12_icon_sheet_512x256.png` (keep the alpha; no lossless needed). It holds every look, and the menu (Options > Look) picks one.
-2. **Make the prim:** one box, size `<0.01, 0.04, 0.04>` (about 40 px). Name it `Take 12`.
+2. **Make the prim:** one box, size `<0.01, 0.04, 0.04>`. Name it `Take 12`. (`keys` sets it to Medium, 0.06, the first time; Options › Look › Size changes it.)
    - Put the texture on the face that points at you when it is on a HUD (try the +X face). You do not have to set repeats or offset: the script does it. Put a fully transparent texture on the other faces.
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.

@@ -195,7 +195,7 @@ class Hud:
 # the port matches the script where it matters
 for frag in ['if (gWant != 0 || !idle) gWant = -1;', 'if (rolling && (!was || mode != gMode))', 'now - gLastT >= GAP && free()) show(gWant);',
              'if (c != "" && c != gLast) return;', 'gSync = llDeleteSubString(str, 0, i);', 'if (i > 0) gKind = llGetSubString(str, 0, i - 1);',
-             'if (t == gText && c == gLast) return;', 'gLast = cur();', 'else if (gLast != "" || gRollT > 0.0 || gSync != "") llSetTimerEvent(1.0);', 'if (gKind != "view" && line() != "") L += [line()];', 'if (done || all >= ALL)',
+             'if (t == gText && c == gLast) return;', 'gLast = cur();', 'else if (gLast != "" || gRollT > 0.0 || gSync != "" || gVerT > 0.0) llSetTimerEvent(1.0);', 'if (gKind != "view" && line() != "") L += [line()];', 'if (done || all >= ALL)',
              'llInsertString(llDeleteSubString(gN, i, i), i, c)', 'else if (!gMore && now - gRollT >= 90.0)',
              'else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";',
              'else if (gMode == "friends" && gLed) w = "your view";', 'if (llAbs(now - want) * 100 <= 15 * want) return s + " ✓";',
@@ -352,6 +352,18 @@ h = Hud(on="0", n="333333333333")
 h.lsd["tipn"] = "0"; h.lsd["tips"] = "1"; h.load(); h.state("rolling", "scenery"); h.run(3)
 check(h.on and h.text.endswith(TIPS[1].split("\n")[1]), "Tips back on did not start from zero")
 
+# ---- 6.7.1: a script that does not answer ui's version check is named in chat --------------------------------------
+import glob
+names = sorted(os.path.basename(p)[:-4] for p in glob.glob(os.path.join(R, "hud", "src", "*.lsl")))
+need = re.search(r'string  NEED = "([^"]+)";', src).group(1).split()
+check(sorted(need + ["tips", "ui"]) == names, f"tips: NEED must name every script but ui and tips: {sorted(set(names) ^ set(need + ['tips', 'ui']))}")
+for n in names:
+    s_ = open(os.path.join(R, "hud", "src", n + ".lsl")).read()
+    check(n == "ui" or f'MSG_VER, VERSION, "{n}"' in s_, f"{n}.lsl must answer the version check with its own name")
+check('else if (num == MSG_VER) gHeard += [(string)id];' in src and "if (gVerT > 0.0 && now - gVerT > 4.0)" in src and '"[Take 12] Missing or stopped: "' in src,
+      "tips: the missing-script check")
+free_tips = open(os.path.join(R, "scenery", "src", "tips.lsl")).read()
+check('string  NEED = "core scenery";' in free_tips, "Take 12 Scenery: only core and scenery are needed (besides ui and tips)")
 print(f"above the button: a status line for {len(MODES)} cameras, Photo and pause; sharing on top; notices respected; "
       f"{len(TIPS)} tips, each at most {int(MAXN)} times, {int(GAP)} s apart, {int(HOLD)} s on screen, off after {int(ALL)}")
 print("text checks:", "ALL PASS" if ok else "FAILURES")

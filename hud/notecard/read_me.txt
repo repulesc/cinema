@@ -77,7 +77,7 @@ Let the people with you watch what your camera films. One person leads; everyone
 STILL
 For a picture of yourself, or of you and whoever stands right next to you. Still places the camera well and holds it still: no cuts, and it never moves by itself.
  - Tap the button > Still. DOUBLE-TAP for the next framing: Full length, Half length, Close.
- - Adjust with your movement keys: W / S closer / further, A / D round you. You stand still meanwhile. The next framing starts fresh. PAGE UP / PAGE DOWN move you up or down in the picture (FIT, below).
+ - Adjust with your movement keys: W / S closer / further, A / D round you. You stand still meanwhile. The next framing starts fresh. PAGE UP / PAGE DOWN raise or lower the camera (FIT, below).
  - SHIFT + A / D (or Shift + the left / right arrows) slides you left or right in the picture, for example to the other golden line, without moving the camera round you.
  - THE LENS: the line above the button names the lens a photographer would use for this framing, and yours:
       □ Still · Close · 105 mm · now 21 · Ctrl+0
@@ -99,7 +99,7 @@ Me, Us, Still and Freehand only start when YOU choose them in the menu.
 
 FIT: PAGE UP / PAGE DOWN  (Me, Us, Only friends, Still)
 Second Life plays your pose in your viewer, so no script can see where your body really is: in a deep sofa, on a bar stool, sitting on the ground, in high heels. When the framing is off, show it once, by eye:
- - PAGE UP moves you up in the picture, PAGE DOWN down (or E / C). A tap is a small step; hold for a smooth move. The camera glides at once, and every next shot is framed with it.
+ - PAGE UP raises the camera, PAGE DOWN lowers it (or E / C). A tap moves it 5 cm. Hold for more: it starts slowly, for precision, and speeds up to half a metre a second for a big move. (Shift can't help here: Second Life doesn't tell scripts about it.) The camera glides at once, and every next shot is framed with it.
  - Above the button: "Fit +12 cm · this seat".
  - It is kept for this seat (and where on it you sit, so each side of a sofa has its own; the last 20 seats), for sitting on the ground, and for standing. Sit there again and you are framed right from the first shot.
  - Back to automatic: press until it says "Fit 0 · automatic".
@@ -143,6 +143,8 @@ Nothing above the button means: it is your own camera.
 While you share, "● LIVE · 2 watching" and the names sit on top of it. While you watch someone, you see only "👁 Pano".
 Short messages ("Your view is kept", "Half length", "Ana watches") show for a few seconds, then the line comes back.
 Options > Look > Status line turns it off (or /77 statusline off).
+
+The button too small? Options > Look > Size: Small, Medium (the usual) or Large; the keys grow with it (or /77 size l).
 
 
 === YOUR LENS ===========================================

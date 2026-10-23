@@ -1,5 +1,14 @@
 # Changelog
 
+## 6.7.1
+**Fit the right way up, faster; a bigger button; a missing script says so.**
+- **Fit:** Page Up now raises the camera and Page Down lowers it (6.7.0 moved you up in the picture, which read as the camera going down). A tap is 5 cm (was 2). Hold for more: it starts at 10 cm/s, for precision, and speeds up to 50 cm/s after about 2 s; up to 1.5 m either way. Shift + Page Up can't be done: Second Life doesn't tell scripts about Shift, so the hold is the big move. Your 6.7.0 fits start over (they had the other sign).
+- **Size:** Options › Look › Size: Small, Medium or Large (the button 0.04, 0.06 or 0.08; `/77 size s|m|l`). The keys grow with it and are now 1.2 times the button's height, so their labels read. A HUD that never chose is set to **Medium**, half again as big as before. (`keys` does it; Take 12 Scenery has no Size.)
+- **A missing script says so.** Every script answers ui's version check; one that stays silent is named once in chat: "Missing or stopped: share …". Share doing nothing at all was most likely this: since 6.2 its panel is drawn by `share`, and without it nothing showed. (`tips`; Take 12 Scenery checks its own four.)
+- **Checks:** `fit_sim` (the new steps and sign), `keys_sim` (the three sizes, the keys beside the button at each), `tips_sim` (every script is on the missing list and answers with its own name).
+- **Version 6.7.1** in all fifteen scripts.
+- **Next (6.8):** sharing becomes **Connect**.
+
 ## 6.7.0
 **Fit: Page Up / Page Down move you in the picture.** A seated pose can put your body anywhere from the point Second Life reports (a deep sofa, a bar stool, a ground sit, heels), and no script can see it. Now you show it once, by eye.
 - **The keys:** while Me, Us, Only friends or Still runs, Page Up moves you up in the picture and Page Down down (E / C too). A tap is 2 cm; held, 25 cm/s; up to 1.2 m either way. The camera glides at once, and every next shot is framed with it (the eye line, the camera height and its angle all follow). "Fit +12 cm · this seat" shows for a few seconds.
