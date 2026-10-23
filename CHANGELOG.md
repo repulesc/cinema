@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.1.1 (fixes from the first in-world test of 7.1)
+- **Adjust walked you (the main bug):** a script holds ONE set of controls, and a second `llTakeControls` replaces the first. Core asked for all the movement keys, then for Page Up / Page Down alone, so only those two stayed taken: Adjust's W/A/S/D still walked you, and (since 7.0) Framing › Me never heard you walk, so it could not follow you. Core now makes one request, and `fit` keeps Page Up / Page Down from your avatar with its own (no jump while Fit is on).
+- **Framing popped back** with "… is gone · disconnected": you were still connected to someone who had left, and the time-out cleared the camera you had just started. Leaving never clears your own running camera now, and starting a camera while the one you followed is silent disconnects at once, without the 25 s wait.
+- **The Adjust help** stays 6 s, comes back once (4 s) after 15 s until you press a key, and the line above the button ends with "✛ Adjust" for as long as you adjust.
+- **Format only when it matters:** the bars show while a camera runs, while you choose a Format, and while you follow a connected Format; with your own camera they go away. Your Format is kept and comes back with the next camera.
+- **Bug hunt:** tapping Adjust while seated (where the keys always adjust) left Adjust on for when you stood up: it does not toggle while seated.
+- Version 7.1.1 in all fifteen scripts. No new art.
+
 ## 7.1.0 (Adjust; Framing in one tap; Connect shares the Format)
 **The keys either walk you or frame the shot.** In 7.0 Framing › Me let the keys walk you only, so nothing could fine-tune a shot, and a tilt was missing. 7.1 gives the keys two jobs and one clear switch.
 - **Adjust:** seated, the keys always adjust the shot (you cannot walk anyway); standing they walk you, until you tap **ADJUST** (the keys strip, the live menu, `/77 adjust`); tap it again to walk. In Framing (Me, Us, Friends) and Freehand:

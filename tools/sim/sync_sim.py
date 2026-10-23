@@ -62,7 +62,7 @@ for name, s in (("sync", sync), ("watch", watch)):
               "if (who == gOwner) return;", "else if (who != gHost) return;", "PERMISSION_TRACK_CAMERA", "CHANGED_REGION",
               "if (!gIsAway && d > 0.6)", "else if (gIsAway && d < 0.3)", "gApplyT = llGetTime() + lag + 2.0;", "GONE"):
         check(w in s, f"{name}: missing {w}")
-    check("clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;" in s
+    check(("clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;" in s or "clear = clear && !gCamOn && llGetAttached() && llGetPermissionsKey() == gOwner;" in s)
           and all("PERMISSION_CONTROL_CAMERA" in l for l in s.splitlines() if "llClearCameraParams()" in l),
           f"{name}: every camera clear must be guarded (no clear without the permission, none while the HUD comes off)")
 check('say(who, "here|T|"' in sync and 'say(who, "here|W|"' in watch, "the who reply must say Take 12 or Watch")
@@ -137,6 +137,11 @@ check("load();" in fo and "set(" not in fo and "CFG_CHANGED" not in fo and 'if (
       "crop: following is not saved and does not change your own cameras; your own Format comes back")
 check(sync.count("gLensTold = TRUE;") == 1 and "gLensTold = FALSE;" in sync[sync.index("\nleave(integer"):], "sync: the lens note once per connection")
 check('"fmt"' not in watch, "the Watch has no Format bars: it ignores fmt")
+# 7.1.1: Framing while still connected to someone who had gone: the time-out cleared the new camera
+check("clear = clear && !gCamOn && llGetAttached()" in sync, "sync: leaving never clears your own running camera")
+st = sync[sync.index("else if (num == START)"):sync.index("else if (num == STOP")]
+check(st.index("llGetUnixTime() - gHearT > 15") < st.index('say(gHost, "ask");') and "leave(FALSE, FALSE);" in st,
+      "sync: your camera starting while the one you followed is silent: you film alone at once, no 25 s wait")
 # 6.3: tap always opens a menu (main when idle, live while a camera runs); the hold shows a clap when it has taken
 check('openMenu(llList2String(["main", "live"], gUiState != "idle"));' in ui and 'llMessageLinked(LINK_SET, CMD, "stop", "")' not in ui[ui.index("onTap()"):ui.index("onDouble()")],
       "ui: a tap must open a menu, never stop the camera")

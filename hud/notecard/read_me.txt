@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (7.1)
+TAKE 12  -  READ ME  (7.1.1)
 A camera for Second Life, from beyond your avatar's back. It only moves your view: nothing is recorded.
 
 
@@ -44,7 +44,7 @@ Small corrections: ADJUST, in Framing and Freehand. The keys trim the shot inste
    A / D  (left / right arrows)   swing it around you
    Shift + A / D                  slide it sideways
    Page Up / Page Down            the height
-Seated, the keys always adjust (you cannot walk anyway). Standing they walk you, until you tap > Adjust (or the ADJUST key); tap it again to walk. Tap for a small step, hold to go faster (full speed after a second).
+Seated, the keys always adjust (you cannot walk anyway). Standing they walk you, until you tap > Adjust (or the ADJUST key); tap it again to walk. While you adjust, the line above the button ends with "✛ Adjust". Tap for a small step, hold to go faster (full speed after a second).
 In Me an adjustment stays until you change Full / Half / Close or stop. In Us and Friends adjusting holds that shot until Next; the next one starts clean.
 The height (Page Up / Page Down) is also how you show where your body really is: Second Life plays your pose in your viewer, so no script can see it (a deep sofa, a ground sit, heels). It is kept for this seat, for sitting on the ground and for standing. While Framing runs these keys never make you jump; flying, they fly.
 
@@ -76,7 +76,7 @@ High drone views over the area, wide views across the horizon, the corners of a 
 
 === FORMAT ==============================================
 
-3:2, 4:5, 1:1, 4:3, 2.39:1 or 9:16: the screen outside the picture is dimmed, like a viewfinder, and Framing composes inside it. Snapshots leave the HUD out; set the snapshot size to the same ratio. If the bars sit on the wrong side: /77 crop flip.
+3:2, 4:5, 1:1, 4:3, 2.39:1 or 9:16: the screen outside the picture is dimmed, like a viewfinder, and Framing composes inside it. The bars show only while a camera runs (and while you choose): with your own camera they go away, and they come back with the next camera. Snapshots leave the HUD out; set the snapshot size to the same ratio. If the bars sit on the wrong side: /77 crop flip.
 
 
 === SETTINGS ============================================

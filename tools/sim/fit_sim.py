@@ -80,8 +80,12 @@ for frag in ("if (k & ~gKeys & llList2Integer(UPS, a)) move(a, llList2Float(STEP
     check(frag in fit, f"fit.lsl: the port is stale: {frag}")
 check('if (gTaps < 3 && !gKeys) s += "\\nhold: faster";' in fit, "fit: the first taps say that a hold is faster")
 check('if (cfg("trace") == "1") llOwnerSay("[Take 12] keys " + str);' in fit, "fit: Chat text shows the keys the viewer sends (Shift + Page Down)")
-check('if (adj) show("Adjust · W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height");' in fit and 'else show("Walk · the keys move you");' in fit,
+check('show("Adjust · W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height");' in fit and 'show("Walk · the keys move you");' in fit,
       "fit: Adjust on / off is said above the button")
+# 7.1.1: the help stays 6 s and comes back once (4 s) after 15 s unless a key was pressed
+check("help(6.0);" in fit and "gHelpT = llGetTime();" in fit and "if (gHelpT > 0.0 && gAdj && llGetTime() - gHelpT > 15.0)" in fit
+      and "help(4.0);" in fit and "if (k) gHelpT = 0.0;" in fit and "llGetTime() - gTextT > gTextFor" in fit and "gTextFor = 3.0;" in fit,
+      "fit: the Adjust help stays 6 s, and comes back once for 4 s after 15 s until you press a key")
 
 # ---- the sign, and the two paths agree --------------------------------------------------------------------------
 # a level camera at height zc, D away: your eyes at y = (eye - zc) / (D tanV). Page Up (fit > 0): cin.fitz = +fit, so the
@@ -111,15 +115,23 @@ check("if (gState == ST_IDLE || (info & AGENT_FLYING)) return FALSE;" in fo and 
 tc = core[core.index("takeCtl(integer pass)"):core.index("// ---- lifecycle")]
 check("gAdj = (gFitCtl && (gAdjOn || gSitCtl));" in tc and "llTakeControls(CTL, TRUE, pass && !gAdj);" in tc,
       "core: seated the keys always adjust, standing after ADJUST; then none of them reaches your avatar")
-check("if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in tc and tc.index("llTakeControls(48") > tc.rindex("llTakeControls(CTL"), "core: Page Up / Down kept back (no jump) while they are Fit's")
+# 7.1.1: a script holds ONE set of controls (a second llTakeControls replaces the first): 7.0 / 7.1.0 took Page Up / Down
+# last, so the movement keys were not taken (Adjust walked you, Me never heard you walk). Core: one request; fit keeps
+# Page Up / Down from your avatar with its own.
+check(tc.count("llTakeControls(") == 1 and core.count("llTakeControls(") == 1, "core: exactly one control request")
+check('if (on) llTakeControls(48, TRUE, FALSE);' in fit and 'else llTakeControls(48, FALSE, TRUE);' in fit and fit.count("llTakeControls(") == 2
+      and "gWant48 = (integer)llList2String(L, 5);" in fit and "hold(gWant48);" in fit and "control(key id, integer level, integer edge)" in fit
+      and "llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);" in fit, "fit: keeps Page Up / Down from your avatar (no jump) while Fit is on, its own request")
+check('+ "|" + (string)gAdj + "|" + (string)gFitCtl, "");' in core, "core: UI_STATE says when Fit is on (field 6)")
 check('if ((was && !gFitCtl) || (adj && !gAdj)) llMessageLinked(LINK_SET, FITKEY, "0", "");' in tc, "core: taking off, stopping or walking again while a key is held lets go of it")
-check('if (adj != gAdj && gState != ST_IDLE) setUi(' in tc and '+ "|" + (string)gAdj, "");' in core, "core: the keys strip and fit hear when Adjust turns on or off")
+check('if ((adj != gAdj || was != gFitCtl) && gState != ST_IDLE) setUi(' in tc, "core: the keys strip, tips and fit hear when Adjust or Fit turn on or off")
 check("if ((info & AGENT_SITTING) != gSitCtl || fitOK(info) != gFitCtl) takeCtl(TRUE);" in core, "core: sitting down, standing up, taking off, landing hand the keys over again")
 ctl = core[core.index("control(key id, integer level, integer edge)"):core.index("timer()", core.index("control(key id"))]
 check(ctl.index('bail("key");') < ctl.index("if (gAdj)") < ctl.index('if (gMode == "free") return;') < ctl.index("level = level & ~48;"),
       "core: Scenery keeps its keys; Adjust takes every key (Freehand too); otherwise Page Up / Down go to Fit and the rest walk you")
 check('if (edge) llMessageLinked(LINK_SET, FITKEY, (string)(level & CTL), "");' in ctl, "core: Adjust hands over every key held")
 check('else if (str == "adjust")' in core and "gAdjOn = !gAdjOn;" in core and core.count("gAdjOn = FALSE;") >= 3, "core: ADJUST toggles; a stop, a new camera and a teleport turn it off")
+check("if (!gSitCtl) gAdjOn = !gAdjOn;" in core, "core: ADJUST tapped while seated (where the keys always adjust) is not left on for when you stand up")
 check("llTakeControls(3, TRUE, FALSE);" not in core, "7.1: no seated W/S closer / wider in Friends (the keys adjust)")
 
 # ---- core: the trim on every shot ---------------------------------------------------------------------------------

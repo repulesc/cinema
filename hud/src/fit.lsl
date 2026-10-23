@@ -12,13 +12,16 @@
 //  Fit, the height, is kept per seat (the object you sit on and where on it; the last 20 seats), one for sitting on
 //  the ground and one for standing; people, friends and frame read it (cin.fitz) and plan every shot with it. In
 //  Freehand the height is for that view only. While a people camera runs, Page Up / Page Down are Fit's even when you
-//  walk (they never make you jump; flying, they fly). Checked in tools/sim/fit_sim.py.
+//  walk (they never make you jump; flying, they fly). 7.1.1: this script keeps Page Up / Down from your avatar with
+//  its own control request (one script holds one set of controls: core's request is all the movement keys, which
+//  it routes here). The Adjust notice stays 6 s and comes back once, 15 s later, until you press a key.
+//  Checked in tools/sim/fit_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 string PASS    = "cinema-1.0-build1";
 
-integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|<next cut>|<why>|<adjust>"
+integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|<next cut>|<why>|<adjust>|<fit>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
@@ -46,8 +49,12 @@ integer gOn;                 // a camera Adjust works in runs
 integer gAdj;                // the keys adjust (core: seated, or ADJUST)
 integer gFree;               // Freehand: the height is for this view only
 integer gTaps;               // the first taps say that a hold is faster
+integer gHold48;              // Page Up / Down are kept from your avatar (no jump) by this script's request
+integer gWant48;             // ... and should be (UI_STATE)
+float   gHelpT;              // Adjust turned on at (0: the help has come back once, or a key was pressed)
 string  gNote;
 float   gTextT;
+float   gTextFor = 3.0;      // s  this notice stays
 
 string cfg(string k)
 {
@@ -149,6 +156,23 @@ show(string s)
     llSetText(s, <1.0, 1.0, 1.0>, 0.85);
     gNote = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);
     gTextT = llGetTime();
+    gTextFor = 3.0;
+}
+
+// how Adjust works, for a while (6 s, then once more for 4 s after 15 s unless you pressed a key)
+help(float t)
+{
+    show("Adjust · W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height");
+    gTextFor = t;
+}
+
+// Page Up / Down: kept from your avatar while they are Fit's, given back otherwise (the permission stays)
+hold(integer on)
+{
+    if (on == gHold48 || !(llGetPermissions() & PERMISSION_TAKE_CONTROLS)) return;
+    gHold48 = on;
+    if (on) llTakeControls(48, TRUE, FALSE);
+    else llTakeControls(48, FALSE, TRUE);
 }
 
 // fast while a key is held or a notice is up; once a second while a camera runs (you may sit or stand)
@@ -156,7 +180,7 @@ tick()
 {
     float t = 0.0;
     if (gOn) t = 1.0;
-    if (gKeys || gTextT > 0.0) t = 0.1;
+    if (gKeys || gTextT > 0.0) t = 0.1;                     // (gHelpT: the 1 s tick while a camera runs is enough)
     llSetTimerEvent(t);
 }
 
@@ -167,12 +191,29 @@ default
     {
         gOwner = llGetOwner();
         look();
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);   // an attachment: granted without asking
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "fit");
     }
 
     on_rez(integer p)
     {
         llResetScript();
+    }
+
+    attach(key id)
+    {
+        if (id != NULL_KEY) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);
+    }
+
+    run_time_permissions(integer p)
+    {
+        gHold48 = FALSE;
+        hold(gWant48);                                      // re-attached while a camera runs
+    }
+
+    // the keys reach core (it routes them here as FITKEY); this request only keeps Page Up / Down from your avatar
+    control(key id, integer level, integer edge)
+    {
     }
 
     changed(integer c)
@@ -199,6 +240,7 @@ default
                 if (k & ~gKeys & llList2Integer(DOWNS, a)) move(a, -llList2Float(STEPS, a));
             }
             if (k && !gKeys) gDownT = llGetTime();
+            if (k) gHelpT = 0.0;                            // you found the keys: the help does not come back
             if (!k && gKeys)
             {
                 keep();                                     // let go: kept
@@ -212,12 +254,22 @@ default
             string m = llList2String(L, 1);
             gOn = (llList2String(L, 0) == "rolling" && llListFindList(["personal", "social", "friends", "frame", "free"], [m]) >= 0);
             integer adj = (integer)llList2String(L, 4) * gOn;
+            gWant48 = (integer)llList2String(L, 5);         // core: a people camera runs (or Freehand, adjusting), not flying
+            hold(gWant48);                                  // no jump while Page Up / Down are Fit's
             if (gFree != (m == "free")) gCtx = "";            // Freehand's height is its own; back from it, the seat's again
             gFree = (m == "free");
             if (adj != gAdj && gOn)
             {
-                if (adj) show("Adjust · W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height");
-                else show("Walk · the keys move you");
+                if (adj)
+                {
+                    help(6.0);
+                    gHelpT = llGetTime();
+                }
+                else
+                {
+                    show("Walk · the keys move you");
+                    gHelpT = 0.0;
+                }
             }
             gAdj = adj;
             if (!gOn && gKeys) keep();
@@ -248,7 +300,12 @@ default
                 if (gKeys & llList2Integer(DOWNS, a)) move(a, -v);
             }
         }
-        if (gTextT > 0.0 && llGetTime() - gTextT > 3.0)
+        if (gHelpT > 0.0 && gAdj && llGetTime() - gHelpT > 15.0)
+        {
+            gHelpT = 0.0;
+            help(4.0);                                      // once more, in case you missed it
+        }
+        if (gTextT > 0.0 && llGetTime() - gTextT > gTextFor)
         {
             if (llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0) == gNote) llSetText("", ZERO_VECTOR, 0.0);
             gTextT = 0.0;

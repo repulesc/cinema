@@ -18,8 +18,8 @@ for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string
           'else if (gPeekOn || gMode == "friends" || gMode == "free")', 'else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))', "float t = (f0 - cp) * u;"):
     check(w in core, f"core: missing {w}")
 # 5.1 gave standing E/C back to your avatar; 6.7 keeps them only for Fit (fit_sim), and never while you fly
-check(core.count("llTakeControls(48") == 1 and "if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in core and "(info & AGENT_FLYING)) return FALSE;" in core,
-      "core: E/C may be kept back only for Fit (and Adjust), and never while you fly")
+check(core.count("llTakeControls(") == 1 and "(info & AGENT_FLYING)) return FALSE;" in core,
+      "core: one control request (7.1.1); E/C kept back only for Fit (fit.lsl) and Adjust, never while you fly")
 check("llTakeControls(3, TRUE, FALSE);" not in core and "NUDGE" not in lens and "gS * 0.8" not in lens, "7.1: no seated W/S closer / wider in Friends (the keys adjust)")
 check('integer own = (gMode == "friends" || gMode == "free");' in core and 'if (own && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
       "core: Friends does not notice a small move or a turn of your camera")
