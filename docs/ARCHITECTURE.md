@@ -202,7 +202,7 @@ Port this decoder to Python in `tools/sim/tap_test.py` and test these sequences:
 | `hold` | 60 | the Pace value in seconds (key kept for compatibility) |
 | `reach` | **100** (4.4.5) | the furthest Scenery camera in use. Learned: lowered when the viewer really stops far cameras short (§6.5), and grown back up to `reach_set` |
 | `reach_set` | **100** | the furthest you chose (menu 50 / 100 / 150 / 200, or `/77 reach <m>`, 20–250). `relearn` sets `reach` back to `reach_set` and clears `reach_ok`. `cfgv` is a number and each step runs once (4.4.4 compared strings, so every rez re-ran them: Chat text was forced off and the learned reach was copied into `reach_set`). Step 4 (4.4.5) sets both to 100, keeping only a chosen 50 or 200 |
-| `seat_deg` | **45** (4.8.0) | seated view: degrees above your eye line (0 off, 30 / 45 / 60). Read by people and friends (`gSeatEl`); `camZ` raises the camera while `gOSit`, `tryCand` pitches it down by that angle plus the rule-of-thirds offset; a change of sit state sets the `seat` event for a calm re-frame |
+| `seat_deg` | **45** (4.8.0) | seated view: degrees above your eye line (0 off, 30 / 45 / 60). Read by people and friends (`gSeatEl`); `camZ` raises the camera while `gOSit`, `tryCand` pitches it down by that angle plus the golden-line offset (6.6; it was the third); a change of sit state sets the `seat` event for a calm re-frame |
 | `reach_ok` | 0 | scenery: cuts since the last REACH_FAIL, for regrowth (§6.5) |
 | `indoors` | `auto` | `auto` / `inside` / `outside` |
 | `chat_cuts` | 1 | |
@@ -365,7 +365,7 @@ The fix:
   - Group: everyone. Friends: you plus the friends used.
   - Pair or speaker: the person facing the camera. The over-the-shoulder foreground is left out on purpose.
   - Portrait: you.
-- **`needAt(az)`:** the distance a camera on side `az` needs, for its real view direction (`viewDir`, including the rule-of-thirds turn). For each person, with `o` = offset from the focus point, `V` = view, `P` = its left, `u` = the side and `k = tanH / MARGIN`:
+- **`needAt(az)`:** the distance a camera on side `az` needs, for its real view direction (`viewDir`, including the golden-line turn, 6.6). For each person, with `o` = offset from the focus point, `V` = view, `P` = its left, `u` = the side and `k = tanH / MARGIN`:
   - `need ≥ (o·P + BODY_R − k·o·V) / (k·(−u·V) + u·P)`;
   - and the same with `−o·P` and `−u·P`.
   - The result is at least `gVNeed` (the height of the shot).
@@ -374,7 +374,7 @@ The fix:
   - group 4–12 m;
   - Friends 3–25 m;
   - portrait 2.5–3.5 m.
-- **`MARGIN` 1.3** (was 1.15). The fit assumes a window no wider than 16:10 (`tanH = tanV × min(aspect, 1.6)`). The outermost body then ends at least about 12 % of the screen width from the edge on 16:10, and about 16 % on 16:9. The rule-of-thirds turn still uses your real aspect.
+- **`MARGIN` 1.3** (was 1.15). The fit assumes a window no wider than 16:10 (`tanH = tanV × min(aspect, 1.6)`). The outermost body then ends at least about 12 % of the screen width from the edge on 16:10, and about 16 % on 16:9. The golden-line turn (6.6, was the third) uses your real aspect. With a Frame format (`cin.crop` R) both use the format: `tanH = tanV × R`, the turn with aspect R, and a format wider than the window scales `tanV` by A / R (a shorter picture).
 - **Drift:**
   - **Social:** `framed()` checks everyone who should be in (group: all; pair: the facing person) against 80 % of the half-width on each scan. Anyone outside it means a re-frame at the next calm cut (`gMinHold`).
   - **Friends:** pulls back (§5).

@@ -87,8 +87,34 @@ for n in (3, 4, 5):
     w = n * h * 0.791667
     right_edge = (h * 0.5 + 0.004 + w * 0.5) - w / 2
     check(right_edge > h / 2, f"{n} keys overlap the button")
-check('if (llGetLinkName(i) == STRIP) gLink = i;' in keys and 'string  STRIP = "Take 12 keys";' in keys, "keys.lsl: finds its strip by name")
-check('if (llGetLinkName(i) != "Take 12 keys")' in rd("hud", "src", "crop.lsl"), "crop.lsl must not take the strip as a bar")
+check('if (llSubStringIndex(m, "keys") >= 0) gLink = i;' in keys and 'string  STRIP = "Take 12 keys";' in keys
+      and "if (!gLink && llGetNumberOfPrims() >= 6) gLink = f;" in keys and "PRIM_NAME, STRIP" in keys, "keys.lsl: finds its strip by name, or the box Frame leaves")
+check('llSubStringIndex(m, "keys") < 0' in rd("hud", "src", "crop.lsl"), "crop.lsl must not take the strip as a bar")
+# 6.6: a strip linked before it was named (or named Take 12 Keys, or taken as a fifth Frame box before 6.6): crop and keys
+# must never claim the same box. A port of both scans over the link names.
+def crop_scan(names):
+    bars = []
+    for n in (0, 1):
+        for i, m in enumerate(names, 2):
+            m = m.lower()
+            if len(bars) < 4 and (m == "take 12 frame") == (n == 0) and "keys" not in m: bars.append(i)
+    return bars
+def keys_scan(names):
+    link = f = nf = 0
+    for i, m in enumerate(names, 2):
+        m = m.lower()
+        if "keys" in m: link = i
+        else:
+            if m == "take 12 frame": nf += 1
+            if m != "take 12 frame" or nf > 4: f = i
+    return link or (f if len(names) + 1 >= 6 else 0)
+F, K, O = "Take 12 frame", "Take 12 keys", "Object"
+CASES = {"built as asked": [F, F, F, F, K], "strip linked first, named later": [O, F, F, F, F], "a new build, nothing named": [O] * 5,
+         "Take 12 Keys": [F, "Take 12 Keys", F, F, F], "taken as a fifth bar before 6.6": [F] * 5, "no strip": [F] * 4}
+for what, names in CASES.items():
+    b, k = crop_scan(names), keys_scan(names)
+    check(len(b) == 4 and k not in b, f"{what}: bars {b}, strip {k}")
+    check((k > 0) == (len(names) >= 5), f"{what}: strip {k}")
 
 # ---- sharing: a camera stop pauses, End live asks ---------------------------------------------------------------
 stop = sync[sync.index("else if (num == STOP && str != \"switch\")"):sync.index("else if (num == CMD && str == \"share\")")]

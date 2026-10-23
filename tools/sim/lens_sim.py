@@ -27,7 +27,7 @@ for w in ('integer LEAD       = 7324;', "gAim += q - gSubj;", "gS = llVecDist(c,
     check(w in lens, f"lens: missing {w}")
 for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNeed = gLed;", "gPLo = gLed;", "gMeas = [];",
           "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);",
-          "if ((!gOSit && gLed == 0.0) || gSeatEl <= 0.0) return S;", "llAtan2(tanV, 3.0) * (gLed == 0.0)",
+          "if ((!gOSit && gLed == 0.0) || gSeatEl <= 0.0) return S;", "llAtan2(tanV * 0.236, 1.0) * (gLed == 0.0)",
           "gPEye = C.z + (gOE - gOP.z) + gAim.z;", "gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;",
           'llMessageLinked(LINK_SET, CMD, "autoq", "");', "if (gPType == 3 && gUsedN > 0 && gLed == 0.0)"):
     check(w in friends, f"friends: missing {w}")

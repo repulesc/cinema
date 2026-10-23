@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -47,7 +47,7 @@ list TIPS = [
     "Photo\ntake your pictures · tap › Resume",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
-    "Tap while it rolls\ntap: photo, next, stop, share, cameras",
+    "Tap while it rolls\ntap: next, stop, share, cameras",
     "Sitting\nsitting: W/S closer or wider",
     "Idle start\nstay idle ",
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
@@ -141,15 +141,15 @@ string guide()
     return s + " · now " + (string)now + " · Ctrl+8";
 }
 
-// your lens against the camera's range: " · 21 mm · try 24", or " · 35 mm ✓"
+// your lens against the camera's range and the key for it: " · 21 mm · try 24 · Ctrl+0", or " · 35 mm ✓"
 string lensTxt(integer m)
 {
     integer n = llRound(12.0 / llTan(gFov * 0.5));
     integer lo = llList2Integer(LO, m);
     integer hi = llList2Integer(HI, m);
     string s = " · " + (string)n + " mm";
-    if (n < lo) return s + " · try " + (string)lo;
-    if (n > hi) return s + " · try " + (string)hi;
+    if (n < lo) return s + " · try " + (string)lo + " · Ctrl+0";
+    if (n > hi) return s + " · try " + (string)hi + " · Ctrl+8";
     return s + " ✓";
 }
 

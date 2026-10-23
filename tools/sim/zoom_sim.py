@@ -58,7 +58,7 @@ check("gF = (float)llList2String(S, 1);" in lens, "lens: the lens at the start")
 check("num == FOVMSG" in frame, "frame keeps its own zoom handling")
 
 # ---- the lens shapes the shot mix ---------------------------------------------------------------------------------
-BIAS = "fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)"
+BIAS = "fclamp((12.0 / llTan(gFov * 0.5) - 35.0) / 120.0, -0.15, 0.3)"   # the real lens, not the Frame-scaled tanV
 for name, s in (("people", people), ("friends", friends)):
     check("llFrand(1.0) >= 0.55 + 0.25 * gOSit + " + BIAS in s, f"{name}: the close-view chance must follow the lens")
 def p_close(mm, seated=0):

@@ -20,11 +20,11 @@ Or simply stay idle: after 3 minutes with no keys and no mouse (adjustable in th
 The small clapper is the whole HUD. Everything is done with taps.
 
 TAP  (one click)
-   - always a menu: when idle, the menu; while a camera runs (or in Photo), the live menu (see below)
+   - always a menu: when idle, the menu; while a camera runs, the live menu (see below)
 
 DOUBLE-TAP  (a double-click)
    - when idle: starts the scenery camera
-   - while a camera runs, or in Photo: the next view, now
+   - while a camera runs: the next view, now
 
 HOLD  (about 1 second, until the clapper claps)
    - a shortcut to the Share panel (see SHARE THE VIEW). Share is in both menus too.
@@ -38,6 +38,8 @@ While a camera runs, the clapper gives a tiny clap now and then; with your own c
 === THE CAMERAS ========================================
 
 Five on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you), STILL (a held picture of you) and FREEHAND (you frame it, it holds the shot). FRAME (see below) sets the picture format on your screen.
+
+THE COMPOSITION. Me, Us and Still place people the way a photographer does, on the golden lines: the eyes 38.2 % from the top of the picture, and you 38.2 % from one side, with the open space on the side you look to. A full-length picture keeps air around you: a little more above the head (10 %) than below the feet (8 %). With a Frame format set, they compose inside that format, not your whole screen.
 
 SCENERY  (the main one, and the only one that starts by itself)
 Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
@@ -70,13 +72,13 @@ Let the people with you watch what your camera films. One person leads; everyone
  - If your camera stops while you are live (Stop, a movement key in Scenery, typing), the live view only PAUSES: your viewers keep your last shot, and above your button: "● LIVE · paused · double-tap: carry on". Start a camera again and they follow it again. Live ends only with End live, leaving the region, or taking the HUD off.
  - Everyone sees the same picture, whatever their zoom: each viewer's camera stands where their own lens shows it the same size.
  - Watching: double-tap = the next view for everyone. Orbit your own camera to look around (the leader sees it); Esc brings you back. Hold > Ask to lead. Any movement key gives you your own camera back.
- - Tap the button: the usual menu (photo hold, next, stop, modes).
+ - Tap the button: the usual menu (next, stop, share, modes).
 
 STILL
 For a picture of yourself, or of you and whoever stands right next to you. Still places the camera well and holds it still: no cuts, and it never moves by itself.
  - Tap the button > Still. DOUBLE-TAP for the next framing: Full length, Half length, Close.
  - Adjust with your movement keys: W / S closer / further, A / D round you, E / C higher / lower. You stand still meanwhile. The next framing starts fresh.
- - SHIFT + A / D (or Shift + the left / right arrows) slides you left or right in the picture, for example onto a third, without moving the camera round you.
+ - SHIFT + A / D (or Shift + the left / right arrows) slides you left or right in the picture, for example to the other golden line, without moving the camera round you.
  - THE LENS: the line above the button names the lens a photographer would use for this framing, and yours:
       □ Still · Close · 105 mm · now 21 · Ctrl+0
    Take 12 can read your viewer's zoom, but only you can change it: Ctrl+0 zooms in, Ctrl+8 zooms out, Ctrl+9 goes back to normal. Press Ctrl+0 until the line shows "105 mm ✓". The camera backs off by itself so the picture keeps its size: a longer lens flattens the perspective, the classic flattering portrait look. Second Life's normal view is about 21 mm, a wide angle.
@@ -104,12 +106,14 @@ In a few busy moments, a short row of quiet keys appears beside the button. Ever
    Freehand                 SAVE · VIEW A · VIEW B · STOP  the saved view in use is underlined
    Still                    FULL · HALF · CLOSE            the framing in use is underlined
 The rest of the time the keys are gone, and the button is alone again.
+ - No keys in Freehand or Still? Type  /77 status : the line "[Take 12/keys]" says whether the strip is found. The strip is the one box named "Take 12 keys"; a fifth box linked to the HUD is taken as the strip too, whatever its name, and renamed.
 
 
 === FRAME: THE PICTURE FORMAT =============================
 
 Tap the button > Frame, and choose a format: 3:2 (35 mm film), 4:5 (portrait), 1:1 (square), 4:3, 2.39:1 (cinema) or 9:16 (vertical). Your screen outside the picture is dimmed, like a camera's viewfinder, so you still see what is about to come into the frame. Off takes it away.
  - It follows your viewer window: make the window bigger or smaller and the frame follows within two seconds.
+ - Me, Us and Still compose inside the format: in 4:5 you stand on a golden line of the 4:5 picture, never in the dimmed part. Still re-frames at once when you change the format; Me and Us from their next shot.
  - Snapshots leave HUDs out, so the dimmed bars are never in your picture. For a picture in the same format, set the snapshot size to the same ratio (for example 1600 x 2000 for 4:5).
  - The dimmed bars cannot be clicked through: a click on them does nothing. Clicks inside the frame work as always.
  - If the frame sits off-centre or is the wrong size, your HUDs may be zoomed: set the HUD zoom back to normal in your viewer's View menu. If the bars appear on the wrong side, type  /77 crop flip ; if they cover the button,  /77 crop back .
@@ -124,7 +128,7 @@ While Take 12 films, a short line above the button always says which camera runs
    ◇ Scenery · started while you were idle   the idle start began it
    ○ Me · auto        ◎ Us · auto            □ Still · Close · 105 mm ✓
    ♡ Only friends · auto                     or  · your view  (after you framed it yourself)
-   ▣ Photo · held                            tap > Resume to carry on
+   ▣ Photo · held                            (HOLD while live) tap > Resume to carry on
    ◇ Scenery · paused · Esc to carry on      you moved the camera yourself
 
 Nothing above the button means: it is your own camera.
@@ -148,22 +152,22 @@ The rule, as in real photography: the lens changes the perspective, never the si
 
 The line above the button shows your lens, and the range each camera likes:
    ◇ Scenery · auto · 21 mm ✓               Scenery: up to 28 mm
-   ◎ Us · auto · 21 mm · try 24              Everyone near: 24 to 50 mm
+   ◎ Us · auto · 21 mm · try 24 · Ctrl+0     Everyone near: 24 to 50 mm
    ○ Me · auto · 50 mm ✓                     Me: 35 to 50 mm
    ♡ Only friends · auto · 85 mm ✓           Only friends: 35 to 85 mm
-"try" is only a suggestion: every lens works. Still names one exact lens for each framing (see STILL).
+"try" is only a suggestion, with the key that gets you there (Ctrl+0 for a longer lens, Ctrl+8 for a wider one): every lens works. Still names one exact lens for each framing (see STILL).
 
 
 === TIPS ================================================
 
-While you are new to Take 12, a short tip shows above the button now and then, for a few seconds, under the line that says which camera runs: what you can do next (when the camera starts, on Photo, when your camera comes back). It never covers the HUD's own messages.
+While you are new to Take 12, a short tip shows above the button now and then, for a few seconds, under the line that says which camera runs: what you can do next (when the camera starts, when your camera comes back). It never covers the HUD's own messages.
 Each tip shows only a few times. After a while Tips turns itself off, and says so once in chat.
 Tap the button > Help > Tips to turn them off, or back on (they start again from the beginning).
 
 
 === THE LIVE MENU (tap the button while a camera runs) =====
 
-PHOTO     Freeze the view so you can take your pictures in peace. Tap the button > Resume to carry on.
+RESUME    Only while the shot is held (the HOLD key while live): carry on.
 SAVE      Keep the view on screen as a favourite spot. Your saved spots come back now and then. (Scenery only.)
 NEXT      Cut to the next view now.
 STOP      Give your camera back.
@@ -233,7 +237,7 @@ It does not stay inside (a skybox, a mall, a house).
 Auto goes inside when you stand on a build that has a roof over you or no land under it for about 100 m. Some builds are made without physics (their floor, walls and roof cannot be seen by the HUD), and Auto cannot know about those. Set Options > Indoors > Inside: it then always stays inside, near you. With Options > Chat text on, the chat line "scenery: ..." says what it found.
 
 I want to take a picture.
-Tap the button > Photo. Tap again > Resume to carry on.
+Tap the button > Still for a held picture of you, or Freehand to frame it yourself: both hold the camera until you leave.
 
 Is my chat recorded?
 No. In Us the HUD only notices WHO speaks in local chat, to cut to them. It does not read, store or send anything.

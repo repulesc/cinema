@@ -1,5 +1,17 @@
 # Changelog
 
+## 6.6.0
+**The composition, like a photographer's.**
+- **The golden lines.** Me, Us and Still put the eyes on the golden line, 38.2 % from the top of the picture (it was the third, 33 %), and you on a golden line across, 38.2 % from one side, with the open space on the side you look to (lead room, as before). Seated looks down at you the same way.
+- **Air in a full-length picture.** Still's Full length leaves 10 % above the head and 8 % below the feet (it was 7 % and 6 %), for you alone and for a group.
+- **Composed inside the Frame format.** With a Frame set, the cameras compose inside it: you stand on a golden line of the 4:5 picture, never in the dimmed part, and a group is fitted to the format's width (a 2.39:1 picture is shorter, and fitted to that too). Without a Frame, nothing changes. Still re-frames at once when you change the format; Me and Us from their next shot. In the sims, people planned for the window and seen in 4:5 were cut in 242 of 598 shots; now in none.
+- **The lens hint names the key:** "○ Me · auto · 21 mm · try 35 · Ctrl+0" (Ctrl+8 when your lens is longer than the camera likes).
+- **No Photo in the menu.** Tap › Photo is gone from the live menu: Still and Freehand hold the camera for your pictures. Resume shows only while the shot is held (the HOLD key while live, `/77 photo`). Take 12 Scenery keeps Photo, its only way to hold a view.
+- **The keys strip is found** however it was linked. A strip linked before it was named was taken by Frame as one of its bars (and renamed), so the keys never showed. Now Frame takes its own four boxes first and never a box named "… keys"; `keys` takes the box named "keys" (any case), or the fifth box Frame leaves, and names it `Take 12 keys`. An HUD where Frame already took the strip mends itself. `/77 status` shows "[Take 12/keys] … strip link N".
+- **Scripts:** `people`, `friends`, `frame` (Still) read `cin.crop`; `crop` sends `CFG_CHANGED "crop"`; `tips` the key hint; `ui` the menu; `keys` and `crop` the strip. `friends` keeps its memory (two clamps and a return merged).
+- **Checks:** `framing_sim` composes inside 4:5, 1:1, 3:2 and 2.39:1 on 16:9 and 16:10 windows (nobody cut, nobody under a 5 % margin, the golden lines exact); `frame_sim` checks 10 % / 8 % air and the golden eyes at every height and lens, and Still's lines inside a 2.39:1 picture; `keys_sim` ports both strip scans over six ways of linking; `seated_sim`, `lens_sim`, `zoom_sim`, `tips_sim`, `menu_sim`, `free_test` follow.
+- **Version 6.6.0** in all fourteen scripts (the Watch is unchanged).
+
 ## 6.5.0 fix: Frame's bars behind the button
 - In-world, the dark Frame bars sat in front of the clapper and caught its clicks. HUD space's +X points into the screen, so the bars now sit 0.02 m behind the button (`crop.lsl`, `gSX = 1`; it was −1). `/77 crop back` still flips it if a viewer differs.
 - Only `crop` changes (still 6.5.0): replace that one script.

@@ -10,7 +10,8 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
+string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -22,6 +23,7 @@ integer GLIDE      = 7312;
 integer ACK        = 7313;
 integer NUDGE      = 7317;
 integer FOVMSG     = 7318;
+integer CFG_CHANGED= 7330;   // crop -> all  "crop" / "aspect": the picture changed
 integer CMD        = 7371;   // keys -> here  "framing|<0 full, 1 half, 2 close>"
 integer STILL      = 7381;   // frame -> tips  "<framing>|<recommended mm>|<your mm>"
 integer MSG_VER    = 7360;
@@ -30,11 +32,11 @@ integer STATUS     = 7370;
 // body heights as a fraction of llGetAgentSize().z, from the feet. CALIBRATE in-world (docs/FRAME.md)
 // index: 0 top, 1 eyes, 2 shoulders, 3 chest, 4 belt, 5 mid-thigh, 6 feet
 list  BODY   = [1.0, 0.935, 0.82, 0.72, 0.56, 0.38, 0.0];
-float THIRD  = 0.333333;
+float PHI_Y  = 0.236;        // the golden line, 38.2 % from the top (and, across, from a side)
 float DMIN   = 1.2;          // m  never closer (hair clips the camera, faces distort)
 float TOPMAX = 0.9;          // the top of a head never above this line
 float MARGIN = 1.3;          // groups: side room, as in the people framing
-float FIT    = 1.6;          // fitted for a 16:10 window, so 16:9 has room to spare
+float FIT    = 1.6;          // without a Frame format: fitted for a 16:10 window, so 16:9 has room to spare
 float R_NEAR = 3.0;          // m  who stands with you is in the picture
 list  NAMES  = ["Full length", "Half length", "Close"];
 list  LENSES = [50, 85, 105]; // mm (35 mm equivalent): the classic lens for each framing
@@ -42,16 +44,16 @@ float SLIDE  = 0.6;          // Shift + A/D: you at most this far from the centr
 
 // you: camera height (fraction), degrees round from the nose, across (x), f1, y1, f2, y2
 list PORT = [
-    0.50,  15.0, 0.0,   0, 0.86,   6, -0.88,
-    0.935, 30.0, 0.333, 1, 0.3333, 4, -1.0,
-    0.98,  25.0, 0.2,   1, 0.3333, 3, -1.0
+    0.50,  15.0, 0.0,   0, 0.80,   6, -0.84,          // 10 % air above the head, 8 % below the feet
+    0.935, 30.0, 0.236, 1, 0.236,  4, -1.0,           // eyes on the golden line, you on a golden line across
+    0.98,  25.0, 0.2,   1, 0.236,  3, -1.0
 ];
 list SEAT = [0.62, 0.36, 0.2];   // seated: how far below the eyes each framing cuts (fraction of the height)
 // you and the people next to you: camera height (fraction of the mean height), f1, y1, f2, y2
 list GRP = [
-    0.60,  0, 0.84,   6, -0.86,
-    0.80,  1, 0.3333, 5, -1.0,
-    0.935, 1, 0.3333, 4, -1.0
+    0.60,  0, 0.80,   6, -0.84,
+    0.80,  1, 0.236,  5, -1.0,
+    0.935, 1, 0.236,  4, -1.0
 ];
 
 key     gOwner;
@@ -67,8 +69,29 @@ float   gNX;                 // Shift + A/D: you slid across the picture (+ righ
 integer gKeys;               // movement keys held
 float   gFovT;               // the zoom changed at: re-frame when it has settled
 float   gPhi;                // tilt from the last solve
+float   gAsp = 1.778;        // the picture you are composed in: the Frame format, or your window
+float   gFit = 1.6;          // what people are fitted to: the format, or 16:10
+float   gTS = 1.0;           // a format wider than the window: the picture is this much as tall
 
 // ============================================================================
+// the picture: the Frame format (crop.lsl writes cin.crop and your window, cin.aspect), or the whole window
+load()
+{
+    float a = (float)llLinksetDataReadProtected("cin.aspect", PASS);
+    float r = (float)llLinksetDataReadProtected("cin.crop", PASS);
+    if (a < 0.5) a = 1.778;
+    gAsp = a;
+    gFit = a;
+    if (a > FIT) gFit = FIT;
+    gTS = 1.0;
+    if (r > 0.0)
+    {
+        gAsp = r;
+        gFit = r;
+        if (r > a) gTS = a / r;
+    }
+}
+
 vector dirOf(float a)
 {
     return <llCos(a), llSin(a), 0.0>;
@@ -138,7 +161,7 @@ list nearby(vector P)
 // [cam, focus] for the current framing, or []
 list frame()
 {
-    float t = llTan(gFov * 0.5);
+    float t = llTan(gFov * 0.5) * gTS;                     // the picture's half-height, as a tangent
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
     if (llGetListLength(d) < 2) return [];
     vector P = llList2Vector(d, 0);
@@ -161,10 +184,10 @@ list frame()
     float z2 = z0 + llList2Float(BODY, llList2Integer(PORT, k + 5)) * h;
     if (llGetAgentInfo(gOwner) & AGENT_SITTING)
     {
-        // seated: the eyes from the sitting estimate, on the third; the cut a set drop below them
+        // seated: the eyes from the sitting estimate, on the golden line; the cut a set drop below them
         E.z = P.z + 0.25 * h;
         z1 = E.z;
-        y1 = THIRD;
+        y1 = PHI_Y;
         z2 = E.z - llList2Float(SEAT, gIdx) * h;
         y2 = -1.0;
         zc = E.z + (llList2Float(PORT, k) - 0.935) * 0.5 * h + gNH;
@@ -176,7 +199,7 @@ list frame()
     if (D < DMIN)
     {
         D = DMIN;                                           // a wide zoom: from DMIN, a little looser
-        gPhi = tiltFor(E.z, THIRD, zc, D, t);
+        gPhi = tiltFor(E.z, PHI_Y, zc, D, t);
         if (gIdx == 0) gPhi = tiltFor(z1, y1, zc, D, t);
     }
     // the side round the nose: the start side, then 15 and 30 degrees either way, then the other side
@@ -194,7 +217,7 @@ list frame()
             if (lk > 0.1) x = -x;
             else if (lk >= -0.1) x = x * gSide;
             x += gNX;                                       // Shift + A/D: where you asked to be
-            V = V * llEuler2Rot(<0.0, 0.0, llAtan2(x * t * FIT, 1.0)>);
+            V = V * llEuler2Rot(<0.0, 0.0, llAtan2(x * t * gAsp, 1.0)>);
             vector foc = cam + V * D;
             foc.z = cam.z - D * llTan(gPhi);
             return [cam, foc];
@@ -274,7 +297,7 @@ list group(vector P, float yaw, float t)
     float D = solveD(z1, llList2Float(GRP, k5 + 2), z2, llList2Float(GRP, k5 + 4), zc, t);
     if (D < 0.0) return [];
     // side room: everyone inside the frame with the margin, nearer people counted wider
-    float kk = t * FIT / MARGIN;
+    float kk = t * gFit / MARGIN;
     float Dl = 0.0;
     for (i = 0; i < n; i++)
     {
@@ -286,8 +309,8 @@ list group(vector P, float yaw, float t)
     D = D * gNDist;
     if (Dl > D)
     {
-        D = Dl;                                             // the width decides: eyes on the third instead
-        gPhi = tiltFor(eyes, THIRD, zc, D, t);
+        D = Dl;                                             // the width decides: eyes on the golden line instead
+        gPhi = tiltFor(eyes, PHI_Y, zc, D, t);
     }
     else if (gNDist != 1.0) gPhi = tiltFor(z1, llList2Float(GRP, k5 + 2), zc, D, t);
     if (D < DMIN) D = DMIN;
@@ -300,7 +323,7 @@ list group(vector P, float yaw, float t)
         vector cam = <C.x, C.y, zc> + dirOf(a) * D;
         if (clear(EC, cam))
         {
-            vector foc = cam - dirOf(a) * D * llEuler2Rot(<0.0, 0.0, llAtan2(gNX * t * FIT, 1.0)>);
+            vector foc = cam - dirOf(a) * D * llEuler2Rot(<0.0, 0.0, llAtan2(gNX * t * gAsp, 1.0)>);
             foc.z = cam.z - D * llTan(gPhi);
             return [cam, foc];
         }
@@ -407,6 +430,7 @@ default
             resetNudges();
             gSide = 1.0;
             if (llFrand(1.0) < 0.5) gSide = -1.0;
+            load();
             llSetTimerEvent(0.2);
             shoot(TRUE);
         }
@@ -420,6 +444,11 @@ default
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/frame] v" + VERSION + " active " + (string)gActive + ", " + llList2String(NAMES, gIdx)
                 + ", with " + (string)llGetListLength(gWith) + ", lens " + (string)llRound(12.0 / llTan(gFov * 0.5)) + " mm, free mem " + (string)llGetFreeMemory());
+        else if (num == CFG_CHANGED && (str == "crop" || str == "aspect" || str == "all"))
+        {
+            load();
+            if (gActive) shoot(FALSE);                      // a new Frame format: the same framing, composed in it
+        }
         else if (!gActive) return;
         else if (num == NEXT)
         {

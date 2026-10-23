@@ -11,7 +11,7 @@
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -129,6 +129,7 @@ choose(float r)
 {
     gR = r;
     set("crop", (string)r);
+    llMessageLinked(LINK_SET, CFG_CHANGED, "crop", "");      // the cameras compose inside the new format
     cut();
     tick();
     tell();
@@ -210,13 +211,20 @@ load()
 setup()
 {
     gBars = [];
+    integer n;
     integer i;
-    for (i = 2; i <= llGetNumberOfPrims() && llGetListLength(gBars) < 4; i++)
-        if (llGetLinkName(i) != "Take 12 keys")             // the soft-key strip is not a bar (keys.lsl)
+    // the boxes that are bars already first, then any other child, lowest link first; never the soft-key strip
+    // (named "... keys", or the highest unclaimed child, which keys.lsl takes)
+    for (n = 0; n < 2; n++)
+        for (i = 2; i <= llGetNumberOfPrims() && llGetListLength(gBars) < 4; i++)
         {
-            gBars += [i];
-            llSetLinkPrimitiveParamsFast(i, [PRIM_NAME, "Take 12 frame", PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1, 1, 0>, ZERO_VECTOR, 0.0,
-                PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.0]);
+            string m = llToLower(llGetLinkName(i));
+            if ((m == "take 12 frame") == (n == 0) && llSubStringIndex(m, "keys") < 0)
+            {
+                gBars += [i];
+                llSetLinkPrimitiveParamsFast(i, [PRIM_NAME, "Take 12 frame", PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1, 1, 0>, ZERO_VECTOR, 0.0,
+                    PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.0]);
+            }
         }
 }
 

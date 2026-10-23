@@ -97,7 +97,7 @@ class Hud:
         return g + f" · now {now} · " + ("Ctrl+0" if now < want else "Ctrl+8")
     def lens_txt(s, m):
         n = round(12 / math.tan(s.fov / 2)); lo, hi = LO[m], HI[m]
-        return f" · {n} mm" + (f" · try {lo}" if n < lo else f" · try {hi}" if n > hi else " ✓")
+        return f" · {n} mm" + (f" · try {lo} · Ctrl+0" if n < lo else f" · try {hi} · Ctrl+8" if n > hi else " ✓")
     def line(s):
         if s.mode not in MODES or s.st not in ACTIVE: return ""
         if not s.stat and not (s.mode == "frame" and s.st == "rolling"): return ""
@@ -201,7 +201,7 @@ for frag in ['if (gWant != 0 || !idle) gWant = -1;', 'if (rolling && (!was || mo
              'else if (gMode == "friends" && gLed) w = "your view";', 'if (llAbs(now - want) * 100 <= 15 * want) return s + " ✓";',
              'if (now < want) return s + " · now " + (string)now + " · Ctrl+0";', 'if (gMode == "frame" && gStill != "") w = guide();',
              'if (!gStat && !(gMode == "frame" && gSt == "rolling")) return "";', 'else if (gMode != "frame") w += lensTxt(m);',
-             'if (n < lo) return s + " · try " + (string)lo;', 'if (n > hi) return s + " · try " + (string)hi;',
+             'if (n < lo) return s + " · try " + (string)lo + " · Ctrl+0";', 'if (n > hi) return s + " · try " + (string)hi + " · Ctrl+8";',
              'float f = (float)llList2String(llParseStringKeepNulls(str, ["|"], []), num == START);',
              'if (!gLensTip && m >= 0 && m < 4 && now - gLastT >= GAP && llGetSubString(lensTxt(m), -1, -1) != "✓")', 'else if (num == STILL) gStill = str;', 'else if (gSt == "peek") w = "paused · Esc to carry on";',
              'if (gKind != "view" && line() != "") gTip = llList2String(llParseString2List(gTip, ["\\n"], []), 1);']:
@@ -219,8 +219,8 @@ check(h.text == "◇ Scenery · paused · Esc to carry on", f"paused: {h.text!r}
 h.state("off"); h.run(1); check(h.text == "", "the text must go when your camera is back")
 h.state("rolling", "scenery"); h.state("rolling", "scenery", "idle"); h.run(1)
 check(h.text == "◇ Scenery · started while you were idle · 21 mm ✓", f"idle start: {h.text!r}")
-h.state("off"); h.state("rolling", "personal"); h.run(1); check(h.text == "○ Me · auto · 21 mm · try 35", f"Me: {h.text!r}")
-h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24", f"Us: {h.text!r}")
+h.state("off"); h.state("rolling", "personal"); h.run(1); check(h.text == "○ Me · auto · 21 mm · try 35 · Ctrl+0", f"Me: {h.text!r}")
+h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24 · Ctrl+0", f"Us: {h.text!r}")
 h.state("rolling", "frame"); h.run(1); check(h.text == "□ Still · held", f"Still: {h.text!r}")
 # 5.9: Still's lens guide - the framing, its lens, yours, and what to press (only you can zoom)
 h.still_msg("Full length", 50, 60); h.run(1)
@@ -233,19 +233,19 @@ h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "□ Still · Half le
 h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Still · Half length · 85 mm ✓", f"Plain: {h.text!r}")
 h.state("rolling", "social"); h.run(1); check(h.text == "", "status off: nothing outside Still")
 h.lsd["status"] = "1"; h.lsd["skin"] = "1"; h.load()
-h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35", f"Only friends: {h.text!r}")
-h.lens(2.4); h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35", f"your own view: {h.text!r}")
-h.lens(0); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35", "Release must say auto again")
-h.lens(2.4); h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24", "your view must not follow you out of Only friends")
+h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35 · Ctrl+0", f"Only friends: {h.text!r}")
+h.lens(2.4); h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35 · Ctrl+0", f"your own view: {h.text!r}")
+h.lens(0); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35 · Ctrl+0", "Release must say auto again")
+h.lens(2.4); h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24 · Ctrl+0", "your view must not follow you out of Only friends")
 # the mark follows the menu style; Status line off
-h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Us · auto · 21 mm · try 24", f"Plain must have no mark: {h.text!r}")
+h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Us · auto · 21 mm · try 24 · Ctrl+0", f"Plain must have no mark: {h.text!r}")
 h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "", "Status line off must hide it")
 # ---- 6.0: your lens in every camera (Still keeps its own guide; Photo and pause say nothing about it) ----------------
 h = Hud(on="0"); h.state("rolling", "social"); h.zoom(35); h.run(1); check(h.text == "◎ Us · auto · 35 mm ✓", f"Us at 35 mm: {h.text!r}")
-h.zoom(105); h.run(1); check(h.text == "◎ Us · auto · 105 mm · try 50", f"Us at 105 mm: {h.text!r}")
-h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 105 mm · try 85", f"Only friends at 105: {h.text!r}")
+h.zoom(105); h.run(1); check(h.text == "◎ Us · auto · 105 mm · try 50 · Ctrl+8", f"Us at 105 mm: {h.text!r}")
+h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 105 mm · try 85 · Ctrl+8", f"Only friends at 105: {h.text!r}")
 h.zoom(85); h.run(1); check(h.text == "♡ Only friends · auto · 85 mm ✓", f"Only friends at 85: {h.text!r}")
-h.state("rolling", "scenery"); h.run(1); check(h.text == "◇ Scenery · auto · 85 mm · try 28", f"Scenery at 85: {h.text!r}")
+h.state("rolling", "scenery"); h.run(1); check(h.text == "◇ Scenery · auto · 85 mm · try 28 · Ctrl+8", f"Scenery at 85: {h.text!r}")
 h.zoom(24); h.run(1); check(h.text == "◇ Scenery · auto · 24 mm ✓", f"Scenery at 24: {h.text!r}")
 h.state("rolling", "personal"); h.zoom(50); h.run(1); check(h.text == "○ Me · auto · 50 mm ✓", f"Me at 50: {h.text!r}")
 h.state("frozen", "personal"); h.run(1); check(h.text == "▣ Photo · held", "Photo must not show the lens")
@@ -276,8 +276,8 @@ h.state("off"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.s
 
 # ---- sharing -----------------------------------------------------------------------------------------------------
 h = Hud(on="0"); h.state("rolling", "social"); h.sharing("live", "● LIVE · 2 watching\nAna · Ben"); h.run(1)
-check(h.text == "● LIVE · 2 watching\nAna · Ben\n◎ Us · auto · 21 mm · try 24", f"live: {h.text!r}")
-h.sharing("", ""); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24", "End live must leave the status")
+check(h.text == "● LIVE · 2 watching\nAna · Ben\n◎ Us · auto · 21 mm · try 24 · Ctrl+0", f"live: {h.text!r}")
+h.sharing("", ""); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24 · Ctrl+0", "End live must leave the status")
 h.state("off"); h.sharing("view", "👁 Pano"); h.run(1); check(h.text == "👁 Pano", f"watching: {h.text!r}")
 h.sharing("inv", "Pano invites you · hold to watch"); h.state("rolling", "scenery"); h.run(1)
 check(h.text == "Pano invites you · hold to watch\n◇ Scenery · auto · 21 mm ✓", f"invited: {h.text!r}")
@@ -297,13 +297,13 @@ h.sharing("live", "● LIVE · 9 watching\n" + " · ".join(n + " (looking around
 h.run(3); n1 = len(h.text.encode())
 check(len((h.syncb + h.line() + h.tip).encode()) > 254 and n1 <= 254 and h.text.startswith("● LIVE"), f"the long-text case is not long ({n1} bytes)")
 h.run(8); h.sharing("live", "● LIVE · 1 watching\nAna"); h.run(2)
-check(h.text == "● LIVE · 1 watching\nAna\n◎ Us · auto · 21 mm · try 24", f"after a cut-short text the composer froze: {h.text!r}")
+check(h.text == "● LIVE · 1 watching\nAna\n◎ Us · auto · 21 mm · try 24 · Ctrl+0", f"after a cut-short text the composer froze: {h.text!r}")
 
 # ---- other scripts' short notices --------------------------------------------------------------------------------
 h = Hud(on="0"); h.state("rolling", "friends"); h.run(1)
 h.text = "Your view is kept · Esc to continue"; h.lens(2.0); h.run(3)
 check(h.text == "Your view is kept · Esc to continue", "the status overwrote the lens notice")
-h.text = ""; h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35", f"the status did not come back: {h.text!r}")
+h.text = ""; h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35 · Ctrl+0", f"the status did not come back: {h.text!r}")
 h.text = "Ana watches"; h.state("frozen", "friends"); h.run(2); check(h.text == "Ana watches", "a state change overwrote a notice")
 h.text = ""; h.run(1); check(h.text == "▣ Photo · held", "the status did not come back after the notice")
 # ---- tips --------------------------------------------------------------------------------------------------------

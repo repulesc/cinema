@@ -16,7 +16,14 @@ def check(c, msg):
     if not c: ok = False; print("FAIL", msg)
 
 FOV = 1.047198                       # the default viewer camera: 60 degrees vertical
-tanV = math.tan(FOV / 2)
+TANV0 = tanV = math.tan(FOV / 2)
+PIC = None                           # 6.6: (R, A) a Frame format R on a window A, composed inside; None: the whole window
+def picture(pic):
+    """as loadCfg: a wider format than the window is shorter (tanV scaled), the width is the format's"""
+    global tanV, PIC
+    PIC, tanV = pic, TANV0
+    if pic and pic[0] > pic[1]: tanV = TANV0 * pic[1] / pic[0]
+GOLD = 0.236                         # 6.6: the golden line, 38.2 % from an edge (1 - 2 x 0.382), was the third (1/3)
 BODY_R, STANDOFF, BODY_MEASURE = 0.35, 0.4, 0.30
 OFFS = [0.0, 0.436332, -0.436332, 0.872665, -0.872665, 1.396263, -1.396263]
 PHI = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0]
@@ -53,7 +60,9 @@ class Planner:
     def __init__(s, world, new, rng):
         s.w, s.new, s.r = world, new, rng
         P = NEW if new else OLD
-        s.M = P["margin"]; s.tanH = tanV * P["fit_aspect"]; s.alpha = math.atan2(tanV * 1.778 / 3.0, 1.0)
+        s.M = P["margin"]; s.tanH = tanV * P["fit_aspect"]; asp = 1.778
+        if new and PIC: s.tanH = tanV * PIC[0]; asp = PIC[0]
+        s.alpha = math.atan2(tanV * asp * (GOLD if new else 1 / 3.0), 1.0)
         s.side, s.rev, s.lastPhi = 1.0, False, 999.0
         s.seatr = 0.0                                               # 4.9.2: extra radius, a close view of someone lying down
         s.close = False                                             # 4.9.0: a close, half-length group view
@@ -260,7 +269,9 @@ def fmt(x):
 if __name__ == "__main__":
     people, friends = src("people.lsl"), src("friends.lsl")
     for s, name in ((people, "people"), (friends, "friends")):     # the port must match the scripts it claims to
-        for what in ("float MARGIN      = 1.3;", "tanH = tanV * fmin(aspect, 1.6);", "gAlpha = llAtan2(tanV * aspect / 3.0, 1.0);",
+        for what in ("float MARGIN      = 1.3;", "tanH = tanV * fmin(aspect, 1.6 + 9.0 * (r > 0.0));", "gAlpha = llAtan2(tanV * aspect * 0.236, 1.0);",
+                     "if (r > aspect) tanV *= aspect / r;", "if (r > 0.0) aspect = r;", 'float r = (float)cfg("crop", "0");',
+                     "float z = fmax(eyeRef - d * tanV * 0.236, gFloorZ + 0.35);",
                      "need = fmax(need, fmax((a + b) / (c + sn), (b - a) / (c - sn)));", "float b = BODY_R + gSeatR - k * (o * V);",
                      "float c = k * (ZERO_VECTOR - u) * V;", "if (de <= gPHi && (st == 0 || llList2Float(r, 1) - STANDOFF >= de))",
                      "float s = 3.0 * fmin(1.0, gPd / de) + 2.0 * llCos(off);", "gPHi = 6.5;", "gMeas = [gNPos];"):
@@ -312,7 +323,7 @@ if __name__ == "__main__":
     # close views (4.9.0): people standing within 3.5 m of each other get, now and then, a half-length view from about
     # half the distance; they must fit as well as the wide ones, and the camera must come out closer
     for s_, what in ((people, "people"), (friends, "friends")):
-        check("if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)) return FALSE;" in s_   # 6.0: + the lens (zoom_sim)
+        check("if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / llTan(gFov * 0.5) - 35.0) / 120.0, -0.15, 0.3)) return FALSE;" in s_   # 6.0: + the lens (zoom_sim)
               and "gPLo = 1.2;" in s_
               and "gVNeed = 0.75 / tanV * MARGIN;" in s_ and "gPEye += 0.15;" in s_ and "closeView(best)" in s_, f"{what}: the close-view rule changed")
     rng = random.Random(21); wide_d = []; close_d = []; tight_d = []; worst = 99.0; nclose = 0; head_n = head_cut = 0
@@ -338,7 +349,7 @@ if __name__ == "__main__":
                     worst = min(worst, m); nclose += 1
                     if spread < 2.0: tight_d.append(pl.d)
                     V = norm(sub(sh[1], sh[0])); E = 1.7                  # eye line of the group; cam z puts it on the upper third
-                    camz = E + 0.15 - pl.d * tanV / 3.0
+                    camz = E + 0.15 - pl.d * tanV * GOLD
                     for p_ in pl.meas:
                         dep = dot(sub(p_, sh[0]), V)
                         for dz in (-0.3, 0.3):                            # a taller or shorter neighbour: eyes 0.3 m off
@@ -351,5 +362,38 @@ if __name__ == "__main__":
     check(head_cut <= 0.03 * head_n, "close views cut the heads of taller neighbours too often")
     check(mean(tight_d) < 2.0, "close views of tight groups should come in under 2 m")
     check(nclose > 100 and mean(close_d) < 0.75 * mean(wide_d), "close views should be clearly closer than wide ones")
+    # ---- 6.6: composed inside the Frame format --------------------------------------------------------------------
+    # the planning above fits the window; with a Frame (crop.lsl) it must fit the format's picture, so nobody stands in
+    # the dimmed bars: 4:5, 1:1 and 3:2 are narrower than the window, 2.39:1 wider (a shorter picture)
+    FRAMES = {"4:5": 0.8, "1:1": 1.0, "3:2": 1.5, "2.39:1": 2.39}
+    T2 = 60 if quick else 150
+    for wn, A in (("16:9", 1.778), ("16:10", 1.6)):
+        for fn_, R_ in FRAMES.items():
+            picture((R_, A)); n = cut = e5 = 0
+            for mode, kinds in (("social", ("pair", "line", "cluster")), ("friends", ("line", "cluster"))):
+                for kind in kinds:
+                    for room in ("open", "room 10x8"):
+                        x = run(True, mode, kind, room, R_, trials=T2, seed=31)
+                        n += x["n"]; cut += x["cut"]; e5 += x["edge5"]
+            before = 0
+            if R_ < A:                                              # before 6.6: planned for the window, seen in the format
+                picture(None)
+                for mode, kinds in (("social", ("pair", "line", "cluster")), ("friends", ("line", "cluster"))):
+                    for kind in kinds:
+                        before += run(True, mode, kind, "open", R_, trials=T2, seed=31)["cut"]
+                picture((R_, A))
+            print(f"frame {fn_:6s} on {wn:5s}: {n} shots inside the format, cut {cut} (planned for the window: {before}), under a 5 % margin {e5}")
+            if fn_ == "4:5": check(before > 0, "frame 4:5: planning for the window should cut people at the format's edge")
+            check(n > 0 and cut == 0, f"frame {fn_} on {wn}: {cut} of {n} shots cut someone at the format's edge")
+            check(e5 <= 0.01 * n, f"frame {fn_} on {wn}: {e5} of {n} shots under a 5 % margin")
+            # the golden lines inside the picture: across, the off-centre view puts you 38.2 % from a side; up, a level
+            # camera at camZ puts the eyes 38.2 % from the top
+            pl = Planner(World(None), True, random.Random(1))
+            gx = math.tan(pl.alpha) / (tanV * R_)
+            check(abs(gx - GOLD) < 1e-9 and abs((1 - gx) / 2 - 0.382) < 1e-9, f"frame {fn_}: you are {gx:.3f} off centre, not on the golden line")
+            for d in (2.0, 4.0, 9.0):
+                ye = (1.7 - (1.7 - d * tanV * GOLD)) / (d * tanV)
+                check(abs((1 - ye) / 2 - 0.382) < 1e-9, f"frame {fn_}: the eyes {100 * (1 - ye) / 2:.1f} % from the top")
+    picture(None)
     print("framing checks:", "ALL PASS" if ok else "FAILURES")
     raise SystemExit(0 if ok else 1)
