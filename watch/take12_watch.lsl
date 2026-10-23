@@ -8,7 +8,7 @@
 //  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/CONNECT.md).
 // ============================================================================
 
-string  VERSION = "6.8.1";
+string  VERSION = "6.8.2";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
@@ -127,6 +127,7 @@ default
         gOwner = llGetOwner();
         llSetText("", ZERO_VECTOR, 0.0);
         llListen(SYNC_CH, "", NULL_KEY, "");
+        llRegionSay(SYNC_CH, "T12|reset");                  // 6.8.2: restarted: the one you followed lets go of you now
         if (llGetAttached()) perms();
     }
 
@@ -267,6 +268,6 @@ default
         }
         else if (w == "director") follow((key)llList2String(L, 2), llList2String(L, 3));   // someone else films now
         else if (w == "kick") leave(FALSE, TRUE, gHostN + " disconnected you");
-        else if (w == "end") leave(FALSE, TRUE, gHostN + " disconnected");
+        else if (w == "end" || w == "reset") leave(FALSE, TRUE, gHostN + " disconnected");   // 6.8.2: their HUD restarted
     }
 }

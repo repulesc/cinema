@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (7.1.1)
+TAKE 12  -  READ ME  (7.1.3)
 A camera for Second Life, from beyond your avatar's back. It only moves your view: nothing is recorded.
 
 
@@ -107,6 +107,7 @@ A quiet line says which camera runs: "○ Me · Half length · 85 mm ✓", "◇ 
 
 scenery  me  us  friends  free  adjust  connect  crop <format|off>  size s|m|l  stop  next  menu  status
 pace <seconds>   reach <metres>   indoors auto|inside|outside   tips on|off   statusline on|off   trace on|off   chan <number>   reset
+debug on|off     Connect: every message and change in your chat, to send to the maker when something goes wrong (off after a reset)
 
 
 === QUESTIONS ===========================================

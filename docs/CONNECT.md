@@ -60,6 +60,7 @@ There are no rosters, lead requests, Pass camera or End live any more: taking a 
 | `lead\|1` / `lead\|2` / `lead\|0` | hub → viewer | you film now (your camera runs) / you hold it now, nobody films (the hub disconnected) / no (an older hub kept the camera: you film alone, disconnected) |
 | `director\|<key>\|<name>` | old hub → viewers | the lead passed: follow this one |
 | `kick` / `end` | hub → viewer(s) | removed (older hubs) / disconnected |
+| `reset` | anyone → region | 7.1.3: this HUD's scripts just restarted and it knows nobody: a viewer following it leaves at once, a hub drops it from its list (the Watch sends it too) |
 
 ## The handshakes
 - **Connect:** + name or + Everyone makes you the hub; **no camera is started**. You send `invite`.
