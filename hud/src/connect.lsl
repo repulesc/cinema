@@ -11,7 +11,7 @@
 //  Give Watch (the free viewer HUD, from the HUD's contents) is all here. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.0";
+string VERSION = "7.0.2";
 string PASS    = "cinema-1.0-build1";
 
 integer MSG_VER    = 7360;
@@ -120,7 +120,7 @@ open(list P)
     string p = llList2String(P, 1);
     string more = lb("⋯", "⋯", "More");
     string inv = lb("➕", "+", "Invite");
-    string dis = lb("✖", "×", "Disconnect");
+    string dis = "Disconnect";                              // no mark: × is Close
     if (p == "live")                                        // you hold the connection
     {
         list c = keys(llList2String(P, 2));
@@ -217,7 +217,7 @@ choose(string msg)
     if (msg == "Close" || msg == "Keep") return;
     key k = btnKey(msg);
     if (msg == lb("➕", "+", "Invite")) go("who");
-    else if (msg == lb("✖", "×", "Disconnect") || (gPage == "end" && msg == "Disconnect")) go(llList2String(["disconnect", "end"], gPage == "end"));
+    else if (msg == "Disconnect") go(llList2String(["disconnect", "end"], gPage == "end"));
     else if (msg == "Film" || msg == "My turn") go("film");
     else if (msg == "Next") go("next");
     else if (gPage == "near")

@@ -11,7 +11,7 @@
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.0";
+string VERSION = "7.0.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -142,9 +142,9 @@ menu()
     gL = llListen(gChan, "", gOwner, "");
     gMenuT = llGetUnixTime();
     tick();
-    string t = "Frame · the picture format on your screen, outside dimmed\nNow: " + ratioName(gR) + " · your window "
+    string t = "Format · the shape of the picture; the rest of your screen is dimmed\nNow: " + ratioName(gR) + " · your window "
         + llGetSubString((string)gA, 0, 3) + ":1\nSnapshots: set the same ratio as the snapshot size.";
-    if (llGetListLength(gBars) < 4) t = "Frame needs four small boxes linked to the HUD, with the button as the root (Read Me > FRAME).";
+    if (llGetListLength(gBars) < 4) t = "Format needs four small boxes linked to the HUD, with the button as the root (see the README for building it).";
     list b = [];
     integer i;
     for (i = 0; i < 6; i++)
@@ -192,7 +192,7 @@ command(string v)
         llMessageLinked(LINK_SET, CFG_CHANGED, "crop_s", "");     // the keys (keys.lsl) follow the same side
         cut();
     }
-    llOwnerSay("[Take 12] Frame: " + ratioName(gR));
+    llOwnerSay("[Take 12] Format: " + ratioName(gR));
 }
 
 load()

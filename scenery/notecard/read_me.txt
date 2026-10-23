@@ -33,7 +33,7 @@ A quiet line above the button says it runs: "◇ Scenery · auto · 21 mm ✓". 
  PACE      how long each view is held (30 s to 2 min)
  LOOK      the line above the button, chat text
  CAMERA    Alt-cam (what an Alt-orbit does), phantom
- TEST CAM  a 3-second check that the HUD can move your camera
+ TEST CAMERA  a 3-second check that the HUD can move your camera
  RESET     factory settings
 
 

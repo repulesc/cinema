@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-"""Take 12 marketing graphics (Second Life Marketplace + in-world vendor board).
+"""Take 12 marketing graphics (7.0.1: minimal) for the Second Life Marketplace and in-world vendors.
 
-Also writes the boards of the free Take 12 Scenery (a FREE ribbon, "SCENERY - FREE CAMERA HUD", the Connect view dimmed
-as a full-version feature) to scenery/marketing/*_scenery.png.
-Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor (1024 and 512).
-Also the free Take 12 Watch board (watch/marketing/adboard_watch_1024.png).
-Writes hud/marketing/adboard_square_1024.png (Marketplace main image),
-hud/marketing/adboard_wide_1024x512.png (in-world vendor board / banner) and
-hud/marketing/adboard_vendor_1024.png + adboard_vendor_512.png (a bolder, simpler square for
-in-world vendor displays such as Caspervend, where the picture is small).
-
-The four small "views" are pixel-art illustrations drawn here, NOT screenshots. For the best
-Marketplace images, swap them for real in-world snapshots (see hud/marketing/README.md).
-Change the NAME / DESCRIPTOR / TAGLINE constants below and re-run to rename the product on the boards.
+One idea per picture: a single quiet frame fills the board, golden-line ticks barely visible at its edges, the small
+clapper in a corner, the name and one line. Nothing else (the product is one button; the boards say so).
+  Take 12          the dusk horizon     "A camera for Second Life."
+  Take 12 Scenery  the drone view       "Free. The place, while you are away."
+  Take 12 Watch    friends at dusk      "Free. See your friend's camera."
+Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor
+(1024 and 512: the same frame, bigger type). The views are pixel-art drawn here, not screenshots.
 
     python3 tools/art/make_adboard.py
 """
@@ -23,19 +18,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_icon as icon
 
 NAME = "TAKE 12"
-DESCRIPTOR = "CINEMATIC CAMERA HUD"
-TAGLINE = "Your idle time, framed."
-HOWTO = "Double-tap to start. Any key brings you back."
-NEW = "NEW: YOUR LENS"                                       # the banner/stamp for the newest feature (6.0: your lens, everywhere)
-SMALL = "ONE TINY BUTTON  -  NO SETUP  -  CONNECT WITH FRIENDS"
-CHIPS = ["Drone views", "Skybox rooms", "Connect", "Your lens"]
+TAGLINE = "A camera for Second Life."
+FREE_NAME, FREE_LINE = "TAKE 12 SCENERY", "Free. The place, while you are away."
+WATCH_NAME, WATCH_LINE = "TAKE 12 WATCH", "Free. See your friend's camera."
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FREE = False                      # main() runs the boards twice; True draws the free Take 12 Scenery versions
-FREE_DESCRIPTOR = "FREE CAMERA HUD"       # under the two-line TAKE 12 / SCENERY title
-FREE_CHIPS = ["Drone views", "Skybox rooms", "Idle start", "Photo hold"]
-FREE_SMALL = "FREE  -  ONE TINY BUTTON  -  NO SETUP"
-FULL_ONLY = ("CONNECT",)          # the view Take 12 Scenery does not have
 
 # ---- a tiny 5x7 pixel font (caps) ------------------------------------------------------------
 ROWS = {
@@ -108,7 +97,6 @@ def ptext(img, xy, text, scale, fill, shadow=None):
         x += 6 * scale
 def pwidth(text, scale): return len(text) * 6 * scale - scale
 
-def font(sz): return ImageFont.truetype(BOLD, sz)
 
 # ---- the four pixel-art views ----------------------------------------------------------------
 def bands(d, w, h, y1, cols):
@@ -130,7 +118,7 @@ def scene_drone(w, h, r):
     d.rectangle([int(w * .3), int(h * .38), int(w * .3), int(h * .38)], fill=CORAL)      # you, tiny
     return im
 
-LENS_TAG = True     # the HUD's own lens readout on the horizon view (the Watch board draws its own text there)
+LENS_TAG = False    # (7.0.1: the frames carry no HUD text)
 
 def scene_wide(w, h, r):
     im = Image.new("RGB", (w, h)); d = ImageDraw.Draw(im); hz = int(h * .58)
@@ -168,7 +156,7 @@ def scene_room(w, h, r):
     d.point((int(w * .46), int(h * .8)), fill=CORAL); d.point((int(w * .46), int(h * .79)), fill=CORAL)      # you, small
     return im
 
-TAG = True          # the "LIVE" tag on the Connect view (the wide strip puts a label there instead)
+TAG = False         # (7.0.1: the frames carry no HUD text)
 
 def scene_friends(w, h, r):
     im = Image.new("RGB", (w, h)); d = ImageDraw.Draw(im); hz = int(h * .6)
@@ -181,259 +169,67 @@ def scene_friends(w, h, r):
         d.ellipse([fx - 2, fy - 12, fx + 2, fy - 8], fill=(246, 214, 186)); d.rectangle([fx - 2, fy - 7, fx + 2, fy], fill=col); d.rectangle([fx - 2, fy + 1, fx + 2, fy + 4], fill=(40, 40, 60))
     bx0, by0, bx1, by1 = int(w * .1), int(h * .36), int(w * .9), int(h * .94)               # the viewfinder brackets
     for (ax, ay, sx_, sy_) in ((bx0, by0, 1, 1), (bx1, by0, -1, 1), (bx0, by1, 1, -1), (bx1, by1, -1, -1)):
-        d.line([(ax, ay), (ax + 6 * sx_, ay)], fill=CHALK); d.line([(ax, ay), (ax, ay + 6 * sy_)], fill=CHALK)
+        if TAG: d.line([(ax, ay), (ax + 6 * sx_, ay)], fill=CHALK); d.line([(ax, ay), (ax, ay + 6 * sy_)], fill=CHALK)
     if TAG:                                                                                  # the HUD's own text: "● LIVE"
         d.rectangle([2, 2, 2 + 4 + 2 + 23 + 3, 2 + 9], fill=INK)
         d.rectangle([4, 5, 6, 7], fill=CORAL)
         ptext(im, (9, 3), "LIVE", 1, CHALK)
     return im
 
-SCENES = [("DRONE", scene_drone), ("HORIZON", scene_wide), ("ROOM", scene_room), ("CONNECT", scene_friends)]
+def font(sz, bold=True): return ImageFont.truetype(BOLD if bold else REG, sz)
 
-def view(fn, gw, gh, scale, seed):
-    return fn(gw, gh, random.Random(seed)).resize((gw * scale, gh * scale), Image.NEAREST)
+def clapper(px, kind="full"):
+    g = {"full": lambda: icon.draw(True, icon.DEFAULT), "free": lambda: icon.draw_scenery(True)}.get(kind)
+    im = icon.watch_icon() if kind == "watch" else icon.frame_img(g())
+    return im.resize((px, px), Image.NEAREST)
 
-def clapper(px, v=icon.DEFAULT):
-    g = icon.draw_scenery(True) if FREE else icon.draw(True, v)       # Take 12 Scenery: the sun on its slate
-    im = icon.frame_img(g).resize((px, px), Image.NEAREST)
-    return im
+def board(W, H, scene, seed, name, line, kind, big=1.0):
+    """one frame: the scene fills the board; a soft dark foot for the type; golden-line ticks; clapper, name, line"""
+    px = 8
+    im = scene(-(-W // px), -(-H // px), random.Random(seed)).resize((-(-W // px) * px, -(-H // px) * px), Image.NEAREST).crop((0, 0, W, H)).convert("RGBA")
+    foot = Image.new("RGBA", (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(foot)
+    y0 = int(H * 0.62)
+    for y in range(y0, H):                                    # the foot: transparent to 78 % black
+        fd.line([(0, y), (W, y)], fill=(10, 10, 14, int(200 * ((y - y0) / (H - y0)) ** 1.4)))
+    im = Image.alpha_composite(im, foot)
+    d = ImageDraw.Draw(im, "RGBA")
+    m, t, tick = int(min(W, H) * 0.035), 2, int(min(W, H) * 0.022)      # golden-line ticks (38.2 % from each side)
+    for f in (0.382, 0.618):
+        x, y = int(W * f), int(H * f)
+        d.rectangle([x - 1, m, x, m + tick], fill=CHALK + (110,))                  # (none at the foot: the type is there)
+        d.rectangle([m, y - 1, m + tick, y], fill=CHALK + (110,)); d.rectangle([W - m - tick, y - 1, W - m, y], fill=CHALK + (110,))
+    u = int((W * H) ** 0.5)                                 # the type follows the board's area (a wide strip too)
+    ic = int(u * 0.085 * big)
+    pad = int(u * 0.06)
+    c = clapper(ic, kind)
+    im.paste(c, (pad, H - pad - ic), c)
+    sc = max(2, int(u * 0.0068 * big))
+    tx = pad + ic + int(u * 0.03)
+    ptext(im, (tx, H - pad - ic + int(ic * 0.08)), name, sc, CHALK)
+    d.text((tx, H - pad - ic + int(ic * 0.08) + 7 * sc + int(u * 0.018)), line, font=font(max(14, int(u * 0.03 * big)), False), fill=(226, 222, 214))
+    return im.convert("RGB")
 
-def free_head(im, x, y, sc, gap, desc_sc, tag_sz, how_sz=0):
-    """the free boards' header: TAKE 12 / SCENERY in two big lines, the descriptor, the tagline (and the how-to)"""
-    d = ImageDraw.Draw(im)
-    ptext(im, (x, y), "TAKE 12", sc, CHALK, shadow=CORAL); y += 7 * sc + gap
-    ptext(im, (x, y), "SCENERY", sc, CHALK, shadow=CORAL); y += 7 * sc + gap + 4
-    ptext(im, (x + 4, y), FREE_DESCRIPTOR, desc_sc, CORAL); y += 7 * desc_sc + 12
-    d.text((x + 4, y), TAGLINE, font=font(tag_sz), fill=(255, 196, 120)); y += tag_sz + 14
-    if how_sz: d.text((x + 4, y), HOWTO, font=font(how_sz), fill=(170, 176, 200))
+def the(kind):
+    """the frame, the name and the line of each product"""
+    if kind == "watch": return scene_friends, 31, WATCH_NAME, WATCH_LINE
+    if kind == "free": return scene_drone, 23, FREE_NAME, FREE_LINE
+    return scene_wide, 41, NAME, TAGLINE
 
-def looks(base, x, y, px, gap):
-    """the three clapper looks (classic, rec, viewfinder), open frame, left to right"""
-    for i, v in enumerate(("classic", "rec", "viewfinder")):
-        c = clapper(px, v); base.paste(c, (x + i * (px + gap), y), c)
-
-def paste_framed(base, im, xy, border=4, label=None, lab_scale=3):
-    d = ImageDraw.Draw(base); x, y = xy; w, h = im.size
-    d.rectangle([x - border, y - border, x + w + border - 1, y + h + border - 1], fill=INK)
-    base.paste(im, (x, y))
-    if label:
-        d.rectangle([x - border, y + h + border, x + w + border - 1, y + h + border + 6 * lab_scale + 12], fill=INK)
-        ptext(base, (x + 8, y + h + border + 6), label, lab_scale, CHALK)
-
-def ribbon(base, box):
-    """the coral FREE ribbon"""
-    d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
-    d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
-    sc = max(2, (y1 - y0 - 24) // 7); ptext(base, ((x0 + x1 - pwidth("FREE", sc)) // 2, (y0 + y1 - 7 * sc) // 2), "FREE", sc, INK)
-
-def banner(base, x, y, w, text, scale):
-    """a coral band across the top of a view (the new feature)"""
-    d = ImageDraw.Draw(base); h = 7 * scale + 16
-    d.rectangle([x - 4, y - 4, x + w + 3, y + h - 1], fill=CORAL, outline=INK, width=4)
-    ptext(base, (x + (w - pwidth(text, scale)) // 2, y + 6), text, scale, INK)
-
-def newlabel(base, x, y, w, h, scale, text, border=4):
-    """the label strip under a framed view (see paste_framed), in coral: the new feature"""
-    d = ImageDraw.Draw(base); y0 = y + h + border
-    d.rectangle([x - border, y0, x + w + border - 1, y0 + 6 * scale + 12], fill=CORAL)
-    ptext(base, (x + 8, y0 + 6), text, scale, INK)
-
-def stamp(base, box, lines):
-    """a coral stamp, lines = [(text, scale), ...] centred"""
-    d = ImageDraw.Draw(base); x0, y0, x1, y1 = box
-    d.rectangle([x0, y0, x1, y1], fill=CORAL, outline=INK, width=4)
-    total = sum(7 * sc for _, sc in lines) + 8 * (len(lines) - 1); y = (y0 + y1 - total) // 2
-    for text, sc in lines:
-        ptext(base, ((x0 + x1 - pwidth(text, sc)) // 2, y), text, sc, INK); y += 7 * sc + 8
-
-def scene_img(lab, fn, gw, gh, sc, seed):
-    """one view; on the free boards the view Take 12 Scenery does not have is dimmed and marked"""
-    im = view(fn, gw, gh, sc, seed)
-    if FREE and lab in FULL_ONLY:
-        im = Image.blend(im, Image.new("RGB", im.size, BG), 0.72)
-        t = 3 if im.width > 300 else 2
-        ptext(im, ((im.width - pwidth("FULL VERSION", t)) // 2, im.height // 2 - 7 * t // 2), "FULL VERSION", t, CHALK)
-    return im
-
-def chips(base, y, items, size, x_left, x_right, gap=14, fill=CORAL):
-    d = ImageDraw.Draw(base); f = font(size); widths = [d.textlength(t, font=f) + 28 for t in items]
-    total = sum(widths) + gap * (len(items) - 1); x = x_left + ((x_right - x_left) - total) / 2
-    for t, wd in zip(items, widths):
-        d.rounded_rectangle([x, y, x + wd, y + size + 20], radius=8, fill=PANEL, outline=fill, width=2)
-        d.text((x + 14, y + 8), t, font=f, fill=CHALK); x += wd + gap
-
-def square():
-    S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
-    for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)   # faint scanlines
-    im.paste(clapper(176), (44, 28), clapper(176))
-    if FREE: free_head(im, 244, 26, 7, 14, 2, 34, 20)
-    else:
-        ptext(im, (244, 44), NAME, 9, CHALK, shadow=CORAL)
-        ptext(im, (248, 118), DESCRIPTOR, 3, CORAL)
-        d.text((248, 160), TAGLINE, font=font(40), fill=(255, 196, 120))
-        d.text((248, 214), HOWTO, font=font(24), fill=(170, 176, 200))
-    if FREE:
-        ribbon(im, (664, 30, 984, 122)); ptext(im, (664, 138), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
-    else:
-        looks(im, 664, 30, 96, 14)
-        ptext(im, (664, 138), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
-    gw, gh, sc = 64, 40, 7; px, py = 48, 262
-    for i, (lab, fn) in enumerate(SCENES):
-        x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 62)
-        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 11 + i), (x, y), label=lab + ("  -  FULL TAKE 12" if FREE and lab in FULL_ONLY else ""))
-    chips(im, 936, _chip_list(), 24, 40, S - 40)
-    d.text((S // 2, 996), FREE_SMALL if FREE else SMALL, font=font(16), fill=(120, 126, 150), anchor="mm")
-    if not FREE: newlabel(im, 48 + 64 * 7 + 40, 262, 64 * 7, 40 * 7, 3, NEW)                 # the horizon view's label, in coral
-    return im
-
-def wide():
-    W, H = 1024, 512; im = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(im)
-    for yy in range(0, H, 4): d.line([(0, yy), (W, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
-    im.paste(clapper(128), (40, 30), clapper(128))
-    if FREE: free_head(im, 192, 22, 5, 10, 2, 26)
-    else:
-        ptext(im, (192, 34), NAME, 7, CHALK, shadow=CORAL)
-        ptext(im, (196, 92), DESCRIPTOR, 2, CORAL)
-        d.text((196, 120), TAGLINE, font=font(32), fill=(255, 196, 120))
-    if FREE:
-        ribbon(im, (716, 26, 980, 100)); ptext(im, (716, 114), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
-    else:
-        looks(im, 716, 26, 80, 12)
-        ptext(im, (716, 114), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-    d.text((44, 196), "Drone views, skybox rooms, idle start." if FREE else "Drone views, skyboxes, connect with friends.", font=font(22), fill=(170, 176, 200))
-    # film strip along the bottom
-    sy, sh = 262, 232; d.rectangle([0, sy, W, sy + sh], fill=INK)
-    for x in range(10, W, 36):
-        d.rounded_rectangle([x, sy + 8, x + 18, sy + 22], radius=3, fill=BG); d.rounded_rectangle([x, sy + sh - 22, x + 18, sy + sh - 8], radius=3, fill=BG)
-    gw, gh, sc = 56, 36, 4
-    global TAG, LENS_TAG
-    TAG = LENS_TAG = False                                       # the strip puts the view's name there instead
-    for i, (lab, fn) in enumerate(SCENES):
-        x = 26 + i * (gw * sc + 24); y = sy + 36
-        im.paste(scene_img(lab, fn, gw, gh, sc, 21 + i), (x, y)); d.rectangle([x - 2, y - 2, x + gw * sc + 1, y + gh * sc + 1], outline=(70, 74, 92), width=2)
-        ptext(im, (x + 8, y + 8), lab, 2, CHALK, shadow=INK)
-        if lab == "HORIZON" and not FREE: banner(im, x, y + gh * sc + 10, gw * sc, "NEW: YOUR LENS", 2)
-    TAG = LENS_TAG = True
-    d.text((W - 36, 150), "TAP  menu\nDOUBLE-TAP  go\nHOLD  " + ("photo" if FREE else "connect"), font=font(22), fill=CHALK, anchor="ra", spacing=8)
-    return im
-
-def vendor():
-    """bold, simple square for vendor displays: one big on-screen picture with the button in the corner"""
-    S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
-    for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
-    im.paste(clapper(150), (48, 34), clapper(150))
-    if FREE: free_head(im, 232, 24, 7, 14, 2, 30)
-    else:
-        ptext(im, (232, 40), NAME, 11, CHALK, shadow=CORAL)
-        ptext(im, (236, 128), DESCRIPTOR, 3, CORAL)
-        d.text((236, 168), TAGLINE, font=font(38), fill=(255, 196, 120))
-    gw, gh, sc = 96, 56, 9                      # the hero: what you see on screen, with the HUD button top right
-    hero = view(scene_wide, gw, gh, sc, 31)
-    hx, hy = 80, 236
-    paste_framed(im, hero, (hx, hy), border=6)
-    btn = clapper(72); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
-    ptext(im, (hx + gw * sc - 190, hy + 98), "DOUBLE-TAP", 2, CHALK, shadow=INK)
-    if FREE:
-        ribbon(im, (80, 784, 380, 884)); ptext(im, (80, 894), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
-        chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60); chips(im, 870, ["Idle start", "Photo hold"], 30, 420, S - 60)
-    else:
-        looks(im, 80, 784, 96, 14)
-        ptext(im, (80, 894), "3 CLAPPER LOOKS", 2, (170, 176, 200))
-        chips(im, 790, ["Drone", "Skybox"], 30, 420, S - 60)
-        chips(im, 870, ["Connect", "Your lens"], 30, 420, S - 60)
-        stamp(im, (730, 44, 976, 126), [("NEW", 3), ("YOUR LENS", 2)])
-    d.text((S // 2, 990), "ONE TINY BUTTON  -  FREE" if FREE else "ONE TINY BUTTON  -  CONNECT WITH FRIENDS", font=font(20), fill=(120, 126, 150), anchor="mm")
-    return im
-
-def watch():
-    """the free Take 12 Watch: one big view, as the Watch shows it (the HUD's own text above the icon)"""
-    S = 1024; im = Image.new("RGB", (S, S), BG); d = ImageDraw.Draw(im)
-    for yy in range(0, S, 4): d.line([(0, yy), (S, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
-    w = icon.watch_icon().resize((176, 176), Image.NEAREST); im.paste(w, (40, 26), w)
-    ptext(im, (236, 40), "TAKE 12 WATCH", 7, CHALK, shadow=CORAL)
-    ptext(im, (240, 112), "FOR FRIENDS OF TAKE 12", 3, CORAL)
-    d.text((240, 156), "See your friend's view.", font=font(38), fill=(255, 196, 120))
-    d.text((240, 206), "Wear it. Nothing to click.", font=font(22), fill=(170, 176, 200))
-    stamp(im, (820, 40, 980, 124), [("FREE", 5)])
-    gw, gh, sc = 96, 56, 9
-    global LENS_TAG
-    LENS_TAG = False
-    hero = scene_wide(gw, gh, random.Random(31)).resize((gw * sc, gh * sc), Image.NEAREST)   # their camera, with the Watch's own text
-    t = "WATCHING PANO"; ImageDraw.Draw(hero).rectangle([20, 20, 20 + pwidth(t, 3) + 24, 20 + 7 * 3 + 20], fill=INK)
-    ptext(hero, (32, 30), t, 3, CHALK); hx, hy = 80, 246
-    paste_framed(im, hero, (hx, hy), border=6)
-    btn = icon.watch_icon().resize((72, 72), Image.NEAREST); im.paste(btn, (hx + gw * sc - 72 - 22, hy + 18), btn)
-    ptext(im, (hx + gw * sc - 112, hy + 98), "WEAR IT", 2, CHALK, shadow=INK)
-    chips(im, 800, ["Nothing to click", "Same picture, any zoom"], 30, 80, S - 80)
-    chips(im, 880, ["Tap: your camera", "Double-tap: next"], 30, 80, S - 80)
-    d.text((S // 2, 990), "ONE TINY BUTTON  -  NO TAKE 12 NEEDED", font=font(20), fill=(120, 126, 150), anchor="mm")
-    return im
-
-def _base(W, H):
-    im = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(im)
-    for yy in range(0, H, 4): d.line([(0, yy), (W, yy)], fill=(26, 28, 38) if (yy // 4) % 2 else BG)
-    return im, d
-
-def _chip_list():
-    return FREE_CHIPS if FREE else CHIPS
-
-def portrait():
-    """3:4 portrait (768 x 1024): header, one big view, three small views, chips"""
-    W, H = 768, 1024; im, d = _base(W, H)
-    im.paste(clapper(150), (40, 30), clapper(150))
-    if FREE: free_head(im, 216, 24, 6, 12, 2, 28, 16)
-    else:
-        ptext(im, (216, 38), NAME, 9, CHALK, shadow=CORAL)
-        ptext(im, (220, 112), DESCRIPTOR, 3, CORAL)
-        d.text((220, 150), TAGLINE, font=font(34), fill=(255, 196, 120))
-        d.text((220, 200), HOWTO, font=font(20), fill=(170, 176, 200))
-    gw, gh, sc = 96, 56, 7; hx, hy = 48, 250                       # the hero view, 672 x 392
-    paste_framed(im, scene_img("HORIZON", scene_wide, gw, gh, sc, 41), (hx, hy), border=5, label="HORIZON")
-    small = [("DRONE", scene_drone), ("ROOM", scene_room), ("CONNECT", scene_friends)]; gw2, gh2, sc2 = 52, 32, 4; y2 = 722
-    for i, (lab, fn) in enumerate(small):
-        x = 48 + i * (gw2 * sc2 + 24)
-        paste_framed(im, scene_img(lab, fn, gw2, gh2, sc2, 51 + i), (x, y2), border=4, label=lab + ("  FULL" if FREE and lab in FULL_ONLY else ""), lab_scale=2)
-    if FREE:
-        ribbon(im, (48, 884, 200, 930)); ptext(im, (216, 898), "FREE TO KEEP AND GIVE", 2, (170, 176, 200))
-    else:
-        looks(im, 48, 876, 54, 10); ptext(im, (232, 898), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
-    chips(im, 944, _chip_list(), 20, 30, W - 30, gap=10)
-    d.text((W // 2, 1004), (FREE_SMALL if FREE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not FREE: stamp(im, (612, 36, 736, 120), [("NEW", 4), ("LENS", 2)])
-    return im
-
-def landscape43():
-    """4:3 landscape (1024 x 768): header row and four views"""
-    W, H = 1024, 768; im, d = _base(W, H)
-    im.paste(clapper(110), (40, 22), clapper(110))
-    if FREE: free_head(im, 178, 14, 5, 10, 2, 22)
-    else:
-        ptext(im, (178, 26), NAME, 8, CHALK, shadow=CORAL)
-        ptext(im, (182, 90), DESCRIPTOR, 2, CORAL)
-        d.text((182, 112), TAGLINE, font=font(28), fill=(255, 196, 120))
-        d.text((182, 148), HOWTO, font=font(18), fill=(170, 176, 200))
-    if FREE: ribbon(im, (760, 26, 984, 96))
-    else:
-        looks(im, 700, 20, 82, 12)
-        ptext(im, (700, 108), "CHOOSE YOUR CLAPPER", 2, (170, 176, 200))
-    gw, gh, sc = 56, 34, 6; px, py = 156, 186
-    for i, (lab, fn) in enumerate(SCENES):
-        x = px + (i % 2) * (gw * sc + 40); y = py + (i // 2) * (gh * sc + 48)
-        paste_framed(im, scene_img(lab, fn, gw, gh, sc, 61 + i), (x, y), border=4, label=lab + ("  -  FULL TAKE 12" if FREE and lab in FULL_ONLY else ""), lab_scale=2)
-    chips(im, 690, _chip_list(), 20, 30, W - 30, gap=12)
-    d.text((W // 2, 748), (FREE_SMALL if FREE else SMALL), font=font(14), fill=(120, 126, 150), anchor="mm")
-    if not FREE: newlabel(im, 156 + 56 * 6 + 40, 186, 56 * 6, 34 * 6, 2, NEW)
-    return im
+def square(kind="full"):   f, sd, n, l = the(kind); return board(1024, 1024, f, sd, n, l, kind)
+def wide(kind="full"):     f, sd, n, l = the(kind); return board(1024, 512, f, sd, n, l, kind)
+def portrait(kind="full"): f, sd, n, l = the(kind); return board(768, 1024, f, sd, n, l, kind)
+def landscape43(kind="full"): f, sd, n, l = the(kind); return board(1024, 768, f, sd, n, l, kind)
+def vendor(kind="full"):   f, sd, n, l = the(kind); return board(1024, 1024, f, sd, n, l, kind, big=1.45)   # read from across a store
+def watch():               return square("watch")
 
 if __name__ == "__main__":
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-    builds = [(False, os.path.join(base, "hud", "marketing"), ""), (True, os.path.join(base, "scenery", "marketing"), "_scenery")]
-    for free, out, suf in builds:
-        FREE = free; os.makedirs(out, exist_ok=True)
-        square().save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide().save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
-        portrait().save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43().save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
-        v = vendor(); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
+    builds = [("full", os.path.join(base, "hud", "marketing"), ""), ("free", os.path.join(base, "scenery", "marketing"), "_scenery")]
+    for kind, out, suf in builds:
+        FREE = (kind == "free"); os.makedirs(out, exist_ok=True)
+        square(kind).save(os.path.join(out, f"adboard_square_1024{suf}.png")); wide(kind).save(os.path.join(out, f"adboard_wide_1024x512{suf}.png"))
+        portrait(kind).save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43(kind).save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
+        v = vendor(kind); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
         print("wrote", os.path.normpath(out))
-        if not free:
-            wo = os.path.join(base, "watch", "marketing"); os.makedirs(wo, exist_ok=True)
-            watch().save(os.path.join(wo, "adboard_watch_1024.png")); print("wrote", os.path.normpath(wo))
+    wo = os.path.join(base, "watch", "marketing"); os.makedirs(wo, exist_ok=True)
+    watch().save(os.path.join(wo, "adboard_watch_1024.png")); print("wrote", os.path.normpath(wo))

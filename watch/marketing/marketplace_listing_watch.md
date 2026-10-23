@@ -21,37 +21,25 @@ Free. A tiny HUD for friends of Take 12: when someone near you connects with Tak
 
 ## Full description
 ```
-Take 12 Watch lets you see what a friend's Take 12 camera sees, while they show it. You do not need Take 12 yourself.
+Free. See your friend's camera.
 
-HOW IT WORKS
-- Wear the Watch on a HUD point (Top Right is usual) and allow camera control once.
-- When a friend near you connects with you from Take 12, you are connected at once. Wearing the Watch is your yes: there is nothing to click. Whoever films, you see it; when nobody films, you have your own camera.
-- Above the Watch you see who films: "Pano films".
-- You see the same picture as your friend, whatever your own zoom: the Watch places the camera so your lens shows it the same size.
+Take 12 Watch is for friends of Take 12. Wear it, and when someone near you connects with you from Take 12, you see the camera of whoever films. Nothing to click: wearing it is your yes. When nobody films, you have your own camera, still connected.
 
-YOU ARE IN CONTROL
-- Tap the Watch: disconnect, your own camera is back. Any movement key: your own camera for a moment, then the shared view again.
-- Double-tap the Watch: the next view, for everyone who watches.
-- Orbit your own camera to look around. Your friend sees that you are looking around, and Esc brings you back to the shared view.
-- When someone else connected starts filming, the Watch follows them by itself.
-- If your friend logs off or leaves, the Watch gives your camera back within 25 seconds.
+- The same picture as your friend, whatever your own zoom.
+- Double-tap: the next view, for everyone. Tap: disconnect.
+- Any movement key: your own camera for a moment, then the shared view again.
+- It only moves your view, inside your region. Nothing is recorded.
 
-GOOD TO KNOW
-- It works inside one region: you and your friend must be near each other.
-- It only moves your view. Nothing is recorded. Your friend only sees that you are watching, and if you look around.
-- The Watch cannot lead: it has no camera of its own. For that, you need Take 12.
-- One small button, a pixel-art clapper with a quiet eye on the slate, in the same look as Take 12.
-- Free. Copy and transfer, no modify. (you)
-- Support: (you)
+Free. Copy and transfer, no modify. (you)  ·  Support: (you)
 ```
 
 ## Features (the Marketplace "Features" list takes 5)
 ```
-Free HUD to watch a friend's Take 12 camera live
+Free: see a friend's Take 12 camera
+Connected at once: wearing it is your yes
 The same picture as your friend, whatever your zoom
-Tap or any movement key: your own camera back
-Double-tap: next view for everyone watching
-Follows the camera when your friend passes it on
+Double-tap: the next view for everyone
+Tap to disconnect; any movement key: your camera for a moment
 ```
 
 ## Keywords

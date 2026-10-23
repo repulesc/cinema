@@ -22,7 +22,7 @@
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.0";
+string VERSION = "7.0.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -509,6 +509,7 @@ default
         else if (num == CMD && str == "share") panel();     // hold the HUD button, or Connect in the menu
         else if (num == SHARE_DO) act(str);
         else if (num == CMD && str == "scenery" && gHost != NULL_KEY && gHeld) film();       // double-tap, nobody films: you do
+        else if (num == CMD && str == "next" && gSharing && !gCamOn) film();                 // NEXT with nobody filming: you film
         else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while watching
         else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: accept the invite
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");

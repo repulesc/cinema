@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "7.0.0";
+string VERSION = "7.0.2";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -27,7 +27,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items (7.0): id, a quiet mark, the title
-string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist|♡|Friends list~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|○|Cameras~release|↺|Release~pace|◷|Pace~afk|◷|Idle start~indoors||Indoors~reach||Reach~camcfg|⌖|Camera~look|◐|Look~test|◌|Test cam~reset|↺|Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size|⊕|Size~full|›|More cameras~readme|▤|Read Me~tips|ⓘ|Tips~";
+string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -288,7 +288,7 @@ string up(string p)
 string title()
 {
     string h = "Take 12";
-    if (gUiState == "rolling") return h + " · " + modeName() + " rolling";
+    if (gUiState == "rolling") return h + " · " + modeName();
     return h;
 }
 
@@ -333,7 +333,7 @@ openMenu(string page)
     }
     else if (page == "pace")
     {
-        text += "How long each view is held.\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Still 120";
+        text += "How long each shot is held.\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Slowest 120";
         b = ["lively", "easy", "calm", "slow", "still", "back"];
     }
     else if (page == "afk")
@@ -355,7 +355,7 @@ openMenu(string page)
     {
         text += "Seated view: " + seatText() + " · Alt-cam: "
             + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + "\nChat cuts: " + onoff("chat_cuts") + " · Phantom: " + onoff("phantom");
+            + "\nChat cuts: " + onoff("chat_cuts") + " · Phantom (see-through objects block the camera too): " + onoff("phantom");
         b = ["seat", "altcam", "chat", "phantom", "back"];
     }
     else if (page == "seat")
@@ -476,7 +476,7 @@ onChoice(string msg)
     {
         integer i = llListFindList(PACE_IDS, [id]);
         if (i >= 0) cfgSet("hold", llList2String(PACE_SECS, i));
-        note("Pace: " + paceName() + " (about " + cfgGet("hold") + " s per view)");
+        note("Pace: " + paceName() + " (about " + cfgGet("hold") + " s per shot)");
         openMenu("opts");
     }
     else if (gPage == "afk")
