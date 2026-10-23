@@ -23,7 +23,7 @@
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -427,10 +427,11 @@ leave(integer tell, integer clear)
     gLensTold = FALSE;
     if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");   // your own Format again
     gFmtOn = FALSE;
-    // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
-    clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
+    // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself. 7.1.1: never while
+    // your own camera runs (you started Framing while still connected to someone who had gone: it was cleared)
+    clear = clear && !gCamOn && llGetAttached() && llGetPermissionsKey() == gOwner;
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
-    if (clear && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays)
+    if (llGetAttached() && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays), your own camera running too
     llMessageLinked(LINK_SET, CMD, "unwatch", "");
     refresh();
 }
@@ -500,6 +501,12 @@ default
             gCamOn = TRUE;
             gMyMode = llList2String(llParseString2List(str, ["|"], []), 0);
             unpend();
+            if (gHost != NULL_KEY && llGetUnixTime() - gHearT > 15)
+            {
+                string n = sn(gHost);                       // the one you followed has gone quiet: no one to ask, you film alone
+                leave(FALSE, FALSE);
+                show(n + " is gone · disconnected");
+            }
             if (gHost != NULL_KEY && !gAskT)
             {
                 say(gHost, "ask");                          // the hub hands over: everyone follows you

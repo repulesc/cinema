@@ -359,6 +359,7 @@ check('else if (num == MSG_VER) gHeard += [(string)id];' in src and "if (gVerT >
       "tips: the missing-script check")
 free_tips = open(os.path.join(R, "scenery", "src", "tips.lsl")).read()
 check('string  NEED = "core scenery";' in free_tips, "Take 12 Scenery: only core and scenery are needed (besides ui and tips)")
+check('if (gAdj) w += " · ✛ Adjust";' in src and "gAdj = (integer)llList2String(L, 4);" in src, "7.1.1: the status line says while the keys adjust")
 print(f"above the button: a status line for {len(MODES)} cameras and a pause; sharing on top; notices respected; "
       f"{len(TIPS)} tips, each at most {int(MAXN)} times, {int(GAP)} s apart, {int(HOLD)} s on screen, off after {int(ALL)}")
 print("text checks:", "ALL PASS" if ok else "FAILURES")

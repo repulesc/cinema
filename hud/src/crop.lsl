@@ -10,13 +10,17 @@
 //  Its own menu (ui routes the Format button here); chat: /77 crop 4:5 | off | flip | back (via picker).
 //  7.1, Connect: watching someone, their Format is shown on your screen (sync: "crop|follow <format>", not saved);
 //  "crop|follow" brings your own back.
+//  7.1.1: the bars show only while a camera runs (UI_STATE rolling / peek), while this menu is open (to see the
+//  choice) and while following a connected Format; with your own camera they go away. The Format itself is kept,
+//  and the cameras compose inside it as before.
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
+integer UI_STATE    = 7320;   // core -> all  "<state>|<mode>|...": the bars show while a camera runs
 integer UI_MENU     = 7321;
 integer CFG_CHANGED = 7330;
 integer MSG_VER     = 7360;
@@ -34,6 +38,8 @@ float   gR;                  // the format (width / height), 0 = off
 float   gA = 1.777778;       // your window
 integer gSY = 1;             // HUD +Y is to the left (/77 crop flip if a viewer differs)
 integer gSX = 1;             // ... and the bars go behind the button, so it stays clickable (/77 crop back flips it)
+integer gLive;               // a camera runs (the bars show)
+integer gFollow;             // a connected director's Format is on screen
 list    gBars;               // the four bars' link numbers (any child but the keys strip, keys.lsl)
 integer gChan;
 integer gL;                  // the menu's listener (0: closed)
@@ -88,7 +94,7 @@ bar(integer link, float y, float z, float w, float h)
 cut()
 {
     if (llGetListLength(gBars) < 4 || !llGetAttached()) return;
-    float r = gR;
+    float r = gR * (gLive || gFollow || gL != 0);           // your own camera: no bars
     float a = gA;
     float sw = 0.0;
     float th = 0.0;
@@ -143,6 +149,7 @@ menu()
     gChan = -(integer)(llFrand(1000000000.0) + 1000.0);
     gL = llListen(gChan, "", gOwner, "");
     gMenuT = llGetUnixTime();
+    cut();                                                  // the bars show while you choose
     tick();
     string t = "Format · the shape of the picture; the rest of your screen is dimmed\nNow: " + ratioName(gR) + " · your window "
         + llGetSubString((string)gA, 0, 3) + ":1\nSnapshots: set the same ratio as the snapshot size.";
@@ -165,6 +172,7 @@ hear(string m)
     {
         llListenRemove(gL);
         gL = 0;
+        cut();
         tick();
         llMessageLinked(LINK_SET, UI_MENU, "main", "");
         return;
@@ -186,6 +194,7 @@ command(string v)
     if (llGetSubString(v, 0, 5) == "follow")
     {
         load();                                             // your own ...
+        gFollow = (v != "follow");
         if (v != "follow")
         {
             gR = (float)llGetSubString(v, 7, -1);           // ... or the director's, for now
@@ -284,7 +293,15 @@ default
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == CMD && str == "crop") menu();
+        if (num == UI_STATE)
+        {
+            string st = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
+            integer on = (st == "rolling" || st == "peek");
+            if (on == gLive) return;
+            gLive = on;
+            cut();
+        }
+        else if (num == CMD && str == "crop") menu();
         else if (num == CMD && llGetSubString(str, 0, 4) == "crop|") command(llDeleteSubString(str, 0, 4));
         else if (num == START) measure(FALSE);
         else if (num == CFG_CHANGED && str == "all")
@@ -307,10 +324,11 @@ default
 
     timer()
     {
-        if (gL && llGetUnixTime() - gMenuT > 60)
+        if (gL && llGetUnixTime() - gMenuT > 30)
         {
             llListenRemove(gL);
             gL = 0;
+            cut();                                          // the menu is gone: no camera, no bars
         }
         measure(FALSE);
         tick();

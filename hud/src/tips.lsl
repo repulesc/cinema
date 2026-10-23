@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -86,6 +86,7 @@ float   gLastT = -100.0;
 float   gRollT;              // rolling since (0: not rolling)
 integer gMore;               // the "Hold > More" tip was offered this run
 integer gSat;                // ... and the sitting one
+integer gAdj;                // the keys adjust the shot (core)
 integer gLensTip;            // ... and the lens one
 float   gFov = 1.047198;     // your lens (field of view, radians)
 integer gLook = 1;           // the button: its look (frames 2n open, 2n+1 clapped) and face, as ui draws it
@@ -173,6 +174,7 @@ string line()
     if (gSt == "peek" && gMode == "free") w = "framing · hold still" + lensTxt(m);   // your lens while you frame
     else if (gSt == "peek") w = "paused · Esc to carry on";
     else if (gMode != "frame") w += lensTxt(m);
+    if (gAdj) w += " · ✛ Adjust";
     return k + " " + s + " · " + w;
 }
 
@@ -307,6 +309,7 @@ default
             string mode = llList2String(L, 1);
             if (st != gSt || (st == "rolling" && mode != gMode)) onState(st, mode);
             gWhy = llList2String(L, 3);
+            gAdj = (integer)llList2String(L, 4);            // 7.1.1: Adjust shows on the status line while it is on
             if (st != "rolling")
             {
                 gClapT = 0.0;                               // still: your own camera, a pause

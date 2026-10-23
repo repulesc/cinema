@@ -7,7 +7,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 1;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -30,7 +30,7 @@ integer TRIM       = 7398;   // fit -> core  "<tilt>|<swing>|<slide>": Adjust, p
 integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>|<lens>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> cameras, tips  the viewer's field of view changed (radians): your lens
-integer UI_STATE   = 7320;   // core -> ui, tips, keys, fit  "<state>|<mode>|<nextCutUnix>|<why>|<adjust: the keys trim the shot>"
+integer UI_STATE   = 7320;   // core -> ui, tips, keys, fit, crop  "<state>|<mode>|<nextCutUnix>|<why>|<adjust: the keys trim the shot>|<fit: Page Up / Down are Fit's>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -131,7 +131,7 @@ loadCfg()
 
 setUi(string st)
 {
-    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy + "|" + (string)gAdj, "");
+    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy + "|" + (string)gAdj + "|" + (string)gFitCtl, "");
 }
 
 string idleUi()
@@ -312,7 +312,10 @@ integer fitOK(integer info)
 }
 
 // the movement keys: passed on to your avatar (in Framing › Me too, which follows you as you walk; it hears NUDGE).
-// 7.1, Adjust: seated (you cannot walk anyway), or standing after ADJUST, all of them are kept back and trim the shot
+// 7.1, Adjust: seated (you cannot walk anyway), or standing after ADJUST, all of them are kept back and trim the shot.
+// 7.1.1: ONE request. A script holds one set of controls and a second llTakeControls replaces the first (7.0 and
+// 7.1.0 took Page Up / Down last, so the movement keys were not taken at all: Adjust walked you, Me never heard
+// you walk). Page Up / Down are kept from your avatar by fit.lsl's own request (UI_STATE: Fit is on), not here.
 takeCtl(integer pass)
 {
     integer info = llGetAgentInfo(gOwner);
@@ -322,10 +325,9 @@ takeCtl(integer pass)
     gFitCtl = fitOK(info);
     gAdj = (gFitCtl && (gAdjOn || gSitCtl));
     llTakeControls(CTL, TRUE, pass && !gAdj);
-    if (gFitCtl) llTakeControls(48, TRUE, FALSE);  // last, so no request above passes them on again
     if ((was && !gFitCtl) || (adj && !gAdj)) llMessageLinked(LINK_SET, FITKEY, "0", "");   // flying, stopped, walking again while held: let go
     if (gAdj && !adj && gMode == "frame") llMessageLinked(LINK_SET, NUDGE, "0|" + (string)llGetCameraRot(), "");   // Me: no longer walking
-    if (adj != gAdj && gState != ST_IDLE) setUi(llList2String(["rolling", "peek"], gState == ST_PEEK));
+    if ((adj != gAdj || was != gFitCtl) && gState != ST_IDLE) setUi(llList2String(["rolling", "peek"], gState == ST_PEEK));
 }
 
 // ---- lifecycle ------------------------------------------------------------------
@@ -761,7 +763,8 @@ default
             }
             else if (str == "adjust")
             {
-                gAdjOn = !gAdjOn;                       // ADJUST: the keys trim the shot / walk you (seated they always trim)
+                if (!gSitCtl) gAdjOn = !gAdjOn;         // ADJUST: the keys trim the shot / walk you (seated they always trim:
+                                                        // a tap there must not leave Adjust on for when you stand up)
                 takeCtl(TRUE);
             }
             else if (llGetSubString(str, 0, 7) == "framing|" || llGetSubString(str, 0, 4) == "view|") untrim();   // a new framing, a saved view

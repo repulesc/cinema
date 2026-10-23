@@ -86,6 +86,19 @@ check("llDetectedLinkNumber(0) > 1) return;" in ui[ui.index("touch_start"):ui.in
 check('"crop"' in re.search(r'b = \["framing".*?\];', ui).group(0) and '|| id == "crop" ||' in ui and "~crop|◰|Format~" in ui, "ui: Format (7.0; Frame before) on the main page, routed to crop")
 check('else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");' in picker, "picker: /77 crop")
 check('"crop"' in ui[ui.index("integer locked(string id)"):ui.index("string label(")] and "crop.lsl" not in build.split("FILES")[0], "the free build leaves Format out (locked in ui; crop.lsl is not part of it)")
+# 7.1.1: the bars only while a camera runs, the menu is open, or a connected Format is followed; the Format is kept
+crop = open(os.path.join(R, "hud", "src", "crop.lsl")).read()
+check("float r = gR * (gLive || gFollow || gL != 0);" in crop and 'integer on = (st == "rolling" || st == "peek");' in crop
+      and 'gFollow = (v != "follow");' in crop, "crop: the bars show only while a camera runs, the menu is open, or following")
+uih = crop[crop.index("if (num == UI_STATE)"):crop.index('else if (num == CMD && str == "crop")')]
+check("set(" not in uih and "CFG_CHANGED" not in uih and "cut();" in uih, "crop: hiding the bars keeps your Format (and the cameras still compose inside it)")
+check(crop.count("cut();                                                  // the bars show while you choose") == 1
+      and "cut();                                          // the menu is gone: no camera, no bars" in crop, "crop: the menu shows the bars while it is open")
+def shown(state, menu, follow, r=1.5):
+    live = state in ("rolling", "peek")
+    return r * (live or follow or menu) > 0
+check(not shown("armed", False, False) and not shown("off", False, False) and shown("rolling", False, False) and shown("peek", False, False)
+      and shown("armed", True, False) and shown("armed", False, True) and not shown("rolling", False, False, 0.0), "the bars: when they show")
 print(f"frame: {len(NAMES)} formats x {len(WINDOWS)} windows, the picture exact and centred, bars tile the screen; {len(POINTS)} HUD points")
 print("frame checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

@@ -7,7 +7,7 @@
 //  closer or wider; seated the keys adjust the shot, fit.lsl.)
 // ============================================================================
 
-string VERSION = "7.1.0";
+string VERSION = "7.1.1";
 
 integer START      = 7301;
 integer STOP       = 7302;
