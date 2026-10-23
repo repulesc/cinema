@@ -15,7 +15,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.3.0";
+string VERSION = "6.4.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -36,7 +36,7 @@ float   WAIT = 10.0;          // s a tip waits for a free moment, then it is dro
 float   GAP  = 20.0;          // s between two tips
 
 // 0 hello  1 scenery  2 me  3 us  4 only friends  5 still  6 photo  7 paused  8 back  9 more  10 sitting  11 idle start
-// 12 your lens
+// 12 your lens  13 freehand
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
     "Take 12 Scenery\nTap: menu · Double-tap: scenery",
@@ -51,13 +51,15 @@ list TIPS = [
     "Tap while it rolls\ntap: photo, next, stop",
     "Sitting\nsitting: W/S closer or wider",
     "Idle start\nstay idle ",
-    "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back"];
-list MODES = ["scenery", "personal", "social", "friends", "frame"];   // tips 1 to 5
-list NAMES = ["Scenery", "Me", "Us", "Only friends", "Still"];
-list MARKS = ["◇", "○", "◎", "♡", "□"];
-// your lens (35 mm equivalent) and the range each camera suggests: Scenery wide, people 24-85 (Still has its own guide)
-list LO = [0, 35, 24, 35, 0];
-list HI = [28, 50, 50, 85, 999];
+    "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
+    "Freehand\nframe it, hold still: it holds · Esc: back to it"];
+list MODES = ["scenery", "personal", "social", "friends", "frame", "free"];   // tips 1 to 5, and 13
+list NAMES = ["Scenery", "Me", "Us", "Only friends", "Still", "Freehand"];
+list MARKS = ["◇", "○", "◎", "♡", "□", "✥"];
+// your lens (35 mm equivalent) and the range each camera suggests: Scenery wide, people 24-85 (Still has its own guide;
+// Freehand: every lens is yours)
+list LO = [0, 35, 24, 35, 0, 0];
+list HI = [28, 50, 50, 85, 999, 999];
 
 key     gOwner;
 integer gOn;                 // Tips on
@@ -164,6 +166,7 @@ string line()
     if (gMode == "frame" && gStill != "") w = guide();
     else if (gMode == "frame") w = "held";
     else if (gMode == "friends" && gLed) w = "your view";
+    else if (gMode == "free") w = "held";
     else if (gMode == "scenery" && gWhy == "idle") w = "started while you were idle";
     if (gSt == "frozen")
     {
@@ -171,6 +174,7 @@ string line()
         k = "▣";
         w = "held";
     }
+    else if (gSt == "peek" && gMode == "free") w = "framing · hold still" + lensTxt(m);   // your lens while you frame
     else if (gSt == "peek") w = "paused · Esc to carry on";
     else if (gMode != "frame") w += lensTxt(m);
     if (gSkin) s = k + " " + s;
@@ -246,10 +250,10 @@ onState(string st, string mode)
         gSat = FALSE;
         gLensTip = FALSE;
         integer m = llListFindList(MODES, [mode]);
-        if (m >= 0) want(m + 1);
+        if (m >= 0) want(m + 1 + 7 * (m == 5));             // Freehand: tip 13
     }
     else if (st == "frozen") want(6);
-    else if (st == "peek") want(7);
+    else if (st == "peek" && mode != "free") want(7);       // Freehand: framing is the point, not a pause
     else if (idle && was)
     {
         gRollT = 0.0;

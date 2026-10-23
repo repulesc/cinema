@@ -14,11 +14,11 @@ def check(c, msg):
 
 # ---- wiring ------------------------------------------------------------------------------------------------------
 for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string)cp + "|" + (string)f, "");',
-          'else if (gPeekOn || gMode == "friends")', "else if (llGetTime() - gLeadT > 1.5)", "float t = (f0 - cp) * u;",
+          'else if (gPeekOn || gMode == "friends" || gMode == "free")', 'else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))', "float t = (f0 - cp) * u;",
           "llTakeControls(CTL & ~3, TRUE, TRUE);", "llTakeControls(3, TRUE, FALSE);"):
     check(w in core, f"core: missing {w}")
 check("llTakeControls(48" not in core, "core: standing E/C are still kept back")
-check('if (gMode == "friends" && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
+check('integer own = (gMode == "friends" || gMode == "free");' in core and 'if (own && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
       "core: Friends does not notice a small move or a turn of your camera")
 check("gShotFoc = f;" in core and "gShotFoc = gf;" in core, "core: the shot's focus is not kept")
 for w in ('integer LEAD       = 7324;', "gAim += q - gSubj;", "gS = llVecDist(c, q);",
