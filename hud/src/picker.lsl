@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -21,7 +21,6 @@ float   R_PICK = 20.0;       // picker range (m)
 integer MAX_F  = 10;
 
 key     gOwner;
-integer gEmoji;
 integer gCmdChan;
 integer gCmdListen;
 list    gFKeys;
@@ -46,7 +45,6 @@ loadFriends()
 {
     gFKeys = [];
     gFNames = [];
-    gEmoji = (cfg("skin", "0") == "2");                 // emoji only in the Color menu style
     list L = llParseString2List(cfg("friends", ""), [";"], []);
     integer i;
     for (i = 0; i < llGetListLength(L); i++)
@@ -67,8 +65,7 @@ saveFriends()
 
 string lb(string e, string t)
 {
-    if (gEmoji) return e + " " + t;
-    return t;
+    return t;                                               // 7.0: one quiet menu style
 }
 
 // top row first, like on screen; llDialog wants the bottom row first
@@ -115,9 +112,7 @@ integer hereNow()
 friendsPage()
 {
     loadFriends();
-    string head = "Friends";
-    if (gEmoji) head = "💞 Friends";
-    string text = head + " · " + (string)llGetListLength(gFKeys) + " saved · " + (string)hereNow() + " here now\n";
+    string text = "♡ Friends · " + (string)llGetListLength(gFKeys) + " saved · " + (string)hereNow() + " here now\n";
     if (llGetListLength(gFKeys) == 0) text += "Nobody yet: use Pick to choose from the people near you.";
     else text += llGetSubString(llDumpList2String(gFNames, ", "), 0, 380);
     openMenu("page", text, [lb("▶", "Start"), lb("➕", "Pick"), lb("➖", "Remove"), lb("🗑", "Clear"), lb("↩", "Back"), lb("✖", "Close")]);
@@ -281,7 +276,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends still connect crop size stop next photo menu status pace reach indoors face skin tips statusline trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends free connect crop size stop next menu status pace reach indoors face tips statusline trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -292,7 +287,7 @@ onCommand(string msg)
     integer n = (integer)v;
     integer m = llListFindList(["me", "us", "still", "connect"], [c]);  // the menu names work too
     if (m >= 0) c = llList2String(["personal", "social", "frame", "share"], m);
-    if (llListFindList(["scenery", "personal", "social", "friends", "frame", "share", "stop", "next", "photo", "fav", "grab"], [c]) >= 0)
+    if (llListFindList(["scenery", "personal", "social", "friends", "frame", "free", "share", "stop", "next", "fav", "grab"], [c]) >= 0)
         llMessageLinked(LINK_SET, CMD, c, "");
     else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");          // Frame: 4:5, off, flip, back (crop)
     else if (c == "size") llMessageLinked(LINK_SET, CMD, "size|" + v, "");          // the button: s, m, l (keys)
@@ -320,11 +315,6 @@ onCommand(string msg)
     }
     else if (c == "friend" && v == "list") llMessageLinked(LINK_SET, UI_FRIENDS, "list", "");
     else if (c == "friend" && v == "clear") llMessageLinked(LINK_SET, UI_FRIENDS, "clear", "");
-    else if (c == "skin" && llListFindList(["plain", "symbols", "color"], [v]) >= 0)
-    {
-        set("skin", (string)llListFindList(["plain", "symbols", "color"], [v]));
-        say("Menu style: " + v);
-    }
     else if (c == "tips" && (v == "on" || v == "off"))
     {
         if (v == "on") llLinksetDataWriteProtected("cin.tipn", "0", PASS);   // every tip from the start

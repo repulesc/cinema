@@ -54,7 +54,7 @@ check('|| str == "free") engage(str);' in core, "core: Freehand must start from 
 check('if (gMode == "free") return;                    // Freehand: a tripod' in core, "core: movement keys must not end Freehand")
 check('else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))' in core, "core: Freehand locks after 1 s still")
 check('integer own = (gMode == "friends" || gMode == "free");' in core and "if (gPeekBail && !own)" in core, "core: your own framing, never a bail")
-check('|| str == "free" || str == "fav")) return;' in core, "core: the free Take 12 Scenery has no Freehand")
+check('|| str == "free")) return;' in core, "core: the free Take 12 Scenery has no Freehand")
 typing = core[core.index("if (info & AGENT_TYPING)"):core.index("if (info & AGENT_MOUSELOOK)")]
 check('"free"' not in typing, "core: typing must not end Freehand")
 
@@ -73,12 +73,12 @@ check("if (llGetListLength(v) > 2) v = llDeleteSubList(v, 0, 0);" in free and "g
       and "if (v == [])\n    {\n        here();" in free, "free.lsl: save / recall")
 check('return "free." + llDumpList2String(llParseString2List(llGetRegionName(), [" "], []), "_");' in free, "free.lsl: per region")
 check('if (num == CMD && str == "fav") save();' in free.replace("else if (num == CMD", "if (num == CMD") and
-      'else if (gMode != "free") llOwnerSay(' in core, "Save: free.lsl keeps the view, core stays quiet")
+      'str == "fav"' not in core, "Save: free.lsl keeps the view (7.0: Scenery has no saved spots, core says nothing)")
 
 # ---- the menu and the line above the button --------------------------------------------------------------------
-check("~free|" in ui and '"frame", "free", "crop"' in ui and '|| id == "free" ||' in ui, "ui: Freehand on the main menu")
-check('if (gUiMode == "scenery" || gUiMode == "free") b += ["save"];' in ui, "ui: Save in the live menu while Freehand runs")
-check('"personal", "us", "frame", "free", "share"' in ui, "ui: the free Take 12 Scenery hides Freehand")
+check("~free|" in ui and '"framing", "free", "share"' in ui and 'if (id == "free" ||' in ui, "ui: Freehand on the main menu")
+check('if (gUiMode == "free") b += ["save"];' in ui, "ui: Save in the live menu while Freehand runs")
+check('"framing", "free", "share", "crop"' in ui[ui.index("integer locked(string id)"):], "ui: the free Take 12 Scenery hides Freehand")
 check('else if (gMode == "free") w = "held";' in tips and 'w = "framing · hold still" + lensTxt(m);' in tips, "tips: held / framing, with your lens")
 check('else if (st == "peek" && mode != "free") want(7);' in tips, "tips: no 'Paused' tip while you frame")
 print(f"freehand: the dolly keeps an object's size over {len(LENSES)}x{len(LENSES)} lens pairs, stops at walls; 2 views per region")

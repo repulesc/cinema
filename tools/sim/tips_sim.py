@@ -1,7 +1,7 @@
 # The text above the button (5.8.0): tips.lsl ported, played against a fake HUD - the core's states, the
 # sharing block from sync, the lens, the short notices other scripts write, and the clock.
 # Status line: every camera says its mode and who is in charge, nothing with your own camera, idle start says so,
-# "your view" follows the lens, Photo and pause, the mark follows the menu style, Status line off.
+# "your view" follows the lens, a pause, the marks (7.0: one menu style, no Photo), Status line off.
 # Sharing: LIVE stacks above the status, watching shows only the 👁 block.
 # Notices: another script's text is never overwritten, the status comes back once it is cleared.
 # Tips (5.7.0): one per camera, short, under the status line, 20 s apart, each retires after 3 showings, Tips turns
@@ -48,13 +48,13 @@ check(len((TIPS[11] + "10 min: the scenery starts by itself").split("\n")[1]) <=
 for m in MODES:
     check(f'"{m}"' in core, f"core has no camera '{m}'")
 check(MODES == ["scenery", "personal", "social", "friends", "frame", "free"], f"the cameras: {MODES}")
-check(NAMES == ["Scenery", "Me", "Us", "Only friends", "Still", "Freehand"], f"the status names must be the menu names: {NAMES}")
+check(NAMES == ["Scenery", "Me", "Us", "Friends", "Me", "Freehand"], f"the status names must be the menu names (7.0: Framing › Me runs frame): {NAMES}")
 for i, word in enumerate(NAMES):
     check(TIPS[i + 1 + 7 * (i == 5)].startswith(word), f"the tip for {MODES[i]} does not start with the menu name {word}")   # Freehand: tip 13
 for i in (9, 10):
     check(TIPS[i].split("\n")[0].lower().split()[0] in TIPS[i].split("\n")[1].lower(), f"tip {i}: its second line must stand alone")
-mk = dict(re.findall(r'~(\w+)\|[^|]*\|([^|]*)\|', ui))
-for m, k in zip(["scenery", "personal", "us", "onlyfr", "frame"], MARKS):
+mk = dict(re.findall(r'~(\w+)\|([^|~]*)\|', ui))
+for m, k in zip(["scenery", "me", "us", "friends", "me"], MARKS):
     check(mk.get(m) == k, f"the mark for {m} must be the menu's ({mk.get(m)!r} vs {k!r})")
 check('"tips"' in picker and 'cin.tipn", "0"' in picker, "/77 tips on|off missing, or it does not start from zero")
 
@@ -72,7 +72,7 @@ def llSetText(t):                            # Second Life keeps at most 254 byt
 check(llGetSubString("|", 1, -1) == "|" and llDeleteSubString("|", 0, 0) == "", "the LSL model is wrong")
 
 # ---- the script, in Python ----------------------------------------------------------------------------------------
-ACTIVE = ("rolling", "frozen", "peek")
+ACTIVE = ("rolling", "peek")
 class Hud:
     def __init__(s, on="1", n="0", afk_on="1", afk_sec="180", status="1", skin="1"):
         s.lsd = {"tips": on, "tipn": n, "afk_on": afk_on, "afk_sec": afk_sec, "status": status, "skin": skin}
@@ -106,10 +106,9 @@ class Hud:
         elif s.mode == "frame": w = "held"
         elif s.mode == "friends" and s.led: w = "your view"
         elif s.mode == "scenery" and s.why == "idle": w = "started while you were idle"
-        if s.st == "frozen": n, k, w = "Photo", "▣", "held"
-        elif s.st == "peek": w = "paused · Esc to carry on"
+        if s.st == "peek": w = "paused · Esc to carry on"
         elif s.mode != "frame": w += s.lens_txt(m)
-        if s.skin: n = k + " " + n
+        n = k + " " + n                      # 7.0: one menu style, the marks always
         return n + " · " + w
     def draw(s):
         c = s.text
@@ -146,7 +145,6 @@ class Hud:
             if rolling and (not was or mode != s.mode):
                 s.rollT = s.t; s.more = False; s.sat = False; s.lens_tip = False
                 if mode in MODES: s.want(MODES.index(mode) + 1)
-            elif st == "frozen": s.want(6)
             elif st == "peek": s.want(7)
             elif idle and was:
                 s.rollT = 0.0
@@ -166,8 +164,9 @@ class Hud:
     def still_msg(s, name, want, fov_deg):    # frame: "<framing>|<mm>|<your mm>", your mm = 12 / tan(FOV / 2), rounded
         s.still = f"{name}|{want}|{round(12 / math.tan(math.radians(fov_deg) / 2))}"; s.after()
     def sharing(s, kind, text):              # sync sends "<kind>|<text>"; parsed exactly as the script does
-        msg = kind + "|" + text; i = msg.find("|")
+        msg = kind + "|" + text; i = msg.find("|"); was = s.kind
         s.kind = llGetSubString(msg, 0, i - 1) if i > 0 else ""
+        if was == "" and s.kind in ("live", "view"): s.want(6)        # 7.0: connected, what it means
         s.syncb = llDeleteSubString(msg, 0, i)
         s.after()
     def tick(s):
@@ -180,7 +179,7 @@ class Hud:
             m = MODES.index(s.mode) if s.mode in MODES else -1
             if not s.lens_tip and 0 <= m < 4 and now - s.lastT >= GAP and not s.lens_txt(m).endswith("✓"):
                 s.lens_tip = True; s.want(12)
-            elif not s.sat and s.mode == "friends" and s.sitting: s.sat = True; s.want(10)
+            elif not s.sat and m >= 1 and m <= 4 and s.sitting: s.sat = True; s.want(10)
             elif not s.more and now - s.rollT >= 90: s.more = True; s.want(9)
         if s.want_i >= 0:
             if not s.on or now - s.wantT > WAIT: s.want_i = -1
@@ -213,7 +212,6 @@ h.state("armed"); h.run(2); check(h.text == "", f"your own camera must show noth
 h.state("rolling", "scenery"); h.run(1); check(h.text == "◇ Scenery · auto · 21 mm ✓", f"scenery: {h.text!r}")
 for k in range(5): h.state("rolling", "scenery"); h.run(30)                     # every cut repeats the state
 check(h.text == "◇ Scenery · auto · 21 mm ✓", f"the status line must stay through the cuts: {h.text!r}")
-h.state("frozen", "scenery"); h.run(1); check(h.text == "▣ Photo · held", f"photo: {h.text!r}")
 h.state("rolling", "scenery"); h.state("peek", "scenery"); h.run(1)
 check(h.text == "◇ Scenery · paused · Esc to carry on", f"paused: {h.text!r}")
 h.state("off"); h.run(1); check(h.text == "", "the text must go when your camera is back")
@@ -221,35 +219,32 @@ h.state("rolling", "scenery"); h.state("rolling", "scenery", "idle"); h.run(1)
 check(h.text == "◇ Scenery · started while you were idle · 21 mm ✓", f"idle start: {h.text!r}")
 h.state("off"); h.state("rolling", "personal"); h.run(1); check(h.text == "○ Me · auto · 21 mm · try 35 · Ctrl+0", f"Me: {h.text!r}")
 h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24 · Ctrl+0", f"Us: {h.text!r}")
-h.state("rolling", "frame"); h.run(1); check(h.text == "□ Still · held", f"Still: {h.text!r}")
+h.state("rolling", "frame"); h.run(1); check(h.text == "○ Me · held", f"Framing › Me: {h.text!r}")
 # 5.9: Still's lens guide - the framing, its lens, yours, and what to press (only you can zoom)
 h.still_msg("Full length", 50, 60); h.run(1)
-check(h.text == "□ Still · Full length · 50 mm · now 21 · Ctrl+0", f"Still at the default zoom: {h.text!r}")
-h.still_msg("Full length", 50, 27); h.run(1); check(h.text == "□ Still · Full length · 50 mm ✓", f"Still at 50 mm: {h.text!r}")
-h.still_msg("Close", 105, 27); h.run(1); check(h.text == "□ Still · Close · 105 mm · now 50 · Ctrl+0", f"Close at 50 mm: {h.text!r}")
+check(h.text == "○ Me · Full length · 50 mm · now 21 · Ctrl+0", f"Still at the default zoom: {h.text!r}")
+h.still_msg("Full length", 50, 27); h.run(1); check(h.text == "○ Me · Full length · 50 mm ✓", f"Still at 50 mm: {h.text!r}")
+h.still_msg("Close", 105, 27); h.run(1); check(h.text == "○ Me · Close · 105 mm · now 50 · Ctrl+0", f"Close at 50 mm: {h.text!r}")
 h.still_msg("Half length", 85, 9); h.run(1); check(h.text.endswith("85 mm · now 152 · Ctrl+8"), f"a lens too long: {h.text!r}")
-h.still_msg("Half length", 85, 18); h.run(1); check(h.text == "□ Still · Half length · 85 mm ✓", f"within 15 %: {h.text!r}")
-h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "□ Still · Half length · 85 mm ✓", "the lens guide must show with the status line off")
-h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Still · Half length · 85 mm ✓", f"Plain: {h.text!r}")
+h.still_msg("Half length", 85, 18); h.run(1); check(h.text == "○ Me · Half length · 85 mm ✓", f"within 15 %: {h.text!r}")
+h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "○ Me · Half length · 85 mm ✓", "the lens guide must show with the status line off")
 h.state("rolling", "social"); h.run(1); check(h.text == "", "status off: nothing outside Still")
-h.lsd["status"] = "1"; h.lsd["skin"] = "1"; h.load()
-h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35 · Ctrl+0", f"Only friends: {h.text!r}")
-h.lens(2.4); h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35 · Ctrl+0", f"your own view: {h.text!r}")
-h.lens(0); h.run(1); check(h.text == "♡ Only friends · auto · 21 mm · try 35 · Ctrl+0", "Release must say auto again")
+h.lsd["status"] = "1"; h.load()
+h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Friends · auto · 21 mm · try 35 · Ctrl+0", f"Only friends: {h.text!r}")
+h.lens(2.4); h.run(1); check(h.text == "♡ Friends · your view · 21 mm · try 35 · Ctrl+0", f"your own view: {h.text!r}")
+h.lens(0); h.run(1); check(h.text == "♡ Friends · auto · 21 mm · try 35 · Ctrl+0", "Release must say auto again")
 h.lens(2.4); h.state("rolling", "social"); h.run(1); check(h.text == "◎ Us · auto · 21 mm · try 24 · Ctrl+0", "your view must not follow you out of Only friends")
 # the mark follows the menu style; Status line off
-h.lsd["skin"] = "0"; h.load(); h.run(1); check(h.text == "Us · auto · 21 mm · try 24 · Ctrl+0", f"Plain must have no mark: {h.text!r}")
 h.lsd["status"] = "0"; h.load(); h.run(1); check(h.text == "", "Status line off must hide it")
 # ---- 6.0: your lens in every camera (Still keeps its own guide; Photo and pause say nothing about it) ----------------
 h = Hud(on="0"); h.state("rolling", "social"); h.zoom(35); h.run(1); check(h.text == "◎ Us · auto · 35 mm ✓", f"Us at 35 mm: {h.text!r}")
 h.zoom(105); h.run(1); check(h.text == "◎ Us · auto · 105 mm · try 50 · Ctrl+8", f"Us at 105 mm: {h.text!r}")
-h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Only friends · auto · 105 mm · try 85 · Ctrl+8", f"Only friends at 105: {h.text!r}")
-h.zoom(85); h.run(1); check(h.text == "♡ Only friends · auto · 85 mm ✓", f"Only friends at 85: {h.text!r}")
+h.state("rolling", "friends"); h.run(1); check(h.text == "♡ Friends · auto · 105 mm · try 85 · Ctrl+8", f"Only friends at 105: {h.text!r}")
+h.zoom(85); h.run(1); check(h.text == "♡ Friends · auto · 85 mm ✓", f"Only friends at 85: {h.text!r}")
 h.state("rolling", "scenery"); h.run(1); check(h.text == "◇ Scenery · auto · 85 mm · try 28 · Ctrl+8", f"Scenery at 85: {h.text!r}")
 h.zoom(24); h.run(1); check(h.text == "◇ Scenery · auto · 24 mm ✓", f"Scenery at 24: {h.text!r}")
 h.state("rolling", "personal"); h.zoom(50); h.run(1); check(h.text == "○ Me · auto · 50 mm ✓", f"Me at 50: {h.text!r}")
-h.state("frozen", "personal"); h.run(1); check(h.text == "▣ Photo · held", "Photo must not show the lens")
-h.state("rolling", "frame"); h.still_msg("Close", 105, 27); h.run(1); check(h.text == "□ Still · Close · 105 mm · now 50 · Ctrl+0", "Still keeps its own guide")
+h.state("rolling", "frame"); h.still_msg("Close", 105, 27); h.run(1); check(h.text == "○ Me · Close · 105 mm · now 50 · Ctrl+0", "Still keeps its own guide")
 # the lens tip: once per run, when the run starts outside the camera's range, after the camera's own tip
 h = Hud(); h.state("armed"); h.run(30); h.state("rolling", "social"); h.run(40)
 check([i for _, i in h.log][-2:] == [3, 12], f"the lens tip must follow the Us tip at 21 mm: {h.log}")
@@ -270,7 +265,7 @@ h.state("rolling", "scenery"); h.run(0.25); check(len(h.claps) == 1 and h.shut, 
 h.run(0.5); check(not h.shut, "the clap must last a quarter of a second")
 h.run(60); n = len(h.claps); gaps = [b - a for a, b in zip(h.claps, h.claps[1:])]
 check(6 <= n <= 9 and all(7.9 <= g <= 12.6 for g in gaps), f"claps every 8-12 s while filming: {n}, gaps {gaps}")
-h.state("frozen", "scenery"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.shut, "no clap during Photo")
+h.state("peek", "scenery"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.shut, "no clap during a pause")
 h.state("rolling", "scenery"); h.run(1); check(len(h.claps) == n + 1, "the clap comes back when filming resumes")
 h.state("off"); n = len(h.claps); h.run(30); check(len(h.claps) == n and not h.shut, "still again when your camera is back")
 
@@ -303,20 +298,20 @@ check(h.text == "● LIVE · 1 watching\nAna\n◎ Us · auto · 21 mm · try 24 
 h = Hud(on="0"); h.state("rolling", "friends"); h.run(1)
 h.text = "Your view is kept · Esc to continue"; h.lens(2.0); h.run(3)
 check(h.text == "Your view is kept · Esc to continue", "the status overwrote the lens notice")
-h.text = ""; h.run(1); check(h.text == "♡ Only friends · your view · 21 mm · try 35 · Ctrl+0", f"the status did not come back: {h.text!r}")
-h.text = "Ana watches"; h.state("frozen", "friends"); h.run(2); check(h.text == "Ana watches", "a state change overwrote a notice")
-h.text = ""; h.run(1); check(h.text == "▣ Photo · held", "the status did not come back after the notice")
+h.text = ""; h.run(1); check(h.text == "♡ Friends · your view · 21 mm · try 35 · Ctrl+0", f"the status did not come back: {h.text!r}")
+h.text = "Ana connected"; h.state("peek", "friends"); h.run(2); check(h.text == "Ana connected", "a state change overwrote a notice")
+h.text = ""; h.run(1); check(h.text == "♡ Friends · paused · Esc to carry on", f"the status did not come back after the notice: {h.text!r}")
 # ---- tips --------------------------------------------------------------------------------------------------------
 # 1. worn: the hello tip, through the start-up states; gone after 6 s
 h = Hud(); h.attach(); h.state("armed"); h.run(2)
 check(h.log and h.log[-1][1] == 0 and h.text.startswith("Take 12"), "no hello tip when worn")
 h.run(6); check(h.text == "", "the hello tip did not go away")
-# 2. a camera starts: its tip under the status line; Photo and back is not a new start; a stop gives the back tip
+# 2. a camera starts: its tip under the status line; a pause and back is not a new start; a stop gives the back tip
 h.run(30); h.state("rolling", "scenery"); h.run(2)
 check(h.text == "◇ Scenery · auto · 21 mm ✓\n" + TIPS[1].split("\n")[1], f"the Scenery tip must sit under the status: {h.text!r}")
 h.run(7); check(h.text == "◇ Scenery · auto · 21 mm ✓", "the tip did not go away, or the status went with it")
-h.run(13); h.state("frozen", "scenery"); h.run(2); check(h.text == "▣ Photo · held\n" + TIPS[6].split("\n")[1], f"Photo: {h.text!r}")
-h.run(20); h.state("rolling", "scenery"); h.run(2); check(h.text == "◇ Scenery · auto · 21 mm ✓", "resuming a Photo must not tip the camera again")
+h.run(13); h.state("peek", "scenery"); h.run(2); check(h.text == "◇ Scenery · paused · Esc to carry on\n" + TIPS[7].split("\n")[1], f"paused: {h.text!r}")
+h.run(20); h.state("rolling", "scenery"); h.run(2); check(h.text == "◇ Scenery · auto · 21 mm ✓", "the end of a pause must not tip the camera again")
 h.run(20); h.state("armed"); h.run(2); check(h.text.startswith("Your camera is back\n"), f"no back tip: {h.text!r}")
 # 3. two events close together: the second waits for the 20 s gap, and is dropped after 10 s
 h.run(30); n0 = len(h.log); h.state("rolling", "personal"); h.run(5); h.state("off"); h.run(12)
@@ -327,22 +322,22 @@ h.run(30); n0 = len(h.log); c3 = h.seen(3); h.state("rolling", "social"); h.text
 check(len(h.log) == n0 and h.seen(3) == c3 and h.text.startswith("Looking"), "a tip covered another script's notice")
 h.text = ""
 # 5. the tip leaves a notice that replaced it alone
-h.run(30); h.state("armed"); h.state("rolling", "frame"); h.run(2); check(h.text.endswith(TIPS[5].split("\n")[1]), "no Still tip")
+h.run(30); h.state("armed"); h.state("rolling", "frame"); h.run(2); check(h.text.endswith(TIPS[5].split("\n")[1]), "no Framing › Me tip")
 h.text = "Half length"; h.run(8); check(h.text == "Half length", "the tip cleared Still's framing name")
 h.text = ""
-# 6. 90 s rolling: the Hold > More tip; sitting in Only friends: W/S
+# 6. 90 s rolling: the Hold > More tip; sitting in a people camera: Fit (Page Up / Down)
 h.run(30); h.state("armed"); h.run(30); h.zoom(50); h.state("rolling", "friends"); h.run(30); h.sitting = True; h.run(5)
-check(h.log[-1][1] == 10, "no sitting tip in Only friends")
+check(h.log[-1][1] == 10, "no sitting tip in Friends")
 h.sitting = False; h.run(90); check(h.log[-1][1] == 9, "no Hold › More tip after 90 s")
 # 7. each tip retires after 3 showings; Tips turns itself off after 24, with one chat line
 h = Hud(n="0" * 12)
 for k in range(40):
-    h.state("armed"); h.run(25); h.state("rolling", MODES[k % 5]); h.run(25); h.state("frozen", MODES[k % 5]); h.run(25)
+    h.state("armed"); h.run(25); h.state("rolling", MODES[k % 5]); h.run(25); h.sharing("live" if k % 2 else "", "x"); h.run(25)
     h.state("rolling", MODES[k % 5]); h.run(25); h.state("peek", MODES[k % 5]); h.run(25)
 check(max(map(int, h.n)) <= MAXN, f"a tip showed more than {MAXN} times: {h.n}")
 check(not h.on and h.lsd["tips"] == "0" and sum(map(int, h.n)) == ALL, f"Tips did not turn off after {ALL}: {h.n}")
 check(len(h.chat) == 1, f"the off line must be said once: {h.chat}")
-n0 = len(h.log); h.state("armed"); h.run(30); h.state("rolling", "scenery"); h.run(30)
+h.sharing("", ""); n0 = len(h.log); h.state("armed"); h.run(30); h.state("rolling", "scenery"); h.run(30)
 check(len(h.log) == n0 and h.text == "◇ Scenery · auto · 21 mm ✓", "a tip showed while Tips is off, or the status went with them")
 # 8. idle start tip once the back tip has retired, with the user's own time
 h = Hud(n="000000003000", afk_sec="300"); h.state("rolling", "scenery"); h.run(30); h.state("armed"); h.run(3)
@@ -364,7 +359,7 @@ check('else if (num == MSG_VER) gHeard += [(string)id];' in src and "if (gVerT >
       "tips: the missing-script check")
 free_tips = open(os.path.join(R, "scenery", "src", "tips.lsl")).read()
 check('string  NEED = "core scenery";' in free_tips, "Take 12 Scenery: only core and scenery are needed (besides ui and tips)")
-print(f"above the button: a status line for {len(MODES)} cameras, Photo and pause; sharing on top; notices respected; "
+print(f"above the button: a status line for {len(MODES)} cameras and a pause; sharing on top; notices respected; "
       f"{len(TIPS)} tips, each at most {int(MAXN)} times, {int(GAP)} s apart, {int(HOLD)} s on screen, off after {int(ALL)}")
 print("text checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

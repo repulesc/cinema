@@ -2,15 +2,17 @@
 
 A one-button Second Life camera HUD that takes your view off your avatar's back and places it, by itself, where a camera operator would. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
 
-- **Scenery camera (default):** when you go idle, or double-tap the button, the camera leaves your avatar and finds clear, grand vantage points around you: high drone views and wide eye-level views up to about 100 m away, and rooms of a skybox from the inside. It holds each still view for about a minute, then cuts.
-- **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
-- **Frame (optional):** a held, well-composed view of you (or you and whoever stands with you) for your own snapshots: Full length, Half length, Close (`docs/FRAME.md`).
-- **Freehand (6.4):** you frame the shot with Second Life's own camera, of people or of an object; held still for a second, Take 12 holds it like a tripod, and a zoom keeps the subject's size.
-- **Connect (6.8):** hold the button and connect with the people near you (Take 12 or the free Take 12 Watch); once connected, whoever films leads and everyone sees that camera (`docs/CONNECT.md`).
-- Tap = a menu (always), double-tap = go / next view, hold = share (a shortcut; the clapper claps when it takes). A movement key gives your camera back instantly.
+7.0 is one product with six doors on its menu:
+- **Framing:** Me · Us · Friends, one rule: it follows you as you walk and holds a composed (golden-line) picture when you stand. Me is Still's composer with walking (`docs/FRAME.md`); Us and Friends hold each group shot and change with the Pace. Fit (Page Up / Down) and your lens everywhere.
+- **Freehand:** you frame the shot with Second Life's own camera; held still for a second, Take 12 holds it like a tripod.
+- **Connect:** connect with the people near you (Take 12 or the free Take 12 Watch); whoever films leads (`docs/CONNECT.md`).
+- **Scenery:** the standby camera: when you go idle (or Scenery › Start) it finds drone views, horizons and skybox rooms. Its settings live under it.
+- **Format:** the picture's shape (3:2, 4:5, 2.39:1 …), the rest of the screen dimmed; Framing composes inside it.
+- **Settings:** Pace, Look (button, status line, Size, chat text), Camera.
+- Tap = a menu (always), double-tap = go / next, hold = Connect. A movement key gives your camera back instantly.
 - **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
-> **Status:** **v6.8.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v7.0.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 

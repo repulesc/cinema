@@ -11,7 +11,7 @@
 //  Give Watch (the free viewer HUD, from the HUD's contents) is all here. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer MSG_VER    = 7360;
@@ -59,13 +59,10 @@ list keys(string csv)
     return llParseString2List(csv, [","], []);
 }
 
-// a label in the menu style chosen in Options > Look: Plain (words), Symbols (a quiet mark), Color (emoji)
+// a label: a quiet mark and the word (7.0: the one menu style)
 string lb(string e, string m, string t)
 {
-    integer k = (integer)llLinksetDataReadProtected("cin.skin", PASS);
-    if (k == 2) return e + " " + t;
-    if (k == 1) return m + " " + t;
-    return t;
+    return m + " " + t;                                     // 7.0: one quiet menu style (the marks)
 }
 
 btn(string label, key k)

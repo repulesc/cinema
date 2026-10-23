@@ -8,14 +8,14 @@
 //  building). Inside a build (Auto: on a build floor in the sky; Indoors=Inside:
 //  on any build floor or under a roof) it keeps the camera INSIDE, on your own
 //  floor: high views, eye-level views, you small in the space, and a close shot
-//  as the last resort - never a view from outside. Saved favourite spots are
-//  mixed in. Shot types: 5 drone, 6 wide, 7 favourite, 10 inside high,
+//  as the last resort - never a view from outside (7.0: no saved favourite spots).
+//  Shot types: 5 drone, 6 wide, 10 inside high,
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
-integer LITE    = 1;                  // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: no favourites
+integer LITE    = 1;                  // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -26,7 +26,6 @@ integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer ACK        = 7313;
 integer REACH_FAIL = 7314;
-integer FAV        = 7316;
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -61,7 +60,6 @@ integer gCuts;
 integer gReachOk;            // cuts since the last REACH_FAIL
 integer gFailCut;            // gCuts at the last REACH_FAIL (-99: none yet)
 float   gFailGot;            // how far the viewer let the camera go that time
-string  gLastFav;
 string  gIndoors;            // auto / inside / outside
 integer gLocal;              // inside mode: the camera stays on your floor, inside the build
 vector  gLocalAt;            // where it was last confirmed that you are inside (the decision is sticky within 30 m)
@@ -500,58 +498,10 @@ list safeShot()
     return [c, c + F * 10.0 - <0.0, 0.0, 0.6>, 13, llAtan2(B.y, B.x)];
 }
 
-string favKey()
-{
-    return "cin.fav." + llDumpList2String(llParseString2List(llGetRegionName(), [" "], []), "_");
-}
-
-addFav(string spot)
-{
-    list L = llParseString2List(llLinksetDataReadProtected(favKey(), PASS), [";"], []);
-    L += [spot];
-    while (llGetListLength(L) > 8) L = llDeleteSubList(L, 0, 0);
-    llLinksetDataWriteProtected(favKey(), llDumpList2String(L, ";"), PASS);
-    llOwnerSay("[Take 12] ⭐ spot saved (" + (string)llGetListLength(L) + "/8 here)");
-}
-
-// one of the saved favourites that is in reach and has a clear view: [cam, focus, 7, az] or []
-list favShot()
-{
-    list L = llParseString2List(llLinksetDataReadProtected(favKey(), PASS), [";"], []);
-    integer n = llGetListLength(L);
-    integer i0 = (integer)llFrand((float)n);
-    integer j;
-    for (j = 0; j < n; j++)
-    {
-        string f = llList2String(L, (i0 + j) % n);
-        if (f != gLastFav)
-        {
-            list P = llParseString2List(f, ["|"], []);
-            vector c = (vector)llList2String(P, 0);
-            vector foc = (vector)llList2String(P, 1);
-            vector h = c - gOP;
-            h.z = 0.0;
-            if (llVecMag(h) <= gReach + 20.0 && c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0 && c != foc
-                && (!gLocal || floorOK(c)))
-            {
-                list r = ray(c, c + llVecNorm(foc - c) * 10.0);
-                if (gErr) return [];
-                if (llList2Integer(r, 0) == 0)
-                {
-                    gLastFav = f;
-                    return [c, foc, 7, llAtan2(h.y, h.x)];
-                }
-            }
-        }
-    }
-    return [];
-}
-
 string kindName(integer t)
 {
     if (t == 5) return "drone";
     if (t == 6) return "wide";
-    if (t == 7) return "favourite";
     if (t == 10) return "inside, high";
     if (t == 11) return "inside, eye level";
     if (t == 12) return "inside, you small";
@@ -567,8 +517,7 @@ nextShot()
     gErr = FALSE;
     if (!gCtxOK || llVecDist(gOP, gCtxPos) > 10.0) context();
     list s = [];
-    if (!gErr && !LITE && gCuts % 4 == 3) s = favShot();
-    if (llGetListLength(s) == 0 && !gErr && gLocal)
+    if (!gErr && gLocal)
     {
         // inside: never a view from outside. Best spot, then a closer relaxed one, then the close shot.
         s = localShot(gDmax, FALSE);
@@ -714,7 +663,6 @@ default
             }
             nextShot();
         }
-        else if (num == FAV && !LITE) addFav(str);
         else if (num == CFG_CHANGED) loadCfg();
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenery");
         else if (num == STATUS && str == "?")

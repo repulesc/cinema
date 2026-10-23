@@ -1,5 +1,20 @@
 # Changelog
 
+## 7.0.0
+**One product.** The menu was a phone menu from the 2000s: about 25 entries on 6 pages, features that overlapped, and "Frame" meaning two things. 7.0 keeps what works and folds it into six doors.
+- **The menu:** Framing · Freehand · Connect / Scenery · Format · Settings / Help · Close.
+- **Framing** is Me · Us · Friends, with one rule everywhere: **it follows you as you walk, and holds a composed picture when you stand.**
+  - **Me** is Still's composer with walking: the movement keys walk you, the camera travels with you, and a second after you stop it composes the picture again in front of you (Full / Half / Close by double-tap or the keys). The old Me and Still are this one camera now; Still's nudges are gone (Freehand is the manual camera, Fit the height of your body).
+  - **Us** (everyone near) and **Friends** (the friends you picked; was Only friends) hold each group shot and change with the Pace, and to whoever speaks.
+- **Scenery** is the standby camera: it still starts by itself when you are idle, and a double-tap starts it; it sits lower in the menu, with its own settings under it (Start, Idle start, Indoors, Reach).
+- **Format** is the picture's shape (it was called Frame).
+- **Settings:** Pace, Look (button, status line, Size, chat text), Camera (seated view, Alt-cam, chat cuts, phantom), Test cam, Reset.
+- **Gone:** Photo hold (Framing and Freehand hold the camera; in the free Take 12 Scenery too), the three menu styles (one quiet style: a mark and a word), Scenery's saved favourite spots (Freehand keeps its saved views), the Timing page.
+- **The Read Me** is rewritten short: one section per door (266 lines became 115); the free one too.
+- **Scripts:** `ui` (the menus, 15.3 KB free, was 13.0), `core` (no Photo, the keys pass in Framing › Me, `/77 me` = Framing › Me), `frame` (walking), `scenery` (no favourites), `tips` (Me / Us / Friends; a tip when you connect), `picker`, `connect`, `crop` (one style).
+- **Checks:** `menu_sim` rewritten for the six doors; `frame_sim` (walking, no nudges), `tips_sim`, `free_test`, `free_sim`, `fit_sim`, `seated_sim`, `sync_sim`, `crop_sim` follow.
+- **Version 7.0.0** in all fifteen scripts (the Watch stays 6.8.0). Next: the ads and the listing, as minimal as the product.
+
 ## 6.8.0
 **Connect: connect first, then whoever films leads.** Sharing is re-thought: you connect with the people near you, and once connected, everyone sees the camera of whoever films.
 - **Connect** (hold the button, or tap › Connect): + name connects you with one person, + Everyone with all of them, ⇄ Join name joins someone already connected. Friends on the Take 12 Watch, or with you in their Friends list, connect at once; anyone else sees "… wants to connect · double-tap: yes". **Connecting starts no camera.**

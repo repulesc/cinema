@@ -85,7 +85,7 @@ tc = core[core.index("takeCtl(integer pass)"):core.index("// ---- lifecycle")]
 check("if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in tc and tc.index("llTakeControls(48") > tc.rindex("llTakeControls(CTL"),
       "core: Page Up / Down kept back (no jump) while they are Fit's, after every other control request (seated friends passes the rest on)")
 check('else if (was) llMessageLinked(LINK_SET, FITKEY, "0", "");' in tc, "core: taking off or stopping while a key is held lets go of it")
-check("|| fitOK(info) != gFitCtl) takeCtl(gMode != \"frame\");" in core, "core: taking off or landing hands the keys over again")
+check("|| fitOK(info) != gFitCtl) takeCtl(TRUE);" in core, "core: taking off or landing hands the keys over again")
 ctl = core[core.index("control(key id, integer level, integer edge)"):core.index("timer()", core.index("control(key id"))]
 check(ctl.index("FITKEY") < ctl.index("NUDGE") and "level = level & ~48;" in ctl and "edge = edge & ~48;" in ctl,
       "core: Page Up / Down go to Fit, the other keys still nudge or walk")
@@ -125,7 +125,7 @@ check(side(0.0, -0.5) != side(0.0, 0.5) and side(0.62, 0.1) == side(0.7, 0.05), 
 # ---- the tip ----------------------------------------------------------------------------------------------------------
 check('"Sitting\\nsitting: Page Up / Down move you in the picture",' in tips and "else if (!gSat && m >= 1 && m <= 4 && (llGetAgentInfo(gOwner) & AGENT_SITTING))" in tips,
       "tips: seated in any people camera, the tip says Page Up / Down")
-check('"Still\\nW/S A/D adjust · Page Up / Down: you up or down",' in tips, "tips: Still's tip")
+check('"Me\\nwalk: it follows · stand: it holds the picture",' in tips, "tips: Framing › Me's tip (7.0)")
 print(f"fit: a tap {STEP * 100:.0f} cm, held {SLOW * 1000:.0f} cm/s rising to {FAST * 1000:.0f} cm/s, up to {LIMIT:.1f} m; Page Up raises the camera, the same on screen and next; "
       f"{SEATS} seats, the ground, standing")
 print("fit checks:", "ALL PASS" if ok else "FAILURES")

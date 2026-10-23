@@ -1,17 +1,17 @@
 // ============================================================================
-//  Take 12  -  frame.lsl  (v4.6)  - Frame
-//  A held, well-composed view of you, or of you and whoever stands right next to you. Three framings:
-//  Full length, Half length, Close. Double-tap = next. The movement keys nudge the camera (core forwards them as
-//  NUDGE; you stand still meanwhile): W/S closer/further, A/D round you, and Shift + A/D (the strafe keys,
-//  CONTROL_LEFT/RIGHT) slides you left or right in the picture. Page Up / Down (E/C) are Fit's (fit.lsl, 6.7): where
-//  you really are, read from cin.fitz at every framing. The distance follows the viewer's zoom
+//  Take 12  -  frame.lsl  (v7.0)  - Framing › Me (Still until 6.8)
+//  A well-composed view of you, or of you and whoever stands right next to you. Three framings: Full length, Half
+//  length, Close. Double-tap (or the keys FULL / HALF / CLOSE) = next. 7.0: it MOVES, THEN HOLDS: the movement keys
+//  walk you (core passes them on and tells this script as NUDGE); while you move, the camera travels with you, and a
+//  second after you stop it composes the picture again in front of you and holds it. No nudges: Freehand is the
+//  manual camera. Page Up / Down (E/C) are Fit's (fit.lsl): where you really are, read from cin.fitz every time. The distance follows the viewer's zoom
 //  (FOVMSG from core). The lens guide: each framing has a classic portrait lens; STILL tells cinema tips the
 //  framing, that lens and yours (35 mm equivalent, 12 / tan(FOV / 2)), and the status line shows them. A script can
 //  read the zoom, only you can change it (Ctrl+0 in, Ctrl+8 out, Ctrl+9 back). This script writes no text itself.
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "6.8.0";
+string VERSION = "7.0.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -41,7 +41,6 @@ float FIT    = 1.6;          // without a Frame format: fitted for a 16:10 windo
 float R_NEAR = 3.0;          // m  who stands with you is in the picture
 list  NAMES  = ["Full length", "Half length", "Close"];
 list  LENSES = [50, 85, 105]; // mm (35 mm equivalent): the classic lens for each framing
-float SLIDE  = 0.6;          // Shift + A/D: you at most this far from the centre (screen units, edge = 1)
 
 // you: camera height (fraction), degrees round from the nose, across (x), f1, y1, f2, y2
 list PORT = [
@@ -63,10 +62,12 @@ integer gIdx;                // 0 Full length, 1 Half length, 2 Close
 list    gWith;               // who stood with you at the cut (keys)
 float   gFov = 1.047198;
 float   gSide = 1.0;
-float   gNDist = 1.0;        // nudges: distance factor, degrees round, metres up
-float   gNAz;
-float   gNX;                 // Shift + A/D: you slid across the picture (+ right)
-integer gKeys;               // movement keys held
+integer gKeys;               // movement keys held (NUDGE from core)
+integer gWalk;               // you are walking: the camera travels with you
+float   gStillT;             // ... the keys let go at (then 1 s still: composed again)
+vector  gCam;                // the shot on screen: camera, focus, and where you stood
+vector  gFoc;
+vector  gAt;
 float   gFovT;               // the zoom changed at: re-frame when it has settled
 float   gPhi;                // tilt from the last solve
 float   gAsp = 1.778;        // the picture you are composed in: the Frame format, or your window
@@ -195,8 +196,6 @@ list frame()
     }
     float D = solveD(z1, y1, z2, y2, zc, t);
     if (D < 0.0) return [];
-    D = D * gNDist;
-    if (gNDist != 1.0) gPhi = tiltFor(z1, y1, zc, D, t);
     if (D < DMIN)
     {
         D = DMIN;                                           // a wide zoom: from DMIN, a little looser
@@ -208,7 +207,7 @@ list frame()
     integer i;
     for (i = 0; i < 6; i++)
     {
-        float az = yaw + gSide * side + gNAz * DEG_TO_RAD + llList2Float(tries, i);
+        float az = yaw + gSide * side + llList2Float(tries, i);
         vector cam = <P.x, P.y, zc> + dirOf(az) * D;
         if (clear(E, cam))
         {
@@ -217,7 +216,6 @@ list frame()
             float lk = F * <V.y, -V.x, 0.0>;
             if (lk > 0.1) x = -x;
             else if (lk >= -0.1) x = x * gSide;
-            x += gNX;                                       // Shift + A/D: where you asked to be
             V = V * llEuler2Rot(<0.0, 0.0, llAtan2(x * t * gAsp, 1.0)>);
             vector foc = cam + V * D;
             foc.z = cam.z - D * llTan(gPhi);
@@ -293,7 +291,7 @@ list group(vector P, float yaw, float t)
     }
     vector Nn = <-A.y, A.x, 0.0>;
     if (dirOf(yaw) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
-    float az = llAtan2(Nn.y, Nn.x) + gNAz * DEG_TO_RAD;
+    float az = llAtan2(Nn.y, Nn.x);
     vector u = dirOf(az);
     float zc = fz + llList2Float(GRP, k5) * hm;
     float D = solveD(z1, llList2Float(GRP, k5 + 2), z2, llList2Float(GRP, k5 + 4), zc, t);
@@ -308,13 +306,11 @@ list group(vector P, float yaw, float t)
         float need = (llFabs(o * <-u.y, u.x, 0.0>) + 0.35) / kk + o * u;
         if (need > Dl) Dl = need;
     }
-    D = D * gNDist;
     if (Dl > D)
     {
         D = Dl;                                             // the width decides: eyes on the golden line instead
         gPhi = tiltFor(eyes, PHI_Y, zc, D, t);
     }
-    else if (gNDist != 1.0) gPhi = tiltFor(z1, llList2Float(GRP, k5 + 2), zc, D, t);
     if (D < DMIN) D = DMIN;
     if (yOf(top, zc, D, t) > TOPMAX) gPhi = tiltFor(top, TOPMAX, zc, D, t);     // the tallest head is never cut
     vector EC = <C.x, C.y, eyes>;
@@ -325,7 +321,7 @@ list group(vector P, float yaw, float t)
         vector cam = <C.x, C.y, zc> + dirOf(a) * D;
         if (clear(EC, cam))
         {
-            vector foc = cam - dirOf(a) * D * llEuler2Rot(<0.0, 0.0, llAtan2(gNX * t * gAsp, 1.0)>);
+            vector foc = cam - dirOf(a) * D;
             foc.z = cam.z - D * llTan(gPhi);
             return [cam, foc];
         }
@@ -359,6 +355,9 @@ shoot(integer cut)
         if (cut) llMessageLinked(LINK_SET, NO_SHOT, "frame", "");   // core covers it with its basic shot
         return;
     }
+    gCam = llList2Vector(s, 0);
+    gFoc = llList2Vector(s, 1);
+    gAt = llList2Vector(llGetObjectDetails(gOwner, [OBJECT_POS]), 0);
     string c = llList2String(s, 0) + "|" + llList2String(s, 1);
     if (cut)
     {
@@ -368,28 +367,29 @@ shoot(integer cut)
     else llMessageLinked(LINK_SET, GLIDE, c + "|0.35", "");
 }
 
-resetNudges()
+// walking: the camera travels with you (camera and focus move as you move, the picture stays), 5 times a second;
+// 1 s after you let go of the keys, and once you stand still, the picture is composed again in front of you
+walk()
 {
-    gNDist = 1.0;
-    gNAz = 0.0;
-    gNX = 0.0;
-}
-
-// one step of the keys held (5 per second): W/S closer/further, A/D round, E/C up/down,
-// Shift + A/D (Second Life sends them as strafe, CONTROL_LEFT/RIGHT) across the picture
-step()
-{
-    if (gKeys & CONTROL_FWD) gNDist = gNDist * 0.96;
-    if (gKeys & CONTROL_BACK) gNDist = gNDist * 1.04;
-    if (gKeys & CONTROL_ROT_LEFT) gNAz += 3.0;
-    if (gKeys & CONTROL_ROT_RIGHT) gNAz -= 3.0;
-    if (gKeys & CONTROL_LEFT) gNX -= 0.02;
-    if (gKeys & CONTROL_RIGHT) gNX += 0.02;
-    if (gNX > SLIDE) gNX = SLIDE;
-    if (gNX < -SLIDE) gNX = -SLIDE;
-    if (gNDist < 0.4) gNDist = 0.4;
-    if (gNDist > 3.0) gNDist = 3.0;
-    shoot(FALSE);
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_VELOCITY]);
+    if (llGetListLength(d) < 2) return;
+    vector P = llList2Vector(d, 0);
+    vector m = P - gAt;
+    if (llVecMag(m) > 0.05)
+    {
+        gCam += m;
+        gFoc += m;
+        gAt = P;
+        llMessageLinked(LINK_SET, GLIDE, (string)gCam + "|" + (string)gFoc + "|0.4", "");
+    }
+    if (gKeys) gStillT = 0.0;
+    else if (gStillT == 0.0) gStillT = llGetTime();
+    else if (llGetTime() - gStillT > 1.0 && llVecMag(llList2Vector(d, 1)) < 0.2)
+    {
+        gWalk = FALSE;                                      // standing again: compose and hold
+        gWith = nearby(P);
+        shoot(FALSE);
+    }
 }
 
 // ============================================================================
@@ -423,8 +423,8 @@ default
             if (gFov < 0.05) gFov = 1.047198;
             gIdx = 0;
             gKeys = 0;
+            gWalk = FALSE;
             gFovT = 0.0;
-            resetNudges();
             gSide = 1.0;
             if (llFrand(1.0) < 0.5) gSide = -1.0;
             load();
@@ -451,22 +451,20 @@ default
         {
             if (str == "skip")
             {
-                gIdx = (gIdx + 1) % 3;                      // double-tap: the next framing, nudges cleared
-                resetNudges();
+                gIdx = (gIdx + 1) % 3;                      // double-tap: the next framing
             }
             shoot(TRUE);
         }
         else if (num == RESUME && str == "tp") shoot(TRUE);
         else if (num == CMD && llGetSubString(str, 0, 7) == "framing|")
         {
-            gIdx = (integer)llGetSubString(str, 8, -1) % 3;    // a key (keys.lsl): that framing, nudges cleared
-            resetNudges();
+            gIdx = (integer)llGetSubString(str, 8, -1) % 3;    // a key (keys.lsl): that framing
             shoot(TRUE);
         }
         else if (num == NUDGE)
         {
-            gKeys = (integer)str;
-            if (gKeys) step();
+            gKeys = (integer)llList2String(llParseString2List(str, ["|"], []), 0);
+            if (gKeys) gWalk = TRUE;                        // you walk: the camera comes along
         }
         else if (num == FOVMSG)
         {
@@ -478,7 +476,7 @@ default
 
     timer()
     {
-        if (gKeys) step();
+        if (gWalk) walk();
         else if (gFovT > 0.0 && llGetTime() - gFovT > 0.8)
         {
             gFovT = 0.0;                                    // the zoom settled: same framing, new distance
