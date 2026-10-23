@@ -11,7 +11,7 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
