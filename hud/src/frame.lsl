@@ -2,15 +2,16 @@
 //  Take 12  -  frame.lsl  (v4.6)  - Frame
 //  A held, well-composed view of you, or of you and whoever stands right next to you. Three framings:
 //  Full length, Half length, Close. Double-tap = next. The movement keys nudge the camera (core forwards them as
-//  NUDGE; you stand still meanwhile): W/S closer/further, A/D round you, E/C up/down, and Shift + A/D (the strafe
-//  keys, CONTROL_LEFT/RIGHT) slides you left or right in the picture. The distance follows the viewer's zoom
+//  NUDGE; you stand still meanwhile): W/S closer/further, A/D round you, and Shift + A/D (the strafe keys,
+//  CONTROL_LEFT/RIGHT) slides you left or right in the picture. Page Up / Down (E/C) are Fit's (fit.lsl, 6.7): where
+//  you really are, read from cin.fitz at every framing. The distance follows the viewer's zoom
 //  (FOVMSG from core). The lens guide: each framing has a classic portrait lens; STILL tells cinema tips the
 //  framing, that lens and yours (35 mm equivalent, 12 / tan(FOV / 2)), and the status line shows them. A script can
 //  read the zoom, only you can change it (Ctrl+0 in, Ctrl+8 out, Ctrl+9 back). This script writes no text itself.
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "6.6.0";
+string VERSION = "6.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -64,7 +65,6 @@ float   gFov = 1.047198;
 float   gSide = 1.0;
 float   gNDist = 1.0;        // nudges: distance factor, degrees round, metres up
 float   gNAz;
-float   gNH;
 float   gNX;                 // Shift + A/D: you slid across the picture (+ right)
 integer gKeys;               // movement keys held
 float   gFovT;               // the zoom changed at: re-frame when it has settled
@@ -172,10 +172,11 @@ list frame()
     vector sz = llGetAgentSize(gOwner);
     float h = sz.z;
     if (h < 0.5) h = 1.9;
-    float z0 = P.z - 0.5 * h;                               // feet
+    float fz = (float)llLinksetDataReadProtected("cin.fitz", PASS);      // Fit (fit.lsl): where you really are
+    float z0 = P.z - 0.5 * h + fz;                          // feet
     vector E = <P.x, P.y, z0 + llList2Float(BODY, 1) * h>;  // eyes
     integer k = gIdx * 7;
-    float zc = z0 + llList2Float(PORT, k) * h + gNH;
+    float zc = z0 + llList2Float(PORT, k) * h;
     float side = llList2Float(PORT, k + 1) * DEG_TO_RAD;
     float x = llList2Float(PORT, k + 2);
     float y1 = llList2Float(PORT, k + 4);
@@ -185,12 +186,12 @@ list frame()
     if (llGetAgentInfo(gOwner) & AGENT_SITTING)
     {
         // seated: the eyes from the sitting estimate, on the golden line; the cut a set drop below them
-        E.z = P.z + 0.25 * h;
+        E.z = P.z + 0.25 * h + fz;
         z1 = E.z;
         y1 = PHI_Y;
         z2 = E.z - llList2Float(SEAT, gIdx) * h;
         y2 = -1.0;
-        zc = E.z + (llList2Float(PORT, k) - 0.935) * 0.5 * h + gNH;
+        zc = E.z + (llList2Float(PORT, k) - 0.935) * 0.5 * h;
     }
     float D = solveD(z1, y1, z2, y2, zc, t);
     if (D < 0.0) return [];
@@ -249,6 +250,7 @@ list group(vector P, float yaw, float t)
     vector C = ZERO_VECTOR;
     float hm = 0.0;
     float fz = 0.0;
+    float ff = (float)llLinksetDataReadProtected("cin.fitz", PASS);
     float top = -1000.0;
     float eyes = 0.0;
     float z2 = 1000.0;
@@ -257,7 +259,7 @@ list group(vector P, float yaw, float t)
     {
         vector p = llList2Vector(M, i);
         float h = llList2Float(H, i);
-        float z0 = p.z - 0.5 * h;
+        float z0 = p.z - 0.5 * h + ff * (i == 0);           // you (first) where Fit says
         C += p;
         hm += h;
         fz += z0;
@@ -293,7 +295,7 @@ list group(vector P, float yaw, float t)
     if (dirOf(yaw) * Nn < 0.0) Nn = ZERO_VECTOR - Nn;
     float az = llAtan2(Nn.y, Nn.x) + gNAz * DEG_TO_RAD;
     vector u = dirOf(az);
-    float zc = fz + llList2Float(GRP, k5) * hm + gNH;
+    float zc = fz + llList2Float(GRP, k5) * hm;
     float D = solveD(z1, llList2Float(GRP, k5 + 2), z2, llList2Float(GRP, k5 + 4), zc, t);
     if (D < 0.0) return [];
     // side room: everyone inside the frame with the margin, nearer people counted wider
@@ -370,7 +372,6 @@ resetNudges()
 {
     gNDist = 1.0;
     gNAz = 0.0;
-    gNH = 0.0;
     gNX = 0.0;
 }
 
@@ -386,12 +387,8 @@ step()
     if (gKeys & CONTROL_RIGHT) gNX += 0.02;
     if (gNX > SLIDE) gNX = SLIDE;
     if (gNX < -SLIDE) gNX = -SLIDE;
-    if (gKeys & CONTROL_UP) gNH += 0.05;
-    if (gKeys & CONTROL_DOWN) gNH -= 0.05;
     if (gNDist < 0.4) gNDist = 0.4;
     if (gNDist > 3.0) gNDist = 3.0;
-    if (gNH > 3.0) gNH = 3.0;
-    if (gNH < -1.5) gNH = -1.5;
     shoot(FALSE);
 }
 

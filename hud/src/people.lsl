@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "6.6.0";
+string VERSION = "6.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -193,8 +193,7 @@ integer refreshOwner()
     gOY = llAtan2(f.y, f.x);
     gOSit = ((llGetAgentInfo(gOwner) & AGENT_SITTING) != 0);
     vector sz = llGetAgentSize(gOwner);
-    gOE = gOP.z + K_EYE_STAND * sz.z;
-    if (gOSit) gOE = gOP.z + K_EYE_SIT * sz.z;
+    gOE = gOP.z + (K_EYE_STAND + (K_EYE_SIT - K_EYE_STAND) * gOSit) * sz.z + (float)cfg("fitz", "0");   // + Fit (fit.lsl)
     return TRUE;
 }
 

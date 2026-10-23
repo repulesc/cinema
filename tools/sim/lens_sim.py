@@ -17,7 +17,9 @@ for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string
           'else if (gPeekOn || gMode == "friends" || gMode == "free")', 'else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))', "float t = (f0 - cp) * u;",
           "llTakeControls(CTL & ~3, TRUE, TRUE);", "llTakeControls(3, TRUE, FALSE);"):
     check(w in core, f"core: missing {w}")
-check("llTakeControls(48" not in core, "core: standing E/C are still kept back")
+# 5.1 gave standing E/C back to your avatar; 6.7 keeps them only for Fit (fit_sim), and never while you fly
+check(core.count("llTakeControls(48") == 1 and "if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in core and "!(info & AGENT_FLYING)" in core,
+      "core: E/C may be kept back only for Fit, and never while you fly")
 check('integer own = (gMode == "friends" || gMode == "free");' in core and 'if (own && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
       "core: Friends does not notice a small move or a turn of your camera")
 check("gShotFoc = f;" in core and "gShotFoc = gf;" in core, "core: the shot's focus is not kept")

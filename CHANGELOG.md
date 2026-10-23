@@ -1,5 +1,17 @@
 # Changelog
 
+## 6.7.0
+**Fit: Page Up / Page Down move you in the picture.** A seated pose can put your body anywhere from the point Second Life reports (a deep sofa, a bar stool, a ground sit, heels), and no script can see it. Now you show it once, by eye.
+- **The keys:** while Me, Us, Only friends or Still runs, Page Up moves you up in the picture and Page Down down (E / C too). A tap is 2 cm; held, 25 cm/s; up to 1.2 m either way. The camera glides at once, and every next shot is framed with it (the eye line, the camera height and its angle all follow). "Fit +12 cm · this seat" shows for a few seconds.
+- **Never a jump:** while a people camera runs, these two keys are kept from your avatar; when you fly, they fly. Stopping the camera gives them back.
+- **Kept where it belongs:** per seat (the object and where on it you sit, to half a metre, so each side of a sofa or a bed has its own; the last 20 seats), one for sitting on the ground, one for standing. One key pair and no mode: 5.0's Tune per seat needed a mode and more keys, and 5.1 took it out.
+- **Still:** E / C no longer move the camera up and down: they are Fit, which re-frames Full, Half and Close with your real height. W / S, A / D and Shift + A / D stay.
+- **The tip:** seated in any people camera, "Sitting · Page Up / Down move you in the picture"; Still's tip names the keys too.
+- **New script `fit.lsl`** (fifteen in all): core hands it the keys (FITKEY 7396) and moves the shot (FIT 7397, through one `glide()`, adding the move to that camera's later glides until its next shot); people and friends add `cin.fitz` to your eyes, frame to your feet. friends keeps its memory (the two eye lines are one).
+- **Checks:** new `fit_sim` (a tap, a hold and the limit; Page Up moves you up, the same on screen and in the next shot; core takes the keys only for a people camera and never flying; the other keys still nudge or walk; 20 seats, the ground and standing kept apart; the tip). `lens_sim` follows.
+- **Version 6.7.0** in all fifteen scripts.
+- **Next (6.8):** Me and Still become one Me.
+
 ## 6.6.0
 **The composition, like a photographer's.**
 - **The golden lines.** Me, Us and Still put the eyes on the golden line, 38.2 % from the top of the picture (it was the third, 33 %), and you on a golden line across, 38.2 % from one side, with the open space on the side you look to (lead room, as before). Seated looks down at you the same way.

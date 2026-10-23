@@ -15,7 +15,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.6.0";
+string VERSION = "6.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -35,7 +35,7 @@ float   LATE = 1.5;           // s after the event
 float   WAIT = 10.0;          // s a tip waits for a free moment, then it is dropped (not counted)
 float   GAP  = 20.0;          // s between two tips
 
-// 0 hello  1 scenery  2 me  3 us  4 only friends  5 still  6 photo  7 paused  8 back  9 more  10 sitting  11 idle start
+// 0 hello  1 scenery  2 me  3 us  4 only friends  5 still  6 photo  7 paused  8 back  9 more  10 sitting: Fit  11 idle start
 // 12 your lens  13 freehand
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
@@ -44,12 +44,12 @@ list TIPS = [
     "Me\nwalk around, it follows you · tap: menu",
     "Us\nit cuts to whoever speaks · double-tap: next",
     "Only friends\nframe it yourself, then Esc: it keeps your view",
-    "Still\nW/S A/D E/C adjust · Shift+A/D slide",
+    "Still\nW/S A/D adjust · Page Up / Down: you up or down",
     "Photo\ntake your pictures · tap › Resume",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
     "Tap while it rolls\ntap: photo, next, stop",
-    "Sitting\nsitting: W/S closer or wider",
+    "Sitting\nsitting: Page Up / Down move you in the picture",
     "Idle start\nstay idle ",
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
     "Freehand\nframe it, hold still: it holds · Esc: back to it"];
@@ -372,7 +372,7 @@ default
                 gLensTip = TRUE;                            // your lens is outside what this camera suggests
                 want(12);
             }
-            else if (!gSat && gMode == "friends" && (llGetAgentInfo(gOwner) & AGENT_SITTING))
+            else if (!gSat && m >= 1 && m <= 4 && (llGetAgentInfo(gOwner) & AGENT_SITTING))   // seated in a people camera: Fit
             {
                 gSat = TRUE;
                 want(10);
