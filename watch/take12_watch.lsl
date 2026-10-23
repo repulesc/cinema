@@ -8,14 +8,14 @@
 //  Speaks the same "T12|..." messages on the same channel as sync.lsl (docs/CONNECT.md).
 // ============================================================================
 
-string  VERSION = "6.8.0";
+string  VERSION = "6.8.1";
 integer SYNC_CH = -7712120;
 float   NEAR    = 20.0;
 float   TAP_GAP = 0.35;
 integer GONE    = 25;        // s  no camera and no heartbeat from the director: it is gone
 
 key     gOwner;
-key     gHost;               // whose view you follow
+key     gHost = NULL_KEY;    // whose view you follow (6.8.1: an unset key is "", not NULL_KEY)
 string  gHostN;              // ... their name (kept: llKey2Name is "" once they have left the region)
 float   gNoteT;              // a note above the HUD ("... camera is gone") until then + 4 s
 string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes

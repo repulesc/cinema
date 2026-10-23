@@ -17,13 +17,14 @@
 //    who|<name> (llRegionSay) -> here|<T/W>|<idle/live/view/pend>|<director name>
 //    invite|<name> -> ack|1 (joined) / ack|0 (asked) / busy|<what>
 //    viewer -> director: join leave next away back ask        director -> viewer: cam|<pos>|<focus>|<lag> hb pause
-//    fmt|<format> (7.1: the director's Format; a Take 12 viewer shows it while connected, its own comes back after)
+//    fmt|<format> (7.1: the director's Format; a Take 12 viewer shows it while connected, its own comes back after;
+//    7.1.2: the director's heartbeat hb|<format> carries it too)
 //    lead|<1 you lead / 2 you hold it / 0 no>   director|<key>|<name> (a hand-over) kick end
 //  The panels are drawn by connect.lsl (SHARE_UI / SHARE_DO; share.lsl before 6.8). Full description:
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -61,7 +62,7 @@ string  gLastCam;            // the camera on your screen now
 list    gInv;                // invited, no answer yet
 list    gRes;                // ... the answers
 integer gInvT;
-key     gHost;               // VIEWING: whose view you follow
+key     gHost = NULL_KEY;    // VIEWING: whose view you follow (7.1.2: an unset key is "", not NULL_KEY)
 vector  gApplied;            // ... the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // ... you are looking around on your own
@@ -69,7 +70,7 @@ integer gHeld;               // ... the director paused (their camera stopped): 
 integer gHearT;              // ... the last word from the director
 integer gAskT;               // ... your camera started: you asked for the lead, waiting
 float   gOwnT;               // ... a movement key: your own camera since (0: following)
-key     gOffer;              // INVITED by
+key     gOffer = NULL_KEY;   // INVITED by
 integer gPendT;              // ... since
 list    gNear;               // the "who" check: [key, "<T/W>~<state>~<director>", ...]
 float   gWhoT;               // ... sent at (0 = none running)
@@ -78,6 +79,7 @@ string  gCam;                // the director's last camera, as sent: re-placed w
 float   gMyFov;              // your lens when it was placed
 string  gFmt = "0";          // your Format (0: none), sent to the people connected
 integer gFmtOn;              // viewing: the director's Format is on your screen
+string  gFmtCur;             // ... which one
 integer gLensTold;           // ... the lens note was shown
 string  gNoteS;              // ... its text
 string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
@@ -650,11 +652,16 @@ default
                 show(sn(gHost) + llList2String([" zooms closer · Ctrl+0 to match", " zooms wider · Ctrl+8 to match"], df > llGetCameraFOV()));
             }
         }
-        else if (w == "hb") gHearT = llGetUnixTime();
-        else if (w == "fmt")
+        else if (w == "hb" || w == "fmt")
         {
-            gFmtOn = TRUE;                                  // the director's Format, while connected (crop.lsl)
-            llMessageLinked(LINK_SET, CMD, "crop|follow " + llList2String(L, 2), "");
+            gHearT = llGetUnixTime();
+            string f = llList2String(L, 2);                 // the director's Format, while connected (crop.lsl)
+            if (f != "" && (!gFmtOn || f != gFmtCur))
+            {
+                gFmtOn = TRUE;
+                gFmtCur = f;
+                llMessageLinked(LINK_SET, CMD, "crop|follow " + f, "");
+            }
         }
         else if (w == "pause")
         {
@@ -745,7 +752,7 @@ default
         if (gSharing && now - gHbT >= 10)
         {
             gHbT = now;
-            all("hb");
+            all("hb|" + gFmt);                              // 7.1.2: the heartbeat carries your Format (a lost fmt heals)
             integer i;
             for (i = llGetListLength(gWatchers) - 1; i >= 0; i--)
             {

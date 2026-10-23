@@ -11,7 +11,7 @@
 //  Give Watch (the free viewer HUD, from the HUD's contents) is all here. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer MSG_VER    = 7360;

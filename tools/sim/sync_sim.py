@@ -106,7 +106,7 @@ check("llDialog" not in watch and '"ask"' not in watch, "watch: no dialogs, and 
 for w in ('llRegionSay(SYNC_CH, "T12|who|"', 'say(k, "invite|"', 'say(who, "ack|0");', 'say(who, "busy|connected");',
           'if (!gSharing) { say(who, "end"); return; }', "llGetUnixTime() - gNextT >= NEXT_GAP", "integer NEXT_GAP   = 5;",
           "integer WAIT       = 20;", "integer GONE       = 25;", 'if (gHand) gHand = FALSE;', 'say(k, "lead|1");', 'say(k, "lead|2");',
-          'all("director|"', 'all("hb");', "if (llGetAgentSize(k) == ZERO_VECTOR)", 'if (m == "scenery") m = "sharecam";',
+          'all("director|"', 'all("hb|" + gFmt);', "if (llGetAgentSize(k) == ZERO_VECTOR)", 'if (m == "scenery") m = "sharecam";',
           "if (!gSharing && llGetUnixTime() - gToggleT < 2) return;", "didn't answer (out of range or HUD off)",
           'if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)',
           "llGetPrimitiveParams([PRIM_TEXT])", 'if (n == 0) return "⇄ Connecting… · nobody has joined yet";',
@@ -130,13 +130,26 @@ check('b = ["framing", "free", "share",' in ui and 'b += ["stop", "share", "mode
 crop = open(os.path.join(R, "hud", "src", "crop.lsl")).read()
 check('if (num == CROP && !gFmtOn)' in sync and 'if (gSharing) all("fmt|" + gFmt);' in sync and 'say(who, "fmt|" + gFmt);' in sync,
       "sync: the director sends its Format on a change and to each viewer that joins")
-check('llMessageLinked(LINK_SET, CMD, "crop|follow " + llList2String(L, 2), "");' in sync and 'if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");' in sync[sync.index("\nleave(integer"):],
+check('llMessageLinked(LINK_SET, CMD, "crop|follow " + f, "");' in sync and 'if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");' in sync[sync.index("\nleave(integer"):],
       "sync: a viewer shows the director's Format, and its own again when it leaves (disconnect, end, kick, its own turn)")
 fo = crop[crop.index('if (llGetSubString(v, 0, 5) == "follow")'):crop.index("integer i = llListFindList(NAMES, [v]);")]
 check("load();" in fo and "set(" not in fo and "CFG_CHANGED" not in fo and 'if (v == "follow") tell();' in fo,
       "crop: following is not saved and does not change your own cameras; your own Format comes back")
 check(sync.count("gLensTold = TRUE;") == 1 and "gLensTold = FALSE;" in sync[sync.index("\nleave(integer"):], "sync: the lens note once per connection")
 check('"fmt"' not in watch, "the Watch has no Format bars: it ignores fmt")
+# 7.1.2: an unset key is "" in LSL, not NULL_KEY: a fresh HUD said "someone is gone · disconnected"
+import glob
+for path in glob.glob(os.path.join(R, "hud", "src", "*.lsl")) + [os.path.join(R, "watch", "take12_watch.lsl")]:
+    src = open(path).read()
+    for k in re.findall(r"^key\s+(\w+)\s*;", src, re.M):
+        check(not re.search(r"\b" + k + r"\s*[!=]=\s*NULL_KEY", src), f"{os.path.basename(path)}: key {k} is compared with NULL_KEY but starts as \"\" (initialise it)")
+check("key     gHost = NULL_KEY;" in sync and "key     gOffer = NULL_KEY;" in sync and "key     gHost = NULL_KEY;" in watch, "sync and the Watch: the host starts as NULL_KEY")
+# 7.1.2: the director's heartbeat carries the Format; a viewer applies a changed one (a lost fmt heals within 10 s)
+check('all("hb|" + gFmt);' in sync, "sync: the director's heartbeat carries its Format")
+hb = sync[sync.index('else if (w == "hb" || w == "fmt")'):sync.index('else if (w == "pause")')]
+check("gHearT = llGetUnixTime();" in hb and 'if (f != "" && (!gFmtOn || f != gFmtCur))' in hb and 'llMessageLinked(LINK_SET, CMD, "crop|follow " + f, "");' in hb,
+      "sync: a viewer follows the Format from fmt and from the heartbeat, only when it changed")
+check('else if (w == "hb") gHearT = llGetUnixTime();' in watch, "the Watch reads hb|<format> as a heartbeat")
 # 7.1.1: Framing while still connected to someone who had gone: the time-out cleared the new camera
 check("clear = clear && !gCamOn && llGetAttached()" in sync, "sync: leaving never clears your own running camera")
 st = sync[sync.index("else if (num == START)"):sync.index("else if (num == STOP")]

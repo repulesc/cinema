@@ -18,7 +18,7 @@
 //  Checked in tools/sim/fit_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|<next cut>|<why>|<adjust>|<fit>"

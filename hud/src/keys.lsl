@@ -9,13 +9,16 @@
 //    Framing › Me            FULL · HALF · CLOSE · ADJUST             (the framing in use lit)
 //    Framing › Us, Friends   NEXT · ADJUST
 //  With the strip the live menu leaves Next out (ui.lsl).
+//  7.1.2, a HUD you can give away: the strip is textured by the texture's UUID, kept in the strip's description
+//  ("take12_keys <uuid>"). While "take12_keys" is in the contents and you have full permissions on it (you made it),
+//  its UUID is saved there; after that the texture can leave the contents, so nothing in the HUD needs Transfer.
 //  Anything else: no keys. Placed left of the button, 1.2 times as tall as it (so the labels read); the HUD's +Y is
 //  left (/77 crop flip, shared with Frame, mirrors both).
 //  6.7.1, Size: Options > Look > Size (or /77 size s|m|l): the button 0.04, 0.06 or 0.08 (Small, Medium, Large;
 //  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -141,11 +144,29 @@ show(integer r)
     if (llGetListLength(c) == 2) sy = (integer)llList2String(c, 0);
     rotation q = llGetLocalRot();
     vector off = <0.0, sy * (b * 0.5 + 0.004 + w * 0.5), 0.0>;
-    string tex = TEX;
-    if (llGetInventoryType(TEX) != INVENTORY_TEXTURE) tex = llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_TEXTURE, 0]), 0);
+    string tex = texture();
     llSetLinkPrimitiveParamsFast(gLink, [PRIM_POS_LOCAL, off / q, PRIM_ROT_LOCAL, ZERO_ROTATION / q, PRIM_SIZE, <0.01, w, h>,
         PRIM_TEXTURE, ALL_SIDES, tex, <n * CW, RH, 0.0>, <(r / PER) * 0.5 + n * CW * 0.5 - 0.5, 0.5 - (r % PER + 0.5) * RH, 0.0>, 0.0,
         PRIM_COLOR, ALL_SIDES, <1, 1, 1>, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
+}
+
+// the atlas: its UUID from the strip's description; saved there while the texture is in the contents with full
+// permissions (llGetInventoryKey is NULL_KEY otherwise); else the texture by name, if it is there
+string texture()
+{
+    string d = llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_DESC]), 0);
+    if (llGetInventoryType(TEX) == INVENTORY_TEXTURE)
+    {
+        key k = llGetInventoryKey(TEX);
+        if (k != NULL_KEY && d != TEX + " " + (string)k)
+        {
+            d = TEX + " " + (string)k;
+            llSetLinkPrimitiveParamsFast(gLink, [PRIM_DESC, d]);
+        }
+    }
+    if (llGetSubString(d, 0, 11) == TEX + " ") return llGetSubString(d, 12, -1);
+    if (llGetInventoryType(TEX) == INVENTORY_TEXTURE) return TEX;
+    return TEXTURE_BLANK;
 }
 
 // a key: the action in its row
@@ -238,7 +259,9 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "keys");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/keys] v" + VERSION + " strip " + llList2String(["not linked", "link " + (string)gLink], gLink > 0)
-                + ", row " + (string)gRow + ", free mem " + (string)llGetFreeMemory());
+                + ", row " + (string)gRow + ", texture " + llList2String(["missing: add take12_keys once", "saved"],
+                llGetSubString(llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_DESC]), 0), 0, 11) == TEX + " ")
+                + ", free mem " + (string)llGetFreeMemory());
         else return;
         show(pick());
     }

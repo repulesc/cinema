@@ -16,7 +16,7 @@
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.1";
+string VERSION = "7.1.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
