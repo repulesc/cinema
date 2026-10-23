@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "6.2.0";
+string VERSION = "6.3.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -40,14 +40,14 @@ float   GAP  = 20.0;          // s between two tips
 list TIPS = [
     "Take 12\nTap: menu · Double-tap: scenery · Hold: share",
     "Scenery\ndouble-tap: next view · any key: your camera",
-    "Me\nwalk around, it follows you · tap: stop",
+    "Me\nwalk around, it follows you · tap: menu",
     "Us\nit cuts to whoever speaks · double-tap: next",
     "Only friends\nframe it yourself, then Esc: it keeps your view",
     "Still\nW/S A/D E/C adjust · Shift+A/D slide",
-    "Photo\ntake your pictures · tap: carry on",
+    "Photo\ntake your pictures · tap › Resume",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
-    "Hold › More\nhold › More: photo, next, stop, other cameras",
+    "Tap while it rolls\ntap: photo, next, stop, share, cameras",
     "Sitting\nsitting: W/S closer or wider",
     "Idle start\nstay idle ",
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back"];

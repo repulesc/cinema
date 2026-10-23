@@ -63,7 +63,7 @@ ALSO
 - Favourite spots, Pace (30 s to 2 min per view), idle start after 3 minutes (adjustable, or off).
 
 CONTROLS
-- Tap: the menu; while the camera runs, stop.
+- Tap: the menu, always (while the camera runs, the live menu).
 - Double-tap: start Scenery, or the next view.
 - Hold: share your view.
 - Any movement key: your camera, instantly.

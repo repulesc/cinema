@@ -116,10 +116,15 @@ check(core.count("llMessageLinked(LINK_SET, CAMSET,") == 2, "core: CAMSET must b
 check('else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }' in core, "core: Go live must start Social")
 check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState == ST_IDLE && str == "scenery") return;' in core,
       "core: viewing must block the idle start and keep the double-tap")
-check('onLong()\n{\n    if (LITE) openMenu(llList2String(["live", "main"], gUiState == "idle"));   // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
+check('onLong()\n{\n    if (LITE) onTap();                                      // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
       and "integer LITE    = 0;" in ui, "ui: hold must open the Share panel, always (the free Take 12 Scenery has no sharing)")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
-check('"frame", "crop", "share", "opts"' in ui and 'b += ["share"];' not in ui, "ui: Share stays in the tap menu, leaves the live menu")
+check('"frame", "crop", "share", "opts"' in ui and 'b += ["next", "stop", "share", "modes", "close"];' in ui and '|| id == "share") llMessageLinked(LINK_SET, CMD, id, "");' in ui,
+      "ui: Share is in both menus (6.3: tap always opens a menu; hold is only a shortcut)")
+# 6.3: tap always opens a menu (main when idle, live while a camera runs); the hold shows a clap when it has taken
+check('openMenu(llList2String(["main", "live"], gUiState != "idle"));' in ui and 'llMessageLinked(LINK_SET, CMD, "stop", "")' not in ui[ui.index("onTap()"):ui.index("onDouble()")],
+      "ui: a tap must open a menu, never stop the camera")
+check("frame(2 * gLook + 1);" in ui and "if (gLongDone) { frame(2 * gLook); nextTimer(); return; }" in ui, "ui: the hold must clap when it takes, and open again on release")
 
 # ---- a small region (the logic of both scripts, ported) -----------------------------------------------------------
 class Region:

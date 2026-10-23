@@ -25,12 +25,12 @@ SUBS = {
         LITE,
         ('string NOTECARD = "Take 12 - Read Me";', 'string NOTECARD = "Take 12 Scenery - Read Me";'),
         ('string h = "Take 12";', 'string h = "Take 12 Scenery";'),
-        ('llOwnerSay("[Take 12] Double-tap: scenery. Tap: menu (rolling: stop). Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");',
-         'llOwnerSay("[Take 12 Scenery] Double-tap: scenery. Tap: menu (rolling: stop). Hold: photo, next, stop.");'),
+        ('llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: share your view. Commands: /" + cfgGet("cmd_chan") + " help");',
+         'llOwnerSay("[Take 12 Scenery] Tap: menu. Double-tap: scenery, or the next view. Any movement key: your camera back.");'),
         ('"Scenery · the place, while you are away\\nMe · follows you\\nUs · you and the people around you\\nStill · a held picture of you\\nFrame · the picture format on your screen"',
          '"Scenery · the place, while you are away\\nMore cameras · Me, Us, Still and sharing, in the full Take 12"'),
-        ('"Welcome to Take 12\\nDouble-tap: scenery\\nTap: menu (rolling: stop)\\nHold: share your view"',
-         '"Welcome to Take 12 Scenery\\nDouble-tap: scenery\\nTap: menu (rolling: stop)\\nHold: photo, next, stop"'),
+        ('"Welcome to Take 12\\nTap: menu\\nDouble-tap: scenery, or the next view\\nHold: share your view\\nAny movement key: your camera back"',
+         '"Welcome to Take 12 Scenery\\nTap: menu\\nDouble-tap: scenery, or the next view\\nAny movement key: your camera back"'),
         ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
         ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
         ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
@@ -43,7 +43,7 @@ SUBS = {
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: share"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
-        ('"Hold › More\\nhold › More: photo, next, stop, other cameras"', '"Hold\\nhold: photo, next, stop"'),
+        ('"Tap while it rolls\\ntap: photo, next, stop, share, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
     ],
 }
 FILES = list(SUBS)

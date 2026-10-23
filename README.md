@@ -6,7 +6,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - **Personal, Social and Friends cameras (optional):** shots of you, of you with the people around you, and of you with the friends you picked.
 - **Frame (optional):** a held, well-composed view of you (or you and whoever stands with you) for your own snapshots: Full length, Half length, Close (`docs/FRAME.md`).
 - **Share the view:** hold the button › Go live, and the people near you (Take 12 or the free Take 12 Watch) watch your camera; one leads, any number watch (`docs/SHARING.md`).
-- Tap = menu, double-tap = go, hold = share. A movement key gives your camera back instantly.
+- Tap = a menu (always), double-tap = go / next view, hold = share (a shortcut; the clapper claps when it takes). A movement key gives your camera back instantly.
 - **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
 > **Status:** **v6.1.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
