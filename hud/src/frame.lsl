@@ -10,7 +10,7 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
@@ -22,6 +22,7 @@ integer GLIDE      = 7312;
 integer ACK        = 7313;
 integer NUDGE      = 7317;
 integer FOVMSG     = 7318;
+integer CMD        = 7371;   // keys -> here  "framing|<0 full, 1 half, 2 close>"
 integer STILL      = 7381;   // frame -> tips  "<framing>|<recommended mm>|<your mm>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -430,6 +431,12 @@ default
             shoot(TRUE);
         }
         else if (num == RESUME && str == "tp") shoot(TRUE);
+        else if (num == CMD && llGetSubString(str, 0, 7) == "framing|")
+        {
+            gIdx = (integer)llGetSubString(str, 8, -1) % 3;    // a key (keys.lsl): that framing, nudges cleared
+            resetNudges();
+            shoot(TRUE);
+        }
         else if (num == NUDGE)
         {
             gKeys = (integer)str;

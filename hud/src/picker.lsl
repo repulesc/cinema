@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;

@@ -1,7 +1,7 @@
 // ============================================================================
 //  Take 12  -  crop.lsl  (v6.2)  - Frame: the picture format on your screen
 //  Darkens your screen outside a chosen picture format (3:2, 4:5, 1:1, 4:3, 2.39:1, 9:16), like a camera's
-//  viewfinder, with four bars: the four boxes linked to the HUD (links 2 to 5; the button stays the root). Snapshots
+//  viewfinder, with four bars: four boxes linked to the HUD (any links but the root and the keys strip). Snapshots
 //  leave HUDs out, so the bars never spoil a picture: set the snapshot size to the same ratio.
 //  HUD space is 1.0 tall and as wide as your window (llGetCameraAspect), +Y to the left, +Z up; every HUD point has
 //  its origin at its own corner, edge or the centre. The bars are placed from the screen centre, through the root's
@@ -11,7 +11,7 @@
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -32,6 +32,7 @@ float   gR;                  // the format (width / height), 0 = off
 float   gA = 1.777778;       // your window
 integer gSY = 1;             // HUD +Y is to the left (/77 crop flip if a viewer differs)
 integer gSX = -1;            // ... and the bars go behind the button (/77 crop back flips it)
+list    gBars;               // the four bars' link numbers (any child but the keys strip, keys.lsl)
 integer gChan;
 integer gL;                  // the menu's listener (0: closed)
 integer gMenuT;
@@ -84,17 +85,17 @@ bar(integer link, float y, float z, float w, float h)
 // the four bars: left and right when the format is narrower than your window, top and bottom when it is wider
 cut()
 {
-    if (llGetNumberOfPrims() < 5 || !llGetAttached()) return;
+    if (llGetListLength(gBars) < 4 || !llGetAttached()) return;
     float r = gR;
     float a = gA;
     float sw = 0.0;
     float th = 0.0;
     if (r > 0.0 && r < a) sw = (a - r) * 0.5;
     else if (r > a) th = (1.0 - a / r) * 0.5;
-    bar(2, (r + sw) * 0.5, 0.0, sw, 1.0);                   // left (+Y)
-    bar(3, -(r + sw) * 0.5, 0.0, sw, 1.0);                  // right
-    bar(4, 0.0, 0.5 - th * 0.5, a, th);                     // top
-    bar(5, 0.0, th * 0.5 - 0.5, a, th);                     // bottom
+    bar(llList2Integer(gBars, 0), (r + sw) * 0.5, 0.0, sw, 1.0);       // left (+Y)
+    bar(llList2Integer(gBars, 1), -(r + sw) * 0.5, 0.0, sw, 1.0);      // right
+    bar(llList2Integer(gBars, 2), 0.0, 0.5 - th * 0.5, a, th);         // top
+    bar(llList2Integer(gBars, 3), 0.0, th * 0.5 - 0.5, a, th);         // bottom
 }
 
 // the timer runs only while a frame is on (your window may change) or the menu is open
@@ -142,7 +143,7 @@ menu()
     tick();
     string t = "Frame · the picture format on your screen, outside dimmed\nNow: " + ratioName(gR) + " · your window "
         + llGetSubString((string)gA, 0, 3) + ":1\nSnapshots: set the same ratio as the snapshot size.";
-    if (llGetNumberOfPrims() < 5) t = "Frame needs four small boxes linked to the HUD, with the button as the root (Read Me > FRAME).";
+    if (llGetListLength(gBars) < 4) t = "Frame needs four small boxes linked to the HUD, with the button as the root (Read Me > FRAME).";
     list b = [];
     integer i;
     for (i = 0; i < 6; i++)
@@ -187,6 +188,7 @@ command(string v)
         if (v == "flip") gSY = -gSY;
         else gSX = -gSX;
         set("crop_s", (string)gSY + "|" + (string)gSX);
+        llMessageLinked(LINK_SET, CFG_CHANGED, "crop_s", "");     // the keys (keys.lsl) follow the same side
         cut();
     }
     llOwnerSay("[Take 12] Frame: " + ratioName(gR));
@@ -207,10 +209,15 @@ load()
 // the boxes: plain, dark, quiet; once
 setup()
 {
+    gBars = [];
     integer i;
-    for (i = 2; i <= 5 && i <= llGetNumberOfPrims(); i++)
-        llSetLinkPrimitiveParamsFast(i, [PRIM_NAME, "Take 12 frame", PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1, 1, 0>, ZERO_VECTOR, 0.0,
-            PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.0]);
+    for (i = 2; i <= llGetNumberOfPrims() && llGetListLength(gBars) < 4; i++)
+        if (llGetLinkName(i) != "Take 12 keys")             // the soft-key strip is not a bar (keys.lsl)
+        {
+            gBars += [i];
+            llSetLinkPrimitiveParamsFast(i, [PRIM_NAME, "Take 12 frame", PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1, 1, 0>, ZERO_VECTOR, 0.0,
+                PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.0]);
+        }
 }
 
 // ============================================================================
@@ -267,7 +274,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "crop");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/crop] v" + VERSION + " frame " + ratioName(gR) + ", window " + (string)gA + ", "
-                + (string)(llGetNumberOfPrims() - 1) + " linked boxes, free mem " + (string)llGetFreeMemory());
+                + (string)llGetListLength(gBars) + " bars, free mem " + (string)llGetFreeMemory());
     }
 
     listen(integer ch, string name, key id, string msg)

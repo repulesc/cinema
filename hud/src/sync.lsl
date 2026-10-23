@@ -16,7 +16,7 @@
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.4.0";
+string VERSION = "6.5.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -59,6 +59,7 @@ key     gHost;               // VIEWING: whose view you follow
 vector  gApplied;            // ... the camera last set from it
 float   gApplyT;             // ... and until when it may still be moving there
 integer gIsAway;             // ... you are looking around on your own
+integer gHeld;               // ... the director paused (their camera stopped): their last shot stays
 integer gHearT;              // ... the last word from the director
 integer gAskT;               // ... your own lead request, waiting
 key     gOffer;              // INVITED by
@@ -104,6 +105,7 @@ string ind()
     {
         // who is connected to your camera, live: names, looking around, no signal
         integer n = llGetListLength(gWatchers);
+        if (n == 0 && !gCamOn) return "● LIVE · paused · nobody watching yet";
         if (n == 0) return "● LIVE · nobody watching yet";
         list s = [];
         integer i;
@@ -116,6 +118,7 @@ string ind()
             s += [t];
         }
         string r = "● LIVE · " + (string)n + " watching\n" + llDumpList2String(s, " · ");
+        if (!gCamOn) r = "● LIVE · paused · double-tap: carry on\n" + llDumpList2String(s, " · ");
         if (n > 4) r += " · +" + (string)(n - 4);
         return r;
     }
@@ -123,6 +126,7 @@ string ind()
     {
         if (now - gHearT > 15) return "👁 " + sn(gHost) + " · no signal…";
         if (gIsAway) return "👁 " + sn(gHost) + " · looking around (Esc: back)";
+        if (gHeld) return "👁 " + sn(gHost) + " · paused";
         return "👁 " + sn(gHost);
     }
     if (gPendT) return name(gOffer) + " invites you · hold to watch";
@@ -264,6 +268,7 @@ act(string s)
     else if (a == "watch") watch(k);
     else if (a == "who") who();
     else if (a == "end") endlive("Live view ended");
+    else if (a == "endask" && gSharing) ui("end|" + (string)llGetListLength(gWatchers));   // End live asks first (share.lsl)
     else if (a == "lead")
     {
         gLead = (gLead + 1) % 3;
@@ -371,6 +376,7 @@ watch(key host)
 {
     gPendT = 0;
     gHost = host;
+    gHeld = FALSE;
     gCam = "";
     gIsAway = FALSE;
     gAskT = 0;
@@ -388,6 +394,7 @@ leave(integer tell, integer clear)
     if (gHost == NULL_KEY) return;
     if (tell) say(gHost, "leave");
     gHost = NULL_KEY;
+    gHeld = FALSE;
     gCam = "";
     gAskT = 0;
     // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
@@ -454,10 +461,15 @@ default
         }
         else if (num == STOP && str != "switch")
         {
+            // 6.5: your camera stopping (Stop, a movement key in Scenery, typing) never ends live: it pauses. Your
+            // viewers keep your last shot, held; a camera starting again carries on. Only End live ends it (it asks).
             gCamOn = FALSE;
-            gLastCam = "";
             if (gHand) gHand = FALSE;                       // you handed the camera on: not the end
-            else endlive("Live view ended");
+            else if (gSharing)
+            {
+                all("pause");
+                show("Live paused · your viewers keep your last shot\ndouble-tap: carry on · End live: hold the button");
+            }
         }
         else if (num == CMD && str == "share") panel();     // hold the HUD button
         else if (num == SHARE_DO) act(str);
@@ -575,9 +587,16 @@ default
         {
             gHearT = llGetUnixTime();
             gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
+            if (gHeld) { gHeld = FALSE; refresh(); }            // the director carries on
             place(FALSE);
         }
         else if (w == "hb") gHearT = llGetUnixTime();
+        else if (w == "pause")
+        {
+            gHearT = llGetUnixTime();
+            gHeld = TRUE;                                   // their last shot stays on your screen
+            refresh();
+        }
         else if (w == "lead")
         {
             gAskT = 0;
@@ -593,6 +612,7 @@ default
         else if (w == "director")
         {
             gHost = (key)llList2String(L, 2);              // the director changed: follow the new one
+            gHeld = FALSE;
             if (llListFindList(gBook, [gHost]) < 0) gBook += [gHost, llList2String(L, 3)];
             gIsAway = FALSE;
             gApplied = ZERO_VECTOR;
