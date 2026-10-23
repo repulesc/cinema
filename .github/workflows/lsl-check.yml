@@ -33,3 +33,4 @@ jobs:
           python3 tools/sim/zoom_sim.py
           python3 tools/sim/listing_check.py
           python3 tools/sim/free_test.py
+          python3 tools/sim/crop_sim.py

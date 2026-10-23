@@ -7,7 +7,7 @@
 This document is the coding spec. Where it gives a number or a formula, use it. Where it says "verify in-world", leave a `// TUNE:` comment and a CALIBRATION row.
 
 ## 1. Scripts
-All ten scripts go in the **root prim** of a one-prim HUD. Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
+All twelve scripts go in the **root prim** of the HUD (since 6.2 it may carry four linked boxes for Frame, see `crop.lsl`). Each must compile clean in `tools/lslcheck.sh` and estimate **≥ 15 KB free**.
 
 | Script | Job | v3 statements | v4 target (est. free) |
 |---|---|---|---|
@@ -20,6 +20,7 @@ All ten scripts go in the **root prim** of a one-prim HUD. Each must compile cle
 | `frame.lsl` | **New in 4.6.** Frame: three held framings of you, or of you and whoever stands within 3 m (automatic), the two-anchor solver, lead room, seated framings, mixed-height groups, obstacle tries, key nudges, silent zoom re-framing, the name shown for 3 s. No menus or listeners. See `docs/FRAME.md` | – | 261 (31.0 KB est.) |
 | `picker.lsl` | **New.** The Friends menu page and the picker. It was split out of `friends` to keep both above 15 KB | – | 156 (35.8 KB est.) |
 | `tips.lsl` | **The text above the button (5.8; tips since 5.7).** The one owner of the hover text. It composes, top to bottom: the sharing block from sync (TEXT 7380), the **status line** while a camera runs (mode and who is in charge, from UI_STATE's `why` and LENS 7319: `◇ Scenery · auto`, `… · started while you were idle`, `♡ Only friends · your view`, `▣ Photo · held`, `… · paused · Esc to carry on`; nothing with your own camera, only the 👁 block while watching; `cin.status` 0 hides it), and a tip. It writes only when the composed text changes and never over another script's short notice (text on screen that it did not write last); when that is cleared it redraws within 1 s. Tips: UI_STATE transitions, 6 s, at most one per 20 s, the second line only under a status line; a tip that finds no free moment in 10 s is dropped, not counted. Each tip retires after 3 showings (`cin.tipn`); when all have retired, or after 24 in all, it writes `tips=0`, sends CFG_CHANGED `tips` and says one line. No menus or listeners | – | 154 (34.3 KB est.) |
+| `crop.lsl` | **Frame (6.2).** The picture format on your screen: four linked boxes (links 2–5; the button stays the root) become dimmed bars (black, alpha 0.6) around a 3:2, 4:5, 1:1, 4:3, 2.39:1 or 9:16 picture, centred and as large as the window allows. HUD space is 1.0 tall and `llGetCameraAspect()` wide, +Y left; the bars are placed from the screen centre (a table per HUD point) through the root's local position and rotation, 0.02 m behind the button. It re-measures every 2 s while a frame is on, and at attach and START otherwise; it writes `cin.aspect` (the real window, for people and friends) and `cin.crop`, and sends CROP 7390. Its own menu (ui routes the Frame button); `/77 crop <format/off/flip/back>` via picker. Checked in `tools/sim/crop_sim.py` | – | 136 (37 KB est.) |
 | `ui.lsl` | **Touch decoding** (tap, double-tap, long press), emoji menus, `/77` commands, settings, the button look (the plain logo, always the same) | 173 | ~300 (≥ 17 KB) |
 
 If a script lands under 15 KB, move text out of it first (help lines, long trace strings). Do not split logic across scripts mid-function.
@@ -52,6 +53,9 @@ The numbers from v3 are unchanged. **Bold** marks what is new in v4.
 | 7330 CFG_CHANGED | ui or friends → all | key | |
 | 7360 VERSION | all | version, or `?` | |
 | **7381 STILL** | frame → tips | `"<framing>\|<recommended mm>\|<your mm>"` | 5.9: Still's lens guide, sent at each shot and glide and at once on FOVMSG |
+| **7392 SHARE_UI** | sync → share | `"<camOn>\|<live/view/inv/lead/near>\|…"` | 6.2: open a Share panel (share.lsl draws it) |
+| **7393 SHARE_DO** | share → sync | `golive`, `invite\|<key>`, `watch\|<key>`, `who`, `end`, `lead`, `panel`, `pass\|<key>`, `kick\|<key>`, `allow`, `decline`, `leave`, `ask`, `accept`, `no`, `note\|<text>` | 6.2: the choice made in a panel |
+| **7390 CROP** | crop → cameras | `"<format>\|<window>"` (width / height; format 0 = off) | 6.2: for composing inside the frame (step 2) |
 | **7380 TEXT** | sync → tips | `"<live/view/inv or empty>\|<the sharing block>"` | 5.8: tips stacks it above the status line |
 | 7370 STATUS | ui → all | `?` | every script prints one line |
 | 7371 CMD | ui → core | `scenery` / `personal` / `social` / **`friends`** / **`frame`** / `stop` / **`next`** / **`photo`** / **`fav`** / `grab` | |

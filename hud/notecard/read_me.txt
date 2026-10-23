@@ -36,7 +36,7 @@ While a camera runs, the clapper gives a tiny clap now and then; with your own c
 
 === THE CAMERAS ========================================
 
-Four on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you) and STILL (a held picture of you).
+Four on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you) and STILL (a held picture of you). FRAME (see below) sets the picture format on your screen.
 
 SCENERY  (the main one, and the only one that starts by itself)
 Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
@@ -81,6 +81,16 @@ For a picture of yourself, or of you and whoever stands right next to you. Still
  - Tap once to leave.
 
 Me, Us and Still only start when YOU choose them in the menu.
+
+
+=== FRAME: THE PICTURE FORMAT =============================
+
+Tap the button > Frame, and choose a format: 3:2 (35 mm film), 4:5 (portrait), 1:1 (square), 4:3, 2.39:1 (cinema) or 9:16 (vertical). Your screen outside the picture is dimmed, like a camera's viewfinder, so you still see what is about to come into the frame. Off takes it away.
+ - It follows your viewer window: make the window bigger or smaller and the frame follows within two seconds.
+ - Snapshots leave HUDs out, so the dimmed bars are never in your picture. For a picture in the same format, set the snapshot size to the same ratio (for example 1600 x 2000 for 4:5).
+ - The dimmed bars cannot be clicked through: a click on them does nothing. Clicks inside the frame work as always.
+ - If the frame sits off-centre or is the wrong size, your HUDs may be zoomed: set the HUD zoom back to normal in your viewer's View menu. If the bars appear on the wrong side, type  /77 crop flip ; if they cover the button,  /77 crop back .
+ - Chat: /77 crop 4:5 (or any format), /77 crop off.
 
 
 === ABOVE THE BUTTON ====================================
@@ -167,6 +177,7 @@ Any movement key (Scenery), tapping the button, or starting to type (Scenery and
 Everything above is in the menu. If you like typing, these work on channel 77 (for example  /77 scenery ).
 
 scenery  me  us  friends  still  share  stop  next  photo  fav  menu  status
+crop 4:5 | 3:2 | 1:1 | 4:3 | 2.39:1 | 9:16 | off     Frame (also crop flip, crop back)
 (personal, social and frame still work too)
 pace <seconds>        e.g.  /77 pace 90
 reach <metres>        e.g.  /77 reach 60      (or  /77 reach relearn )

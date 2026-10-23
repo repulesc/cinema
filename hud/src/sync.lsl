@@ -12,10 +12,11 @@
 //    invite|<name> -> ack|1 (joined) / ack|0 (asked) / busy|<what>
 //    viewer -> director: join leave next away back ask        director -> viewer: cam|<pos>|<focus>|<lag> hb lead|<1/0>
 //    director|<key>|<name> (a hand-over) kick end
+//  6.2.0: the panels are drawn by share.lsl (SHARE_UI / SHARE_DO); this script ran out of memory with them.
 //  Full description: docs/SHARING.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "6.1.0";
+string VERSION = "6.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -25,6 +26,8 @@ integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
 integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|<the state above the HUD>"
+integer SHARE_UI   = 7392;   // sync -> share: open a panel "<camOn>|<page>|..." (share.lsl draws the Share panel)
+integer SHARE_DO   = 7393;   // share -> sync: the choice
 integer SYNC_CH    = -7712120;   // Take 12 and Take 12 Watch share this channel
 float   NEAR       = 20.0;       // m  who is found and invited
 integer NEXT_GAP   = 5;          // s  two viewers' double-taps close together cut once
@@ -33,7 +36,6 @@ integer GONE       = 25;         // s  no camera and no heartbeat from the direc
 integer QUIET      = 25;         // s  a viewer not heard from this long shows "(no signal)"...
 integer LOST       = 45;         // s  ... and this long is dropped
 integer gBeatT;              // viewing: your last heartbeat to the director
-string  WATCH      = "Take 12 Watch";
 list    LEADS      = ["Ask", "Always", "Never"];
 
 key     gOwner;
@@ -61,14 +63,8 @@ integer gHearT;              // ... the last word from the director
 integer gAskT;               // ... your own lead request, waiting
 key     gOffer;              // INVITED by
 integer gPendT;              // ... since
-list    gNear;               // the "who" check: [key, "<T/W>|<state>|<director>", ...]
+list    gNear;               // the "who" check: [key, "<T/W>~<state>~<director>", ...]
 float   gWhoT;               // ... sent at (0 = none running)
-string  gPage;               // our own dialog
-list    gBtn;                // ... [label, key, ...]
-key     gSel;                // roster: the viewer picked
-integer gDlg;
-integer gDlgL;
-integer gDlgT;
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
 string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes
 float   gMyFov;              // your lens when it was placed
@@ -89,20 +85,6 @@ string name(key k)
         if (llGetListLength(gBook) > 40) gBook = llDeleteSubList(gBook, 0, 1);
     }
     return n;
-}
-
-// at most m bytes (a dialog button: 24, a dialog text: 512); emoji are 4 bytes, "·" 2
-string fit(string s, integer m)
-{
-    if (llStringLength(s) > m) s = llGetSubString(s, 0, m - 1);
-    while (TRUE)
-    {
-        string b = llStringToBase64(s);
-        integer n = llStringLength(b) * 3 / 4 - (llGetSubString(b, -1, -1) == "=") - (llGetSubString(b, -2, -1) == "==");
-        if (n <= m) return s;
-        s = llDeleteSubString(s, -1, -1);
-    }
-    return s;
 }
 
 // a short name: "Ana Resident" -> "Ana"
@@ -221,52 +203,10 @@ all(string m)
     for (i = 0; i < llGetListLength(gWatchers); i++) say(llList2Key(gWatchers, i), m);
 }
 
-dialog(string page, string text, list b)
-{
-    gPage = page;
-    llListenRemove(gDlgL);
-    gDlg = -1000000 - (integer)llFrand(1000000.0);
-    gDlgL = llListen(gDlg, "", gOwner, "");
-    gDlgT = llGetUnixTime();
-    llDialog(gOwner, fit(text, 500), b, gDlg);
-    llSetTimerEvent(1.0);
-}
-
 integer near(key k)
 {
     list d = llGetObjectDetails(k, [OBJECT_POS]);
     return (llGetListLength(d) > 0 && llVecDist(llList2Vector(d, 0), llGetPos()) <= NEAR);
-}
-
-
-string names(list ks)
-{
-    list n = [];
-    integer i;
-    for (i = 0; i < llGetListLength(ks); i++) n += [name(llList2Key(ks, i))];
-    return llDumpList2String(n, ", ");
-}
-
-// a label in the menu style chosen in Options > Look: Plain (words), Symbols (a quiet mark), Color (emoji)
-string lb(string e, string m, string t)
-{
-    integer k = (integer)llLinksetDataReadProtected("cin.skin", PASS);
-    if (k == 2) return e + " " + t;
-    if (k == 1) return m + " " + t;
-    return t;
-}
-
-// a button for a person: the label, and who it stands for
-btn(string label, key k)
-{
-    gBtn += [label, k];
-}
-
-key btnKey(string label)
-{
-    integer i = llListFindList(gBtn, [label]);
-    if (i < 0) return NULL_KEY;
-    return llList2Key(gBtn, i + 1);
 }
 
 list    gW;                  // the viewers on a Take 12 Watch ("join|W"): they cannot lead
@@ -294,76 +234,70 @@ who()
     show("Looking for people near you…");
 }
 
-panelNear()
+// the Share panel is drawn by share.lsl: it gets what it needs, when it should open
+ui(string page)
 {
-    gBtn = [];
-    list b = [];
-    list desc = [];
-    if (gSharing) b = ["Invite all"];
-    else b = [lb("🔴", "●", "Go live")];
-    integer i;
-    for (i = 0; i < llGetListLength(gNear); i += 2)
-    {
-        key k = llList2Key(gNear, i);
-        list I = llParseStringKeepNulls(llList2String(gNear, i + 1), ["|"], []);
-        string st = llList2String(I, 1);
-        string d = name(k);
-        if (llList2String(I, 0) == "W") d += " (Watch)";
-        if (st == "live") d += " (live)";
-        else if (st == "view") d += " (watching " + llList2String(I, 2) + ")";
-        desc += [d];
-        if (llGetListLength(b) < 9)
-        {
-            string wl = fit(lb("👁", "◉", "Watch") + " " + sn(k), 24);
-            if ((integer)llLinksetDataReadProtected("cin.skin", PASS)) wl = fit(lb("👁", "◉", sn(k)), 24);
-            string al = fit("+ " + sn(k), 24);
-            if (st == "live" && !gSharing) { b += [wl]; btn(wl, k); }
-            else if (st == "idle" && llListFindList(gWatchers, [k]) < 0) { b += [al]; btn(al, k); }
-        }
-    }
-    string t = "Share your view.";
-    if (gSharing) t = "Invite more people.";
-    if (desc == []) t += "\nNobody near you wears Take 12 or Take 12 Watch yet.";
-    else t += "\nNear you: " + llDumpList2String(desc, ", ");
-    t += "\n+ name: invite one";
-    dialog("near", t, b + ["Give Watch", lb("⋯", "⋯", "More"), "Close"]);
+    llMessageLinked(LINK_SET, SHARE_UI, (string)gCamOn + "|" + page, "");
 }
 
 panel()
 {
-    if (gSharing)
-    {
-        string t = lb("🔴", "●", "LIVE") + " · ";
-        if (gWatchers == []) t += "nobody watches yet";
-        else t += "watching: " + names(gWatchers);
-        if (gAway != []) t += "\nlooking around: " + names(gAway);
-        t += "\nWhen someone asks to lead: " + llList2String(LEADS, gLead);
-        dialog("live", t, ["Invite more", "Roster", "Lead: " + llList2String(LEADS, gLead), "End live", lb("⋯", "⋯", "More"), "Close"]);
-    }
-    else if (gHost != NULL_KEY)
-    {
-        string t = "Viewing " + name(gHost) + "'s camera.";
-        if (gAskT) t += "\nYou asked to lead; waiting for an answer.";
-        dialog("view", t, ["Ask to lead", "Leave", lb("⋯", "⋯", "More"), "Close"]);
-    }
-    else if (gPendT) dialog("invited", name(gOffer) + " invites you to watch their camera.", ["Watch", "No"]);
+    if (gSharing) ui("live|" + (string)gLead + "|" + llDumpList2String(gWatchers, ",") + "|" + llDumpList2String(gAway, ",") + "|" + llDumpList2String(gW, ","));
+    else if (gHost != NULL_KEY) ui("view|" + (string)gHost + "|" + (string)(gAskT != 0));
+    else if (gPendT) ui("inv|" + (string)gOffer);
     else who();
 }
 
-roster()
+// a choice in the Share panel (share.lsl)
+act(string s)
 {
-    gBtn = [];
-    list b = [];
-    integer i;
-    for (i = 0; i < llGetListLength(gWatchers) && i < 11; i++)
+    list A = llParseString2List(s, ["|"], []);
+    string a = llList2String(A, 0);
+    key k = (key)llList2String(A, 1);
+    integer w = llListFindList(gWatchers, [k]);
+    if (a == "golive") golive(TRUE);
+    else if (a == "invite")                                 // invite one: you go live for them
     {
-        key k = llList2Key(gWatchers, i);
-        string l = fit(sn(k), 24);
-        b += [l];
-        btn(l, k);
+        golive(FALSE);
+        if (gSharing) invite(k);
     }
-    if (b == []) { panel(); return; }
-    dialog("roster", "Who watches you. Pick someone to pass the camera or remove them.", b + ["Back"]);
+    else if (a == "watch") watch(k);
+    else if (a == "who") who();
+    else if (a == "end") endlive("Live view ended");
+    else if (a == "lead")
+    {
+        gLead = (gLead + 1) % 3;
+        llLinksetDataWriteProtected("cin.share_lead", llList2String(LEADS, gLead), PASS);
+        panel();
+    }
+    else if (a == "panel") panel();
+    else if (a == "pass" && w >= 0) grant(k);
+    else if (a == "kick" && w >= 0)
+    {
+        say(k, "kick");
+        drop(k);
+        show(name(k) + " removed");
+        refresh();
+    }
+    else if ((a == "allow" || a == "decline") && gLeadAsk != NULL_KEY)
+    {
+        if (a == "allow" && llListFindList(gWatchers, [gLeadAsk]) >= 0) grant(gLeadAsk);
+        else
+        {
+            say(gLeadAsk, "lead|0");
+            gLeadAsk = NULL_KEY;
+        }
+    }
+    else if (a == "leave" && gHost != NULL_KEY) leave(TRUE, TRUE);
+    else if (a == "ask" && gHost != NULL_KEY && !gAskT)
+    {
+        say(gHost, "ask");
+        gAskT = llGetUnixTime();
+        show("Asked " + name(gHost) + " to lead…");
+    }
+    else if (a == "accept" && gPendT) watch(gOffer);
+    else if (a == "no") unpend();
+    else if (a == "note") note(llList2String(A, 1));
 }
 
 // ---- directing -----------------------------------------------------------------
@@ -386,7 +320,7 @@ golive(integer everyone)
     integer i;
     if (everyone)
         for (i = 0; i < llGetListLength(gNear); i += 2)
-            if (llList2String(llParseStringKeepNulls(llList2String(gNear, i + 1), ["|"], []), 1) == "idle") invite(llList2Key(gNear, i));
+            if (llList2String(llParseStringKeepNulls(llList2String(gNear, i + 1), ["~"], []), 1) == "idle") invite(llList2Key(gNear, i));
     refresh();
 }
 
@@ -526,129 +460,17 @@ default
             else endlive("Live view ended");
         }
         else if (num == CMD && str == "share") panel();     // hold the HUD button
+        else if (num == SHARE_DO) act(str);
         else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while viewing
         else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: accept the invite
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/sync] v" + VERSION + " live " + (string)gSharing + ", watching you: " + names(gWatchers)
+            llOwnerSay("[Take 12/sync] v" + VERSION + " live " + (string)gSharing + ", watching you: " + (string)llGetListLength(gWatchers)
                 + ", following " + name(gHost) + ", lead " + llList2String(LEADS, gLead) + ", free mem " + (string)llGetFreeMemory());
     }
 
     listen(integer ch, string name, key id, string msg)
     {
-        if (ch == gDlg)
-        {
-            llListenRemove(gDlgL);
-            gDlgT = 0;
-            if (msg == lb("⋯", "⋯", "More"))
-            {
-                if (gCamOn) llMessageLinked(LINK_SET, CMD, "livemenu", "");
-                else llMessageLinked(LINK_SET, CMD, "mainmenu", "");
-            }
-            else if (gPage == "near")
-            {
-                if (msg == lb("🔴", "●", "Go live")) golive(TRUE);
-                else if (msg == "Invite all") golive(TRUE);
-                else if (msg == "Give Watch")
-                {
-                    if (llGetInventoryType(WATCH) != INVENTORY_OBJECT)
-                    {
-                        llOwnerSay("[Take 12] Put the \"" + WATCH + "\" object in the HUD to give it out.");
-                        return;
-                    }
-                    list ids = llGetAgentList(AGENT_LIST_REGION, []);
-                    list b = [];
-                    gBtn = [];
-                    integer i;
-                    for (i = 0; i < llGetListLength(ids) && llGetListLength(b) < 11; i++)
-                    {
-                        key k = llList2Key(ids, i);
-                        if (k != gOwner && near(k))
-                        {
-                            string l = fit(sn(k), 24);
-                            b += [l];
-                            btn(l, k);
-                        }
-                    }
-                    if (b == []) note("Nobody within " + (string)llRound(NEAR) + " m.");
-                    else dialog("give", "Give the free Take 12 Watch to:", b);
-                }
-                else
-                {
-                    key k = btnKey(msg);
-                    if (k == NULL_KEY) return;
-                    if (llGetSubString(msg, 0, 0) == "+")   // invite one: you go live for them
-                    {
-                        golive(FALSE);
-                        if (gSharing) invite(k);
-                    }
-                    else watch(k);                          // a live director near you: watch them
-                }
-            }
-            else if (gPage == "live")
-            {
-                if (msg == "Invite more") who();
-                else if (msg == "Roster") roster();
-                else if (msg == "End live") endlive("Live view ended");
-                else if (llGetSubString(msg, 0, 4) == "Lead:")
-                {
-                    gLead = (gLead + 1) % 3;
-                    llLinksetDataWriteProtected("cin.share_lead", llList2String(LEADS, gLead), PASS);
-                    panel();
-                }
-            }
-            else if (gPage == "roster")
-            {
-                if (msg == "Back") { panel(); return; }
-                gSel = btnKey(msg);
-                if (llListFindList(gW, [gSel]) >= 0) dialog("person", name(gSel) + " (Take 12 Watch: cannot lead)", ["Remove", "Back"]);
-                else if (gSel != NULL_KEY) dialog("person", name(gSel), ["Pass camera", "Remove", "Back"]);
-            }
-            else if (gPage == "person" && llListFindList(gWatchers, [gSel]) >= 0)
-            {
-                if (msg == "Pass camera") grant(gSel);
-                else if (msg == "Remove")
-                {
-                    say(gSel, "kick");
-                    drop(gSel);
-                    show(name(gSel) + " removed");
-                    refresh();
-                }
-                else roster();
-            }
-            else if (gPage == "lead" && gLeadAsk != NULL_KEY)
-            {
-                if (msg == "Allow" && llListFindList(gWatchers, [gLeadAsk]) >= 0) grant(gLeadAsk);
-                else
-                {
-                    say(gLeadAsk, "lead|0");
-                    gLeadAsk = NULL_KEY;
-                }
-            }
-            else if (gPage == "view" && gHost != NULL_KEY)
-            {
-                if (msg == "Leave") leave(TRUE, TRUE);
-                else if (msg == "Ask to lead" && !gAskT)
-                {
-                    say(gHost, "ask");
-                    gAskT = llGetUnixTime();
-                    show("Asked " + name(gHost) + " to lead…");
-                }
-            }
-            else if (gPage == "invited" && gPendT)
-            {
-                if (msg == "Watch") watch(gOffer);
-                else unpend();
-            }
-            else if (gPage == "give")
-            {
-                key k = btnKey(msg);
-                if (k == NULL_KEY) return;
-                llGiveInventory(k, WATCH);
-                note("Take 12 Watch given to " + name(k) + ". Once they wear it, hold your button > Go live.");
-            }
-            return;
-        }
         // the share channel: only what an avatar's own HUD says counts
         if (llGetSubString(msg, 0, 3) != "T12|") return;
         key who = llGetOwnerKey(id);
@@ -669,7 +491,7 @@ default
         }
         else if (w == "here")
         {
-            if (gWhoT > 0.0 && llListFindList(gNear, [who]) < 0 && near(who)) gNear += [who, llDumpList2String(llList2List(L, 2, 4), "|")];
+            if (gWhoT > 0.0 && llListFindList(gNear, [who]) < 0 && near(who)) gNear += [who, llDumpList2String(llList2List(L, 2, 4), "~")];
         }
         else if (w == "invite")
         {
@@ -743,7 +565,7 @@ default
             {
                 gLeadAsk = who;
                 gLeadT = llGetUnixTime();
-                dialog("lead", name(who) + " asks to lead the camera.\nEveryone would then watch theirs.", ["Allow", "Decline"]);
+                ui("lead|" + (string)who);
             }
         }
         else if (wi >= 0 && w == "hb") return;            // a viewer's heartbeat (seen above)
@@ -799,7 +621,7 @@ default
         {
             gWhoT = 0.0;                                    // the "who" check is in: the panel
             quiet();
-            panelNear();
+            ui("near|" + (string)gSharing + "|" + llDumpList2String(gWatchers, ",") + "|" + llDumpList2String(gNear, ","));
         }
         if (gInv != [] && now - gInvT >= 3)
         {
@@ -878,12 +700,7 @@ default
         }
         if (gTextT > 0.0 && llGetTime() - gTextT > 4.0) quiet();       // the notice gives way to the state again
         else refresh();                                                 // keep the state current ("no signal")
-        if (gDlgT > 0 && now - gDlgT > 60)
-        {
-            gDlgT = 0;
-            llListenRemove(gDlgL);
-        }
-        if (ind() == "" && gTextT == 0.0 && gWhoT == 0.0 && gInv == [] && gRes == [] && gDlgT == 0 && gLeadAsk == NULL_KEY)
+        if (ind() == "" && gTextT == 0.0 && gWhoT == 0.0 && gInv == [] && gRes == [] && gLeadAsk == NULL_KEY)
             llSetTimerEvent(0.0);
     }
 }

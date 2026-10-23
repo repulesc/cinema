@@ -36,6 +36,7 @@ check('if (gIndoors == "outside") raw = FALSE;' in sc, "scenery: skybox rooms mu
 check("!LITE && gCuts % 4 == 3" in sc and "num == FAV && !LITE" in sc, "scenery: no favourites in the free build")
 check('if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "fav")) return;' in core,
       "core: the free build must refuse the other cameras")
+check('"crop"' not in re.search(r'b = \["scenery".*?\];', ui).group(0), "the free build has no Frame (no crop.lsl)")
 # its own button (scenery/art): one design, so no Button choice under Options > Look
 check('"th0"' not in ui and " · Button: " not in ui and "menu style, button" not in ui, "ui: the free build has one button design, no Button choice")
 readme = rd("scenery", "README.md")
