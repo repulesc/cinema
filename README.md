@@ -2,8 +2,8 @@
 
 A one-button Second Life camera HUD that takes your view off your avatar's back and places it, by itself, where a camera operator would. The brand is **12**, the product is **Take 12**, and the Marketplace title is **Take 12 - Cinematic Camera HUD**.
 
-7.0 is one product with six doors on its menu:
-- **Framing:** Me · Us · Friends, one rule: it follows you as you walk and holds a composed (golden-line) picture when you stand. Me is Still's composer with walking (`docs/FRAME.md`); Us and Friends hold each group shot and change with the Pace. Fit (Page Up / Down) and your lens everywhere.
+7.0 is one product with six doors on its menu (7.1: Adjust, Framing in one tap, Connect shares the Format):
+- **Framing:** Me · Us · Friends, one rule: it follows you as you walk and holds a composed (golden-line) picture when you stand. Me is Still's composer with walking (`docs/FRAME.md`); Us and Friends hold each group shot and change with the Pace. One tap starts the last one used. **Adjust** (7.1): the keys trim the shot (W/S tilt, A/D around, Shift+A/D side, Page Up/Down height): seated always, standing after ADJUST. Your lens everywhere.
 - **Freehand:** you frame the shot with Second Life's own camera; held still for a second, Take 12 holds it like a tripod.
 - **Connect:** connect with the people near you (Take 12 or the free Take 12 Watch); whoever films leads (`docs/CONNECT.md`).
 - **Scenery:** the standby camera: when you go idle (or Scenery › Start) it finds drone views, horizons and skybox rooms. Its settings live under it.
@@ -48,7 +48,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
    - If the script moves the picture on the wrong faces too, tell it which face carries the picture with `/77 face <number>` (the face numbers are shown when you select a face in Build mode, starting at 0).
    - Colour white, no glow. The scripts set fullbright.
 3. **Delete all old scripts from the prim** (v3 or earlier, and the `cinema_*` ones from before 5.8.1), then add the fifteen from `hud/src/` to the root prim: `core`, `ui`, `scenery`, `people`, `friends`, `picker`, `frame`, `free`, `lens`, `sync`, `connect`, `tips`, `crop`, `keys`, `fit` (6.8: `share` became `connect`; delete `share`). Each prints a `ready` line with its free memory.
-   - **For the keys (6.5):** rez one more box (any size), name it exactly `Take 12 keys`, and link it with the others (the button selected last). Upload `hud/art/take12_keys_512x1024.png` (keep the alpha) and drop it into the HUD's contents named `take12_keys`. `keys` sizes, places and textures the strip itself; without it, everything stays in the menus.
+   - **For the keys (6.5):** rez one more box (any size), name it exactly `Take 12 keys`, and link it with the others (the button selected last). Upload `hud/art/take12_keys_1024.png` (keep the alpha; 7.1) and drop it into the HUD's contents named `take12_keys`. `keys` sizes, places and textures the strip itself; without it, everything stays in the menus.
    - **For Frame (6.2):** rez four small boxes (any size), select them, select the button prim last (so it stays the root), and link them (Ctrl+L). `crop` makes them dark, see-through bars and places them itself; it never touches the button. Without the boxes everything else works, and Frame says what is missing. (Detach the HUD to link, then wear it again.)
 4. **Build › Scripts › Set Scripts to Running in Selection** (a script that once failed to compile stays "not running").
 5. Create a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt` (paste it in as plain text) and drop it in.

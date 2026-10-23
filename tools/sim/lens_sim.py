@@ -1,7 +1,8 @@
 # Follow my lead (5.1): you frame a Friends view with Second Life's own camera; core sends LEAD once it is still,
 # lens.lsl keeps how close, how high, from where and aimed at what, and friends.lsl plans every next
 # shot from it. A port of that chain: your view must come back exactly as the next planned shot, move with the group,
-# scale with W/S, and the scripts must carry the same maths and wiring.
+# scale with its distance, and the scripts must carry the same maths and wiring. (7.1: seated W/S no longer step closer
+# or wider; seated the keys adjust the shot, fit_sim.)
 import math, os, random
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -14,17 +15,17 @@ def check(c, msg):
 
 # ---- wiring ------------------------------------------------------------------------------------------------------
 for w in ('integer LEAD       = 7324;', 'llMessageLinked(LINK_SET, LEAD, (string)cp + "|" + (string)f, "");',
-          'else if (gPeekOn || gMode == "friends" || gMode == "free")', 'else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))', "float t = (f0 - cp) * u;",
-          "llTakeControls(CTL & ~3, TRUE, TRUE);", "llTakeControls(3, TRUE, FALSE);"):
+          'else if (gPeekOn || gMode == "friends" || gMode == "free")', 'else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))', "float t = (f0 - cp) * u;"):
     check(w in core, f"core: missing {w}")
 # 5.1 gave standing E/C back to your avatar; 6.7 keeps them only for Fit (fit_sim), and never while you fly
-check(core.count("llTakeControls(48") == 1 and "if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in core and "!(info & AGENT_FLYING)" in core,
-      "core: E/C may be kept back only for Fit, and never while you fly")
+check(core.count("llTakeControls(48") == 1 and "if (gFitCtl) llTakeControls(48, TRUE, FALSE);" in core and "(info & AGENT_FLYING)) return FALSE;" in core,
+      "core: E/C may be kept back only for Fit (and Adjust), and never while you fly")
+check("llTakeControls(3, TRUE, FALSE);" not in core and "NUDGE" not in lens and "gS * 0.8" not in lens, "7.1: no seated W/S closer / wider in Friends (the keys adjust)")
 check('integer own = (gMode == "friends" || gMode == "free");' in core and 'if (own && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;' in core,
       "core: Friends does not notice a small move or a turn of your camera")
-check("gShotFoc = f;" in core and "gShotFoc = gf;" in core, "core: the shot's focus is not kept")
+check("gShotFoc = f;" in core[core.index("place(vector p, vector f)"):] and "place(gp, gf);" in core and "place(p, f);" in core, "core: the shot's focus is not kept")
 for w in ('integer LEAD       = 7324;', "gAim += q - gSubj;", "gS = llVecDist(c, q);",
-          "gEl = llAtan2(h.z, llVecMag(<h.x, h.y, 0.0>));", "gAz = llAtan2(h.y, h.x);", "gS = gS * 0.8;", "gS = gS * 1.25;",
+          "gEl = llAtan2(h.z, llVecMag(<h.x, h.y, 0.0>));", "gAz = llAtan2(h.y, h.x);",
           'automatic(TRUE); }', "gSubj += f - gFoc;", "if (llVecDist(c, gLC) < 0.05) return;"):
     check(w in lens, f"lens: missing {w}")
 for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNeed = gLed;", "gPLo = gLed;", "gMeas = [];",
@@ -33,7 +34,7 @@ for w in ('+ "|" + (string)gPFp, "");', "if (gLed > 0.0) gPAz = gLedAz;", "gVNee
           "gPEye = C.z + (gOE - gOP.z) + gAim.z;", "gPFp = <C.x + gAim.x, C.y + gAim.y, gPEye>;",
           'llMessageLinked(LINK_SET, CMD, "autoq", "");', "if (gPType == 3 && gUsedN > 0 && gLed == 0.0)"):
     check(w in friends, f"friends: missing {w}")
-check('if (gUiMode == "friends") b += ["release"];' in ui and 'llMessageLinked(LINK_SET, CMD, "auto", "")' in ui and "tune" not in ui,
+check('if (gUiMode == "friends") b += ["flist", "release"];' in ui and 'llMessageLinked(LINK_SET, CMD, "auto", "")' in ui and "tune" not in ui,
       "ui: the live menu should offer Release (back to automatic), not Tune")
 
 # ---- the chain, ported -------------------------------------------------------------------------------------------
@@ -90,11 +91,11 @@ for t in range(400):
 check(worst_pos < 1e-6, f"your view comes back {worst_pos:.2e} m off")
 check(worst_dir < 1e-4, f"your view comes back turned by {worst_dir:.2e} degrees")
 check(worst_move < 1e-6, f"a moved group moves the camera wrongly by {worst_move:.2e} m")
-check(worst_scale < 1e-6, f"W/S do not scale the distance ({worst_scale:.2e} m off)")
+check(worst_scale < 1e-6, f"the distance does not scale ({worst_scale:.2e} m off)")
 # the core's focus: when you look at your faces, the point kept is on your line of sight nearest the old subject
 check(abs(dot(sub(core_lead((0, 0, 0), (1, 0, 0), (3, 0.4, 0)), (3, 0, 0)), (1, 1, 1))) < 1e-9, "core lead point")
 check(core_lead((0, 0, 0), (1, 0, 0), (-2, 0, 0)) == (0.5, 0.0, 0.0), "a subject behind the camera must not flip the view")
 print(f"follow my lead: {n} orbited views come back exactly (worst {worst_pos:.0e} m, {worst_dir:.0e} deg), "
-      f"follow the group and scale with W/S")
+      f"follow the group and scale with the distance")
 print("lens checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

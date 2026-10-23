@@ -27,7 +27,7 @@ SUBS = {
         ('string h = "Take 12";', 'string h = "Take 12 Scenery";'),
         ('llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: connect with people near you. Commands: /" + cfgGet("cmd_chan") + " help");',
          'llOwnerSay("[Take 12 Scenery] Tap: menu. Double-tap: scenery, or the next view. Any movement key: your camera back.");'),
-        ('"Framing · you, or you and the people with you, composed\\nFreehand · you frame it, it holds it\\nConnect · one camera for everyone near you\\nScenery · the place, while you are away\\nFormat · the shape of the picture"',
+        ('"Framing · you, or you and the people with you, composed (it starts the last one: Me, Us or Friends)\\nFreehand · you frame it, it holds it\\nConnect · one camera for everyone near you\\nScenery · the place, while you are away\\nFormat · the shape of the picture"',
          '"Scenery · the place, while you are away\\nMore cameras · Framing, Freehand and Connect, in the full Take 12"'),
         ('"Welcome to Take 12\\nTap: menu\\nDouble-tap: scenery, or the next view\\nHold: connect with people near you\\nAny movement key: your camera back"',
          '"Welcome to Take 12 Scenery\\nTap: menu\\nDouble-tap: scenery, or the next view\\nAny movement key: your camera back"'),
@@ -41,7 +41,7 @@ SUBS = {
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: connect"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
-        ('"Tap while it rolls\\ntap: next, stop, connect, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
+        ('"Tap while it rolls\\ntap: Me · Us · Friends, Adjust, stop"', '"Tap while it rolls\\ntap: next, stop"'),
         ('string  NEED = "core scenery people friends picker frame free lens sync connect crop keys fit";', 'string  NEED = "core scenery";'),
     ],
 }

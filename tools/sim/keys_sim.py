@@ -1,5 +1,6 @@
 # The soft keys (6.5.0, keys.lsl) and the safer live view. One strip prim shows a row of the key atlas
-# (hud/art/take12_keys_512x1024.png) with repeats and offsets; the touch position says which key. Checked here:
+# (hud/art/take12_keys_1024.png; 7.1: two columns of ten rows, for ADJUST) with repeats and offsets; the touch
+# position says which key. Checked here:
 # every row's window lands exactly on its keys, a touch maps to the key under it, each key's action is answered by
 # the script it goes to, the strip sits beside the button; and Connect (6.8): your camera stopping never disconnects,
 # Disconnect asks first when only Watches would be left, and both HUDs show that nobody films.
@@ -24,22 +25,25 @@ check(ROWS == [len(r[1]) for r in mk.ROWS], f"keys.lsl ROWS {ROWS} != the atlas 
 check(max(ROWS) <= 5, "five keys at most")
 CW = float(re.search(r"float   CW    = ([0-9.]+);", keys).group(1)); RH = float(re.search(r"float   RH    = ([0-9.]+);", keys).group(1))
 check(abs(CW - mk.CW / mk.W) < 1e-9 and abs(RH - mk.CH / mk.H) < 1e-9, "the cell size in keys.lsl must match the atlas")
-im = Image.open(os.path.join(R, "hud", "art", "take12_keys_512x1024.png")).convert("RGBA")
-check(im.size == (mk.W, mk.H), f"the atlas is {im.size}")
+PER = int(re.search(r"integer PER   = (\d+);", keys).group(1))
+check(PER == mk.PER and mk.COL == mk.W // 2 and mk.PER * mk.CH <= mk.H and 2 * mk.PER >= len(ROWS), "two columns of ten rows hold every row")
+im = Image.open(os.path.join(R, "hud", "art", "take12_keys_1024.png")).convert("RGBA")
+check(im.size == (mk.W, mk.H) == (1024, 1024), f"the atlas is {im.size}")
 W, H = im.size
-check("<n * CW, RH, 0.0>, <n * CW * 0.5 - 0.5, 0.5 - (r + 0.5) * RH, 0.0>" in keys, "keys.lsl: the repeats / offsets")
+check("<n * CW, RH, 0.0>, <(r / PER) * 0.5 + n * CW * 0.5 - 0.5, 0.5 - (r % PER + 0.5) * RH, 0.0>" in keys, "keys.lsl: the repeats / offsets")
 for r, n in enumerate(ROWS):
     ru, rv = n * CW, RH
-    ou, ov = n * CW * 0.5 - 0.5, 0.5 - (r + 0.5) * RH
+    ou, ov = (r // PER) * 0.5 + n * CW * 0.5 - 0.5, 0.5 - (r % PER + 0.5) * RH
     u0, u1 = ou + 0.5 - ru / 2, ou + 0.5 + ru / 2          # Second Life: the window is centred at offset + 0.5
     v0, v1 = ov + 0.5 - rv / 2, ov + 0.5 + rv / 2          # v up from the bottom of the image
     box = (round(u0 * W), round((1 - v1) * H), round(u1 * W), round((1 - v0) * H))
-    check(box == (0, r * mk.CH, n * mk.CW, (r + 1) * mk.CH), f"row {r}: the window {box} misses its keys")
+    x0, y0 = (r // PER) * mk.COL, (r % PER) * mk.CH
+    check(box == (x0, y0, x0 + n * mk.CW, y0 + mk.CH), f"row {r}: the window {box} misses its keys")
     for i in range(n):                                     # each key cell holds a key; the next cell is empty
-        cell = im.crop((i * mk.CW, r * mk.CH, (i + 1) * mk.CW, (r + 1) * mk.CH))
+        cell = im.crop((x0 + i * mk.CW, y0, x0 + (i + 1) * mk.CW, y0 + mk.CH))
         check(cell.getchannel("A").getbbox() is not None, f"row {r}, key {i}: empty")
-    if n < 5:
-        check(im.crop((n * mk.CW, r * mk.CH, (n + 1) * mk.CW, (r + 1) * mk.CH)).getchannel("A").getbbox() is None, f"row {r}: a stray key")
+    if n < 6:
+        check(im.crop((x0 + n * mk.CW, y0, x0 + (n + 1) * mk.CW, y0 + mk.CH)).getchannel("A").getbbox() is None, f"row {r}: a stray key")
     # a touch: the key under it
     for i in range(n):
         for f in (0.02, 0.5, 0.98):
@@ -49,16 +53,32 @@ check("integer k = (integer)(st.x * llList2Integer(ROWS, gRow));" in keys and "i
 
 # ---- which keys, when ----------------------------------------------------------------------------------------------
 names = [r[0] for r in mk.ROWS]
-check(names == ["live", "watch", "free", "freeA", "freeB", "full", "half", "close"], f"atlas rows {names} (6.8: Connect)")
+check(names == ["live", "watch", "free", "freeA", "freeB", "free+", "freeA+", "freeB+", "full", "half", "close", "full+", "half+", "close+",
+                 "group", "group+"], f"atlas rows {names} (7.1: ADJUST off / on)")
 for frag in ('if (gShare == "live") return 0;', 'if (gShare == "view") return 1;',
-             'if (on && gMode == "free") return 3 + gPick;', 'if (gSt == "rolling" && gMode == "frame") return 5 + gStill;', "return -1;"):
+             'if (on && gMode == "free") return 3 + gPick + 3 * gAdj;', 'if (gSt == "rolling" && gMode == "frame") return 8 + gStill + 3 * gAdj;',
+             'if (on && (gMode == "social" || gMode == "friends")) return 14 + gAdj;', "return -1;", "gAdj = (integer)llList2String(L, 4);"):
     check(frag in keys, f"keys.lsl: pick() no longer reads {frag}")
+# a port of pick(): each state shows the row whose lit keys say it
+def pick(mode, sub, adj):
+    if mode == "free": return 3 + sub + 3 * adj
+    if mode == "frame": return 8 + sub + 3 * adj
+    return 14 + adj
+for mode, subs, want in (("free", (-1, 0, 1), (None, "A", "B")), ("frame", (0, 1, 2), ("FULL", "HALF", "CLOSE")), ("social", (0,), (None,))):
+    for sub, w in zip(subs, want):
+        for adj in (0, 1):
+            lit = set(mk.ROWS[pick(mode, sub, adj)][2])
+            check(lit == {x for x in (w, "ADJUST" if adj else None) if x}, f"{mode} {sub} adjust {adj}: row {pick(mode, sub, adj)} lights {lit}")
+check(all("ADJUST" in r[1] for r in mk.ROWS[2:]) and all(r[1][-1] == "ADJUST" for r in mk.ROWS[2:]), "ADJUST, last, on every camera row")
 
 # ---- every key's action is answered ----------------------------------------------------------------------------
 acts = {"LIVE": re.search(r'string  LIVE = "([^"]+)";', keys).group(1), "FREE": re.search(r'string  FREE = "([^"]+)";', keys).group(1),
-        "STIL": re.search(r'string  STIL = "([^"]+)";', keys).group(1), "WATCH": re.search(r'string  WTCH = "([^"]+)";', keys).group(1)}
+        "STIL": re.search(r'string  STIL = "([^"]+)";', keys).group(1), "WATCH": re.search(r'string  WTCH = "([^"]+)";', keys).group(1),
+        "GRP": re.search(r'string  GRP  = "([^"]+)";', keys).group(1)}
 check(acts["LIVE"] == "C:next;S:who;S:disconnect" and acts["WATCH"] == "C:scenery;S:film;S:disconnect", f"keys.lsl: the Connect keys {acts}")
-check('string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, STIL, STIL, STIL], gRow);' in keys, "keys.lsl: each row's actions")
+check('string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, FREE, FREE, FREE, STIL, STIL, STIL, STIL, STIL, STIL, GRP, GRP], gRow);' in keys, "keys.lsl: each row's actions")
+rowact = ["LIVE", "WTCH", "FREE", "FREE", "FREE", "FREE", "FREE", "FREE", "STIL", "STIL", "STIL", "STIL", "STIL", "STIL", "GRP", "GRP"]
+check(all(len({"WTCH": acts["WATCH"]}.get(a, acts.get(a, "")).split(";")) == ROWS[i] for i, a in enumerate(rowact)), "every key on a row has an action")
 for name, row in acts.items():
     n = len(row.split(";"))
     check(n in ROWS, f"{name}: {n} actions")
@@ -66,6 +86,8 @@ for name, row in acts.items():
         kind, what = a[0], a[2:]
         if kind == "S":
             check(f'a == "{what}"' in sync, f"sync does not act on '{what}' (key {name})")
+        elif what == "adjust":
+            check('else if (str == "adjust")' in core and "gAdjOn = !gAdjOn;" in core, "core does not act on 'adjust'")
         elif what in ("next", "photo", "stop"):
             check(f'str == "{what}"' in core, f"core does not act on '{what}'")
         elif what == "scenery":

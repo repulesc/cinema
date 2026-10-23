@@ -55,6 +55,7 @@ There are no rosters, lead requests, Pass camera or End live any more: taking a 
 | `join` `leave` `next` `away` `back` `ask` | viewer → hub | connected (`join\|W` from a Watch: it can never take the lead), left, next view (5 s apart), own camera / looking around, back, **my camera started**. A `join` to someone no longer holding it is answered with `director\|…` (the lead moved on: follow that one) or `end` |
 | `hb` | viewer → hub, hub → viewers | heartbeat, every 10 s |
 | `cam\|<pos>\|<focus>\|<lag>\|<lens>` | hub → viewers | every camera the hub's core sets, with its field of view |
+| `fmt\|<format>` | hub → viewers | 7.1: the hub's Format (its ratio, 0 = none), on a change and to each viewer that joins. A Take 12 viewer shows it (`crop\|follow <format>`, not saved) and gets its own back when it leaves; the Watch has no bars and ignores it |
 | `pause` | hub → viewers | nobody films: viewers get their own camera, still connected. Also sent on `join` while the hub's camera is off |
 | `lead\|1` / `lead\|2` / `lead\|0` | hub → viewer | you film now (your camera runs) / you hold it now, nobody films (the hub disconnected) / no (an older hub kept the camera: you film alone, disconnected) |
 | `director\|<key>\|<name>` | old hub → viewers | the lead passed: follow this one |
@@ -82,6 +83,7 @@ There are no rosters, lead requests, Pass camera or End live any more: taking a 
   - `k = tan(hub/2) / tan(yours/2)`, clamped to 0.2–5;
   - stopped 0.3 m short of a wall.
 - **The same code.** `place()` is identical in both scripts; sync_sim checks it, and the geometry.
+- **7.1: a note, once.** A Take 12 viewer whose lens differs from the hub's by more than 15 % is told once per connection ("Ana zooms wider · Ctrl+8 to match"): the picture already keeps its size, only the perspective differs.
 
 ## Feedback and edge cases
 - **Heartbeats:** every viewer sends `hb` every 10 s.

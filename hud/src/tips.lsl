@@ -14,7 +14,7 @@
 //  script clears it, the status comes back within a second.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer LENS        = 7319;   // lens -> friends  "<distance>|...": distance 0 = automatic, else your own view
@@ -34,7 +34,7 @@ float   LATE = 1.5;           // s after the event
 float   WAIT = 10.0;          // s a tip waits for a free moment, then it is dropped (not counted)
 float   GAP  = 20.0;          // s between two tips
 
-// 0 hello  1 scenery  2 me  3 us  4 friends  5 me (Framing)  6 connected  7 paused  8 back  9 more  10 sitting: Fit  11 idle start
+// 0 hello  1 scenery  2 me  3 us  4 friends  5 me (Framing)  6 connected  7 paused  8 back  9 more  10 sitting: Adjust  11 idle start
 // 12 your lens  13 freehand
 // Under a status line only the second line shows, so it must make sense on its own.
 list TIPS = [
@@ -43,15 +43,15 @@ list TIPS = [
     "Me\nwalk around, it follows you · tap: menu",
     "Us\nit cuts to whoever speaks · double-tap: next",
     "Friends\nframe it yourself, then Esc: it keeps your view",
-    "Me\nwalk: it follows · stand: it holds the picture",
+    "Me\nwalk: it follows · Adjust: the keys trim the shot",
     "Connected\nwhoever films leads · hold: the Connect panel",
     "Paused\nyou moved the camera, so it waits for you",
     "Your camera is back\ndouble-tap: scenery again",
-    "Tap while it rolls\ntap: next, stop, connect, cameras",
-    "Sitting\nsitting: Page Up / Down move you in the picture",
+    "Tap while it rolls\ntap: Me · Us · Friends, Adjust, stop",
+    "Sitting\nsitting: W/S tilt · A/D around · PgUp/PgDn height",
     "Idle start\nstay idle ",
     "Your lens\nCtrl+0 zoom in · Ctrl+8 out · Ctrl+9 back",
-    "Freehand\nframe it, hold still: it holds · Esc: back to it"];
+    "Freehand\nframe it, hold still: it holds · Adjust: trim it"];
 list MODES = ["scenery", "personal", "social", "friends", "frame", "free"];   // tips 1 to 5, and 13
 list NAMES = ["Scenery", "Me", "Us", "Friends", "Me", "Freehand"];      // 7.0: Me is Framing › Me (frame)
 list MARKS = ["◇", "○", "◎", "♡", "○", "✥"];

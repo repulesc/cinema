@@ -28,7 +28,7 @@ A camera for Second Life.
 Take 12 moves your view off your avatar's back and composes it the way a photographer would: eyes on the golden line, room to look into, air around a full-length picture. One small button. Any movement key gives your camera back.
 
 FRAMING
-Me, Us or Friends. It follows you as you walk and holds a composed picture when you stand. Page Up and Page Down set the height for the way you sit; it remembers each seat.
+Me, Us or Friends, one tap away. It follows you as you walk and holds a composed picture when you stand. Adjust trims it with your keys: tilt, around you, sideways, height (remembered per seat).
 
 FREEHAND
 Frame it yourself with Second Life's camera. Hold still for a second and Take 12 holds it, like a tripod.

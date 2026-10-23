@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (7.0)
+TAKE 12  -  READ ME  (7.1)
 A camera for Second Life, from beyond your avatar's back. It only moves your view: nothing is recorded.
 
 
@@ -6,21 +6,21 @@ A camera for Second Life, from beyond your avatar's back. It only moves your vie
 
 1. Wear the HUD (Attach To HUD > Top Right) and accept the camera permission once.
 2. Tap the small clapper: the menu.
-3. Tap > Stop gives your own camera back (in Scenery any movement key does too; in Framing the keys walk you and the camera comes along).
+3. Tap > Framing: a composed picture of you, at once. Tap again > Stop gives your own camera back (in Scenery any movement key does too).
 
 Stay idle for 3 minutes and the scenery camera starts by itself.
 
 
 === THE BUTTON ==========================================
 
-TAP         the menu (while a camera runs: Next, Stop, Connect, Cameras)
+TAP         the menu (while a camera runs: Me · Us · Friends, Adjust, Stop, Connect, Menu)
 DOUBLE-TAP  idle: the scenery camera · running: the next shot
 HOLD        Connect (about 1 second, until the clapper claps)
 
 
 === THE MENU ============================================
 
-FRAMING     you, or you and the people with you, composed
+FRAMING     you, or you and the people with you, composed (one tap: the last one you used)
 FREEHAND    you frame it, Take 12 holds it
 CONNECT     one camera for everyone near you
 SCENERY     the place, while you are away
@@ -30,14 +30,23 @@ SETTINGS    pace, look, camera
 
 === FRAMING =============================================
 
-One rule everywhere: it follows you as you walk, and holds a composed picture when you stand.
+Tap > Framing starts the last one you used (Me the first time). While it runs, tap: Me, Us or Friends switch.
+It follows you as you walk, and holds a composed picture when you stand.
  ME        you. Full length, half length or close (double-tap, or the keys). Walk and the camera comes along; stand still for a second and it composes the picture again in front of you.
  US        you and the people near you: shots of the group, a pair over the shoulder, whoever speaks in chat. Each shot is held, then changes with the Pace.
- FRIENDS   you and the friends you picked (Framing > Friends list). Frame it yourself and press Esc: Take 12 keeps your view.
+ FRIENDS   you and the friends you picked (tap > Friends list). Frame it yourself and press Esc: Take 12 keeps your view.
 The composition: eyes on the golden line (38.2 % from the top), you on a golden line across with room to look into, air around a full-length picture. With a Format set, it composes inside it.
 
-FIT: PAGE UP / PAGE DOWN
-Second Life plays your pose in your viewer, so no script can see where your body really is (a deep sofa, a ground sit, heels). Page Up raises the camera, Page Down lowers it: tap for 5 cm, hold to go faster. It is kept for this seat, for sitting on the ground and for standing. While Framing runs these keys never make you jump; flying, they fly.
+ONE RULE: BIG MOVES, SMALL CORRECTIONS
+Big moves: your viewer's own camera (Alt + mouse, the wheel), in Freehand, or in Friends (press Esc after: it keeps your view).
+Small corrections: ADJUST, in Framing and Freehand. The keys trim the shot instead of walking you:
+   W / S  (up / down arrows)      tilt the camera up or down
+   A / D  (left / right arrows)   swing it around you
+   Shift + A / D                  slide it sideways
+   Page Up / Page Down            the height
+Seated, the keys always adjust (you cannot walk anyway). Standing they walk you, until you tap > Adjust (or the ADJUST key); tap it again to walk. Tap for a small step, hold to go faster (full speed after a second).
+In Me an adjustment stays until you change Full / Half / Close or stop. In Us and Friends adjusting holds that shot until Next; the next one starts clean.
+The height (Page Up / Page Down) is also how you show where your body really is: Second Life plays your pose in your viewer, so no script can see it (a deep sofa, a ground sit, heels). It is kept for this seat, for sitting on the ground and for standing. While Framing runs these keys never make you jump; flying, they fly.
 
 THE LENS
 Your viewer's zoom is your lens: Ctrl+0 zooms in, Ctrl+8 out, Ctrl+9 back. The line above the button shows it and what each camera likes ("21 mm · try 35 · Ctrl+0"); Me names the classic portrait lens for each framing (50, 85, 105 mm). Zoom while it runs and the camera glides so the picture keeps its size: a longer lens flatters faces.
@@ -45,7 +54,7 @@ Your viewer's zoom is your lens: Ctrl+0 zooms in, Ctrl+8 out, Ctrl+9 back. The l
 
 === FREEHAND ============================================
 
-For the photographer: frame the shot yourself with Second Life's camera (Alt-click, Ctrl+Alt-drag, the wheel, your lens). Hold still for a second: it is held, like a tripod. Walk into the picture, pose, take the snapshot. Tap > Save keeps the view (two per region, View A and View B; a double-tap goes between them). Tap > Stop to end it.
+For the photographer: frame the shot yourself with Second Life's camera (Alt-click, Ctrl+Alt-drag, the wheel, your lens). Hold still for a second: it is held, like a tripod. Walk into the picture, pose, take the snapshot. Tap > Adjust to trim it with the keys. Tap > Save keeps the view (two per region, View A and View B; a double-tap goes between them). Tap > Stop to end it.
 
 
 === CONNECT =============================================
@@ -53,6 +62,7 @@ For the photographer: frame the shot yourself with Second Life's camera (Alt-cli
 Watch one camera together. Hold the button (or tap > Connect): + name connects you with one person, + Everyone with all of them (people near you wearing Take 12 or the free Take 12 Watch).
  - Once connected, WHOEVER FILMS LEADS: start any camera and everyone connected sees it. Nobody filming: everyone has their own camera, still connected.
  - Watching: double-tap = next for everyone. My turn (Hold > My turn, or start any camera): you film. A movement key gives you your own camera for a moment.
+ - The Format of whoever films shows on your screen too, while you are connected; yours comes back after. Your lens is yours: the picture keeps its size, and a note says how to match theirs.
  - Disconnect (Hold > Disconnect) is the only way out. The others stay connected.
 
 
@@ -80,9 +90,10 @@ High drone views over the area, wide views across the horizon, the corners of a 
 
 === THE KEYS (if your HUD has the keys strip) ===========
 
-A short row of quiet keys beside the button, only when they help:
-   Me          FULL · HALF · CLOSE
-   Freehand    SAVE · VIEW A · VIEW B · STOP
+A short row of quiet keys beside the button, only when they help (with them, Next is not in the menu):
+   Me          FULL · HALF · CLOSE · ADJUST
+   Us, Friends NEXT · ADJUST
+   Freehand    SAVE · VIEW A · VIEW B · STOP · ADJUST
    Connected   NEXT · INVITE · DISCONNECT   /   NEXT · MY TURN · DISCONNECT
 No keys? /77 status: the line "[Take 12/keys]" says whether the strip is found.
 
@@ -94,7 +105,7 @@ A quiet line says which camera runs: "○ Me · Half length · 85 mm ✓", "◇ 
 
 === CHAT (optional, channel 77) =========================
 
-scenery  me  us  friends  free  connect  crop <format|off>  size s|m|l  stop  next  menu  status
+scenery  me  us  friends  free  adjust  connect  crop <format|off>  size s|m|l  stop  next  menu  status
 pace <seconds>   reach <metres>   indoors auto|inside|outside   tips on|off   statusline on|off   trace on|off   chan <number>   reset
 
 

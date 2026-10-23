@@ -7,11 +7,13 @@
 //  its origin at its own corner, edge or the centre. The bars are placed from the screen centre, through the root's
 //  own position and rotation, so the button can sit anywhere.
 //  Also measures your window for the cameras (cin.aspect; they assumed 16:9) and tells them the format (CROP).
-//  Its own menu (ui routes the Frame button here); chat: /77 crop 4:5 | off | flip | back (via picker).
+//  Its own menu (ui routes the Format button here); chat: /77 crop 4:5 | off | flip | back (via picker).
+//  7.1, Connect: watching someone, their Format is shown on your screen (sync: "crop|follow <format>", not saved);
+//  "crop|follow" brings your own back.
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -178,9 +180,22 @@ hear(string m)
     menu();
 }
 
-// /77 crop <format | off | flip | back>
+// /77 crop <format | off | flip | back>; follow <format> / follow: Connect (sync)
 command(string v)
 {
+    if (llGetSubString(v, 0, 5) == "follow")
+    {
+        load();                                             // your own ...
+        if (v != "follow")
+        {
+            gR = (float)llGetSubString(v, 7, -1);           // ... or the director's, for now
+            if (ratioName(gR) == "off") gR = 0.0;
+        }
+        cut();
+        tick();
+        if (v == "follow") tell();
+        return;
+    }
     integer i = llListFindList(NAMES, [v]);
     if (i >= 0) choose(llList2Float(RATIOS, i));
     else if (v == "off") choose(0.0);

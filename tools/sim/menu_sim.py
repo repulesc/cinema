@@ -1,6 +1,7 @@
 # The menus (7.0.0: one product). The main page has six doors: Framing, Freehand, Connect, Scenery, Format,
-# Settings (and Help, Close; the free Take 12 Scenery: Scenery, Settings, More cameras, Help, Close). Framing holds
-# Me / Us / Friends; Scenery its own settings (idle start, indoors, reach); Settings: Pace, Look, Camera, Test cam,
+# Settings (and Help, Close; the free Take 12 Scenery: Scenery, Settings, More cameras, Help, Close). 7.1: Framing
+# starts the last one used at once (Me the first time); the live menu switches Me / Us / Friends and has Adjust, and
+# leaves Next out when the keys strip (which has it) is linked; Scenery its own settings (idle start, indoors, reach); Settings: Pace, Look, Camera, Test cam,
 # Reset. One quiet menu style (a mark and a word). Ported from ui.lsl: every page fits a dialog (12 buttons), every
 # button has a name, Back goes to the page above, the labels on a page are distinct and fit 24 bytes.
 import os, re
@@ -34,7 +35,7 @@ lk = ui[ui.index("integer locked(string id)"):]
 hide_full = set(re.findall(r'if \(!LITE\) return \(id == "(\w+)"\);', lk[:300]))
 hide_free = set(re.findall(r'"(\w+)"', re.search(r'return \(llListFindList\(\[(.*?)\], \[id\]\)', lk).group(1)))
 check(hide_full == {"full"}, f"the full build must hide only More cameras: {hide_full}")
-check(hide_free >= {"framing", "free", "share", "crop", "save", "modes", "release"} and not hide_free & {"scenery", "start", "next", "stop", "opts",
+check(hide_free >= {"framing", "free", "share", "crop", "save", "modes", "release", "me", "us", "friends", "flist", "adjust"} and not hide_free & {"scenery", "start", "next", "stop", "opts",
       "pace", "afk", "camcfg", "indoors", "reach", "look", "help", "readme", "tips", "full", "back", "close"}, f"Take 12 Scenery hides {hide_free}")
 check(all(i in items for i in hide_free | hide_full), "a hidden id is not a menu item")
 check("ids = b;" in ui[ui.index("list order(list ids)"):ui.index("list order(list ids)") + 400] and "if (!locked(" in ui, "order() must leave out what the build hides")
@@ -44,13 +45,21 @@ check(shown("main", hide_full) == ["framing", "free", "share", "scenery", "crop"
 check([label(i) for i in shown("main", hide_full)[:6]] == ["○ Framing", "✥ Freehand", "⇄ Connect", "◇ Scenery", "◰ Format", "≡ Settings"],
       f"the six doors: {[label(i) for i in shown('main', hide_full)]}")
 check(shown("main", hide_free) == ["scenery", "opts", "full", "help", "close"], f"Take 12 Scenery main menu: {shown('main', hide_free)}")
-check(pages.get("framing") == ["me", "us", "friends", "flist", "back"], f"Framing: {pages.get('framing')}")
+check("framing" not in pages, "7.1: no Framing page, the door starts a camera")
+check('if (id == "framing") id = cfgGet("fwho");' in ui and 'if (id == "") id = "frame";' in ui
+      and 'cfgGet("fwho") != gUiMode) cfgWrite("fwho", gUiMode);' in ui, "ui: Framing starts the last one used (Me the first time)")
 check(pages.get("scenery") == ["start", "afk", "indoors", "reach", "back"], f"Scenery: {pages.get('scenery')}")
 check(pages.get("opts") == ["pace", "look", "camcfg", "test", "reset", "back"], f"Settings: {pages.get('opts')}")
 check(pages.get("camcfg") == ["seat", "altcam", "chat", "phantom", "back"], f"Camera: {pages.get('camcfg')}")
 check(pages.get("look") == ["th0", "th1", "th2", "stline", "size", "trace", "back"], f"Look: {pages.get('look')}")
 check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")
-check(shown("live", hide_full) == ["save", "release", "next", "stop", "share", "modes", "close"], f"live menu: {shown('live', hide_full)}")
+check(shown("live", hide_full) == ["save", "me", "us", "friends", "adjust", "flist", "release", "next", "stop", "share", "modes", "close"], f"live menu: {shown('live', hide_full)}")
+lv = ui[ui.index('else if (page == "live")'):ui.index('else if (page == "pace")')]
+check('if (fr) b += ["me", "us", "friends"];' in lv and 'if (fr || gUiMode == "free") b += ["adjust"];' in lv and 'if (gUiMode == "scenery" || !strip()) b += ["next"];' in lv,
+      "ui: the live menu: Me / Us / Friends in Framing, Adjust in Framing and Freehand, Next only without the keys strip (and in Scenery)")
+check('if (llGetLinkName(i) == "Take 12 keys") return TRUE;' in ui, "ui: the keys strip is found by its name (keys.lsl names it)")
+check(all(f'"{x}"' in lv for x in ("save", "flist", "release")) and len(shown("live", hide_full)) <= 12, "the live menu fits one dialog")
+check('return "● " + llList2String(p, 1);' in ui, "ui: the camera running and Adjust on carry a dot in the live menu")
 check(shown("live", hide_free) == ["next", "stop", "close"], f"Take 12 Scenery live menu: {shown('live', hide_free)}")
 # 7.0 cuts: no Photo, no menu styles, no Scenery favourites
 for gone in ("photo", "resume", "sk0", "sk1", "sk2", "favs", "here", "timing", "personal", "frame", "everyone", "onlyfr"):
@@ -59,7 +68,7 @@ check("gSkin" not in ui and "cfgSet(\"skin\"" not in ui, "ui: one menu style")
 # Framing's three: Me runs the Framing composer (frame), Us people (social), Friends friends
 check('llList2String(["frame", "social", "friends"], llListFindList(["me", "us", "friends"], [id]))' in ui, "ui: Framing › Me / Us / Friends start frame / social / friends")
 check('if (id == "start") { closeMenu(); llMessageLinked(LINK_SET, CMD, "scenery", ""); }' in ui, "ui: Scenery › Start")
-check('if (id == "free" || id == "share" || id == "crop")' in ui, "ui: Freehand, Connect and Format start from the main menu")
+check('if (id == "free" || id == "share" || id == "crop" || id == "frame" || id == "social" || id == "friends")' in ui, "ui: Framing, Freehand, Connect and Format start from the main menu")
 # ---- every page fits, every button has a name, labels distinct and within 24 bytes ----------------------------------
 for p, ids in pages.items():
     check(len(ids) <= 12, f"{p}: {len(ids)} buttons (a dialog holds 12)")

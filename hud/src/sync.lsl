@@ -17,17 +17,19 @@
 //    who|<name> (llRegionSay) -> here|<T/W>|<idle/live/view/pend>|<director name>
 //    invite|<name> -> ack|1 (joined) / ack|0 (asked) / busy|<what>
 //    viewer -> director: join leave next away back ask        director -> viewer: cam|<pos>|<focus>|<lag> hb pause
+//    fmt|<format> (7.1: the director's Format; a Take 12 viewer shows it while connected, its own comes back after)
 //    lead|<1 you lead / 2 you hold it / 0 no>   director|<key>|<name> (a hand-over) kick end
 //  The panels are drawn by connect.lsl (SHARE_UI / SHARE_DO; share.lsl before 6.8). Full description:
 //  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
 integer STOP       = 7302;
 integer CAMSET     = 7325;   // core -> sync  "<pos>|<focus>|<lag>|<lens>" (6.0.1: viewers place it through their own lens)
+integer CROP       = 7390;   // crop -> cameras  "<format>|<window>": your Format, for the people connected (7.1)
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
@@ -74,6 +76,9 @@ float   gWhoT;               // ... sent at (0 = none running)
 float   gTextT;              // a short notice above the HUD, until it gives way to the state again
 string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes
 float   gMyFov;              // your lens when it was placed
+string  gFmt = "0";          // your Format (0: none), sent to the people connected
+integer gFmtOn;              // viewing: the director's Format is on your screen
+integer gLensTold;           // ... the lens note was shown
 string  gNoteS;              // ... its text
 string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
 
@@ -419,6 +424,9 @@ leave(integer tell, integer clear)
     gCam = "";
     gAskT = 0;
     gOwnT = 0.0;
+    gLensTold = FALSE;
+    if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");   // your own Format again
+    gFmtOn = FALSE;
     // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself
     clear = clear && llGetAttached() && llGetPermissionsKey() == gOwner;
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
@@ -477,7 +485,12 @@ default
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == CAMSET)
+        if (num == CROP && !gFmtOn)
+        {
+            gFmt = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
+            if (gSharing) all("fmt|" + gFmt);
+        }
+        else if (num == CAMSET)
         {
             gLastCam = str;
             all("cam|" + str);
@@ -590,6 +603,7 @@ default
             show(sn(who) + " connected");
             if (!gCamOn) say(who, "pause");                 // nobody films: their own camera, connected
             else if (gLastCam != "") say(who, "cam|" + gLastCam);
+            say(who, "fmt|" + gFmt);
         }
         else if (w == "leave" && llListFindList(gWatchers, [who]) >= 0)
         {
@@ -622,8 +636,19 @@ default
             gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
             if (gHeld) { gHeld = FALSE; refresh(); }            // someone films again
             if (!gAskT && gOwnT == 0.0) place(FALSE);           // (your own camera, or yours for a moment: kept)
+            float df = (float)llList2String(L, 5);
+            if (!gLensTold && df > 0.05 && llFabs(df / llGetCameraFOV() - 1.0) > 0.15)
+            {
+                gLensTold = TRUE;                               // the same picture through your lens, another perspective: how to match
+                show(sn(gHost) + llList2String([" zooms closer · Ctrl+0 to match", " zooms wider · Ctrl+8 to match"], df > llGetCameraFOV()));
+            }
         }
         else if (w == "hb") gHearT = llGetUnixTime();
+        else if (w == "fmt")
+        {
+            gFmtOn = TRUE;                                  // the director's Format, while connected (crop.lsl)
+            llMessageLinked(LINK_SET, CMD, "crop|follow " + llList2String(L, 2), "");
+        }
         else if (w == "pause")
         {
             gHearT = llGetUnixTime();

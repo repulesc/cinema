@@ -1,40 +1,51 @@
 // ============================================================================
-//  Take 12  -  fit.lsl  (v6.7)  - Fit: Page Up / Page Down move the camera up or down
-//  Second Life plays poses in the viewer: no script can see where your body really is in a seat, on the ground, in
-//  heels. So you show it once, by eye. While a people camera runs (Me, Us, Only friends, Still), core hands this
-//  script Page Up / Page Down (E / C; they never make you jump; flying, they fly): a tap moves the camera 5 cm up or
-//  down, holding speeds up (10 cm/s at first, 50 cm/s after about 2 s). No script can see Shift, so the hold is the
-//  big move. The shot on screen glides at once (FIT to core); every next shot is planned with it (cin.fitz, read
-//  by people, friends and frame: they frame as if your eyes were that much higher).
-//  6.7.1: Page Up raises the camera (6.7.0 moved you up in the picture, which read as the camera going down); the
-//  values are kept under new names (fitc.*), so 6.7.0's start over.
-//  Kept per seat (the object you sit on and where on it; the last 20 seats), one for sitting on the ground and one
-//  for standing. One key pair, no mode (5.0's Tune per seat needed a mode and more keys, and 5.1 took it out).
-//  Checked in tools/sim/fit_sim.py.
+//  Take 12  -  fit.lsl  (v7.1)  - Adjust: the keys trim the shot (and Fit: Page Up / Page Down, the height)
+//  7.1: Adjust. Seated the keys always adjust; standing they walk you, until you tap ADJUST (the keys strip, the live
+//  menu, /77 adjust). Then core keeps them from your avatar and hands them here (FITKEY, the keys held):
+//    W / S (up / down arrows)     tilt the camera up or down            1 degree a tap, up to 15 degrees/s held
+//    A / D (left / right arrows)  swing it around you                   3 degrees a tap, up to 45 degrees/s
+//    Shift + A / D                slide it sideways                     5 cm a tap, up to 50 cm/s
+//    Page Up / Page Down          the height (Fit)                      10 cm a tap, up to 60 cm/s
+//  Holding speeds up, full speed after about a second (no script can see Shift on its own, so holding is the big
+//  move). Tilt, swing and slide go to core (TRIM), which puts them on every shot: in Me until Full / Half / Close
+//  change or the camera stops; in Us and Friends adjusting holds that shot until Next (core resets, FITKEY "r").
+//  Fit, the height, is kept per seat (the object you sit on and where on it; the last 20 seats), one for sitting on
+//  the ground and one for standing; people, friends and frame read it (cin.fitz) and plan every shot with it. In
+//  Freehand the height is for that view only. While a people camera runs, Page Up / Page Down are Fit's even when you
+//  walk (they never make you jump; flying, they fly). Checked in tools/sim/fit_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
-integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
+integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|<next cut>|<why>|<adjust>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer FITKEY     = 7396;   // core -> here  "<keys held: 16 Page Up, 32 Page Down>"
+integer CMD        = 7371;
+integer FITKEY     = 7396;   // core -> here  "<keys held>" (Adjust: all of them; else Page Up 16 / Page Down 32), "r": a new shot
 integer FIT        = 7397;   // here -> core  "<dz>": the shot on screen moves dz metres (next shots read cin.fitz)
+integer TRIM       = 7398;   // here -> core  "<tilt rad>|<swing rad>|<slide m>": Adjust, on every shot
 
-float   STEP  = 0.05;        // m  a tap
-float   SLOW  = 0.01;        // m  each 0.1 s while held, from 0.4 s ...
-float   GROW  = 0.025;       // m  ... plus this per second held ...
-float   FAST  = 0.05;        // m  ... up to this (50 cm/s)
-float   LIMIT = 1.5;         // m  either way
+// the four axes: height (Page Up 16 / Page Down 32), tilt (W 1 / S 2), swing (A 256 / D 512), slide (Shift+D 8 / Shift+A 4)
+list    UPS   = [16, 1, 256, 8];
+list    DOWNS = [32, 2, 512, 4];
+list    STEPS = [0.10, 0.017453, 0.05236, 0.05];   // a tap: 10 cm, 1 degree, 3 degrees, 5 cm
+list    RATES = [0.6, 0.2618, 0.7854, 0.5];        // held, full speed (per second): 60 cm, 15 degrees, 45 degrees, 50 cm
+list    LIMITS= [1.5, 0.43633, 1.309, 1.5];        // either way: 1.5 m, 25 degrees, 75 degrees, 1.5 m
+float   RAMP  = 0.3;         // s  a hold starts after this, slow (a fifth of full speed) ...
+float   FULL  = 1.0;         // s  ... and runs at full speed from here
 integer SEATS = 20;
 
 key     gOwner;
 string  gCtx;                // "stand", "ground" or the key of the object you sit on
 float   gFit;                // m  the camera: + up (Page Up)
+vector  gT;                  // Adjust: <tilt, swing, slide> (+ up, + to your left around you, + to the right)
 integer gKeys;
-float   gDownT;              // the key went down at
-integer gOn;                 // a people camera runs
+float   gDownT;              // a key went down at
+integer gOn;                 // a camera Adjust works in runs
+integer gAdj;                // the keys adjust (core: seated, or ADJUST)
+integer gFree;               // Freehand: the height is for this view only
+integer gTaps;               // the first taps say that a hold is faster
 string  gNote;
 float   gTextT;
 
@@ -68,6 +79,8 @@ look()
     string c = ctx();
     if (c == gCtx) return;
     gCtx = c;
+    gFit = 0.0;                                             // Freehand: each view starts level
+    if (gFree) return;
     gFit = (float)cfg("fitc." + c);
     set("fitz", (string)gFit);
 }
@@ -75,6 +88,7 @@ look()
 // keep it; a seat goes to the end of the list, the oldest seat beyond 20 is forgotten
 keep()
 {
+    if (gFree) return;
     set("fitc." + gCtx, (string)gFit);
     if (gCtx == "stand" || gCtx == "ground") return;
     list L = llParseString2List(cfg("fitcseats"), [","], []);
@@ -89,19 +103,44 @@ keep()
     set("fitcseats", llDumpList2String(L, ","));
 }
 
-// a step up (+) or down (-): the shot glides, the line above the button says it
-move(float d)
+// axis a moves by d (+ up, left, right): the shot glides, the line above the button says it
+move(integer a, float d)
 {
-    float f = gFit + d;
-    if (f > LIMIT) f = LIMIT;
-    if (f < -LIMIT) f = -LIMIT;
-    if (f == gFit) return;
-    llMessageLinked(LINK_SET, FIT, (string)(f - gFit), "");
-    gFit = f;
-    set("fitz", (string)gFit);
-    string s = "Fit " + llList2String(["", "+"], gFit > 0.004) + (string)llRound(gFit * 100.0) + " cm";
-    if (llRound(gFit * 100.0) == 0) s = "Fit 0 · automatic";
-    show(s + " · " + llList2String(["this seat", "standing", "sitting on the ground"], llListFindList(["stand", "ground"], [gCtx]) + 1));
+    float lim = llList2Float(LIMITS, a);
+    float v = gFit;
+    if (a == 1) v = gT.x;
+    if (a == 2) v = gT.y;
+    if (a == 3) v = gT.z;
+    float f = v + d;
+    if (f > lim) f = lim;
+    if (f < -lim) f = -lim;
+    if (f == v) return;
+    string s;
+    if (a == 0)
+    {
+        llMessageLinked(LINK_SET, FIT, (string)(f - gFit), "");
+        gFit = f;
+        if (!gFree) set("fitz", (string)gFit);
+        s = "Height " + sgn(gFit * 100.0) + " cm · " + llList2String(["this seat", "standing", "on the ground"], llListFindList(["stand", "ground"], [gCtx]) + 1);
+        if (gFree) s = "Height " + sgn(gFit * 100.0) + " cm · this view";
+    }
+    else
+    {
+        if (a == 1) gT.x = f;
+        if (a == 2) gT.y = f;
+        if (a == 3) gT.z = f;
+        llMessageLinked(LINK_SET, TRIM, (string)gT.x + "|" + (string)gT.y + "|" + (string)gT.z, "");
+        s = "Tilt " + sgn(gT.x * RAD_TO_DEG) + "° · Around " + sgn(gT.y * RAD_TO_DEG) + "° · Side " + sgn(gT.z * 100.0) + " cm";
+    }
+    if (gTaps < 3 && !gKeys) s += "\nhold: faster";
+    show(s);
+}
+
+string sgn(float v)
+{
+    integer i = llRound(v);
+    if (i > 0) return "+" + (string)i;
+    return (string)i;
 }
 
 // a short notice above the button, read back as Second Life keeps it; tips draws the line again afterwards
@@ -112,7 +151,7 @@ show(string s)
     gTextT = llGetTime();
 }
 
-// fast while a key is held or a notice is up; once a second while a people camera runs (you may sit or stand)
+// fast while a key is held or a notice is up; once a second while a camera runs (you may sit or stand)
 tick()
 {
     float t = 0.0;
@@ -143,28 +182,53 @@ default
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == FITKEY)
+        if (num == FITKEY && str == "r")
+        {
+            gT = ZERO_VECTOR;                               // a new shot, a new view: Adjust starts clean
+            if (gFree) gFit = 0.0;
+        }
+        else if (num == FITKEY)
         {
             look();
-            integer k = (integer)str * gOn;                 // held, paused, Photo: the keys do nothing
-            if (k & ~gKeys & 16) move(STEP);              // a new press: one step at once
-            if (k & ~gKeys & 32) move(-STEP);
+            integer k = (integer)str * gOn;                 // held, paused: the keys do nothing
+            if (cfg("trace") == "1") llOwnerSay("[Take 12] keys " + str);   // what the viewer sends (Shift + Page Down?)
+            integer a;
+            for (a = 0; a < 4; a++)
+            {
+                if (k & ~gKeys & llList2Integer(UPS, a)) move(a, llList2Float(STEPS, a));   // a new press: one step at once
+                if (k & ~gKeys & llList2Integer(DOWNS, a)) move(a, -llList2Float(STEPS, a));
+            }
             if (k && !gKeys) gDownT = llGetTime();
-            if (!k && gKeys) keep();                        // let go: kept
+            if (!k && gKeys)
+            {
+                keep();                                     // let go: kept
+                gTaps++;
+            }
             gKeys = k;
         }
         else if (num == UI_STATE)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
-            gOn = (llList2String(L, 0) == "rolling" && llListFindList(["personal", "social", "friends", "frame"], [llList2String(L, 1)]) >= 0);
+            string m = llList2String(L, 1);
+            gOn = (llList2String(L, 0) == "rolling" && llListFindList(["personal", "social", "friends", "frame", "free"], [m]) >= 0);
+            integer adj = (integer)llList2String(L, 4) * gOn;
+            if (gFree != (m == "free")) gCtx = "";            // Freehand's height is its own; back from it, the seat's again
+            gFree = (m == "free");
+            if (adj != gAdj && gOn)
+            {
+                if (adj) show("Adjust · W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height");
+                else show("Walk · the keys move you");
+            }
+            gAdj = adj;
             if (!gOn && gKeys) keep();
             if (!gOn) gKeys = 0;
             look();
         }
+        else if (num == CMD && str == "adjust" && gOn && (llGetAgentInfo(gOwner) & AGENT_SITTING)) show("Seated · the keys adjust");
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "fit");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/fit] v" + VERSION + " " + gCtx + ": " + (string)llRound(gFit * 100.0) + " cm, "
-                + (string)llGetListLength(llParseString2List(cfg("fitcseats"), [","], [])) + " seats kept, free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/fit] v" + VERSION + " " + gCtx + ": " + (string)llRound(gFit * 100.0) + " cm, adjust " + (string)gAdj + " "
+                + (string)gT + ", " + (string)llGetListLength(llParseString2List(cfg("fitcseats"), [","], [])) + " seats kept, free mem " + (string)llGetFreeMemory());
         else return;
         tick();
     }
@@ -172,11 +236,17 @@ default
     timer()
     {
         float h = llGetTime() - gDownT;
-        if (gKeys && h > 0.4)
+        if (gKeys && h > RAMP)
         {
-            float v = SLOW + GROW * (h - 0.4);              // held: slow at first for precision, then fast
-            if (v > FAST) v = FAST;
-            move(v * ((gKeys & 16) > 0) - v * ((gKeys & 32) > 0));
+            float r = 0.2 + 0.8 * (h - RAMP) / (FULL - RAMP);   // held: slow at first for precision, then fast
+            if (r > 1.0) r = 1.0;
+            integer a;
+            for (a = 0; a < 4; a++)
+            {
+                float v = llList2Float(RATES, a) * 0.1 * r;
+                if (gKeys & llList2Integer(UPS, a)) move(a, v);
+                if (gKeys & llList2Integer(DOWNS, a)) move(a, -v);
+            }
         }
         if (gTextT > 0.0 && llGetTime() - gTextT > 3.0)
         {
