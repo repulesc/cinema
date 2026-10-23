@@ -8,7 +8,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -331,8 +331,7 @@ openMenu(string page)
     }
     else if (page == "live")
     {
-        if (gUiState == "frozen") b = ["resume"];
-        else b = ["photo"];
+        if (gUiState == "frozen") b = ["resume"]; else b = ["photo"];
         if (gUiMode == "scenery" || gUiMode == "free") b += ["save"];
         if (gUiMode == "friends") b += ["release"];
         b += ["next", "stop", "share", "modes", "close"];

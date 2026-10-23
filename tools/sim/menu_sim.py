@@ -43,8 +43,8 @@ shown = lambda p, hide: [i for i in pages.get(p, []) if i not in hide]
 check(shown("main", hide_full) == ["scenery", "personal", "us", "frame", "free", "crop", "share", "opts", "help", "close"], f"main menu: {shown('main', hide_full)}")
 check([i for i in shown("main", hide_free) if i != "crop"] == ["scenery", "opts", "full", "help", "close"], f"Take 12 Scenery main menu: {shown('main', hide_free)}")
 # (the free build's Frame button is taken out by tools/build_scenery.py: it has no crop.lsl; free_test checks the result)
-check(shown("live", hide_free) == ["photo", "next", "stop", "close"] or set(shown("live", hide_free)) == {"photo", "resume", "next", "stop", "close"},
-      f"Take 12 Scenery live menu: {shown('live', hide_free)}")
+check(shown("live", hide_full) == ["resume", "save", "release", "next", "stop", "share", "modes", "close"] and "photo" not in items,   # 6.6: no Photo button; Resume only while held
+      f"live menu: {shown('live', hide_full)} (Take 12 Scenery keeps Photo: tools/build_scenery.py, free_test)")
 check(pages.get("us") == ["everyone", "onlyfr", "flist", "back"], f"Us page: {pages.get('us')}")
 check(pages.get("opts") == ["timing", "camcfg", "look", "favs", "test", "reset", "back"], f"Options: {pages.get('opts')}")
 check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")

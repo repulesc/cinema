@@ -1,5 +1,5 @@
 # Seated view: the camera rises to look down on you at 30/45/60 degrees (people and friends scripts). Checks the
-# maths used in tryCand/camZ: your eye lands on the upper third, everyone near you stays inside the vertical frame,
+# maths used in tryCand/camZ: your eye lands on the golden line (38.2 % from the top, 6.6), everyone near you stays inside the vertical frame,
 # the ceiling cap falls back to the level shot, and both scripts carry the same code and default.
 import math, os, random, re
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -14,7 +14,7 @@ for name in ("people", "friends"):
     check('cfg("seat_deg", "45")' in src, f"{name}: default seat angle is not 45")
     check("if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src
           or "if ((gOSit || gLed > 0.0) && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);" in src, f"{name}: camZ lacks the seated rise")
-    check("r > de * 0.176" in src and "llAtan2(tanV, 3.0)" in src, f"{name}: tryCand lacks the seated look-down")
+    check("r > de * 0.176" in src and "llAtan2(tanV * 0.236, 1.0)" in src, f"{name}: tryCand lacks the seated look-down")
     check('gOSit != gSitAtShot) gPendEvent = "seat"' in src, f"{name}: no re-frame when you sit or stand")
     check("float de = seatD(fmax(needAt(az)" in src, f"{name}: the sweep does not use the slant distance")
     check("float d = S * llCos(gSeatEl);" in src and "float R = fmax(gRoofZ - 0.3 - gPEye, 0.0);" in src
@@ -29,7 +29,7 @@ def shot(el_deg, de, eye_z, roof=None):
     z = eye_z + de * math.tan(math.radians(el_deg))
     if roof is not None: z = min(z, roof - 0.3)
     r = z - eye_z
-    if r > de * 0.176: pitch = math.atan2(r, de) + math.atan2(TANV, 3.0)
+    if r > de * 0.176: pitch = math.atan2(r, de) + math.atan2(TANV * 0.236, 1.0)
     else: pitch = 0.0
     return z, z - de * math.tan(pitch), pitch
 
@@ -45,7 +45,7 @@ for el in (30, 45, 60):
         eye = 0.6                                         # a seated eye, ground at 0
         cz, fz, pitch = shot(el, de, eye)
         y = y_of(eye, de, cz, pitch)
-        check(abs(y - 1 / 3) < 0.02, f"{el} deg at {de} m: your eye is at {y:.2f}, not the upper third")
+        check(abs(y - 0.236) < 0.02, f"{el} deg at {de} m: your eye is at {y:.2f}, not on the golden line")
         for _ in range(200):                              # friends up to 3 m round you, standing or sitting
             ho = rng.uniform(-3.0, 3.0)                   # along the view
             top = rng.choice([0.9, 2.0]); bot = 0.0

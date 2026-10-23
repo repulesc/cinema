@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -163,8 +163,11 @@ loadCfg()
     if (aspect < 0.5) aspect = 1.778;
     if (gFov < 0.1) gFov = 1.047198;
     tanV = llTan(gFov * 0.5);
-    gAlpha = llAtan2(tanV * aspect / 3.0, 1.0);             // rule of thirds on your window
-    tanH = tanV * fmin(aspect, 1.6);                        // people are fitted for a 16:10 window: 16:9 has room to spare
+    float r = (float)cfg("crop", "0");                      // a Frame format: compose inside it (a wider one is shorter)
+    if (r > aspect) tanV *= aspect / r;
+    if (r > 0.0) aspect = r;
+    tanH = tanV * fmin(aspect, 1.6 + 9.0 * (r > 0.0));      // the format exactly; without one fitted for 16:10, so 16:9 has room to spare
+    gAlpha = llAtan2(tanV * aspect * 0.236, 1.0);           // on a golden line, 38.2 % from a side
 }
 
 // [status, distance]: 0 clear (full length), 1 hit, <0 error
@@ -257,7 +260,7 @@ integer survey()
 // ============================================================================
 float camZ(float eyeRef, float d)
 {
-    float z = fmax(eyeRef - d * tanV / 3.0, gFloorZ + 0.35);
+    float z = fmax(eyeRef - d * tanV * 0.236, gFloorZ + 0.35);      // the eyes on the golden line, 38.2 % from the top
     if (gOSit && gSeatEl > 0.0) z = eyeRef + d * llTan(gSeatEl);
     if (gIndoor) z = fmin(z, gRoofZ - 0.3);
     return z;
@@ -301,8 +304,8 @@ float needAt(float az)
 // people close together: now and then a close view of faces and shoulders (the caller remembers it, so two in a row never happen)
 integer closeView(float spread)
 {
-    // seated: more often; and the longer your lens (mm = 12 / tanV), the more often, like a camera operator would
-    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / tanV - 35.0) / 120.0, -0.15, 0.3)) return FALSE;
+    // seated: more often; and the longer your lens (mm = 12 / tan(FOV / 2)), the more often, like a camera operator would
+    if (spread >= 3.5 || gLastClose || llFrand(1.0) >= 0.55 + 0.25 * gOSit + fclamp((12.0 / llTan(gFov * 0.5) - 35.0) / 120.0, -0.15, 0.3)) return FALSE;
     gVNeed = 0.75 / tanV * MARGIN;
     gPLo = 1.2;
     gPEye += 0.15;                                      // a little headroom for a taller neighbour
@@ -435,7 +438,7 @@ list tryCand(float az, float de)
     if (rs < 0 || (rs == 1 && llList2Float(rr, 1) < llVecDist(cam, gPFp) - 0.8)) return [];
     vector foc = cam + viewDir(az) * de;
     float r = cam.z - gPEye;
-    if (gOSit && gSeatEl > 0.0 && r > de * 0.176) foc.z = cam.z - de * llTan(llAtan2(r, de) + llAtan2(tanV, 3.0));
+    if (gOSit && gSeatEl > 0.0 && r > de * 0.176) foc.z = cam.z - de * llTan(llAtan2(r, de) + llAtan2(tanV * 0.236, 1.0));
     else foc.z = cam.z - de * llTan(fclamp(gPTh, 0.0, gThetaMax));
     return [cam, foc];
 }

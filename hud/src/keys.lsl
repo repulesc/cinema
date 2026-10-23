@@ -1,5 +1,5 @@
 // ============================================================================
-//  Take 12  -  keys.lsl  (v6.5)  - the soft keys: a few quiet keys beside the button, only when they help
+//  Take 12  -  keys.lsl  (v6.6)  - the soft keys: a few quiet keys beside the button, only when they help
 //  One strip prim linked to the HUD, named "Take 12 keys", shows a row of the key atlas (hud/art/
 //  take12_keys_512x1024.png, in the HUD's contents as "take12_keys") with repeats and offsets; the touch position
 //  on it (llDetectedTouchST) says which key. Without the strip everything stays in the menus.
@@ -11,7 +11,7 @@
 //  Frame, mirrors both). Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -50,12 +50,26 @@ string cfg(string k)
     return llLinksetDataReadProtected("cin." + k, PASS);
 }
 
+// the strip: a child named "... keys" (any case); else, with five or more children, the highest one that is not one of
+// Frame's four bars (crop.lsl claims the bars it named first, then the lowest children). Named STRIP once found, so a strip linked before it was named works.
 find()
 {
     gLink = 0;
+    integer f;
+    integer nf;
     integer i;
     for (i = 2; i <= llGetNumberOfPrims(); i++)
-        if (llGetLinkName(i) == STRIP) gLink = i;
+    {
+        string m = llToLower(llGetLinkName(i));
+        if (llSubStringIndex(m, "keys") >= 0) gLink = i;
+        else
+        {
+            if (m == "take 12 frame") nf++;                 // a fifth "frame" box: a strip Frame took before 6.6
+            if (m != "take 12 frame" || nf > 4) f = i;
+        }
+    }
+    if (!gLink && llGetNumberOfPrims() >= 6) gLink = f;
+    if (gLink) llSetLinkPrimitiveParamsFast(gLink, [PRIM_NAME, STRIP]);
     gRow = -2;
 }
 
@@ -73,6 +87,7 @@ integer pick()
 // the strip: row r of the atlas, left of the button and as tall as it; r = -1 hides it
 show(integer r)
 {
+    if (gLink && llGetLinkName(gLink) != STRIP) find();     // re-linked or renamed: look again
     if (!gLink || r == gRow || !llGetAttached()) return;
     gRow = r;
     if (r < 0)
@@ -127,7 +142,7 @@ default
         if (c & CHANGED_OWNER) llResetScript();
         if (c & CHANGED_LINK)
         {
-            find();
+            find();                                         // (also when the strip is linked after it was named)
             show(pick());
         }
     }

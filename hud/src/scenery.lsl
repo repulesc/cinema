@@ -12,7 +12,7 @@
 //  11 inside eye level, 12 inside "you small", 13 inside close.
 // ============================================================================
 
-string VERSION = "6.5.0";
+string VERSION = "6.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE    = 0;                  // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: no favourites
 

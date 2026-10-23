@@ -34,6 +34,11 @@ SUBS = {
         ('Camera · seated view, indoors, reach, Alt-cam, chat cuts', 'Camera · indoors, reach, Alt-cam'),
         ('"Seated view: " + seatText() + " · Indoors: "', '"Indoors: "'),
         ('+ "\\nChat cuts: " + onoff("chat_cuts") + " · Phantom: "', '+ "\\nPhantom: "'),
+        # Photo hold stays here (6.6 took it out of the full menu: the full HUD has Freehand and the HOLD key)
+        ('~resume|▶|›|Resume~', '~photo|📷|▣|Photo~resume|▶|›|Resume~'),
+        ('if (gUiState == "frozen") b = ["resume"];         // held (the HOLD key while live, /77 photo): carry on',
+         'if (gUiState == "frozen") b = ["resume"]; else b = ["photo"];'),
+        ('if (id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");', 'if (id == "photo" || id == "resume") llMessageLinked(LINK_SET, CMD, "photo", "");'),
         # no Frame (crop.lsl is not part of it)
         ('b = ["scenery", "personal", "us", "frame", "free", "crop", "share", "opts", "full", "help", "close"];', 'b = ["scenery", "personal", "us", "frame", "free", "share", "opts", "full", "help", "close"];'),
         # one button design (scenery/art): no Button choice under Options > Look
@@ -43,7 +48,7 @@ SUBS = {
     ],
     "tips.lsl": [
         ('"Take 12\\nTap: menu · Double-tap: scenery · Hold: share"', '"Take 12 Scenery\\nTap: menu · Double-tap: scenery"'),
-        ('"Tap while it rolls\\ntap: photo, next, stop, share, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
+        ('"Tap while it rolls\\ntap: next, stop, share, cameras"', '"Tap while it rolls\\ntap: photo, next, stop"'),
     ],
 }
 FILES = list(SUBS)

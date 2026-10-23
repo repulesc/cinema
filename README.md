@@ -10,7 +10,7 @@ A one-button Second Life camera HUD that takes your view off your avatar's back 
 - Tap = a menu (always), double-tap = go / next view, hold = share (a shortcut; the clapper claps when it takes). A movement key gives your camera back instantly.
 - **Take 12 Scenery (free):** the scenery camera on its own, for L$0, generated from the same scripts (`scenery/`).
 
-> **Status:** **v6.1.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Status:** **v6.6.0** (in `hud/`), with the free Take 12 Scenery in `scenery/` and the free Take 12 Watch in `watch/`. The frozen, working v3.0.0 is in [`legacy/v3/`](legacy/v3/). The in-world checklist is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 **Naming for the box and folder** (so buyers can find it after unboxing): the box and the folder inside it are both called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`, and the notecard is `Take 12 - Read Me`.
 

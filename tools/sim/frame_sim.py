@@ -13,15 +13,16 @@ def check(c, msg):
 
 FEAT = ["top", "eyes", "shoulders", "chest", "belt", "midthigh", "feet"]
 BODY = dict(top=1.0, eyes=0.935, shoulders=0.82, chest=0.72, belt=0.56, midthigh=0.38, feet=0.0)
-THIRD, DMIN, TOP_MAX, FIT, MARGIN = 1 / 3, 1.2, 0.9, 1.6, 1.3
+PHI_Y, DMIN, TOP_MAX, FIT, MARGIN = 0.236, 1.2, 0.9, 1.6, 1.3      # 6.6: the golden line (was the third)
 NAMES = ["Full length", "Half length", "Close"]
 # you: camera height, degrees round, across, (f1, y1), (f2, y2)
-PORT = [(0.50, 15, 0.0, ("top", 0.86), ("feet", -0.88)),
-        (0.935, 30, 0.333, ("eyes", THIRD), ("belt", -1.0)),
-        (0.98, 25, 0.2, ("eyes", THIRD), ("chest", -1.0))]
-GRP = [(0.60, ("top", 0.84), ("feet", -0.86)),
-       (0.80, ("eyes", THIRD), ("midthigh", -1.0)),
-       (0.935, ("eyes", THIRD), ("belt", -1.0))]
+PORT = [(0.50, 15, 0.0, ("top", 0.80), ("feet", -0.84)),         # 6.6: 10 % air above the head, 8 % below the feet
+        (0.935, 30, 0.236, ("eyes", PHI_Y), ("belt", -1.0)),        # eyes on the golden line, you on a golden line across
+        (0.98, 25, 0.2, ("eyes", PHI_Y), ("chest", -1.0))]
+GRP = [(0.60, ("top", 0.80), ("feet", -0.84)),
+       (0.80, ("eyes", PHI_Y), ("midthigh", -1.0)),
+       (0.935, ("eyes", PHI_Y), ("belt", -1.0))]
+pct = lambda y: 100 * (1 - y) / 2                            # screen y (-1..1) as % from the top
 
 def fov_of_mm(mm): return 2 * math.atan(12.0 / mm)
 def solve(z1, y1, z2, y2, zc, fov):
@@ -72,13 +73,16 @@ for i, (cam, side, x, (f1, y1), (f2, y2)) in enumerate(PORT):
             if D < DMIN:                                     # the script: from DMIN, a little looser
                 loose += 1
                 D = DMIN
-                phi = tilt_for(BODY["eyes"] * h, THIRD, zc, D, fov) if i else tilt_for(BODY[f1] * h, y1, zc, D, fov)
+                phi = tilt_for(BODY["eyes"] * h, PHI_Y, zc, D, fov) if i else tilt_for(BODY[f1] * h, y1, zc, D, fov)
                 check(mm < 85, f"{NAMES[i]}: looser at {mm} mm, which should be long enough")
             else:
                 check(abs(y_of(BODY[f1] * h, zc, D, phi, fov) - y1) < 0.01, f"{NAMES[i]}: {f1} misplaced")
                 check(abs(y_of(BODY[f2] * h, zc, D, phi, fov) - y2) < 0.01, f"{NAMES[i]}: {f2} misplaced")
             check(y_of(h, zc, D, phi, fov) <= 0.97, f"{NAMES[i]}: head cut at {h} m, {mm} mm")
-            if i: check(abs(y_of(BODY["eyes"] * h, zc, D, phi, fov) - THIRD) < 0.01, f"{NAMES[i]}: eyes off the third")
+            if i: check(abs(pct(y_of(BODY["eyes"] * h, zc, D, phi, fov)) - 38.2) < 1.0, f"{NAMES[i]}: eyes off the golden line")
+            elif D > DMIN:                                    # full length: air above the head and below the feet
+                check(abs(pct(y_of(h, zc, D, phi, fov)) - 10.0) < 1.0, f"Full length: {pct(y_of(h, zc, D, phi, fov)):.1f} % above the head at {h} m, {mm} mm")
+                check(abs(100 - pct(y_of(0.0, zc, D, phi, fov)) - 8.0) < 1.0, f"Full length: the feet at {h} m, {mm} mm")
             check(abs(math.degrees(phi)) <= 25, f"{NAMES[i]}: tilt {math.degrees(phi):.0f} degrees")
 
 # ---- you with the people next to you ----------------------------------------------------------------------------
@@ -118,16 +122,38 @@ for i, (cam, side, x, (f1, y1), (f2, y2)) in enumerate(PORT):
 # Shift + A/D: Second Life sends Shift + A/D as strafe (CONTROL_LEFT/RIGHT); plain A/D (ROT) still walks round you
 for frag in ("if (gKeys & CONTROL_ROT_LEFT) gNAz += 3.0;", "if (gKeys & CONTROL_ROT_RIGHT) gNAz -= 3.0;",
              "if (gKeys & CONTROL_LEFT) gNX -= 0.02;", "if (gKeys & CONTROL_RIGHT) gNX += 0.02;", "x += gNX;",
-             "float SLIDE  = 0.6;", "gNX = 0.0;", "llAtan2(gNX * t * FIT, 1.0)"):
+             "float SLIDE  = 0.6;", "gNX = 0.0;", "llAtan2(gNX * t * gAsp, 1.0)", "llAtan2(x * t * gAsp, 1.0)"):
     check(frag in LSL, f"frame: missing {frag}")
-# the view turns by atan(x * tan(FOV/2) * FIT): you land at screen x (+ = right), inside the picture for |x| <= SLIDE
-for mm in (21, 50, 105):
-    t = math.tan(fov_of_mm(mm) / 2)
-    for x in (-0.6, -0.333, 0.0, 0.2, 0.6):
-        a = math.atan(x * t * FIT)                            # the view direction turns left (+) by a
-        fwd, right = (math.cos(a), math.sin(a)), (math.sin(a), -math.cos(a))
-        sx = (10 * right[0]) / (10 * fwd[0]) / (t * FIT)      # you, 10 m straight ahead of the unturned view
-        check(abs(sx - x) < 1e-9, f"slide {x} at {mm} mm lands at {sx:.3f}")
+# the view turns by atan(x * t * aspect): you land at screen x (+ = right) of the picture's half-width; 6.6: the
+# picture's real aspect (the Frame format, or your window), so Half length's 0.236 is exactly the golden line
+def load(a, r):                                               # frame.lsl load(): (gAsp, gFit, gTS)
+    asp, fit, ts = a, min(a, FIT), 1.0
+    if r > 0: asp, fit = r, r; ts = a / r if r > a else 1.0
+    return asp, fit, ts
+for a, r in ((16 / 9, 0.0), (1.6, 0.0), (16 / 9, 0.8), (16 / 9, 1.0), (16 / 9, 2.39), (1.6, 1.5)):
+    asp, fit, ts = load(a, r)
+    for mm in (21, 50, 105):
+        t = math.tan(fov_of_mm(mm) / 2) * ts
+        for x in (-0.6, -0.236, 0.0, 0.2, 0.6):
+            ang = math.atan(x * t * asp)                      # the view direction turns left (+) by ang
+            fwd, right = (math.cos(ang), math.sin(ang)), (math.sin(ang), -math.cos(ang))
+            sx = (10 * right[0]) / (10 * fwd[0]) / (t * asp)  # you, 10 m straight ahead of the unturned view
+            check(abs(sx - x) < 1e-9, f"slide {x} at {mm} mm lands at {sx:.3f}")
+    check(abs(pct(-PORT[1][2]) - 61.8) < 0.1, "Half length: you are not on the golden line across")
+for frag in ("float t = llTan(gFov * 0.5) * gTS;", "if (r > a) gTS = a / r;", "gAsp = r;", "gFit = r;", "if (a > FIT) gFit = FIT;",
+             "float kk = t * gFit / MARGIN;", 'num == CFG_CHANGED && (str == "crop" || str == "aspect" || str == "all")', "if (gActive) shoot(FALSE);"):
+    check(frag in LSL, f"frame: composing inside the Frame format: missing {frag}")
+# a wider format (2.39:1 on 16:9) is a shorter picture: the framings still keep their lines inside it
+for mm in (50, 85, 105):
+    asp, fit, ts = load(16 / 9, 2.39)
+    tp = math.tan(fov_of_mm(mm) / 2) * ts
+    fovp = 2 * math.atan(tp)                                  # the picture as a lens
+    for i, (cam, side, x, (f1, y1), (f2, y2)) in enumerate(PORT):
+        h = 1.9; zc = cam * h
+        sl = solve(BODY[f1] * h, y1, BODY[f2] * h, y2, zc, fovp)
+        check(sl is not None, f"2.39:1 {NAMES[i]} at {mm} mm: no solution")
+        if sl and sl[0] >= DMIN:
+            check(abs(y_of(BODY[f1] * h, zc, sl[0], sl[1], fovp) - y1) < 0.01, f"2.39:1 {NAMES[i]} at {mm} mm: {f1} off its line")
 
 print(f"Frame: 3 framings x {len(HEIGHTS)} heights x {len(LENSES)} zooms, and 600 mixed groups; "
       f"{loose} cases framed a little looser at a wide zoom (as intended)")
