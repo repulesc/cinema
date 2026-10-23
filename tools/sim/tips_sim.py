@@ -40,17 +40,17 @@ check("~status=1~" in ui and 'toggle("status", "Status line")' in ui, "ui: Statu
 check('c == "statusline"' in picker, "/77 statusline on|off missing")
 
 # ---- the text: two short lines, one tip per camera; a second line that stands alone ------------------------------
-check(len(TIPS) == 13, f"{len(TIPS)} tips (13 expected)")
+check(len(TIPS) == 14, f"{len(TIPS)} tips (14 expected)")
 for t in TIPS[:11] + TIPS[12:]:
     ls = t.split("\n")
     check(len(ls) == 2 and all(0 < len(l) <= 50 for l in ls), f"tip too long or not two lines: {t!r}")
 check(len((TIPS[11] + "10 min: the scenery starts by itself").split("\n")[1]) <= 50, "the idle start tip is too long")
 for m in MODES:
     check(f'"{m}"' in core, f"core has no camera '{m}'")
-check(MODES == ["scenery", "personal", "social", "friends", "frame"], f"the cameras: {MODES}")
-check(NAMES == ["Scenery", "Me", "Us", "Only friends", "Still"], f"the status names must be the menu names: {NAMES}")
+check(MODES == ["scenery", "personal", "social", "friends", "frame", "free"], f"the cameras: {MODES}")
+check(NAMES == ["Scenery", "Me", "Us", "Only friends", "Still", "Freehand"], f"the status names must be the menu names: {NAMES}")
 for i, word in enumerate(NAMES):
-    check(TIPS[i + 1].startswith(word), f"the tip for {MODES[i]} does not start with the menu name {word}")
+    check(TIPS[i + 1 + 7 * (i == 5)].startswith(word), f"the tip for {MODES[i]} does not start with the menu name {word}")   # Freehand: tip 13
 for i in (9, 10):
     check(TIPS[i].split("\n")[0].lower().split()[0] in TIPS[i].split("\n")[1].lower(), f"tip {i}: its second line must stand alone")
 mk = dict(re.findall(r'~(\w+)\|[^|]*\|([^|]*)\|', ui))

@@ -37,7 +37,7 @@ While a camera runs, the clapper gives a tiny clap now and then; with your own c
 
 === THE CAMERAS ========================================
 
-Four on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you) and STILL (a held picture of you). FRAME (see below) sets the picture format on your screen.
+Five on the menu: SCENERY (the place, while you are away), ME (follows you), US (you and the people around you), STILL (a held picture of you) and FREEHAND (you frame it, it holds the shot). FRAME (see below) sets the picture format on your screen.
 
 SCENERY  (the main one, and the only one that starts by itself)
 Looks at the place, not at people. High drone views looking down over the area, and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a sky club), it stays INSIDE: views from up high, at eye level, and you as a small figure in the space, always on your own floor. On the ground in a house, it looks from outside, above the roof (Options > Indoors > Inside keeps it inside there too).
@@ -81,7 +81,17 @@ For a picture of yourself, or of you and whoever stands right next to you. Still
    The lenses: Full length 50 mm, Half length 85 mm, Close 105 mm. The line shows in Still even when the status line is off.
  - Tap once to leave.
 
-Me, Us and Still only start when YOU choose them in the menu.
+FREEHAND  (tap the button > Freehand)
+For the photographer: you frame the shot, of yourself, of people, or of an object; Take 12 holds it.
+ - Frame it with Second Life's own camera: Alt-click your subject to aim at it, Ctrl+Alt-drag to orbit around it, Ctrl+Alt+Shift-drag to pan, the mouse wheel to come closer, Ctrl+0 / Ctrl+8 for your lens. Frame (below) shows the picture format.
+ - Hold the view still for a second: it is held. The line above the button says "✥ Freehand · held · 85 mm", and the clapper claps.
+ - Now it is a tripod: Esc and walking no longer move it. Walk into your picture, pose, take your snapshot.
+ - To frame again, just move the camera ("framing · hold still"), and hold still again. Esc always brings back the view last held.
+ - The view is aimed at what sits in the middle of your picture. Zoom while it is held, and the camera glides back (or in) so that subject keeps its size: a longer lens flattens the perspective, as everywhere in Take 12. (Phantom objects are seen through: aim at something solid, or frame again after zooming.)
+ - Tap > Save keeps the view held (two per region: View A and View B; a third replaces the oldest). Double-tap goes from one saved view to the other; with none saved, it holds the view on screen at once.
+ - Stop: tap > Stop. (Movement keys do not stop Freehand: they move you.)
+
+Me, Us, Still and Freehand only start when YOU choose them in the menu.
 
 
 === FRAME: THE PICTURE FORMAT =============================

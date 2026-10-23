@@ -28,13 +28,13 @@ ui, tips, sc, core = (rd("scenery", "src", n) for n in ("ui.lsl", "tips.lsl", "s
 for s, n in ((ui, "ui"), (tips, "tips")):
     for bad in ("Hold: share", "share your view", "Commands: /", "other cameras", 'text += "Seated view'):
         check(bad not in s, f"{n}: the free build still says '{bad}'")
-check('string h = "Take 12 Scenery";' in ui and "Welcome to Take 12 Scenery" in ui and "More cameras · Me, Us, Still and sharing, in the full Take 12" in ui,
+check('string h = "Take 12 Scenery";' in ui and "Welcome to Take 12 Scenery" in ui and "More cameras · Me, Us, Still, Freehand and sharing, in the full Take 12" in ui,
       "ui: the free names and the More cameras line")
 check('if (LITE) onTap();' in ui, "Hold must open the menu in the free build (there is no sharing)")
 check('if (id == "full") { closeMenu(); upsell(); return; }' in ui and "llLoadURL(gOwner" in ui, "More cameras must open the full Take 12's listing")
 check('if (gIndoors == "outside") raw = FALSE;' in sc, "scenery: skybox rooms must work in the free build")
 check("!LITE && gCuts % 4 == 3" in sc and "num == FAV && !LITE" in sc, "scenery: no favourites in the free build")
-check('if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "fav")) return;' in core,
+check('if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free" || str == "fav")) return;' in core,
       "core: the free build must refuse the other cameras")
 check('"crop"' not in re.search(r'b = \["scenery".*?\];', ui).group(0), "the free build has no Frame (no crop.lsl)")
 # its own button (scenery/art): one design, so no Button choice under Options > Look

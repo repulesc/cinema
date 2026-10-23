@@ -82,7 +82,7 @@ check("llDetectedLinkNumber(0) > 1) return;" in ui[ui.index("touch_start"):ui.in
       "llDetectedLinkNumber(0) > 1) return;" in ui[ui.index("touch_end"):], "ui must ignore touches on the bars")
 check('"crop"' in re.search(r'b = \["scenery".*?\];', ui).group(0) and '|| id == "crop")' in ui and "~crop|" in ui, "ui: Frame on the main page, routed to crop")
 check('else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");' in picker, "picker: /77 crop")
-check('"frame", "crop", "share"' in build and "crop.lsl is not part of it" in build, "the free build leaves Frame out")
+check('"frame", "free", "crop", "share"' in build and "crop.lsl is not part of it" in build, "the free build leaves Frame out")
 print(f"frame: {len(NAMES)} formats x {len(WINDOWS)} windows, the picture exact and centred, bars tile the screen; {len(POINTS)} HUD points")
 print("frame checks:", "ALL PASS" if ok else "FAILURES")
 raise SystemExit(0 if ok else 1)

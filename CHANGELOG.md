@@ -1,5 +1,16 @@
 # Changelog
 
+## 6.4.0
+**Freehand: you frame it, Take 12 holds it.** For photographers, of people or of objects.
+- **Tap › Freehand.** Frame with Second Life's own camera (Alt-click to aim, Ctrl+Alt-drag to orbit, the wheel, Ctrl+0 / Ctrl+8 for the lens, Frame for the format). Hold the view still for a second and it is held: "✥ Freehand · held · 85 mm" above the button, and a clap.
+- **A tripod.** Esc and walking no longer move it: walk into your picture, pose, take the snapshot. Move the camera to frame again ("framing · hold still", with your lens); Esc brings back the view last held. Stop is in the live menu.
+- **The lens, as everywhere.** The held view is aimed at what sits in the middle of the frame (a ray from the camera), so a zoom dollies the camera along its line by k = tan(old/2) / tan(new/2): the subject keeps its size and only the perspective changes, stopping 0.3 m short of a wall. Phantom objects are seen through.
+- **Saved views:** Tap › Save keeps the held view, two per region (View A, View B; a third replaces the oldest). A double-tap goes from one to the other; with none saved, it holds the view on screen at once.
+- **Sharing:** viewers follow a hand-framed shot like any other.
+- **New script `free.lsl`** (thirteen in all). Core: Freehand reuses Only friends' "Follow my lead" lock (1 s instead of 1.5, focus by ray), no exit on movement keys or typing. Take 12 Scenery has no Freehand.
+- **Checks:** `free_sim` (the dolly keeps an object's size over 36 lens pairs, the wall stop, saving and recalling, the wiring in core, ui and tips); `lens_sim`, `tips_sim`, `menu_sim`, `sync_sim`, `crop_sim` and `free_test` follow.
+- **Version 6.4.0** in all thirteen scripts.
+
 ## 6.3.0
 **One meaning per gesture.** From in-world testing: a tap meant three things (menu, stop, carry on), and while a camera ran the menu hid behind Hold › ⋯ More.
 - **Tap: always a menu.** Idle: the menu. A camera running, or Photo: the live menu (Resume first in Photo). Stopping is any movement key, or Stop in the live menu.

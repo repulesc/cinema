@@ -41,6 +41,7 @@ Us is for when you are with people. Everyone near: over-the-shoulder and group s
 Still is for a picture of yourself, or of you and a friend: full length, half length or close, held still. Adjust with your movement keys; Shift + A/D slides you across the picture.
 
 FRAME IT YOURSELF
+Freehand is for photographers: frame the shot yourself, of people or of an object, hold still for a second and Take 12 holds it like a tripod. Walk into your picture, pose, zoom: the subject keeps its size as the lens changes. Two saved views per region.
 In Only friends, set the view up with your own camera and press Esc: Take 12 carries on with your view, following your friends. Sitting or lying down, the camera looks down on you from above.
 
 SHARE THE VIEW

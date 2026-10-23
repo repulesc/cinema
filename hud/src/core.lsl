@@ -1,12 +1,12 @@
 // ============================================================================
 //  Take 12  -  core.lsl  (v4)
-//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social, friends, frame
+//  Owns the camera. Modes: scenery (default, AFK + double-tap), personal, social, friends, frame, free (Freehand, 6.4)
 //  and friends (optional, from the menu). Photo hold (freeze), glide (friends). Triggers, exits, hold timer, Alt-cam peek,
 //  pauses, a watchdog with a basic fallback shot per mode, reach verification.
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "6.3.0";
+string VERSION = "6.4.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -438,16 +438,17 @@ activeTick(float dt)
                 return;
             }
         }
-        else if (gPeekOn || gMode == "friends")
+        else if (gPeekOn || gMode == "friends" || gMode == "free")
         {
             // Alt-cam / orbit: the viewer silently overrides scripted cameras
             integer dev = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want);
             rotation cr = llGetCameraRot();
-            // Friends: a smaller move, or a turn of the view over about 10 degrees, is you taking the camera too
-            if (gMode == "friends" && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;
+            integer own = (gMode == "friends" || gMode == "free");   // your own framing becomes the shot
+            // Friends, Freehand: a smaller move, or a turn of the view over about 10 degrees, is you taking the camera too
+            if (own && (llVecDist(cp, gShotPos) > 0.3 || llRot2Fwd(cr) * llVecNorm(gShotFoc - gShotPos) < 0.985)) dev = TRUE;
             if (dev && gState == ST_ROLL)
             {
-                if (gPeekBail && gMode != "friends") { bail("camera"); return; }
+                if (gPeekBail && !own) { bail("camera"); return; }
                 gState = ST_PEEK;
                 setUi("peek");
                 llMessageLinked(LINK_SET, PAUSE, "peek", "");
@@ -455,16 +456,16 @@ activeTick(float dt)
                 gLeadP = cp;
                 gLeadR = cr;
             }
-            else if (dev && gMode == "friends")
+            else if (dev && own)
             {
-                // Follow my lead: your view, still for 1.5 s, becomes the shot (Esc hands the camera back to it)
+                // Follow my lead: your view, still for 1.5 s (Freehand: 1 s), becomes the shot (Esc hands the camera back to it)
                 if (llVecDist(cp, gLeadP) > 0.05 || llAngleBetween(cr, gLeadR) > 0.02)
                 {
                     gLeadT = llGetTime();
                     gLeadP = cp;
                     gLeadR = cr;
                 }
-                else if (llGetTime() - gLeadT > 1.5)
+                else if (llGetTime() - gLeadT > 1.5 - 0.5 * (gMode == "free"))
                 {
                     list O = llParseStringKeepNulls(gLast, ["|"], []);
                     vector f0 = (vector)llList2String(O, 4);    // the subject Friends aimed at
@@ -473,6 +474,13 @@ activeTick(float dt)
                     float t = (f0 - cp) * u;
                     if (t < 0.5) t = 0.5;
                     vector f = cp + u * t;
+                    if (gMode == "free")
+                    {
+                        // Freehand: aimed at what sits in the middle of your frame, so a zoom keeps its size (free.lsl)
+                        list h = llCastRay(cp, cp + u * 60.0, [RC_MAX_HITS, 1]);
+                        f = cp + u * 10.0;
+                        if (llList2Integer(h, -1) > 0) f = llList2Vector(h, 1);
+                    }
                     setCam(cp, f);
                     gVerify = FALSE;
                     gLast = (string)cp + "|" + (string)f + "|" + llList2String(O, 2) + "|" + llList2String(O, 3) + "|" + (string)f;
@@ -586,6 +594,7 @@ default
             gLastAct = now;
             return;
         }
+        if (gMode == "free") return;                    // Freehand: a tripod, you walk and it stays
         if (gMode == "scenery" || gState == ST_TEST)
         {
             bail("key");
@@ -666,7 +675,7 @@ default
         }
         else if (num == CMD)
         {
-            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "fav")) return;
+            if (LITE && (str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free" || str == "fav")) return;
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
@@ -685,7 +694,7 @@ default
             else if (str == "watch" || str == "unwatch") gWatch = (str == "watch");
             else if (str == "sharecam") { if (gState == ST_IDLE) engage("social"); }  // Go live with the camera off: Social
             else if (gWatch && gState == ST_IDLE && str == "scenery") return;   // watching: the double-tap cuts for all (sync)
-            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame") engage(str);
+            else if (str == "scenery" || str == "personal" || str == "social" || str == "friends" || str == "frame" || str == "free") engage(str);
             else if (str == "photo")
             {
                 if ((gState == ST_ROLL || gState == ST_PEEK) && gLast != "")
@@ -732,7 +741,7 @@ default
                     list F = llParseStringKeepNulls(gLast, ["|"], []);
                     llMessageLinked(LINK_SET, FAV, llList2String(F, 0) + "|" + llList2String(F, 1), "");
                 }
-                else llOwnerSay("[Take 12] Save spot works while the scenery camera is rolling.");
+                else if (gMode != "free") llOwnerSay("[Take 12] Save spot works while the scenery camera is rolling.");   // Freehand saves its own
             }
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
