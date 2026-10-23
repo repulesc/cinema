@@ -73,6 +73,7 @@ check("if (p < 0) return ZERO_VECTOR;" in crop, "Center and Center 2 are the scr
 check("(at - p) / r" in crop and "ZERO_ROTATION / r" in crop and "<p.x + gSX * DEPTH, y * gSY, z>" in crop,
       "bars must be placed through the root's own position and rotation, square to the screen, behind the button")
 check('if (llGetLinkName(i) != "Take 12 keys")' in crop and "gBars += [i];" in crop, "the bars are any four children but the keys strip (6.5)")
+check("integer gSX = 1;" in crop, "the bars must sit behind the button: +X points into the screen (6.5.0 fix)")
 check("llGetCameraAspect()" in crop and "PERMISSION_TRACK_CAMERA" in crop, "the window is measured")
 check('set("aspect", (string)a);' in crop and 'llMessageLinked(LINK_SET, CFG_CHANGED, "aspect", "");' in crop, "the cameras get your window")
 

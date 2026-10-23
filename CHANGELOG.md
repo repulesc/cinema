@@ -1,5 +1,9 @@
 # Changelog
 
+## 6.5.0 fix: Frame's bars behind the button
+- In-world, the dark Frame bars sat in front of the clapper and caught its clicks. HUD space's +X points into the screen, so the bars now sit 0.02 m behind the button (`crop.lsl`, `gSX = 1`; it was −1). `/77 crop back` still flips it if a viewer differs.
+- Only `crop` changes (still 6.5.0): replace that one script.
+
 ## 6.5.0
 **The keys, and a live view that never ends by accident.**
 - **Soft keys.** In a few busy moments a short row of quiet keys appears beside the button, and only then:
