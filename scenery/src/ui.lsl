@@ -8,7 +8,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 1;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -28,7 +28,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items (7.0): id, a quiet mark, the title
-string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
+string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~adjust|✛|Adjust~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -52,6 +52,7 @@ integer gDbl;
 // what the camera is doing
 string  gUiState = "idle";    // idle / rolling
 string  gUiMode  = "scenery";
+integer gAdj;               // the keys adjust the shot (core)
 integer gNextCut;
 integer gShownIdle = TRUE;
 integer gLook = 1;          // 0 classic, 1 rec, 2 viewfinder (frames 2n open, 2n+1 clapped on the sheet)
@@ -192,7 +193,7 @@ note(string s)
 integer locked(string id)
 {
     if (!LITE) return (id == "full");
-    return (llListFindList(["framing", "free", "share", "crop", "save", "seat", "chat", "modes", "release"], [id]) >= 0);
+    return (llListFindList(["framing", "free", "share", "crop", "save", "seat", "chat", "modes", "release", "me", "us", "friends", "flist", "adjust"], [id]) >= 0);
 }
 
 string label(string id)
@@ -203,6 +204,9 @@ string label(string id)
     string r = llGetSubString(ITEMS, i, i + 30);                // one entry is shorter than this
     list p = llParseStringKeepNulls(llGetSubString(r, 0, llSubStringIndex(r, "~") - 1), ["|"], []);
     if (llList2String(p, 0) == "") return llList2String(p, 1);
+    // the live menu: the camera running and Adjust on carry a dot
+    if (gPage == "live" && (id == llList2String(["me", "us", "friends"], llListFindList(["frame", "social", "friends"], [gUiMode])) || (id == "adjust" && gAdj)))
+        return "● " + llList2String(p, 1);
     return llList2String(p, 0) + " " + llList2String(p, 1);
 }
 
@@ -211,6 +215,14 @@ upsell()
 {
     llOwnerSay("[Take 12 Scenery] Framing, Freehand and Connect are in the full Take 12.");
     llLoadURL(gOwner, "Get the full Take 12", BUY_URL);
+}
+
+// the keys strip is linked (keys.lsl): it already has Next, so the live menu leaves it out
+integer strip()
+{
+    integer i;
+    for (i = 2; i <= llGetNumberOfPrims(); i++) if (llGetLinkName(i) == "Take 12 keys") return TRUE;
+    return FALSE;
 }
 
 string idOf(string msg)
@@ -315,11 +327,6 @@ openMenu(string page)
         text += "Scenery · the place, while you are away\nMore cameras · Framing, Freehand and Connect, in the full Take 12";
         b = ["framing", "free", "share", "scenery", "crop", "opts", "full", "help", "close"];
     }
-    else if (page == "framing")
-    {
-        text += "It follows you as you walk, and holds a composed picture when you stand.\nMe · you  ·  Us · you and the people near you\nFriends · you and the friends you picked";
-        b = ["me", "us", "friends", "flist", "back"];
-    }
     else if (page == "scenery")
     {
         text += "Scenery · the place, while you are away. It starts by itself when you are idle.\nIdle start: " + afkText() + "\nIndoors: " + cfgGet("indoors") + " · Reach: " + cfgGet("reach") + " m";
@@ -327,9 +334,15 @@ openMenu(string page)
     }
     else if (page == "live")
     {
+        // 7.1: switch Me / Us / Friends here; Adjust (the keys trim the shot); Next only without the keys strip
+        integer fr = (llListFindList(["frame", "social", "friends"], [gUiMode]) >= 0);
         if (gUiMode == "free") b += ["save"];
-        if (gUiMode == "friends") b += ["release"];
-        b += ["next", "stop", "share", "modes", "close"];
+        if (fr) b += ["me", "us", "friends"];
+        if (fr || gUiMode == "free") b += ["adjust"];
+        if (gUiMode == "friends") b += ["flist", "release"];
+        if (gUiMode == "scenery" || !strip()) b += ["next"];
+        b += ["stop", "share", "modes", "close"];
+        if (fr || gUiMode == "free") text += "Adjust · the keys trim the shot: W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height (seated: always)\n";
         if (gNextCut > llGetUnixTime() && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
     }
     else if (page == "pace")
@@ -440,18 +453,14 @@ onChoice(string msg)
     }
     if (gPage == "main")
     {
-        if (id == "free" || id == "share" || id == "crop")
+        if (id == "framing") id = cfgGet("fwho");           // 7.1: one click, the last one used (Me the first time)
+        if (id == "") id = "frame";
+        if (id == "free" || id == "share" || id == "crop" || id == "frame" || id == "social" || id == "friends")
         {
             closeMenu();
             llMessageLinked(LINK_SET, CMD, id, "");
         }
         else openMenu(id);
-    }
-    else if (gPage == "framing")
-    {
-        closeMenu();
-        if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");
-        else llMessageLinked(LINK_SET, CMD, llList2String(["frame", "social", "friends"], llListFindList(["me", "us", "friends"], [id])), "");
     }
     else if (gPage == "scenery")
     {
@@ -462,7 +471,10 @@ onChoice(string msg)
     {
         closeMenu();
         if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
-        else if (id == "next" || id == "stop" || id == "share") llMessageLinked(LINK_SET, CMD, id, "");
+        else if (id == "next" || id == "stop" || id == "share" || id == "adjust") llMessageLinked(LINK_SET, CMD, id, "");
+        else if (id == "me" || id == "us" || id == "friends")
+            llMessageLinked(LINK_SET, CMD, llList2String(["frame", "social", "friends"], llListFindList(["me", "us", "friends"], [id])), "");
+        else if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");
         else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
         else if (id == "modes") openMenu("main");
     }
@@ -656,15 +668,17 @@ default
         if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));
         else if (num == UI_STATE)
         {
-            list L = llParseString2List(str, ["|"], []);
+            list L = llParseStringKeepNulls(str, ["|"], []);
             string st = llList2String(L, 0);
             gUiMode = llList2String(L, 1);
             gNextCut = (integer)llList2String(L, 2);
+            gAdj = (integer)llList2String(L, 4);
+            if (st == "rolling" && llListFindList(["frame", "social", "friends"], [gUiMode]) >= 0 && cfgGet("fwho") != gUiMode) cfgWrite("fwho", gUiMode);   // Framing starts it next time
             if (st == "rolling" || st == "peek") gUiState = "rolling";
             else gUiState = "idle";
             setLook(st);
         }
-        else if (num == UI_MENU) openMenu(str);
+        else if (num == UI_MENU) openMenu(llList2String([str, "main"], str == "live" && gUiState == "idle"));   // the Friends list's Back
         else if (num == CFG_CHANGED)                        // a chat command (picker) may have changed these
         {
                     gNote = (cfgGet("trace") == "1");

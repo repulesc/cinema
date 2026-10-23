@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -201,7 +201,7 @@ onChoice(string msg)
         else if (msg == lb("➕", "Pick")) pickMenu(0);
         else if (msg == lb("➖", "Remove")) removeMenu(0);
         else if (msg == lb("🗑", "Clear")) openMenu("clear", "Remove all saved friends?", [lb("✔", "Yes, clear"), lb("↩", "Back")]);
-        else if (msg == lb("↩", "Back")) { closeMenu(); llMessageLinked(LINK_SET, UI_MENU, "us", ""); }
+        else if (msg == lb("↩", "Back")) { closeMenu(); llMessageLinked(LINK_SET, UI_MENU, "live", ""); }
     }
     else if (gPage == "clear")
     {
@@ -276,7 +276,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends free connect crop size stop next menu status pace reach indoors face tips statusline trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends free adjust connect crop size stop next menu status pace reach indoors face tips statusline trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -287,7 +287,7 @@ onCommand(string msg)
     integer n = (integer)v;
     integer m = llListFindList(["me", "us", "still", "connect"], [c]);  // the menu names work too
     if (m >= 0) c = llList2String(["personal", "social", "frame", "share"], m);
-    if (llListFindList(["scenery", "personal", "social", "friends", "frame", "free", "share", "stop", "next", "fav", "grab"], [c]) >= 0)
+    if (llListFindList(["scenery", "personal", "social", "friends", "frame", "free", "share", "stop", "next", "fav", "grab", "adjust"], [c]) >= 0)
         llMessageLinked(LINK_SET, CMD, c, "");
     else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");          // Frame: 4:5, off, flip, back (crop)
     else if (c == "size") llMessageLinked(LINK_SET, CMD, "size|" + v, "");          // the button: s, m, l (keys)

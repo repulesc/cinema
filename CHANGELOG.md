@@ -1,5 +1,21 @@
 # Changelog
 
+## 7.1.0 (Adjust; Framing in one tap; Connect shares the Format)
+**The keys either walk you or frame the shot.** In 7.0 Framing › Me let the keys walk you only, so nothing could fine-tune a shot, and a tilt was missing. 7.1 gives the keys two jobs and one clear switch.
+- **Adjust:** seated, the keys always adjust the shot (you cannot walk anyway); standing they walk you, until you tap **ADJUST** (the keys strip, the live menu, `/77 adjust`); tap it again to walk. In Framing (Me, Us, Friends) and Freehand:
+  - W / S (↑ / ↓) tilt the camera, A / D (← / →) swing it around you, Shift + A / D slide it sideways, Page Up / Page Down the height.
+  - A tap is a small step (10 cm, 1°, 3°, 5 cm); hold for more, full speed after a second (60 cm/s, 15°/s, 45°/s, 50 cm/s). The first taps say "hold: faster".
+  - In Me it stays until Full / Half / Close change or you stop, also while it recomposes after a walk. In Us and Friends adjusting holds that shot (no cut by time or by a speaker) until Next; the next one starts clean.
+  - The height is still kept per seat (Fit). A camera swung behind a wall stays in front of it.
+- **One rule, told once** (Read Me, tips): big moves with your viewer's camera (Alt + mouse) in Freehand or Friends; small corrections with Adjust.
+- **Framing in one tap:** the Framing door starts the last one used (Me the first time); the live menu switches Me / Us / Friends (the running one has a dot) and has Adjust and the Friends list.
+- **The menu does not repeat the keys:** with the keys strip linked, Next is left out of the live menu (the strip and the double-tap have it).
+- **The keys strip:** FULL · HALF · CLOSE · ADJUST in Me, NEXT · ADJUST in Us and Friends, SAVE · VIEW A · VIEW B · STOP · ADJUST in Freehand. **Re-upload `hud/art/take12_keys_1024.png`** (new, 1024 × 1024) as `take12_keys`.
+- **Connect shares the Format:** the bars of whoever films show on every connected Take 12, and your own come back when you leave. Lenses stay your own (the picture keeps its size); a note says once how to match theirs.
+- **Fixes:** the Friends list's Back led to the welcome page (it opened a page that no longer existed): it goes back to the live menu. Seated W/S in Friends no longer step closer or wider (they adjust now; closer and wider are your zoom).
+- **With Chat text on,** Adjust says the raw keys your viewer sends, to see what Shift + Page Down does in your viewer (no script sees Shift itself).
+- **Scripts:** `fit` (Adjust), `core` (the keys, the trim on every shot, the held group shot), `ui`, `keys`, `tips`, `picker`, `sync`, `crop`, `lens`. Version 7.1.0 in all fifteen.
+
 ## 7.0.2 (UI review and debug)
 **A professional pass over every screen, then a debugging pass.** Findings fixed:
 - **One word for one thing:** the Pace page said "Still 120" next to a Slowest button (Still is gone), and "view" in one place, "shot" in another: now "shot" and "Slowest". Format's own menu and chat line still said Frame: now Format.

@@ -124,8 +124,19 @@ check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState =
 check('onLong()\n{\n    if (LITE) onTap();                                      // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
       and "integer LITE    = 0;" in ui, "ui: hold must open the Connect panel, always (the free Take 12 Scenery has no Connect)")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
-check('b = ["framing", "free", "share",' in ui and 'b += ["next", "stop", "share", "modes", "close"];' in ui and '|| id == "share") llMessageLinked(LINK_SET, CMD, id, "");' in ui,
+check('b = ["framing", "free", "share",' in ui and 'b += ["stop", "share", "modes", "close"];' in ui and '|| id == "share" || id == "adjust") llMessageLinked(LINK_SET, CMD, id, "");' in ui,
       "ui: Connect is in both menus (tap always opens a menu; hold is only a shortcut)")
+# 7.1: the director's Format on the viewers' screens while connected; their own after; the lens note once
+crop = open(os.path.join(R, "hud", "src", "crop.lsl")).read()
+check('if (num == CROP && !gFmtOn)' in sync and 'if (gSharing) all("fmt|" + gFmt);' in sync and 'say(who, "fmt|" + gFmt);' in sync,
+      "sync: the director sends its Format on a change and to each viewer that joins")
+check('llMessageLinked(LINK_SET, CMD, "crop|follow " + llList2String(L, 2), "");' in sync and 'if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");' in sync[sync.index("\nleave(integer"):],
+      "sync: a viewer shows the director's Format, and its own again when it leaves (disconnect, end, kick, its own turn)")
+fo = crop[crop.index('if (llGetSubString(v, 0, 5) == "follow")'):crop.index("integer i = llListFindList(NAMES, [v]);")]
+check("load();" in fo and "set(" not in fo and "CFG_CHANGED" not in fo and 'if (v == "follow") tell();' in fo,
+      "crop: following is not saved and does not change your own cameras; your own Format comes back")
+check(sync.count("gLensTold = TRUE;") == 1 and "gLensTold = FALSE;" in sync[sync.index("\nleave(integer"):], "sync: the lens note once per connection")
+check('"fmt"' not in watch, "the Watch has no Format bars: it ignores fmt")
 # 6.3: tap always opens a menu (main when idle, live while a camera runs); the hold shows a clap when it has taken
 check('openMenu(llList2String(["main", "live"], gUiState != "idle"));' in ui and 'llMessageLinked(LINK_SET, CMD, "stop", "")' not in ui[ui.index("onTap()"):ui.index("onDouble()")],
       "ui: a tap must open a menu, never stop the camera")

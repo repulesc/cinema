@@ -22,6 +22,10 @@ you accept or skip; nothing to set; nothing on screen but the framing's name for
   1 s after you let go, once you stand still, it composes the current framing again in front of you (a glide; the
   people near you looked at again). There are no nudges: Freehand is the manual camera, Fit (Page Up / Down) the
   height of your body.
+- **7.1: Adjust.** Seated, or standing after ADJUST (the keys strip, the live menu, `/77 adjust`), the keys trim the
+  shot instead of walking you: W/S tilt, A/D swing around you, Shift+A/D slide, Page Up/Down height (fit.lsl). Core
+  puts the trim on every shot (`place()`), so it stays as Me recomposes after you walk; Full / Half / Close, Next or
+  a stop start it clean. While you adjust no NUDGE is sent, so the camera does not follow a walk.
 - **The zoom is silent:** the distance follows the viewer's field of view, re-solved 0.8 s after the zoom settles,
   so the picture keeps its size and only the perspective changes. Never closer than 1.2 m: at the wide default
   zoom, Close on a short avatar comes out a little looser. The Read Me has one line on zooming in.

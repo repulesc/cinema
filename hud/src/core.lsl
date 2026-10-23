@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -25,10 +25,11 @@ integer SPEAKER    = 7315;   // core -> social / friends  owner key (you started
 integer NUDGE      = 7317;   // core -> frame, lens  "<keys held now>|<camera rotation>"
 integer FITKEY     = 7396;   // core -> fit  "<Page Up 16 / Page Down 32 held>": Fit (fit.lsl)
 integer FIT        = 7397;   // fit -> core  "<dz>": the shot on screen moves dz metres up
+integer TRIM       = 7398;   // fit -> core  "<tilt>|<swing>|<slide>": Adjust, put on every shot (7.1)
 integer CAMSET     = 7325;   // core -> sync     "<pos>|<focus>|<lag>|<lens>": every camera put on screen (Share the view)
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": in Friends, your own view held still (Follow my lead)
 integer FOVMSG     = 7318;   // core -> cameras, tips  the viewer's field of view changed (radians): your lens
-integer UI_STATE   = 7320;   // core -> ui, tips  "<state>|<mode>|<nextCutUnix>|<why>"
+integer UI_STATE   = 7320;   // core -> ui, tips, keys, fit  "<state>|<mode>|<nextCutUnix>|<why>|<adjust: the keys trim the shot>"
 integer CFG_CHANGED= 7330;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
@@ -59,8 +60,14 @@ float   gFovSent;             // frame: the field of view last reported
 integer gType;                // type of the shot on screen
 integer gSitBase;
 integer gWatch;               // you are watching someone's shared view: no idle start, double-tap cuts for all (sync)
-integer gSitCtl;              // friends: the controls were taken seated
+integer gSitCtl;              // the controls were taken seated
 integer gFitCtl;              // Page Up / Down are Fit's (a people camera runs, you are not flying)
+integer gAdjOn;               // ADJUST: standing, the keys trim the shot instead of walking you (seated they always do)
+integer gAdj;                 // the keys trim the shot now (fit.lsl)
+integer gHeld;                // Us, Friends: you adjusted this shot, so it is held until Next
+vector  gTrim;                // Adjust: <tilt rad, swing rad, slide m>, put on every shot (fit.lsl)
+vector  gBaseP;               // the shot as its camera planned it, before Adjust
+vector  gBaseF;
 float   gFitShift;            // m  Fit moved the shot on screen since its camera planned it (added to that camera's glides)
 float   gLeadT;               // friends: your own camera, and since when it is still
 vector  gLeadP;
@@ -123,7 +130,7 @@ loadCfg()
 
 setUi(string st)
 {
-    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy, "");
+    llMessageLinked(LINK_SET, UI_STATE, st + "|" + gMode + "|" + (string)gNextCut + "|" + gWhy + "|" + (string)gAdj, "");
 }
 
 string idleUi()
@@ -147,8 +154,41 @@ float clampf(float v, float lo, float hi)
 }
 
 // ---- camera ------------------------------------------------------------------
+// the shot, with Adjust on top: gShotPos / gShotFoc. Swing turns the camera around the focus, slide moves both
+// sideways, tilt raises or lowers the focus; a camera that would end up behind a wall stays in front of it.
+place(vector p, vector f)
+{
+    gBaseP = p;
+    gBaseF = f;
+    if (gTrim != ZERO_VECTOR)
+    {
+        vector d = (p - f) * llAxisAngle2Rot(<0.0, 0.0, 1.0>, -gTrim.y);
+        f += llVecNorm(<0.0, 0.0, 1.0> % d) * gTrim.z;
+        p = f + d;
+        if (gTrim.y != 0.0 || gTrim.z != 0.0)
+        {
+            list h = llCastRay(f, p, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+            if (llList2Integer(h, -1) == 1) p = llList2Vector(h, 1) + llVecNorm(f - p) * 0.3;
+        }
+        f.z += llVecMag(<d.x, d.y, 0.0>) * llTan(gTrim.x);
+    }
+    gShotPos = p;
+    gShotFoc = f;
+}
+
+// Adjust starts clean: a new shot in Us / Friends, Next, a new framing or view, the camera stops
+untrim()
+{
+    gTrim = ZERO_VECTOR;
+    gHeld = FALSE;
+    llMessageLinked(LINK_SET, FITKEY, "r", "");
+}
+
 setCam(vector p, vector f)
 {
+    place(p, f);
+    p = gShotPos;
+    f = gShotFoc;
     gCamBefore = llGetCameraPos();
     if (gCutMode || gGlided) llClearCameraParams();
     gGlided = FALSE;
@@ -163,8 +203,6 @@ setCam(vector p, vector f)
         CAMERA_POSITION_THRESHOLD, 0.0,
         CAMERA_FOCUS_THRESHOLD, 0.0
     ]);
-    gShotPos = p;
-    gShotFoc = f;
     llMessageLinked(LINK_SET, CAMSET, (string)p + "|" + (string)f + "|0|" + (string)llGetCameraFOV(), "");
     gApplyT = llGetTime();
     gVerify = TRUE;
@@ -177,6 +215,7 @@ applyShot(string s)
     gHold = (float)llList2String(L, 2);
     gType = (integer)llList2String(L, 3);
     gFitShift = 0.0;                                // a new shot is planned with Fit already
+    if ((gMode == "social" || gMode == "friends") && s != gLast) untrim();   // a new cut (not the same one after a pause): its own picture
     gLast = s;
     gPending = FALSE;
     gAsking = FALSE;
@@ -189,10 +228,9 @@ applyShot(string s)
 // move the camera on screen, eased by the viewer over the lag (glides: friends, frame, the dolly, Fit)
 glide(vector gp, vector gf, float lag)
 {
-    llSetCameraParams([CAMERA_POSITION, gp, CAMERA_FOCUS, gf, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
-    gShotPos = gp;
-    gShotFoc = gf;
-    llMessageLinked(LINK_SET, CAMSET, (string)gp + "|" + (string)gf + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
+    place(gp, gf);
+    llSetCameraParams([CAMERA_POSITION, gShotPos, CAMERA_FOCUS, gShotFoc, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
+    llMessageLinked(LINK_SET, CAMSET, (string)gShotPos + "|" + (string)gShotFoc + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
     gGlideUntil = llGetTime() + 3.0;
     gGlided = TRUE;
     list O = llParseStringKeepNulls(gLast, ["|"], []);
@@ -263,27 +301,30 @@ askWorker(string why)
     else llMessageLinked(LINK_SET, START, gMode + "|" + (string)llGetCameraFOV(), "");
 }
 
-// Page Up / Down (UP 16, DOWN 32) belong to Fit while a people camera runs, unless you fly: never a jump
+// Page Up / Down (UP 16, DOWN 32) belong to Fit while a people camera runs, unless you fly: never a jump. In Freehand
+// only while you adjust.
 integer fitOK(integer info)
 {
-    return (gState != ST_IDLE && llListFindList(["personal", "social", "friends", "frame"], [gMode]) >= 0 && !(info & AGENT_FLYING));
+    if (gState == ST_IDLE || (info & AGENT_FLYING)) return FALSE;
+    if (llListFindList(["personal", "social", "friends", "frame"], [gMode]) >= 0) return TRUE;
+    return (gMode == "free" && (gAdjOn || (info & AGENT_SITTING)));
 }
 
-// the movement keys: passed on to your avatar (7.0: in Framing › Me too, which follows you as you walk; it hears NUDGE).
-// Friends, seated: W/S (FWD 1, BACK 2) are kept back for closer/wider (they do not move a seated avatar)
+// the movement keys: passed on to your avatar (in Framing › Me too, which follows you as you walk; it hears NUDGE).
+// 7.1, Adjust: seated (you cannot walk anyway), or standing after ADJUST, all of them are kept back and trim the shot
 takeCtl(integer pass)
 {
-    llTakeControls(CTL, TRUE, pass);
-    gSitCtl = llGetAgentInfo(gOwner) & AGENT_SITTING;
-    if (gMode == "friends" && gState != ST_IDLE && gSitCtl)
-    {
-        llTakeControls(CTL & ~3, TRUE, TRUE);
-        llTakeControls(3, TRUE, FALSE);
-    }
+    integer info = llGetAgentInfo(gOwner);
+    gSitCtl = info & AGENT_SITTING;
     integer was = gFitCtl;
-    gFitCtl = fitOK(llGetAgentInfo(gOwner));
+    integer adj = gAdj;
+    gFitCtl = fitOK(info);
+    gAdj = (gFitCtl && (gAdjOn || gSitCtl));
+    llTakeControls(CTL, TRUE, pass && !gAdj);
     if (gFitCtl) llTakeControls(48, TRUE, FALSE);  // last, so no request above passes them on again
-    else if (was) llMessageLinked(LINK_SET, FITKEY, "0", "");   // flying or stopped while held: let go
+    if ((was && !gFitCtl) || (adj && !gAdj)) llMessageLinked(LINK_SET, FITKEY, "0", "");   // flying, stopped, walking again while held: let go
+    if (gAdj && !adj && gMode == "frame") llMessageLinked(LINK_SET, NUDGE, "0|" + (string)llGetCameraRot(), "");   // Me: no longer walking
+    if (adj != gAdj && gState != ST_IDLE) setUi(llList2String(["rolling", "peek"], gState == ST_PEEK));
 }
 
 // ---- lifecycle ------------------------------------------------------------------
@@ -298,6 +339,8 @@ bail(string why)
     gTypeSent = FALSE;
     gLastAct = llGetUnixTime();
     gNoEngageUntil = gLastAct + 10;
+    gAdjOn = FALSE;
+    untrim();
     llMessageLinked(LINK_SET, STOP, why, "");
     if (gPermOK) takeCtl(TRUE);                     // the keys back to your avatar (Frame, seated friends, Fit)
     setUi(idleUi());
@@ -324,6 +367,8 @@ engage(string mode)
     gLastAct = llGetUnixTime();
     gLastTick = llGetTime();
     gFovSent = llGetCameraFOV();
+    gAdjOn = FALSE;
+    untrim();
     takeCtl(TRUE);
     askWorker("start");
     setUi("rolling");
@@ -393,7 +438,7 @@ activeTick(float dt)
     }
     else gTypeSent = FALSE;
     if (gMode == "scenery" && (info & gSitMask) != gSitBase) { bail("sit"); return; }
-    if ((gMode == "friends" && (info & AGENT_SITTING) != gSitCtl) || fitOK(info) != gFitCtl) takeCtl(TRUE);
+    if ((info & AGENT_SITTING) != gSitCtl || fitOK(info) != gFitCtl) takeCtl(TRUE);   // sat down, stood up, took off, landed
     if (info & AGENT_MOUSELOOK)
     {
         if (gState != ST_PAUSE) pause("ml");
@@ -489,6 +534,7 @@ activeTick(float dt)
                         f = cp + u * 10.0;
                         if (llList2Integer(h, -1) > 0) f = llList2Vector(h, 1);
                     }
+                    untrim();                           // you framed it yourself: Adjust starts from it
                     setCam(cp, f);
                     gVerify = FALSE;
                     gLast = (string)cp + "|" + (string)f + "|" + llList2String(O, 2) + "|" + llList2String(O, 3) + "|" + (string)f;
@@ -510,7 +556,7 @@ activeTick(float dt)
     }
 
     // hold timer
-    if (gState == ST_ROLL && !gAsking && gHold > 0.0)
+    if (gState == ST_ROLL && !gAsking && gHold > 0.0 && !gHeld)
     {
         if (dt > 2.0) dt = 2.0;
         gHold -= dt;
@@ -587,6 +633,7 @@ default
             if (gState == ST_TEST) { bail("tp"); return; }
             llClearCameraParams();
             gLast = "";
+            gAdjOn = FALSE;
             pause("tp");
         }
     }
@@ -602,12 +649,17 @@ default
             gLastAct = now;
             return;
         }
-        if (gMode == "free") return;                    // Freehand: a tripod, you walk and it stays
         if (gMode == "scenery" || gState == ST_TEST)
         {
             bail("key");
             return;
         }
+        if (gAdj)
+        {
+            if (edge) llMessageLinked(LINK_SET, FITKEY, (string)(level & CTL), "");   // Adjust: every key trims the shot
+            return;
+        }
+        if (gMode == "free") return;                    // Freehand: a tripod, you walk and it stays
         if (gFitCtl && (edge & 48)) llMessageLinked(LINK_SET, FITKEY, (string)(level & 48), "");
         if (gFitCtl)
         {
@@ -615,10 +667,10 @@ default
             edge = edge & ~48;
             if (!(level | edge)) return;
         }
-        if (gMode == "frame" || gMode == "friends")
+        if (gMode == "frame")
         {
-            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "");   // Frame steps while held; lens frames Friends
-            if (gMode == "frame") return;
+            if (edge) llMessageLinked(LINK_SET, NUDGE, (string)level + "|" + (string)llGetCameraRot(), "");   // Me: you walk, it follows
+            return;
         }
         // personal / social: the camera follows you
         if (now != gMovSent)
@@ -644,6 +696,7 @@ default
         if (num == SHOT)
         {
             gWorkerOK = TRUE;
+            if (gHeld && !gAsking) return;              // Us, Friends: you adjusted this shot; it stays until Next
             if (gState == ST_WAIT || gState == ST_ROLL) applyShot(str);
             else if (gState == ST_PAUSE || gState == ST_PEEK)
             {
@@ -659,7 +712,7 @@ default
             if (gState == ST_ROLL && gMode != "scenery")
             {
                 list L = llParseStringKeepNulls(str, ["|"], []);
-                vector d = <0.0, 0.0, gFitShift * (gMode != "frame")>;     // Still re-solves with Fit itself
+                vector d = <0.0, 0.0, gFitShift * (gMode != "frame")>;     // Me re-solves with Fit itself
                 float lag = 1.5;
                 if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
                 glide((vector)llList2String(L, 0) + d, (vector)llList2String(L, 1) + d, lag);
@@ -670,7 +723,19 @@ default
             // Fit: the shot on screen moves up or down at once; the camera script plans its next shot with it
             vector d = <0.0, 0.0, (float)str>;
             gFitShift += d.z;
-            if (gState == ST_ROLL && gMode != "scenery") glide(gShotPos + d, gShotFoc + d, 0.2);
+            if (gState == ST_ROLL && gMode != "scenery") glide(gBaseP + d, gBaseF + d, 0.2);
+        }
+        else if (num == TRIM)
+        {
+            // Adjust: tilt, swing, slide on the shot on screen (and every next one); in Us and Friends it holds the shot
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            gTrim = <(float)llList2String(L, 0), (float)llList2String(L, 1), (float)llList2String(L, 2)>;
+            if (gMode == "social" || gMode == "friends")
+            {
+                gHeld = TRUE;
+                gNextCut = 0;
+            }
+            if (gState == ST_ROLL) glide(gBaseP, gBaseF, 0.15);
         }
         else if (num == NO_SHOT)
         {
@@ -693,6 +758,12 @@ default
             {
                 if (gState != ST_IDLE) bail("cmd");
             }
+            else if (str == "adjust")
+            {
+                gAdjOn = !gAdjOn;                       // ADJUST: the keys trim the shot / walk you (seated they always trim)
+                takeCtl(TRUE);
+            }
+            else if (llGetSubString(str, 0, 7) == "framing|" || llGetSubString(str, 0, 4) == "view|") untrim();   // a new framing, a saved view
             else if (str == "grab")
             {
                 if (gState == ST_IDLE && gPermOK)
@@ -717,6 +788,7 @@ default
                     setUi("rolling");
                     llMessageLinked(LINK_SET, RESUME, "peek", "");
                 }
+                untrim();
                 if (gState == ST_ROLL) askWorker("skip");
             }
         }

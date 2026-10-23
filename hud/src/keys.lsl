@@ -1,19 +1,21 @@
 // ============================================================================
 //  Take 12  -  keys.lsl  (v6.6)  - the soft keys: a few quiet keys beside the button, only when they help
 //  One strip prim linked to the HUD, named "Take 12 keys", shows a row of the key atlas (hud/art/
-//  take12_keys_512x1024.png, in the HUD's contents as "take12_keys") with repeats and offsets; the touch position
-//  on it (llDetectedTouchST) says which key. Without the strip everything stays in the menus.
-//    Connected, holding it   NEXT · INVITE · DISCONNECT      (6.8: Connect; the Watches only: DISCONNECT asks)
-//    Connected, watching     NEXT · MY TURN · DISCONNECT     (MY TURN: you film, everyone sees yours)
-//    Freehand                SAVE · VIEW A · VIEW B · STOP   (the view in use lit)
-//    Still                   FULL · HALF · CLOSE             (the framing in use lit)
+//  take12_keys_1024.png, in the HUD's contents as "take12_keys"; 7.1: two columns of ten rows) with repeats and
+//  offsets; the touch position on it (llDetectedTouchST) says which key. Without the strip everything stays in the menus.
+//    Connected, holding it   NEXT · INVITE · DISCONNECT               (6.8: Connect; the Watches only: DISCONNECT asks)
+//    Connected, watching     NEXT · MY TURN · DISCONNECT              (MY TURN: you film, everyone sees yours)
+//    Freehand                SAVE · VIEW A · VIEW B · STOP · ADJUST   (the view in use lit; ADJUST lit while the keys adjust)
+//    Framing › Me            FULL · HALF · CLOSE · ADJUST             (the framing in use lit)
+//    Framing › Us, Friends   NEXT · ADJUST
+//  With the strip the live menu leaves Next out (ui.lsl).
 //  Anything else: no keys. Placed left of the button, 1.2 times as tall as it (so the labels read); the HUD's +Y is
 //  left (/77 crop flip, shared with Frame, mirrors both).
 //  6.7.1, Size: Options > Look > Size (or /77 size s|m|l): the button 0.04, 0.06 or 0.08 (Small, Medium, Large;
 //  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -29,15 +31,17 @@ integer UI_MENU    = 7321;   // here -> ui: back to a menu page
 
 string  STRIP = "Take 12 keys";
 string  TEX   = "take12_keys";
-float   CW    = 0.1484375;   // a key cell on the atlas: 76 x 96 of 512 x 1024
+float   CW    = 0.07421875;  // a key cell on the atlas: 76 x 96 of 1024 x 1024
 float   RH    = 0.09375;
+integer PER   = 10;          // rows in a column (two columns, 512 wide)
 // the rows of the atlas, top first (tools/art/make_keys.py): how many keys, and what each does
 // C: a command (core, free, frame), S: a choice for sync (connect.lsl's SHARE_DO), one row per entry, ";" between keys
-list    ROWS = [3, 3, 4, 4, 4, 3, 3, 3];
+list    ROWS = [3, 3, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 2, 2];
 string  LIVE = "C:next;S:who;S:disconnect";
 string  WTCH = "C:scenery;S:film;S:disconnect";
-string  FREE = "C:fav;C:view|0;C:view|1;C:stop";
-string  STIL = "C:framing|0;C:framing|1;C:framing|2";
+string  FREE = "C:fav;C:view|0;C:view|1;C:stop;C:adjust";
+string  STIL = "C:framing|0;C:framing|1;C:framing|2;C:adjust";
+string  GRP  = "C:next;C:adjust";
 list    STILLS = ["Full length", "Half length", "Close"];
 list    SIZES  = ["Small", "Medium", "Large"];
 list    EDGES  = [0.04, 0.06, 0.08];   // m  the button's height (and width) for each size
@@ -47,6 +51,7 @@ integer gLink;               // the strip (0: none linked)
 integer gRow = -2;           // the row on show (-1: hidden)
 string  gSt;                 // core's state and mode
 string  gMode;
+integer gAdj;                // the keys adjust the shot (core)
 string  gShare;              // live / view / inv / ""
 integer gPick = -1;          // Freehand: the saved view in use
 integer gStill;              // Still: the framing
@@ -108,8 +113,9 @@ integer pick()
     integer on = (gSt == "rolling" || gSt == "frozen" || gSt == "peek");
     if (gShare == "live") return 0;
     if (gShare == "view") return 1;
-    if (on && gMode == "free") return 3 + gPick;
-    if (gSt == "rolling" && gMode == "frame") return 5 + gStill;
+    if (on && gMode == "free") return 3 + gPick + 3 * gAdj;
+    if (gSt == "rolling" && gMode == "frame") return 8 + gStill + 3 * gAdj;
+    if (on && (gMode == "social" || gMode == "friends")) return 14 + gAdj;
     return -1;
 }
 
@@ -138,14 +144,14 @@ show(integer r)
     string tex = TEX;
     if (llGetInventoryType(TEX) != INVENTORY_TEXTURE) tex = llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_TEXTURE, 0]), 0);
     llSetLinkPrimitiveParamsFast(gLink, [PRIM_POS_LOCAL, off / q, PRIM_ROT_LOCAL, ZERO_ROTATION / q, PRIM_SIZE, <0.01, w, h>,
-        PRIM_TEXTURE, ALL_SIDES, tex, <n * CW, RH, 0.0>, <n * CW * 0.5 - 0.5, 0.5 - (r + 0.5) * RH, 0.0>, 0.0,
+        PRIM_TEXTURE, ALL_SIDES, tex, <n * CW, RH, 0.0>, <(r / PER) * 0.5 + n * CW * 0.5 - 0.5, 0.5 - (r % PER + 0.5) * RH, 0.0>, 0.0,
         PRIM_COLOR, ALL_SIDES, <1, 1, 1>, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
 }
 
 // a key: the action in its row
 press(integer i)
 {
-    string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, STIL, STIL, STIL], gRow);
+    string row = llList2String([LIVE, WTCH, FREE, FREE, FREE, FREE, FREE, FREE, STIL, STIL, STIL, STIL, STIL, STIL, GRP, GRP], gRow);
     string a = llList2String(llParseString2List(row, [";"], []), i);
     if (llGetSubString(a, 0, 0) == "S") llMessageLinked(LINK_SET, SHARE_DO, llDeleteSubString(a, 0, 1), "");
     else llMessageLinked(LINK_SET, CMD, llDeleteSubString(a, 0, 1), "");
@@ -216,6 +222,7 @@ default
             list L = llParseStringKeepNulls(str, ["|"], []);
             gSt = llList2String(L, 0);
             gMode = llList2String(L, 1);
+            gAdj = (integer)llList2String(L, 4);
             if (gMode != "free") gPick = -1;
         }
         else if (num == TEXT) gShare = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);

@@ -3,17 +3,16 @@
 //  You frame the view with Second Life's own camera (Alt-orbit, the wheel, A/D while seated) and press Esc: core
 //  sees the camera still for 1.5 s and sends LEAD. This script keeps what you chose - how close, how high, from where
 //  and aimed at what - relative to the group, and hands it to Friends as LENS, so every next cut and variation keeps it.
-//  Seated, W/S step closer or wider (they do not move a seated avatar). Long press > Auto, sitting down or standing
-//  up go back to the automatic framing.
+//  Long press > Auto, sitting down or standing up go back to the automatic framing. (7.1: seated W/S no longer step
+//  closer or wider; seated the keys adjust the shot, fit.lsl.)
 // ============================================================================
 
-string VERSION = "7.0.2";
+string VERSION = "7.1.0";
 
 integer START      = 7301;
 integer STOP       = 7302;
 integer SHOT       = 7310;   // friends -> core  "<cam>|<focus>|<hold>|<type>|<subject>" (the subject: where it aimed)
 integer GLIDE      = 7312;
-integer NUDGE      = 7317;
 integer FOVMSG     = 7318;   // core -> cameras: your lens changed (radians)
 integer LENS       = 7319;   // lens -> friends  "<distance>|<angle down rad>|<from rad>|<aim>|<cut now>"; distance 0 = automatic
 integer LEAD       = 7324;   // core -> lens     "<cam>|<focus>": your own view, held still
@@ -30,7 +29,6 @@ float   gS;                  // your lead: distance along the view (0 = automati
 float   gEl;
 float   gAz;
 vector  gAim;                // where you aimed, from the subject Friends planned
-integer gPrev;               // keys held at the last NUDGE
 integer gSit;
 vector  gLC;                 // the last view you led with
 float   gF = 1.047198;       // your lens (field of view, radians)
@@ -93,7 +91,6 @@ default
             gActive = (llList2String(S, 0) == "friends");
             gF = (float)llList2String(S, 1);
             if (gF < 0.05) gF = 1.047198;
-            gPrev = 0;
             if (!gActive) return;
             gSit = llGetAgentInfo(gOwner) & AGENT_SITTING;
             send(FALSE);
@@ -155,21 +152,6 @@ default
             if (!gTold) llOwnerSay("[Take 12] Your view is kept: press Esc to carry on. Tap the button > Release to go back.");
             gTold = TRUE;
             send(FALSE);                                    // it is on screen already
-        }
-        else if (num == NUDGE && gSit)
-        {
-            integer lv = (integer)str;
-            integer k = lv & ~gPrev;
-            gPrev = lv;
-            if (!(k & (CONTROL_FWD | CONTROL_BACK))) return;
-            if (gS == 0.0) lead(gCam, gSubj);               // from the shot on screen
-            if (k & CONTROL_FWD) gS = gS * 0.8;
-            else gS = gS * 1.25;
-            if (gS < 0.6) gS = 0.6;
-            if (gS > 25.0) gS = 25.0;
-            if (k & CONTROL_FWD) show("Closer");
-            else show("Wider");
-            send(TRUE);
         }
         else if (num == CMD && str == "auto") { gLC = ZERO_VECTOR; automatic(TRUE); }
         else if (num == CMD && str == "autoq") automatic(FALSE);   // Friends: the group changed
