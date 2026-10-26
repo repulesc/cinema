@@ -121,7 +121,7 @@ check("gAdj = (gFitCtl && (gAdjOn || gSitCtl));" in tc and "llTakeControls(CTL, 
 check(tc.count("llTakeControls(") == 1 and core.count("llTakeControls(") == 1, "core: exactly one control request")
 check('if (on) llTakeControls(48, TRUE, FALSE);' in fit and 'else llTakeControls(48, FALSE, TRUE);' in fit and fit.count("llTakeControls(") == 2
       and "gWant48 = (integer)llList2String(L, 5);" in fit and "hold(gWant48);" in fit and "control(key id, integer level, integer edge)" in fit
-      and "llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);" in fit, "fit: keeps Page Up / Down from your avatar (no jump) while Fit is on, its own request")
+      and "llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);" in fit, "fit: keeps Page Up / Down from your avatar (no jump) while Fit is on, its own request")
 check('+ "|" + (string)gAdj + "|" + (string)gFitCtl, "");' in core, "core: UI_STATE says when Fit is on (field 6)")
 check('if ((was && !gFitCtl) || (adj && !gAdj)) llMessageLinked(LINK_SET, FITKEY, "0", "");' in tc, "core: taking off, stopping or walking again while a key is held lets go of it")
 check('if ((adj != gAdj || was != gFitCtl) && gState != ST_IDLE) setUi(' in tc, "core: the keys strip, tips and fit hear when Adjust or Fit turn on or off")

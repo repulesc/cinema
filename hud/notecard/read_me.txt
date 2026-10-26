@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (7.1.3)
+TAKE 12  -  READ ME  (7.2)
 A camera for Second Life, from beyond your avatar's back. It only moves your view: nothing is recorded.
 
 
@@ -48,6 +48,12 @@ Seated, the keys always adjust (you cannot walk anyway). Standing they walk you,
 In Me an adjustment stays until you change Full / Half / Close or stop. In Us and Friends adjusting holds that shot until Next; the next one starts clean.
 The height (Page Up / Page Down) is also how you show where your body really is: Second Life plays your pose in your viewer, so no script can see it (a deep sofa, a ground sit, heels). It is kept for this seat, for sitting on the ground and for standing. While Framing runs these keys never make you jump; flying, they fly.
 
+SHOW ME: WHERE YOUR FACE REALLY IS
+Lying on a bed or curled on a sofa, Second Life only knows where your avatar is "anchored", not where your head ended up. Your camera knows. While Framing runs: tap > Show me, then
+   1. Alt-click your face (the view turns to it) and hold still a moment,
+   2. Alt-drag a little round it (a small turn is enough) and hold still again.
+Take 12 finds your face where the two views meet and frames it from then on: Me, Us and Friends put your eyes on the golden line, seen from the side your face looks to. It is kept for this seat (and for standing, and for sitting on the ground), and turns with the bed or sofa. Show me again to redo it; /77 showme clear forgets it here.
+
 THE LENS
 Your viewer's zoom is your lens: Ctrl+0 zooms in, Ctrl+8 out, Ctrl+9 back. The line above the button shows it and what each camera likes ("21 mm · try 35 · Ctrl+0"); Me names the classic portrait lens for each framing (50, 85, 105 mm). Zoom while it runs and the camera glides so the picture keeps its size: a longer lens flatters faces.
 
@@ -72,6 +78,7 @@ High drone views over the area, wide views across the horizon, the corners of a 
  IDLE START  when it starts by itself (off, 1 to 10 min; Mouse check: it also waits until your viewer marks you Away)
  INDOORS     Auto (inside in a skybox or under a roof), Inside, Outside
  REACH       how far it may go (50 to 200 m)
+ FORMAT      its own picture shape for the idle views (off by default); your Format stays for your own shots
 
 
 === FORMAT ==============================================
@@ -105,7 +112,7 @@ A quiet line says which camera runs: "○ Me · Half length · 85 mm ✓", "◇ 
 
 === CHAT (optional, channel 77) =========================
 
-scenery  me  us  friends  free  adjust  connect  crop <format|off>  size s|m|l  stop  next  menu  status
+scenery  me  us  friends  free  adjust  showme [clear]  connect  crop <format|off>  size s|m|l  stop  next  menu  status
 pace <seconds>   reach <metres>   indoors auto|inside|outside   tips on|off   statusline on|off   trace on|off   chan <number>   reset
 debug on|off     Connect: every message and change in your chat, to send to the maker when something goes wrong (off after a reset)
 

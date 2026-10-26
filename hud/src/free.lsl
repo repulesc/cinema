@@ -11,7 +11,7 @@
 //  Checked in tools/sim/free_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

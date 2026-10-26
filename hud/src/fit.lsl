@@ -15,16 +15,21 @@
 //  walk (they never make you jump; flying, they fly). 7.1.1: this script keeps Page Up / Down from your avatar with
 //  its own control request (one script holds one set of controls: core's request is all the movement keys, which
 //  it routes here). The Adjust notice stays 6 s and comes back once, 15 s later, until you press a key.
-//  Checked in tools/sim/fit_sim.py.
+//  7.2, Show me: no script can see where your body is in a pose (Second Life plays animations in each viewer), but
+//  your camera can: Alt-click your face and the viewer aims at it; Alt-drag a little round it and the aim stays on it.
+//  Two still views from different sides are two lines through your face: where they meet is your face, to a few cm.
+//  Kept per seat like Fit (cin.facec.<seat>: "<offset>|<facing>" in your own frame, so a turned sofa still fits),
+//  and the cameras (Me, Us, Friends) read the one for where you are now as cin.face. /77 showme clear forgets it.
+//  Checked in tools/sim/fit_sim.py and tools/sim/showme_emu.py (the real scripts in the emulator).
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|<next cut>|<why>|<adjust>|<fit>"
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
-integer CMD        = 7371;
+integer CMD        = 7371;   // "showme" (start / stop), "showmeclear"; to core: "showmeend"
 integer FITKEY     = 7396;   // core -> here  "<keys held>" (Adjust: all of them; else Page Up 16 / Page Down 32), "r": a new shot
 integer FIT        = 7397;   // here -> core  "<dz>": the shot on screen moves dz metres (next shots read cin.fitz)
 integer TRIM       = 7398;   // here -> core  "<tilt rad>|<swing rad>|<slide m>": Adjust, on every shot
@@ -52,6 +57,15 @@ integer gTaps;               // the first taps say that a hold is faster
 integer gHold48;              // Page Up / Down are kept from your avatar (no jump) by this script's request
 integer gWant48;             // ... and should be (UI_STATE)
 float   gHelpT;              // Adjust turned on at (0: the help has come back once, or a key was pressed)
+integer gCal;                // Show me: measuring
+float   gCalT;               // ... since
+vector  gCP;                 // the camera now, and since when it is still
+rotation gCR;
+float   gStillT;
+integer gMoved;              // ... you moved it since the last view taken (only your own views count)
+vector  gAP;                 // the first still view: a line from gAP along gAD
+vector  gAD;
+float   gHintT;
 string  gNote;
 float   gTextT;
 float   gTextFor = 3.0;      // s  this notice stays
@@ -90,6 +104,7 @@ look()
     if (gFree) return;
     gFit = (float)cfg("fitc." + c);
     set("fitz", (string)gFit);
+    set("face", cfg("facec." + c));                         // Show me: your face here, if you showed it
 }
 
 // keep it; a seat goes to the end of the list, the oldest seat beyond 20 is forgotten
@@ -105,6 +120,7 @@ keep()
     if (llGetListLength(L) > SEATS)
     {
         llLinksetDataDeleteProtected("cin.fitc." + llList2String(L, 0), PASS);
+        llLinksetDataDeleteProtected("cin.facec." + llList2String(L, 0), PASS);
         L = llDeleteSubList(L, 0, 0);
     }
     set("fitcseats", llDumpList2String(L, ","));
@@ -175,11 +191,91 @@ hold(integer on)
     else llTakeControls(48, FALSE, TRUE);
 }
 
-// fast while a key is held or a notice is up; once a second while a camera runs (you may sit or stand)
+// ---- Show me ---------------------------------------------------------------------------------------------------
+showme(integer on)
+{
+    if (on == gCal) return;
+    gCal = on;
+    gAP = ZERO_VECTOR;
+    gMoved = FALSE;
+    gStillT = 0.0;
+    gCalT = llGetTime();
+    gHintT = 0.0;
+    if (on) llMessageLinked(LINK_SET, CMD, "showme|go", "");        // core: your own camera while you show it
+    else llMessageLinked(LINK_SET, CMD, "showmeend", "");
+}
+
+// the closest points of the lines a + s u and b + t v (u, v unit): [the point between them, the gap, s, t]
+list meet(vector a, vector u, vector b, vector v)
+{
+    vector w = a - b;
+    float k = u * v;
+    float den = 1.0 - k * k;
+    if (den < 0.01) return [];
+    float sa = (k * (v * w) - (u * w)) / den;
+    float tb = ((v * w) - k * (u * w)) / den;
+    vector p = a + u * sa;
+    vector q = b + v * tb;
+    return [(p + q) * 0.5, llVecDist(p, q), sa, tb];
+}
+
+// every 0.2 s while measuring: a still view (0.6 s) is a line through your face; two of them 12 degrees apart meet there
+measure()
+{
+    if (!(llGetPermissions() & PERMISSION_TRACK_CAMERA)) return;
+    vector c = llGetCameraPos();
+    rotation r = llGetCameraRot();
+    integer moved = (llVecDist(c, gCP) > 0.01 || llAngleBetween(r, gCR) > 0.01);
+    gCP = c;
+    gCR = r;
+    if (llGetTime() - gCalT < 1.0) return;                  // the scripted camera letting go is not you
+    if (moved)
+    {
+        gMoved = TRUE;
+        gStillT = llGetTime();
+        return;
+    }
+    if (!gMoved || llGetTime() - gStillT < 0.6) return;     // the view you had before is not a view of your face
+    gMoved = FALSE;
+    vector u = llRot2Fwd(r);
+    if (gAP == ZERO_VECTOR)
+    {
+        gAP = c;
+        gAD = u;
+        show("Show me · now Alt-drag a little round your face, then hold still");
+        return;
+    }
+    if (u * gAD > 0.978) return;                            // not 12 degrees round yet: wait for more
+    list m = meet(gAP, gAD, c, u);
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
+    vector F = llList2Vector(m, 0);
+    if (m == [] || llList2Float(m, 1) > 0.15 || llList2Float(m, 2) < 0.2 || llList2Float(m, 3) < 0.2
+        || llGetListLength(d) < 2 || llVecDist(F, llList2Vector(d, 0)) > 3.0)
+    {
+        gAP = c;                                            // these two do not aim at one point near you: start from this one
+        gAD = u;
+        show("Show me · Alt-click your face, then Alt-drag a little round it");
+        return;
+    }
+    rotation R = llList2Rot(d, 1);
+    string v = (string)((F - llList2Vector(d, 0)) / R) + "|" + (string)(llVecNorm(gAP - F) / R);
+    look();
+    set("facec." + gCtx, v);
+    set("face", v);
+    gFit = 0.0;                                             // the guess is replaced: Fit starts level here
+    keep();
+    set("fitz", "0");
+    showme(FALSE);
+    show("Got you · Me, Us and Friends frame your face here (" + llList2String(["this seat", "standing", "on the ground"],
+        llListFindList(["stand", "ground"], [gCtx]) + 1) + ")");
+}
+
+// fast while a key is held, a notice is up or you show where you are; once a second while a camera runs
 tick()
 {
     float t = 0.0;
     if (gOn) t = 1.0;
+    if (gCal) t = 0.2;
     if (gKeys || gTextT > 0.0) t = 0.1;                     // (gHelpT: the 1 s tick while a camera runs is enough)
     llSetTimerEvent(t);
 }
@@ -191,7 +287,7 @@ default
     {
         gOwner = llGetOwner();
         look();
-        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);   // an attachment: granted without asking
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);   // an attachment: granted without asking
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "fit");
     }
 
@@ -202,7 +298,7 @@ default
 
     attach(key id)
     {
-        if (id != NULL_KEY) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);
+        if (id != NULL_KEY) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
     }
 
     run_time_permissions(integer p)
@@ -276,6 +372,20 @@ default
             if (!gOn) gKeys = 0;
             look();
         }
+        else if (num == CMD && str == "showme")
+        {
+            look();
+            showme(!gCal);
+            if (gCal) show("Show me · Alt-click your face, then Alt-drag a little round it");
+            else show("Show me · stopped");
+        }
+        else if (num == CMD && str == "showmeclear")
+        {
+            look();
+            llLinksetDataDeleteProtected("cin.facec." + gCtx, PASS);
+            set("face", "");
+            show("Show me · forgotten here: the cameras guess again");
+        }
         else if (num == CMD && str == "adjust" && gOn && (llGetAgentInfo(gOwner) & AGENT_SITTING)) show("Seated · the keys adjust");
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "fit");
         else if (num == STATUS && str == "?")
@@ -287,6 +397,20 @@ default
 
     timer()
     {
+        if (gCal)
+        {
+            measure();
+            if (gCal && llGetTime() - gCalT > 90.0)
+            {
+                showme(FALSE);
+                show("Show me · no luck: Alt-click your face, Alt-drag a little, hold still each time");
+            }
+            else if (gCal && llGetTime() - gHintT > 8.0)
+            {
+                gHintT = llGetTime();                       // the instruction stays readable
+                if (gAP == ZERO_VECTOR) show("Show me · Alt-click your face, then Alt-drag a little round it");
+            }
+        }
         float h = llGetTime() - gDownT;
         if (gKeys && h > RAMP)
         {

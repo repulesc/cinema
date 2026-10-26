@@ -11,7 +11,7 @@
 //  Maths: docs/FRAME.md, checked in tools/sim/frame_sim.py. The fuller version is kept in lab/frame-full-4.5.0/.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -73,6 +73,7 @@ float   gPhi;                // tilt from the last solve
 float   gAsp = 1.778;        // the picture you are composed in: the Frame format, or your window
 float   gFit = 1.6;          // what people are fitted to: the format, or 16:10
 float   gTS = 1.0;           // a format wider than the window: the picture is this much as tall
+float   gWz;                 // Show me (7.2): your face's height, measured (0: not shown here)
 
 // ============================================================================
 // the picture: the Frame format (crop.lsl writes cin.crop and your window, cin.aspect), or the whole window
@@ -167,6 +168,18 @@ list frame()
     if (llGetListLength(d) < 2) return [];
     vector P = llList2Vector(d, 0);
     vector F = llRot2Fwd(llList2Rot(d, 1));
+    // 7.2 Show me (fit.lsl): your face, measured, in your own frame: where it is and which way it looks
+    list c = llParseString2List(llLinksetDataReadProtected("cin.face", PASS), ["|"], []);
+    gWz = 0.0;
+    if (c != [])
+    {
+        rotation R = llList2Rot(d, 1);
+        vector W = P + (vector)llList2String(c, 0) * R;
+        vector u = (vector)llList2String(c, 1) * R;
+        if (u.x * u.x + u.y * u.y > 0.1) F = llVecNorm(<u.x, u.y, 0.0>);
+        P = <W.x, W.y, P.z>;
+        gWz = W.z;
+    }
     float yaw = llAtan2(F.y, F.x);
     if (llGetListLength(gWith)) return group(P, yaw, t);
 
@@ -175,6 +188,7 @@ list frame()
     if (h < 0.5) h = 1.9;
     float fz = (float)llLinksetDataReadProtected("cin.fitz", PASS);      // Fit (fit.lsl): where you really are
     float z0 = P.z - 0.5 * h + fz;                          // feet
+    if (gWz != 0.0) z0 = gWz + fz - llList2Float(BODY, 1) * h;    // (shown: from your face down)
     vector E = <P.x, P.y, z0 + llList2Float(BODY, 1) * h>;  // eyes
     integer k = gIdx * 7;
     float zc = z0 + llList2Float(PORT, k) * h;
@@ -188,6 +202,7 @@ list frame()
     {
         // seated: the eyes from the sitting estimate, on the golden line; the cut a set drop below them
         E.z = P.z + 0.25 * h + fz;
+        if (gWz != 0.0) E.z = gWz + fz;                     // shown: your face, measured
         z1 = E.z;
         y1 = PHI_Y;
         z2 = E.z - llList2Float(SEAT, gIdx) * h;
@@ -258,6 +273,7 @@ list group(vector P, float yaw, float t)
         vector p = llList2Vector(M, i);
         float h = llList2Float(H, i);
         float z0 = p.z - 0.5 * h + ff * (i == 0);           // you (first) where Fit says
+        if (i == 0 && gWz != 0.0) z0 = gWz + ff - llList2Float(BODY, 1) * h;   // ... or where you showed your face
         C += p;
         hm += h;
         fz += z0;

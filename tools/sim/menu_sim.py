@@ -48,17 +48,29 @@ check(shown("main", hide_free) == ["scenery", "opts", "full", "help", "close"], 
 check("framing" not in pages, "7.1: no Framing page, the door starts a camera")
 check('if (id == "framing") id = cfgGet("fwho");' in ui and 'if (id == "") id = "frame";' in ui
       and 'cfgGet("fwho") != gUiMode) cfgWrite("fwho", gUiMode);' in ui, "ui: Framing starts the last one used (Me the first time)")
-check(pages.get("scenery") == ["start", "afk", "indoors", "reach", "back"], f"Scenery: {pages.get('scenery')}")
+check(pages.get("scenery") == ["start", "afk", "indoors", "reach", "sfmt", "back"], f"Scenery: {pages.get('scenery')}")
+check('else if (id == "sfmt") { closeMenu(); llMessageLinked(LINK_SET, CMD, "cropsc", ""); }' in ui, "ui: Scenery > Format opens Scenery's own Format (7.2)")
 check(pages.get("opts") == ["pace", "look", "camcfg", "test", "reset", "back"], f"Settings: {pages.get('opts')}")
 check(pages.get("camcfg") == ["seat", "altcam", "chat", "phantom", "back"], f"Camera: {pages.get('camcfg')}")
 check(pages.get("look") == ["th0", "th1", "th2", "stline", "size", "trace", "back"], f"Look: {pages.get('look')}")
 check(pages.get("help") == ["readme", "tips", "back"], f"Help: {pages.get('help')}")
-check(shown("live", hide_full) == ["save", "me", "us", "friends", "adjust", "flist", "release", "next", "stop", "share", "modes", "close"], f"live menu: {shown('live', hide_full)}")
+check(shown("live", hide_full) == ["save", "me", "us", "friends", "adjust", "showme", "flist", "release", "next", "stop", "share", "modes", "close"], f"live menu: {shown('live', hide_full)}")
+# per camera (the page's branches): Freehand, Me / Us, Friends, each one dialog
+def live_for(mode, strip=False):
+    fr = mode in ("frame", "social", "friends")
+    b = (["save"] if mode == "free" else []) + (["me", "us", "friends"] if fr else []) + (["adjust"] if fr or mode == "free" else [])
+    b += ["showme"] if fr else []
+    b += ["flist", "release"] if mode == "friends" else []
+    b += ["next"] if mode == "scenery" or not strip else []
+    return b + ["stop", "share", "modes", "close"]
+LIVE_MAX = max(len(live_for(m)) for m in ("free", "frame", "social", "friends", "scenery"))
+check(LIVE_MAX <= 12 and len(live_for("friends")) == 12, f"each live menu fits a dialog: {[len(live_for(m)) for m in ('free', 'frame', 'social', 'friends', 'scenery')]}")
+check('if (fr) b += ["showme"];' in ui and '|| id == "showme") llMessageLinked(LINK_SET, CMD, id, "");' in ui and "~showme||Show me~" in ui, "ui: Show me in the Framing live menus (7.2)")
 lv = ui[ui.index('else if (page == "live")'):ui.index('else if (page == "pace")')]
 check('if (fr) b += ["me", "us", "friends"];' in lv and 'if (fr || gUiMode == "free") b += ["adjust"];' in lv and 'if (gUiMode == "scenery" || !strip()) b += ["next"];' in lv,
       "ui: the live menu: Me / Us / Friends in Framing, Adjust in Framing and Freehand, Next only without the keys strip (and in Scenery)")
 check('if (llGetLinkName(i) == "Take 12 keys") return TRUE;' in ui, "ui: the keys strip is found by its name (keys.lsl names it)")
-check(all(f'"{x}"' in lv for x in ("save", "flist", "release")) and len(shown("live", hide_full)) <= 12, "the live menu fits one dialog")
+check(all(f'"{x}"' in lv for x in ("save", "flist", "release")), "the live menu has Save, the Friends list and Release")
 check('return "● " + llList2String(p, 1);' in ui, "ui: the camera running and Adjust on carry a dot in the live menu")
 check(shown("live", hide_free) == ["next", "stop", "close"], f"Take 12 Scenery live menu: {shown('live', hide_free)}")
 # 7.0 cuts: no Photo, no menu styles, no Scenery favourites
@@ -71,7 +83,7 @@ check('if (id == "start") { closeMenu(); llMessageLinked(LINK_SET, CMD, "scenery
 check('if (id == "free" || id == "share" || id == "crop" || id == "frame" || id == "social" || id == "friends")' in ui, "ui: Framing, Freehand, Connect and Format start from the main menu")
 # ---- every page fits, every button has a name, labels distinct and within 24 bytes ----------------------------------
 for p, ids in pages.items():
-    check(len(ids) <= 12, f"{p}: {len(ids)} buttons (a dialog holds 12)")
+    check(len(ids) <= 12 or p == "live", f"{p}: {len(ids)} buttons (a dialog holds 12)")   # live: per camera, above
     for i in ids:
         check(i in items, f"{p}: '{i}' has no name in ITEMS")
     labels = [label(i) for i in ids]

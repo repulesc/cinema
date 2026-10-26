@@ -124,7 +124,7 @@ check("if (!gPermOK || gWatch) return;" in core and 'else if (gWatch && gState =
 check('onLong()\n{\n    if (LITE) onTap();                                      // Take 12 Scenery: no sharing\n    else llMessageLinked(LINK_SET, CMD, "share", "");\n}' in ui
       and "integer LITE    = 0;" in ui, "ui: hold must open the Connect panel, always (the free Take 12 Scenery has no Connect)")
 check('if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));' in ui, "ui: ⋯ More cannot open the menus")
-check('b = ["framing", "free", "share",' in ui and 'b += ["stop", "share", "modes", "close"];' in ui and '|| id == "share" || id == "adjust") llMessageLinked(LINK_SET, CMD, id, "");' in ui,
+check('b = ["framing", "free", "share",' in ui and 'b += ["stop", "share", "modes", "close"];' in ui and '|| id == "share" || id == "adjust" || id == "showme") llMessageLinked(LINK_SET, CMD, id, "");' in ui,
       "ui: Connect is in both menus (tap always opens a menu; hold is only a shortcut)")
 # 7.1: the director's Format on the viewers' screens while connected; their own after; the lens note once
 crop = open(os.path.join(R, "hud", "src", "crop.lsl")).read()
