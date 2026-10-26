@@ -13,10 +13,11 @@
 //  7.1.1: the bars show only while a camera runs (UI_STATE rolling / peek), while this menu is open (to see the
 //  choice) and while following a connected Format; with your own camera they go away. The Format itself is kept,
 //  and the cameras compose inside it as before.
+//  7.2: Scenery has its own Format (Scenery > Format, cin.crop_sc, off by default): the idle views are not your shots.
 //  Checked in tools/sim/crop_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START       = 7301;
@@ -35,6 +36,9 @@ float   DEPTH  = 0.02;        // m  the bars sit this far behind the button (HUD
 
 key     gOwner;
 float   gR;                  // the format (width / height), 0 = off
+float   gRS;                 // Scenery's own format (7.2)
+integer gScen;               // the camera running is Scenery
+integer gSc;                 // the menu sets Scenery's format
 float   gA = 1.777778;       // your window
 integer gSY = 1;             // HUD +Y is to the left (/77 crop flip if a viewer differs)
 integer gSX = 1;             // ... and the bars go behind the button, so it stays clickable (/77 crop back flips it)
@@ -94,7 +98,7 @@ bar(integer link, float y, float z, float w, float h)
 cut()
 {
     if (llGetListLength(gBars) < 4 || !llGetAttached()) return;
-    float r = gR * (gLive || gFollow || gL != 0);           // your own camera: no bars
+    float r = eff() * (gLive || gFollow || gL != 0);        // your own camera: no bars
     float a = gA;
     float sw = 0.0;
     float th = 0.0;
@@ -106,10 +110,18 @@ cut()
     bar(llList2Integer(gBars, 3), 0.0, th * 0.5 - 0.5, a, th);         // bottom
 }
 
+// the format on screen: a connected director's, Scenery's own while Scenery runs (or while you choose it), else yours
+float eff()
+{
+    if (gFollow) return gR;
+    if ((gL && gSc) || (!gL && gScen)) return gRS;
+    return gR;
+}
+
 // the timer runs only while a frame is on (your window may change) or the menu is open
 tick()
 {
-    llSetTimerEvent(2.0 * (gR > 0.0 || gL != 0));
+    llSetTimerEvent(2.0 * (gR > 0.0 || gRS > 0.0 || gL != 0));
 }
 
 // your window: kept for the cameras, which compose for it
@@ -130,11 +142,19 @@ measure(integer force)
 
 tell()
 {
-    llMessageLinked(LINK_SET, CROP, (string)gR + "|" + (string)gA, "");
+    llMessageLinked(LINK_SET, CROP, (string)eff() + "|" + (string)gA, "");
 }
 
 choose(float r)
 {
+    if (gSc)
+    {
+        gRS = r;                                            // Scenery's: the cameras that compose do not use it
+        set("crop_sc", (string)r);
+        cut();
+        tick();
+        return;
+    }
     gR = r;
     set("crop", (string)r);
     llMessageLinked(LINK_SET, CFG_CHANGED, "crop", "");      // the cameras compose inside the new format
@@ -151,15 +171,18 @@ menu()
     gMenuT = llGetUnixTime();
     cut();                                                  // the bars show while you choose
     tick();
-    string t = "Format · the shape of the picture; the rest of your screen is dimmed\nNow: " + ratioName(gR) + " · your window "
+    float cur = gR;
+    if (gSc) cur = gRS;
+    string t = "Format · the shape of the picture; the rest of your screen is dimmed\nNow: " + ratioName(cur) + " · your window "
         + llGetSubString((string)gA, 0, 3) + ":1\nSnapshots: set the same ratio as the snapshot size.";
+    if (gSc) t = "Scenery's Format · its own picture shape, for the idle views (yours stays for your shots)\nNow: " + ratioName(cur);
     if (llGetListLength(gBars) < 4) t = "Format needs four small boxes linked to the HUD, with the button as the root (see the README for building it).";
     list b = [];
     integer i;
     for (i = 0; i < 6; i++)
     {
         string n = llList2String(NAMES, i);
-        if (llList2Float(RATIOS, i) == gR) n = "✓ " + n;
+        if (llList2Float(RATIOS, i) == cur) n = "✓ " + n;
         b += [n];
     }
     string back = "‹ Back";
@@ -174,7 +197,7 @@ hear(string m)
         gL = 0;
         cut();
         tick();
-        llMessageLinked(LINK_SET, UI_MENU, "main", "");
+        llMessageLinked(LINK_SET, UI_MENU, llList2String(["main", "scenery"], gSc), "");
         return;
     }
     if (m == " ") return;
@@ -205,6 +228,7 @@ command(string v)
         if (v == "follow") tell();
         return;
     }
+    gSc = FALSE;                                            // /77 crop sets your Format
     integer i = llListFindList(NAMES, [v]);
     if (i >= 0) choose(llList2Float(RATIOS, i));
     else if (v == "off") choose(0.0);
@@ -223,6 +247,8 @@ load()
 {
     gR = (float)cfg("crop");
     if (ratioName(gR) == "off") gR = 0.0;
+    gRS = (float)cfg("crop_sc");
+    if (ratioName(gRS) == "off") gRS = 0.0;
     list s = llParseString2List(cfg("crop_s"), ["|"], []);
     if (llGetListLength(s) == 2)
     {
@@ -295,13 +321,21 @@ default
     {
         if (num == UI_STATE)
         {
-            string st = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            string st = llList2String(L, 0);
             integer on = (st == "rolling" || st == "peek");
-            if (on == gLive) return;
+            integer sc = (llList2String(L, 1) == "scenery");
+            if (on == gLive && sc == gScen) return;
             gLive = on;
+            gScen = sc;
             cut();
+            tell();                                         // (a connected viewer sees the format on your screen)
         }
-        else if (num == CMD && str == "crop") menu();
+        else if (num == CMD && (str == "crop" || str == "cropsc"))
+        {
+            gSc = (str == "cropsc");                        // Format, or Scenery > Format
+            menu();
+        }
         else if (num == CMD && llGetSubString(str, 0, 4) == "crop|") command(llDeleteSubString(str, 0, 4));
         else if (num == START) measure(FALSE);
         else if (num == CFG_CHANGED && str == "all")
@@ -313,7 +347,7 @@ default
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "crop");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/crop] v" + VERSION + " frame " + ratioName(gR) + ", window " + (string)gA + ", "
+            llOwnerSay("[Take 12/crop] v" + VERSION + " frame " + ratioName(gR) + ", scenery " + ratioName(gRS) + ", window " + (string)gA + ", "
                 + (string)llGetListLength(gBars) + " bars, free mem " + (string)llGetFreeMemory());
     }
 

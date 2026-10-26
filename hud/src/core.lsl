@@ -6,7 +6,7 @@
 //  All four scripts (core, scenery, people, ui) go in the ROOT prim of the HUD.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";   // protected Linkset-Data password, same in all scripts
 integer LITE    = 0;                      // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1: scenery camera only
 
@@ -448,7 +448,7 @@ activeTick(float dt)
     }
     if (gState == ST_PAUSE)
     {
-        if (gPauseWhy == "tp" && llGetUnixTime() < gResumeAt) return;
+        if (gPauseWhy == "showme" || (gPauseWhy == "tp" && llGetUnixTime() < gResumeAt)) return;   // Show me: until fit is done
         resume();
     }
     float fv = llGetCameraFOV();                    // the zoom is your lens: every camera keeps its picture for it
@@ -759,6 +759,16 @@ default
             if (str == "stop")
             {
                 if (gState != ST_IDLE) bail("cmd");
+            }
+            else if (str == "showme|go" && (gState == ST_ROLL || gState == ST_WAIT || gState == ST_PEEK))
+            {
+                llClearCameraParams();                  // 7.2 Show me (fit.lsl): your own camera, to Alt-click your face
+                pause("showme");
+            }
+            else if (str == "showmeend" && gPauseWhy == "showme")
+            {
+                gPauseWhy = "tp";                       // framed again from scratch (as after a teleport), with your face known
+                gResumeAt = 0;
             }
             else if (str == "adjust")
             {

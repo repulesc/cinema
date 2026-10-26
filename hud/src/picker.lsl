@@ -7,7 +7,7 @@
 //  Also the chat commands (/77 ...): they moved here from ui.lsl in 5.6.0 to give the menus room.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_MENU    = 7321;
@@ -276,7 +276,7 @@ say(string s)
 
 help()
 {
-    say("Commands on /" + (string)gCmdChan + ": scenery me us friends free adjust connect crop size stop next menu debug status pace reach indoors face tips statusline trace chan reset (details: Read Me).");
+    say("Commands on /" + (string)gCmdChan + ": scenery me us friends free adjust showme connect crop size stop next menu debug status pace reach indoors face tips statusline trace chan reset (details: Read Me).");
 }
 
 onCommand(string msg)
@@ -323,6 +323,7 @@ onCommand(string msg)
     }
     else if (c == "statusline" && (v == "on" || v == "off")) { set("status", (string)(v == "on")); say("Status line: " + v); }
     else if ((c == "trace" || c == "cutmode") && (v == "on" || v == "off")) { set(c, (string)(v == "on")); say(c + ": " + v); }
+    else if (c == "showme") llMessageLinked(LINK_SET, CMD, llList2String(["showme", "showmeclear"], v == "clear"), "");   // 7.2 (fit.lsl)
     else if (c == "debug" && (v == "on" || v == "off")) llMessageLinked(LINK_SET, CMD, "debug|" + (string)(v == "on"), "");   // 7.1.3: Connect, in chat
     else if (c == "chan" && n > 0 && n != 9)
     {

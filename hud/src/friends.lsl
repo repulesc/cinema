@@ -9,7 +9,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -47,7 +47,6 @@ list PHI  = [45.0, -45.0, 135.0, -135.0, 180.0, 0.0];
 
 float   gThetaMax;
 float   gSeatEl;                // seated view: how high above you the camera looks down (0 = off)
-integer gTrace;
 integer gChatOn;
 list    gRayOpts;
 float   gFov;
@@ -154,16 +153,10 @@ vector dirOf(float a)
     return <llCos(a), llSin(a), 0.0>;
 }
 
-tsay(string s)
-{
-    if (gTrace) llOwnerSay("[Take 12] " + s);
-}
-
 loadCfg()
 {
     gThetaMax = (float)cfg("theta_max", "10") * DEG_TO_RAD;
     gSeatEl   = (float)cfg("seat_deg", "45") * DEG_TO_RAD;
-    gTrace    = (integer)cfg("trace", "0");
     float pace = (float)cfg("hold", "60");                // the Pace setting also sets the people cameras' rhythm
     gBase = fclamp(0.75 * pace, 20.0, 150.0);               // a shot is held about this long (Calm 60 s: 45 s)
     gMinHold = fmax(12.0, 0.25 * pace);                     // an event (arrival, speaker, left the frame) cuts no sooner than this (Calm: 15 s)
@@ -201,6 +194,16 @@ integer refreshOwner()
     gOSit = ((llGetAgentInfo(gOwner) & AGENT_SITTING) != 0);
     vector sz = llGetAgentSize(gOwner);
     gOE = gOP.z + (K_EYE_STAND + (K_EYE_SIT - K_EYE_STAND) * gOSit) * sz.z + (float)cfg("fitz", "0");   // + Fit (fit.lsl)
+    list c = llParseString2List(cfg("face", ""), ["|"], []);   // 7.2 Show me (fit.lsl): your face, measured, in your own frame
+    if (c != [])
+    {
+        rotation R = llList2Rot(d, 1);
+        vector w = gOP + (vector)llList2String(c, 0) * R;
+        f = (vector)llList2String(c, 1) * R;
+        gOE = gOE - gOP.z + w.z - (K_EYE_STAND + (K_EYE_SIT - K_EYE_STAND) * gOSit) * sz.z;   // the face, + Fit
+        gOP = <w.x, w.y, gOP.z>;
+        if (f.x * f.x + f.y * f.y > 0.1) gOY = llAtan2(f.y, f.x);     // the way your face looks
+    }
     return TRUE;
 }
 
@@ -623,7 +626,6 @@ nextShot(float mult)
         if (llGetListLength(gGrp) == 0 && !gToldAlone)
         {
             gToldAlone = TRUE;
-            tsay("friends: none here yet");
         }
         gUsedN = 0;
         planA(FALSE);
@@ -659,7 +661,6 @@ nextShot(float mult)
     gOut = 0;
     gCenter = centroid(gUsedN);
     gPresAtShot = llGetListLength(gGrp);
-    tsay("friends: shot " + (string)type + ", " + (string)(gUsedN + 1) + " in frame");
 }
 
 // you and the friends in the shot all within k of the half-width?

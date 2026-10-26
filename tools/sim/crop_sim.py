@@ -88,9 +88,18 @@ check('else if (c == "crop") llMessageLinked(LINK_SET, CMD, "crop|" + v, "");' i
 check('"crop"' in ui[ui.index("integer locked(string id)"):ui.index("string label(")] and "crop.lsl" not in build.split("FILES")[0], "the free build leaves Format out (locked in ui; crop.lsl is not part of it)")
 # 7.1.1: the bars only while a camera runs, the menu is open, or a connected Format is followed; the Format is kept
 crop = open(os.path.join(R, "hud", "src", "crop.lsl")).read()
-check("float r = gR * (gLive || gFollow || gL != 0);" in crop and 'integer on = (st == "rolling" || st == "peek");' in crop
+check("float r = eff() * (gLive || gFollow || gL != 0);" in crop and 'integer on = (st == "rolling" || st == "peek");' in crop
       and 'gFollow = (v != "follow");' in crop, "crop: the bars show only while a camera runs, the menu is open, or following")
-uih = crop[crop.index("if (num == UI_STATE)"):crop.index('else if (num == CMD && str == "crop")')]
+uih = crop[crop.index("if (num == UI_STATE)"):crop.index('else if (num == CMD && (str == "crop" || str == "cropsc"))')]
+# 7.2: Scenery's own Format: shown while Scenery runs (and while you choose it), yours otherwise; a follow wins
+ef = crop[crop.index("float eff()"):crop.index("// the timer runs")]
+check("if (gFollow) return gR;" in ef and "if ((gL && gSc) || (!gL && gScen)) return gRS;" in ef and 'gRS = (float)cfg("crop_sc");' in crop
+      and 'set("crop_sc", (string)r);' in crop and 'integer sc = (llList2String(L, 1) == "scenery");' in crop
+      and 'gSc = (str == "cropsc");' in crop and 'llList2String(["main", "scenery"], gSc)' in crop and "gSc = FALSE;" in crop,
+      "crop: Scenery has its own Format (Scenery > Format), kept apart from yours")
+ch = crop[crop.index("choose(float r)"):crop.index("menu()")]
+check(ch.index("if (gSc)") < ch.index('CFG_CHANGED, "crop"') and "return;" in ch[:ch.index('CFG_CHANGED, "crop"')],
+      "crop: choosing Scenery's Format does not change what Framing composes in")
 check("set(" not in uih and "CFG_CHANGED" not in uih and "cut();" in uih, "crop: hiding the bars keeps your Format (and the cameras still compose inside it)")
 check(crop.count("cut();                                                  // the bars show while you choose") == 1
       and "cut();                                          // the menu is gone: no camera, no bars" in crop, "crop: the menu shows the bars while it is open")

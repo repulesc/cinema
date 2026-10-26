@@ -334,6 +334,15 @@ class Obj:
     def llGetInventoryName(s, sc, t, i):
         L = sorted(n for n, v in s.inventory.items() if C["INVENTORY_" + v[0].upper()] == t or t == C["INVENTORY_ALL"])
         return L[i] if 0 <= i < len(L) else ""
+    def drop(s, name, kind="texture", full=True):
+        """you drop an item into the HUD's contents (full: you have full permissions on it)"""
+        s.inventory[name] = (kind, new_key(), full)
+        s._changed(C["CHANGED_INVENTORY"])
+    def _changed(s, what):
+        for sc in s.scripts:
+            if sc.has("changed"): s.event(sc, "changed", (what,))
+    def llRemoveInventory(s, sc, name):
+        if s.inventory.pop(name, None): s._changed(C["CHANGED_INVENTORY"])
     def llGetInventoryKey(s, sc, name):
         v = s.inventory.get(name)
         return v[1] if v and v[2] else Key(C["NULL_KEY"])

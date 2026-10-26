@@ -10,15 +10,16 @@
 //    Framing › Us, Friends   NEXT · ADJUST
 //  With the strip the live menu leaves Next out (ui.lsl).
 //  7.1.2, a HUD you can give away: the strip is textured by the texture's UUID, kept in the strip's description
-//  ("take12_keys <uuid>"). While "take12_keys" is in the contents and you have full permissions on it (you made it),
-//  its UUID is saved there; after that the texture can leave the contents, so nothing in the HUD needs Transfer.
+//  ("take12_keys <uuid>"). 7.2: drop the texture into the HUD (any name starting "take12_keys") and this script keeps
+//  its UUID on the strip and takes the texture out of the contents itself, so nothing in the HUD needs Transfer. Only
+//  a texture you have full permissions on (you made it): anyone else's is left alone.
 //  Anything else: no keys. Placed left of the button, 1.2 times as tall as it (so the labels read); the HUD's +Y is
 //  left (/77 crop flip, shared with Frame, mirrors both).
 //  6.7.1, Size: Options > Look > Size (or /77 size s|m|l): the button 0.04, 0.06 or 0.08 (Small, Medium, Large;
 //  Medium when never set), the keys with it. Checked in tools/sim/keys_sim.py.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE   = 7320;   // core -> all  "<state>|<mode>|..."
@@ -150,23 +151,39 @@ show(integer r)
         PRIM_COLOR, ALL_SIDES, <1, 1, 1>, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
 }
 
-// the atlas: its UUID from the strip's description; saved there while the texture is in the contents with full
-// permissions (llGetInventoryKey is NULL_KEY otherwise); else the texture by name, if it is there
+// the atlas: its UUID from the strip's description; else a key texture still in the contents (not yours to adopt)
 string texture()
 {
     string d = llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_DESC]), 0);
-    if (llGetInventoryType(TEX) == INVENTORY_TEXTURE)
-    {
-        key k = llGetInventoryKey(TEX);
-        if (k != NULL_KEY && d != TEX + " " + (string)k)
-        {
-            d = TEX + " " + (string)k;
-            llSetLinkPrimitiveParamsFast(gLink, [PRIM_DESC, d]);
-        }
-    }
     if (llGetSubString(d, 0, 11) == TEX + " ") return llGetSubString(d, 12, -1);
-    if (llGetInventoryType(TEX) == INVENTORY_TEXTURE) return TEX;
+    string t = dropped();
+    if (t != "") return t;
     return TEXTURE_BLANK;
+}
+
+// a keys texture in the contents ("take12_keys", "take12_keys_1024", ...), or ""
+string dropped()
+{
+    integer i;
+    for (i = llGetInventoryNumber(INVENTORY_TEXTURE) - 1; i >= 0; i--)
+    {
+        string n = llGetInventoryName(INVENTORY_TEXTURE, i);
+        if (llGetSubString(n, 0, 10) == TEX) return n;
+    }
+    return "";
+}
+
+// 7.2: a keys texture dropped into the HUD: its UUID goes on the strip, the texture leaves the contents
+adopt()
+{
+    string n = dropped();
+    if (n == "" || !gLink) return;
+    key k = llGetInventoryKey(n);
+    if (k == NULL_KEY) return;                              // not full permissions for you: left as it is
+    llSetLinkPrimitiveParamsFast(gLink, [PRIM_DESC, TEX + " " + (string)k]);
+    llRemoveInventory(n);
+    gRow = -2;
+    llOwnerSay("[Take 12] The keys texture is saved on the strip and taken out of the contents: the HUD can be given away.");
 }
 
 // a key: the action in its row
@@ -186,6 +203,7 @@ default
         gOwner = llGetOwner();
         if (cfg("size") == "") size(1);                     // never set: Medium
         find();
+        adopt();                                            // (dropped in before this script was)
         show(-1);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "keys");
     }
@@ -198,11 +216,9 @@ default
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
-        if (c & CHANGED_LINK)
-        {
-            find();                                         // (also when the strip is linked after it was named)
-            show(pick());
-        }
+        if (c & CHANGED_LINK) find();                       // (also when the strip is linked after it was named)
+        if (c & CHANGED_INVENTORY) adopt();                 // a keys texture dropped in
+        if (c & (CHANGED_LINK | CHANGED_INVENTORY)) show(pick());
     }
 
     listen(integer ch, string name, key id, string msg)
@@ -259,7 +275,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "keys");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/keys] v" + VERSION + " strip " + llList2String(["not linked", "link " + (string)gLink], gLink > 0)
-                + ", row " + (string)gRow + ", texture " + llList2String(["missing: add take12_keys once", "saved"],
+                + ", row " + (string)gRow + ", texture " + llList2String(["missing: drop take12_keys into the HUD", "saved"],
                 llGetSubString(llList2String(llGetLinkPrimitiveParams(gLink, [PRIM_DESC]), 0), 0, 11) == TEX + " ")
                 + ", free mem " + (string)llGetFreeMemory());
         else return;

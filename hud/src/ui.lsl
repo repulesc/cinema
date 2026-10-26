@@ -7,7 +7,7 @@
 //  friends.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
 integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
@@ -27,7 +27,7 @@ float LONG_HOLD = 0.8;      // s  hold this long = long press
 string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
 
 // menu items (7.0): id, a quiet mark, the title
-string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~adjust|✛|Adjust~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
+string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~adjust|✛|Adjust~showme||Show me~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~sfmt||Format~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
 list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
 list PACE_SECS = [30, 45, 60, 90, 120];
 
@@ -192,7 +192,7 @@ note(string s)
 integer locked(string id)
 {
     if (!LITE) return (id == "full");
-    return (llListFindList(["framing", "free", "share", "crop", "save", "seat", "chat", "modes", "release", "me", "us", "friends", "flist", "adjust"], [id]) >= 0);
+    return (llListFindList(["framing", "free", "share", "crop", "save", "seat", "chat", "modes", "release", "me", "us", "friends", "flist", "adjust", "sfmt", "showme"], [id]) >= 0);
 }
 
 string label(string id)
@@ -329,7 +329,7 @@ openMenu(string page)
     else if (page == "scenery")
     {
         text += "Scenery · the place, while you are away. It starts by itself when you are idle.\nIdle start: " + afkText() + "\nIndoors: " + cfgGet("indoors") + " · Reach: " + cfgGet("reach") + " m";
-        b = ["start", "afk", "indoors", "reach", "back"];
+        b = ["start", "afk", "indoors", "reach", "sfmt", "back"];
     }
     else if (page == "live")
     {
@@ -338,6 +338,7 @@ openMenu(string page)
         if (gUiMode == "free") b += ["save"];
         if (fr) b += ["me", "us", "friends"];
         if (fr || gUiMode == "free") b += ["adjust"];
+        if (fr) b += ["showme"];                                // 7.2: show where your face is (fit.lsl)
         if (gUiMode == "friends") b += ["flist", "release"];
         if (gUiMode == "scenery" || !strip()) b += ["next"];
         b += ["stop", "share", "modes", "close"];
@@ -464,13 +465,14 @@ onChoice(string msg)
     else if (gPage == "scenery")
     {
         if (id == "start") { closeMenu(); llMessageLinked(LINK_SET, CMD, "scenery", ""); }
+        else if (id == "sfmt") { closeMenu(); llMessageLinked(LINK_SET, CMD, "cropsc", ""); }   // crop.lsl: Scenery's own Format
         else openMenu(id);
     }
     else if (gPage == "live")
     {
         closeMenu();
         if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
-        else if (id == "next" || id == "stop" || id == "share" || id == "adjust") llMessageLinked(LINK_SET, CMD, id, "");
+        else if (id == "next" || id == "stop" || id == "share" || id == "adjust" || id == "showme") llMessageLinked(LINK_SET, CMD, id, "");
         else if (id == "me" || id == "us" || id == "friends")
             llMessageLinked(LINK_SET, CMD, llList2String(["frame", "social", "friends"], llListFindList(["me", "us", "friends"], [id])), "");
         else if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");

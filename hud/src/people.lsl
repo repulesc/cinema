@@ -7,7 +7,7 @@
 //  Started only from the menu / chat, never by AFK.
 // ============================================================================
 
-string VERSION = "7.1.3";
+string VERSION = "7.2.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -194,6 +194,16 @@ integer refreshOwner()
     gOSit = ((llGetAgentInfo(gOwner) & AGENT_SITTING) != 0);
     vector sz = llGetAgentSize(gOwner);
     gOE = gOP.z + (K_EYE_STAND + (K_EYE_SIT - K_EYE_STAND) * gOSit) * sz.z + (float)cfg("fitz", "0");   // + Fit (fit.lsl)
+    list c = llParseString2List(cfg("face", ""), ["|"], []);   // 7.2 Show me (fit.lsl): your face, measured, in your own frame
+    if (c != [])
+    {
+        rotation R = llList2Rot(d, 1);
+        vector w = gOP + (vector)llList2String(c, 0) * R;
+        f = (vector)llList2String(c, 1) * R;
+        gOE = gOE - gOP.z + w.z - (K_EYE_STAND + (K_EYE_SIT - K_EYE_STAND) * gOSit) * sz.z;   // the face, + Fit
+        gOP = <w.x, w.y, gOP.z>;
+        if (f.x * f.x + f.y * f.y > 0.1) gOY = llAtan2(f.y, f.x);     // the way your face looks
+    }
     return TRUE;
 }
 

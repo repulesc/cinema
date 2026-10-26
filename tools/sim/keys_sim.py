@@ -103,12 +103,16 @@ for name, row in acts.items():
 check('llMessageLinked(LINK_SET, KEYS, "free|" + (string)gPick, "");' in free, "free.lsl: lights the view in use")
 # 7.1.2: a HUD you can give away: the atlas by its UUID, saved in the strip's description
 tx = keys[keys.index("string texture()"):keys.index("// a key: the action in its row")]
-check("key k = llGetInventoryKey(TEX);" in tx and 'llSetLinkPrimitiveParamsFast(gLink, [PRIM_DESC, d]);' in tx and "if (k != NULL_KEY" in tx
-      and tx.index('if (llGetSubString(d, 0, 11) == TEX + " ") return llGetSubString(d, 12, -1);') < tx.index("if (llGetInventoryType(TEX) == INVENTORY_TEXTURE) return TEX;"),
-      "keys.lsl: the texture's UUID is saved in the strip's description (full permissions) and used first")
+check(tx.index('if (llGetSubString(d, 0, 11) == TEX + " ") return llGetSubString(d, 12, -1);') < tx.index("string t = dropped();"),
+      "keys.lsl: the strip is textured by the UUID it keeps, first")
+# 7.2: a keys texture dropped in is adopted: its UUID on the strip, the texture out of the contents (yours only)
+ad = keys[keys.index("adopt()\n{"):keys.index("// a key: the action in its row")]
+check("key k = llGetInventoryKey(n);" in ad and "if (k == NULL_KEY) return;" in ad and ad.index("PRIM_DESC, TEX") < ad.index("llRemoveInventory(n);")
+      and "if (c & CHANGED_INVENTORY) adopt();" in keys and "adopt();                                            // (dropped in" in keys
+      and "if (llGetSubString(n, 0, 10) == TEX) return n;" in keys, "keys.lsl: a dropped-in keys texture is adopted and taken out (7.2)")
 check(len("take12_keys ") == 12 and "string tex = texture();" in keys and "llGetLinkPrimitiveParams(gLink, [PRIM_TEXTURE, 0])" not in keys,
       "keys.lsl: no texture by name from the contents once the UUID is kept (and no face read, which a next owner cannot)")
-check('"missing: add take12_keys once", "saved"' in keys, "keys.lsl: /77 status says whether the texture is saved")
+check('"missing: drop take12_keys into the HUD", "saved"' in keys, "keys.lsl: /77 status says whether the texture is saved")
 check('else if (num == STILL)' in keys and '"Full length", "Half length", "Close"' in keys, "keys.lsl: Still's framing")
 
 # ---- the strip: beside the button, never on it; Frame's bars leave it alone --------------------------------------
