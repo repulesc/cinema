@@ -14,24 +14,8 @@ files=("$@")
 rc=0
 for f in "${files[@]}"; do
     if python3 "$DIR/main.py" -O clear -o /dev/null "$f"; then
-        # rough Mono size model fitted on in-world readings: ~18 KB base + ~58 B per statement + 2 B per string char,
-        # plus ~30 B for each element of a constant list (every element is an object): 4.8.0 crashed with "Stack-Heap
-        # Collision" in the UI script while this model, then without that term, still showed 15 KB free
-        python3 -I - "$f" <<'PY' || rc=1
-import re, sys
-f = sys.argv[1]
-# one pass: keep string literals as they are, drop // comments (a "//" inside a string, such as a URL, is not a comment)
-t = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*', lambda m: m.group(0) if m.group(0)[0] == '"' else '', open(f).read())
-chars = sum(len(x) for x in re.findall(r'"((?:\\.|[^"\\])*)"', t))
-stmts = re.sub(r'"(?:\\.|[^"\\])*"', '""', t).count(';')
-clean = re.sub(r'"(?:\\.|[^"\\])*"', '""', t)
-elems = sum(m.group(1).count(',') + 1 for m in re.finditer(r'\blist\s+\w+\s*=\s*\[(.*?)\];', clean, re.S) if m.group(1).strip())
-free = 64 - (18372 + 58.3 * stmts + 2 * chars + 30 * elems) / 1024
-strict = not f.startswith("legacy/")
-low = free < 15.0
-print(("FAIL  " if low and strict else "OK    ") + f"{f}: {stmts} statements, est. free memory {free:.1f} KB" + ("   <-- under 15 KB" if low else ""))
-sys.exit(1 if low and strict else 0)
-PY
+        # the memory model (static: code and constants) lives in tools/lslmem.py, shared with the emulator's runtime check
+        python3 -I "$(dirname "$0")/lslmem.py" "$f" || rc=1
     else
         echo "FAIL  $f"
         rc=1

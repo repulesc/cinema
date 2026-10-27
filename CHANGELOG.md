@@ -1,5 +1,20 @@
 # Changelog
 
+## 8.0.1 (the strip no longer runs out of memory)
+- **Fixed: `screen: Stack-Heap Collision`.** This was the first in-world report; "A Take 12 script is missing: screen" followed from it.
+  - The strip was laid out as one list of about 460 values for every part, and while the list grew its old copy stayed alive too. That was far more than the script had room for.
+  - It now goes out in small batches (about 60 values each): the same strip, a fraction of the memory.
+- **The same kind of risk, removed elsewhere:**
+  - **Portrait Us and Scenic's Drift** used to read the whole region's list of avatars (up to about 100 keys in a full club). They now ask a sensor (the nearest 16 within 10 m).
+  - **Fixed** keeps its seat index as a string, not a list of 48 keys.
+  - **Reset › Seats & views and the 7.x migration** delete settings ten at a time.
+- **Fixed: a new copy that took over an old one's setup still offered the first-run setup.**
+- **Memory is now measured where it runs out:**
+  - The emulator notes the biggest list each script builds while running and answers `llGetFreeMemory` from it.
+  - `tools/sim/memory_emu.py` (in CI) drives every script's heaviest moments and fails if any of them would leave less than 3 KB. On 8.0.0 it reproduces the in-world error: screen 9.5 KB short. Now every script keeps at least 8 KB.
+  - The static estimate moved into `tools/lslmem.py`, shared by `tools/lslcheck.sh` and the emulator.
+- Version 8.0.1 in all eleven scripts. Replace all of them in your HUD, and the free build's eight.
+
 ## 8.0.0 (a rebuild: the Monitor, four shots, two equal cameras)
 7.2's in-world test showed the product did not work where it mattered:
 - bad compositions when sitting, lying or cuddling;

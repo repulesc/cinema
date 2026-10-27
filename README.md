@@ -15,7 +15,7 @@ the top of the screen and the [12].
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.0.0** (in `hud/`), emulator-tested, before its in-world test (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.0.1** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,
@@ -60,7 +60,7 @@ and the notecard is `Take 12 - Read Me`.
 6. Wear it on **HUD Top Center**. A note says "Tap the [12] to set up." `/12 status` prints one line per script.
 
 ## Checks (CI runs them on every push)
-- `bash tools/lslcheck.sh`: compiles every script; fails if one has less than 15 KB free.
+- `bash tools/lslcheck.sh`: compiles every script; fails if one has less than 15 KB free (the model is in `tools/lslmem.py`).
 - `python3 tools/build_scenery.py --check`: the free build is up to date.
 - `python3 tools/art/make_strip.py --check`: the textures' cell tables in `screen.lsl` match the art.
 - The emulator tests:
@@ -68,5 +68,6 @@ and the notecard is `Take 12 - Read Me`.
   - `gestures_emu.py`, `shots_emu.py`;
   - `portrait_emu.py`, `tracking_emu.py`, `fixed_emu.py`, `scenic_emu.py`;
   - `connect_emu.py [runs] [seed]`: scenarios and a fuzzer, with invariants;
-  - `carry_emu.py`, `builder_emu.py`.
+  - `carry_emu.py`, `builder_emu.py`;
+  - `memory_emu.py`: every script's heaviest moments (the strip at every size, a crowd of 90, full seat memory, carry-over, a 7.x migration) must leave 3 KB of its 64 KB, measured on the lists it builds while running.
 - `tools/sim/text_check.py` (every word, note and button), `free_test.py`, `listing_check.py`.

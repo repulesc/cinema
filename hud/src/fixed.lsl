@@ -15,7 +15,7 @@
 //  A view: "<cam>|<focus>|<where you were>|<your facing°>|<lens>" (a seat's in the furniture's frame).
 // ============================================================================
 
-string VERSION = "8.0.0";
+string VERSION = "8.0.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -98,20 +98,33 @@ string v2(vector v)
     return "<" + f2(v.x) + "," + f2(v.y) + "," + f2(v.z) + ">";
 }
 
-// a key goes to the end of its list; past max the first is forgotten (and returned)
+// a key goes to the end of its index; past max the first is forgotten (and returned). Done on the string, never as a
+// list: 48 furniture keys as a list (and its copy) is a lot of this script's memory (8.0.1)
 string lru(string idx, string item, integer max)
 {
-    list L = llParseString2List(cfg(idx), [","], []);
-    integer i = llListFindList(L, [item]);
-    if (i >= 0) L = llDeleteSubList(L, i, i);
-    L += [item];
-    string out = "";
-    if (llGetListLength(L) > max)
+    string L = cfg(idx);
+    if (L != "") L = "," + L;
+    L += ",";                                           // ",a,b," (or "," when empty)
+    integer i = llSubStringIndex(L, "," + item + ",");
+    if (i >= 0) L = llDeleteSubString(L, i + 1, i + llStringLength(item) + 1);
+    L += item + ",";
+    integer n = -1;                                     // entries: the commas less one
+    string T = L;
+    integer k = llSubStringIndex(T, ",");
+    while (k >= 0)
     {
-        out = llList2String(L, 0);
-        L = llDeleteSubList(L, 0, 0);
+        n++;
+        T = llDeleteSubString(T, 0, k);
+        k = llSubStringIndex(T, ",");
     }
-    set(idx, llDumpList2String(L, ","));
+    string out = "";
+    if (n > max)
+    {
+        k = llSubStringIndex(llDeleteSubString(L, 0, 0), ",");
+        out = llGetSubString(L, 1, k);
+        L = llDeleteSubString(L, 1, k + 1);
+    }
+    set(idx, llGetSubString(L, 1, -2));
     return out;
 }
 
@@ -624,7 +637,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "fixed");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/fixed] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + gCtx + ", "
-                + llList2String(["a kept view", "your own camera (frame it)"], gFree) + ", " + (string)llGetListLength(llParseString2List(cfg("seats"), [","], []))
+                + llList2String(["a kept view", "your own camera (frame it)"], gFree) + ", " + (string)((llStringLength(cfg("seats")) + 1) / 37)
                 + " seats and " + (string)llGetListLength(llParseString2List(cfg("places"), [","], [])) + " places kept, LSD free "
                 + (string)llLinksetDataAvailable() + ", free mem " + (string)llGetFreeMemory());
         else if (!gOn) return;

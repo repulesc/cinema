@@ -16,7 +16,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.0";
+string VERSION = "8.0.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -85,6 +85,7 @@ integer gProblem;
 integer gHold;                     // the hold fill, 0-8
 float   gEye = -9.0;               // the eye-line guide (screen z), -9 hidden
 integer gClear;                    // Look › Keys: Clear
+list    gP;                        // the batch being built (put / go)
 
 // ============================================================================
 string cfg(string k)
@@ -270,36 +271,50 @@ float alphaOf(string st)
 }
 
 // ============================================================================
-// everything on screen, in one go
+// the strip goes out in small batches: 8.0.0 built one list of ~460 values for every part and died in-world with
+// "Stack-Heap Collision" (a list and its copy while it grows); now no batch is much over 60 values
+put(list L)
+{
+    gP += L;
+    if (llGetListLength(gP) > 60) go();
+}
+
+go()
+{
+    if (gP != []) llSetLinkPrimitiveParamsFast(LINK_ROOT, gP);
+    gP = [];
+}
+
+// everything on screen
 layout()
 {
     if (!gFound || !llGetAttached()) return;
     float f = gFade / 3.0;
     if (!gOpen) f = 0.0;
-    list P = [PRIM_LINK_TARGET, LINK_ROOT, PRIM_POS_LOCAL, centre() + <0.0, 0.0, midZ()>, PRIM_ROT_LOCAL, ZERO_ROTATION,
+    put([PRIM_LINK_TARGET, LINK_ROOT, PRIM_POS_LOCAL, centre() + <0.0, 0.0, midZ()>, PRIM_ROT_LOCAL, ZERO_ROTATION,
         PRIM_SIZE, <0.01, px(44.0), px(44.0)>, PRIM_COLOR, ALL_SIDES, WHITE, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]
-        + uvMark(llList2String(["disc", "discamber"], gProblem));
+        + uvMark(llList2String(["disc", "discamber"], gProblem)));
     // the [12]'s ring and dot
     integer ringOn = (gProblem || gHold > 0 || gState == "film");
     string rk = "ring0";
     if (gHold > 0) rk = "ring" + (string)gHold;
     if (gProblem) rk = "ring9";
-    if (gRing) P += at(gRing, 0.0, 0.0, -0.001, px(50.0), px(50.0)) + uvMark(rk)
-        + [PRIM_COLOR, ALL_SIDES, WHITE, 0.85 * ringOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+    if (gRing) put(at(gRing, 0.0, 0.0, -0.001, px(50.0), px(50.0)) + uvMark(rk)
+        + [PRIM_COLOR, ALL_SIDES, WHITE, 0.85 * ringOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
     integer dotOn = (gLinkSt != "alone" && gLinkSt != "");             // connected (even when nobody films)
-    if (gDot) P += at(gDot, px(15.0), px(15.0), -0.002, 0.01, 0.01) + uvMark("dot")
-        + [PRIM_COLOR, ALL_SIDES, WHITE, 1.0 * dotOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.12 * (gLinkSt == "shared")];
+    if (gDot) put(at(gDot, px(15.0), px(15.0), -0.002, 0.01, 0.01) + uvMark("dot")
+        + [PRIM_COLOR, ALL_SIDES, WHITE, 1.0 * dotOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.12 * (gLinkSt == "shared")]);
     // closed: the strip shrinks away
     if (f <= 0.0)
     {
-        P += away(gBand) + away(gBox) + away(gHalo) + away(gSep) + away(gShp) + away(gLnk);
+        put(away(gBand) + away(gBox) + away(gHalo) + away(gSep) + away(gShp) + away(gLnk));
         integer i;
-        for (i = 0; i < 4; i++) P += away(llList2Integer(gSL, i));
-        for (i = 0; i < 6; i++) P += away(llList2Integer(gOL, i));
-        for (i = 0; i < 3; i++) if (!(i == 2 && gEye > -9.0)) P += away(llList2Integer(gUL, i));
+        for (i = 0; i < 4; i++) put(away(llList2Integer(gSL, i)));
+        for (i = 0; i < 6; i++) put(away(llList2Integer(gOL, i)));
+        for (i = 0; i < 3; i++) if (!(i == 2 && gEye > -9.0)) put(away(llList2Integer(gUL, i)));
         gOptVis = [];
-        P += eyeLine() + notePart();
-        llSetLinkPrimitiveParamsFast(LINK_ROOT, P);
+        put(eyeLine() + notePart());
+        go();
         return;
     }
     float H = stripH();
@@ -318,8 +333,8 @@ layout()
         brot = PI;
     }
     list bc = mark("band");
-    P += at(gBand, 0.0, bz, 0.004, gA + 0.02, hb) + uvr(gTM, llList2Float(bc, 0) + 2.0, llList2Float(bc, 1), llList2Float(bc, 2) - 4.0, llList2Float(bc, 3), brot)
-        + [PRIM_COLOR, ALL_SIDES, WHITE, f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+    put(at(gBand, 0.0, bz, 0.004, gA + 0.02, hb) + uvr(gTM, llList2Float(bc, 0) + 2.0, llList2Float(bc, 1), llList2Float(bc, 2) - 4.0, llList2Float(bc, 3), brot)
+        + [PRIM_COLOR, ALL_SIDES, WHITE, f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
     // the widths of everything, to fit a narrow window
     float shotsW = 0.0;
     integer i;
@@ -360,17 +375,17 @@ layout()
             float tw = (llList2Float(c, 2) - 2.0 * PADX) / 48.0 * hw;
             float ba = 0.96;
             if (gState != "film" && gState != "wait") ba = 0.27;    // you hold the camera, let go, watching: dimmed
-            P += at(gBox, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("box") + [PRIM_COLOR, ALL_SIDES, WHITE, ba * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+            put(at(gBox, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("box") + [PRIM_COLOR, ALL_SIDES, WHITE, ba * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
             litBox = TRUE;
             if (ba > 0.5) col = INK;
             else a = 0.9;
         }
         if (gState == "watch" && st != "lit") a = 0.27;
-        P += at(link, cx, 0.0, 0.001, wd, hw) + uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0)
-            + [PRIM_COLOR, ALL_SIDES, col, a * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+        put(at(link, cx, 0.0, 0.001, wd, hw) + uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0)
+            + [PRIM_COLOR, ALL_SIDES, col, a * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
         x += wd + gap;
     }
-    if (!litBox) P += away(gBox);
+    if (!litBox) put(away(gBox));
     // the options, from the right
     x = Wc * 0.5 - inset;
     integer o = llGetListLength(vis);
@@ -384,7 +399,7 @@ layout()
         string w = llList2String(vis, i);
         if (w == "/")
         {
-            if (gSep) P += at(gSep, x - px(8.0), 0.0, 0.001, 0.01, px(16.0)) + uvMark("sep") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.4 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+            if (gSep) put(at(gSep, x - px(8.0), 0.0, 0.001, 0.01, px(16.0)) + uvMark("sep") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.4 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
             sep = TRUE;
             x -= px(16.0) + gap;
         }
@@ -397,17 +412,17 @@ layout()
             float a = alphaOf(st);
             if (gState == "watch") a = 0.27;
             integer link = llList2Integer(gOL, part);
-            P += at(link, cx, 0.0, 0.001, wd, hw) + uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0)
-                + [PRIM_COLOR, ALL_SIDES, WHITE, a * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+            put(at(link, cx, 0.0, 0.001, wd, hw) + uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0)
+                + [PRIM_COLOR, ALL_SIDES, WHITE, a * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
             float tw = (llList2Float(c, 2) - 2.0 * PADX) / 48.0 * hw;
             if (st == "lit" && u < 2 && gState != "watch")
             {
-                P += at(llList2Integer(gUL, u), cx, -px(10.5), 0.001, tw, 0.01) + uvMark("under") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.94 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+                put(at(llList2Integer(gUL, u), cx, -px(10.5), 0.001, tw, 0.01) + uvMark("under") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.94 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
                 u++;
             }
             if (st == "accent" && gHalo)
             {
-                P += at(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.86 * f, PRIM_GLOW, ALL_SIDES, 0.0];
+                put(at(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.86 * f, PRIM_GLOW, ALL_SIDES, 0.0]);
                 halo = TRUE;
             }
             gOptVis += [w];                                  // the word on part k (right to left)
@@ -427,19 +442,19 @@ layout()
             list c = word(llList2String(SHOTS, hi));
             float wd = llList2Float(c, 2) / 48.0 * hw;
             float tw = (llList2Float(c, 2) - 2.0 * PADX) / 48.0 * hw;
-            P += at(gHalo, hx + wd * 0.5, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.8 * f, PRIM_GLOW, ALL_SIDES, 0.06];
+            put(at(gHalo, hx + wd * 0.5, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.8 * f, PRIM_GLOW, ALL_SIDES, 0.06]);
             halo = TRUE;
         }
     }
-    if (!halo) P += away(gHalo);
-    if (!sep) P += away(gSep);
-    for (i = part; i < 6; i++) P += away(llList2Integer(gOL, i));
+    if (!halo) put(away(gHalo));
+    if (!sep) put(away(gSep));
+    for (i = part; i < 6; i++) put(away(llList2Integer(gOL, i)));
     // the middle: the shape (bars key) left of the [12], Connect right of it
     list sc = mark("shape" + gShapeL);
     float sw = llList2Float(sc, 4) / 48.0 * hw;
     float sa = 0.86;
     if (gShapeL == "DIM") sa = 0.27;
-    P += at(gShp, -px(40.0) - sw * 0.5, 0.0, 0.001, sw, hw) + uvMark("shape" + gShapeL) + [PRIM_COLOR, ALL_SIDES, WHITE, sa * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+    put(at(gShp, -px(40.0) - sw * 0.5, 0.0, 0.001, sw, hw) + uvMark("shape" + gShapeL) + [PRIM_COLOR, ALL_SIDES, WHITE, sa * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
     string lk = "ALONE";
     float la = 0.43;
     if (gLinkSt == "on") { lk = gLinkN; la = 0.92; }
@@ -449,19 +464,19 @@ layout()
     if ((integer)lk > 9) lk = "9";
     list lc = mark("link" + lk);
     float lw = llList2Float(lc, 4) / 48.0 * hw;
-    P += at(gLnk, px(40.0) + lw * 0.5, 0.0, 0.001, lw, hw) + uvMark("link" + lk)
-        + [PRIM_COLOR, ALL_SIDES, WHITE, la * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.05 * (gLinkSt == "shared")];
+    put(at(gLnk, px(40.0) + lw * 0.5, 0.0, 0.001, lw, hw) + uvMark("link" + lk)
+        + [PRIM_COLOR, ALL_SIDES, WHITE, la * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.05 * (gLinkSt == "shared")]);
     if (gLinkSt == "theirs" && u < 3)
     {
         // under the word, past the rings: in the cell the word starts at PADX + 52 px and ends PADX before the edge
         float tx = px(40.0) + (PADX + 52.0) / 48.0 * hw;
         float tw = (llList2Float(lc, 4) - 2.0 * PADX - 52.0) / 48.0 * hw;
-        P += at(llList2Integer(gUL, u), tx + tw * 0.5, -px(10.5), 0.001, tw, 0.01) + uvMark("under") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.94 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
+        put(at(llList2Integer(gUL, u), tx + tw * 0.5, -px(10.5), 0.001, tw, 0.01) + uvMark("under") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.94 * f, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
         u++;
     }
-    for (i = u; i < 3; i++) if (!(i == 2 && gEye > -9.0)) P += away(llList2Integer(gUL, i));
-    P += eyeLine() + notePart();
-    llSetLinkPrimitiveParamsFast(LINK_ROOT, P);
+    for (i = u; i < 3; i++) if (!(i == 2 && gEye > -9.0)) put(away(llList2Integer(gUL, i)));
+    put(eyeLine() + notePart());
+    go();
 }
 
 // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye

@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.0.0";
+string VERSION = "8.0.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -68,6 +68,9 @@ integer gWalk;
 float   gAwayT;
 float   gFovT;
 integer gKeys;
+integer gCrowd;                      // the sensor: more than 6 people within 10 m
+list    gNearK;                      // ... the nearest within 3 m (at most 3)
+integer gWaitUs;                     // Us just started with nobody known yet
 
 string cfg(string k)
 {
@@ -147,29 +150,11 @@ float eyeFrac()
 }
 
 // ---- who is with you ------------------------------------------------------------------------
-// [crowd, the nearest within 3 m (at most 3), ...]
-list near(vector P)
+// [crowd, the nearest within 3 m (at most 3), ...], from the last sensor sweep (8.0.1: never the whole region's list,
+// which in a full club is 100 keys and ran close to this script's memory)
+list near()
 {
-    list ids = llGetAgentList(AGENT_LIST_REGION, []);
-    list w = [];
-    integer crowd;
-    integer i;
-    for (i = 0; i < llGetListLength(ids); i++)
-    {
-        key k = llList2Key(ids, i);
-        list d = llGetObjectDetails(k, [OBJECT_POS]);
-        if (k != gOwner && d != [])
-        {
-            vector q = llList2Vector(d, 0);
-            float dd = llVecDist(<q.x, q.y, 0.0>, <P.x, P.y, 0.0>);
-            if (dd <= CROWD) crowd++;
-            if (dd <= NEAR && llFabs(q.z - P.z) < 1.5) w += [dd, k];
-        }
-    }
-    w = llListSort(w, 2, TRUE);
-    list out = [];
-    for (i = 1; i < llGetListLength(w) && i < 7; i += 2) out += [llList2Key(w, i)];
-    return [crowd > 6] + out;
+    return [gCrowd] + gNearK;
 }
 
 // ---- framing ------------------------------------------------------------------------------------
@@ -413,9 +398,7 @@ save()
 people(float now)
 {
     if (!gUs) return;
-    list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
-    if (d == []) return;
-    list n = near(llList2Vector(d, 0));
+    list n = near();
     if (llList2Integer(n, 0)) return;                    // a crowd: no people cuts
     n = llList2List(n, 1, 3);
     integer change;
@@ -462,14 +445,13 @@ start(string why)
     gWith = [];
     gSide = 1.0;
     gCross = 1.0;
+    gWaitUs = FALSE;
+    llSensorRemove();
     if (gUs)
     {
-        list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
-        if (d != [])
-        {
-            list n = near(llList2Vector(d, 0));
-            gWith = llList2List(n, 1, 3);
-        }
+        gWith = llList2List(near(), 1, 3);
+        gWaitUs = (gWith == []);                         // the first sweep may bring them: a cut then
+        llSensorRepeat("", NULL_KEY, AGENT, CROWD, PI, 0.5);   // 16 at most, nearest first: joins stay near 2 s
     }
     gSeen = [];
     gGone = [];
@@ -534,6 +516,7 @@ default
         {
             gOn = FALSE;
             llSetTimerEvent(0.0);
+            llSensorRemove();
         }
         else if (num == PAUSE) gHold = TRUE;
         else if (num == RESUME)
@@ -572,6 +555,31 @@ default
         }
         else if (num == MOVING) gKeys = (integer)str;
         else if (num == CFG_CHANGED && (str == "eye" || str == "all")) shoot("glide");
+    }
+
+    sensor(integer n)
+    {
+        vector P = llGetPos();
+        gCrowd = (n > 6);
+        gNearK = [];
+        integer i;
+        for (i = 0; i < n && llGetListLength(gNearK) < 3; i++)
+        {
+            vector q = llDetectedPos(i);
+            if (llVecDist(<q.x, q.y, 0.0>, <P.x, P.y, 0.0>) <= NEAR && llFabs(q.z - P.z) < 1.5) gNearK += [llDetectedKey(i)];
+        }
+        if (gWaitUs && gNearK != [] && gOn && !gHold)
+        {
+            gWaitUs = FALSE;
+            gWith = gNearK;
+            shoot("cut");
+        }
+    }
+
+    no_sensor()
+    {
+        gCrowd = FALSE;
+        gNearK = [];
     }
 
     timer()
