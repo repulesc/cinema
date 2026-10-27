@@ -105,3 +105,23 @@ def textures(h):
     """the two textures dropped in (adopted by screen)"""
     h.drop("take12_words")
     h.drop("take12_marks")
+
+
+def var(h, script, name):
+    """a global of one of the HUD's running scripts"""
+    for sc in h.scripts:
+        if sc.name == script: return sc.g[name]
+    raise KeyError(script)
+
+
+def state(h): return var(h, "core", "gState"), var(h, "core", "gShot")
+
+
+def dialog_ok(av, where):
+    """the dialog on screen is one SL accepts: at most 12 buttons of at most 24 bytes"""
+    if not av.dialog: return check(False, "%s: no dialog" % where)
+    b = av.dialog[2]
+    check(len(b) <= 12, "%s: %d buttons" % (where, len(b)))
+    for x in b: check(0 < len(x.encode()) <= 24, "%s: button %r is %d bytes" % (where, x, len(x.encode())))
+    check(len(av.dialog[1].encode()) <= 512, "%s: the text is %d bytes" % (where, len(av.dialog[1].encode())))
+    return True

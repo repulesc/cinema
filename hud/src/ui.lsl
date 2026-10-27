@@ -13,7 +13,6 @@
 string VERSION = "8.0.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
-string NOTECARD = "Take 12 - Read Me";
 
 integer UI_STATE    = 7320;
 integer CFG_CHANGED = 7330;
@@ -29,7 +28,7 @@ integer CMD         = 7371;
 float   TAP_GAP   = 0.35;           // s  a second tap within this: a double-tap
 float   LONG_HOLD = 0.8;            // s  held this long: everything off (or back)
 float   EYE_D     = 2.5;            // m  the eye-line check's camera, in front of you
-list    NEED = ["core", "ui", "text", "screen", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry"];
+string  NEED = "core ui text screen bars tracking portrait fixed scenic sync carry";
 
 key     gOwner;
 integer gChan;
@@ -173,7 +172,12 @@ menu()
 
 open(string p)
 {
-    if (p == "settings") page(p, "", ["Lens", "Eye line", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"]);
+    if (p == "settings")
+    {
+        list b = ["Lens", "Eye line", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
+        page(p, "", b);
+    }
     else if (p == "lens")
     {
         string w = lensWant();
@@ -432,6 +436,7 @@ done()
 // ---- the eye line: a line on screen, PgUp / PgDn onto your eyes, tap to keep ----------------------------------------
 eyeStart()
 {
+    if (LITE && gFirst == "lens") { eyeEnd(FALSE); return; }            // the free build: no Portrait, no eye line
     list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
     if (llGetListLength(d) < 2 || !(llGetPermissions() & PERMISSION_TAKE_CONTROLS)) return;
     vector P = llList2Vector(d, 0);
@@ -541,7 +546,7 @@ command(string m)
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);
     else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect|menu", "");
-    else llOwnerSay("[Take 12] /12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip");
+    else note("commands", "");
 }
 
 // ============================================================================
@@ -665,7 +670,7 @@ default
         else if (num == MSG_VER && str != "?")
         {
             if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];
-            if (str != VERSION) note("plain", (string)id + " is version " + str + ", ui is " + VERSION + ". All Take 12 scripts must come from one copy.");
+            if (str != VERSION) note("mixed", (string)id);
         }
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/ui] v" + VERSION + " " + gState + " " + gShot + ", strip " + llList2String(["closed", "open"], gOpen)
@@ -708,8 +713,8 @@ default
             // which scripts did not answer: amber, and the note says which
             list miss = [];
             integer i;
-            list need = NEED;
-            if (LITE) need = ["core", "ui", "text", "screen", "bars", "scenic", "sync", "carry"];
+            list need = llParseString2List(NEED, [" "], []);
+            if (LITE) need = llDeleteSubList(need, 5, 7);  // the free build: no tracking, portrait, fixed
             for (i = 0; i < llGetListLength(need); i++) if (llListFindList(gVer, [llList2String(need, i)]) < 0) miss += llList2String(need, i);
             if (miss != [])
             {

@@ -23,7 +23,7 @@ integer STATUS  = 7370;
 
 float   SHOW    = 3.0;            // s  a note stays this long
 
-// notes: id, important (also in chat), the words (%: the argument)
+// notes: id, important (1: also in chat; 2: only in chat), the words (%: the argument)
 list NOTES = [
     "setup", 1, "Tap the [12] to set up.",
     "frameit", 0, "Frame it, Take 12 keeps it.",
@@ -57,6 +57,8 @@ list NOTES = [
     "snapshot", 0, "The bars are on your screen, not in snapshots: set the snapshot size to your shape.",
     "flying", 0, "Flying: your own camera until you land.",
     "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
+    "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
+    "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
     "plain", 0, "%"
 ];
 
@@ -137,8 +139,9 @@ note(string id, string arg)
     integer i = llListFindList(NOTES, [id]);
     if (i < 0 || i % 3) return;
     string s = fill(llList2String(NOTES, i + 2), arg);
-    show(s);
-    if (llList2Integer(NOTES, i + 1)) llOwnerSay("[Take 12] " + s);
+    integer imp = llList2Integer(NOTES, i + 1);
+    if (imp < 2) show(s);
+    if (imp) llOwnerSay("[Take 12] " + s);
 }
 
 // a key's first three uses: its tip (words that share one tip count together)
