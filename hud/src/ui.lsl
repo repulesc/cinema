@@ -363,7 +363,7 @@ choose(string m)
         if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
         else if (b == "Seats & views")
         {
-            list K = llLinksetDataFindKeys("^cin\\.(seat|seats|view|gsit)", 0, 0);
+            list K = llLinksetDataFindKeys("^cin\\.(seat|view|places)", 0, 0);
             integer i;
             for (i = 0; i < llGetListLength(K); i++) llLinksetDataDeleteProtected(llList2String(K, i), PASS);
             llMessageLinked(LINK_SET, CFG_CHANGED, "seats", "");

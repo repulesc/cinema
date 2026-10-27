@@ -36,6 +36,7 @@ string  gFollow;                   // watching: their shape ("" none)
 integer gOn = TRUE;                // the bars key
 float   gDim = 1.0;                // Black 1.0, Dimmed 0.6
 string  gSent;
+vector  gRootAt;                   // where the root was when the bars were cut (screen moves it: place, size)
 
 string cfg(string k)
 {
@@ -111,6 +112,7 @@ list bar(integer link, float y, float z, float w, float h)
 cut()
 {
     if (!llGetAttached()) return;
+    gRootAt = llGetLocalPos();
     float r = ratio();
     float a = gA;
     float sw = 0.0;
@@ -237,5 +239,6 @@ default
     timer()
     {
         measure();
+        if (llVecDist(llGetLocalPos(), gRootAt) > 0.0005) cut();      // the strip moved the root: the bars stay on the screen
     }
 }

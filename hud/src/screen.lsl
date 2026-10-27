@@ -106,7 +106,7 @@ find()
     for (i = 2; i <= llGetNumberOfPrims(); i++)
     {
         string n = llGetLinkName(i);
-        string h = llGetSubString(n, 0, 5);
+        string h = llGetSubString(n, 0, 4);
         integer k = (integer)llGetSubString(n, 5, -1);
         if (n == "t12 ring") gRing = i;
         else if (n == "t12 dot") gDot = i;
@@ -331,11 +331,12 @@ layout()
         if (llList2String(vis, i) == "/") optsW += px(16.0) + gap;
         else optsW += llList2Float(word(llList2String(vis, i)), 2) / 48.0 * hw + gap;
     }
-    float mid = px(40.0) + llList2Float(mark("shape2.39"), 4) / 48.0 * hw + gap;
-    float room = Wc * 0.5 - mid;                                // each half, beyond the middle
-    float need = shotsW;
-    if (optsW > need) need = optsW;
-    if (inset + need > room) inset = room - need;
+    // each half beyond the middle, kept for its widest word (FULL left of the [12], THEIR FILM right of it)
+    float room = Wc * 0.5 - px(40.0) - gap;
+    float iL = room - llList2Float(mark("shapeFULL"), 4) / 48.0 * hw - shotsW;
+    float iR = room - llList2Float(mark("linkTHEIR FILM"), 4) / 48.0 * hw - optsW;
+    if (iL < inset) inset = iL;
+    if (iR < inset) inset = iR;
     if (inset < 0.02) inset = 0.02;
     // the shots, from the left
     float x = -Wc * 0.5 + inset;

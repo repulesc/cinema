@@ -582,7 +582,10 @@ default
             for (i = 0; i < llGetListLength(gP); i++)
                 s += " " + llList2String(gPN, i) + "(" + llList2String(["away", "near"], llList2Integer(gPR, i)) + ", film "
                     + (string)llList2Integer(gPF, i) + ", " + (string)llRound(llGetTime() - llList2Float(gPT, i)) + " s)";
-            llOwnerSay("[Take 12/sync] v" + VERSION + " connected:" + s + "; watching " + sn(gHost) + ", watched by "
+            if (s == "") s = " nobody";
+            string h = "nobody";
+            if (gHost != NULL_KEY) h = sn(gHost);
+            llOwnerSay("[Take 12/sync] v" + VERSION + " connected:" + s + "; watching " + h + ", watched by "
                 + (string)llGetListLength(gW) + ", filming " + (string)gFilm + ", free mem " + (string)llGetFreeMemory());
         }
     }
