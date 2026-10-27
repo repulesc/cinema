@@ -221,7 +221,8 @@ default
         }
         else if (num == CMD && llGetSubString(str, 0, 10) == "bars|follow")
         {
-            gFollow = llStringTrim(llGetSubString(str, 11, -1), STRING_TRIM);   // "full": theirs has no bars
+            gFollow = "";                                   // "bars|follow": your own again
+            if (str != "bars|follow") gFollow = llStringTrim(llGetSubString(str, 12, -1), STRING_TRIM);   // "full": no bars
             cut();
         }
         else if (num == CFG_CHANGED && (llGetSubString(str, 0, 5) == "shape." || str == "bars" || str == "bstyle" || str == "flip" || str == "all"))
