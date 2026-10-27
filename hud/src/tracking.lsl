@@ -13,7 +13,7 @@
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -83,7 +83,7 @@ float scale()
 float eyeFrac()
 {
     float e = (float)cfg("eye");
-    if (e < 0.6 || e > 1.0) e = 0.935;
+    if (e < 0.5 || e > 1.5) e = 0.935;                  // above 1.0 too: a mesh body or hover height (8.0.5)
     return e;
 }
 

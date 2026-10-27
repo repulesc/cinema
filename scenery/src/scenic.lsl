@@ -14,7 +14,7 @@
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -481,7 +481,7 @@ integer here()
     gOP = llList2Vector(d, 0);
     gErr = FALSE;
     integer was = gLocal;
-    if (!gCtxOK || llVecDist(gOP, gCtxPos) > 10.0) context();
+    if (!gCtxOK || llVecDist(gOP, gCtxPos) > 4.0) context();   // 8.0.5: 10 m missed walking into a room next door
     if (was != gLocal) opts();
     return TRUE;
 }

@@ -9,12 +9,13 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
 integer UI_STATE = 7320;
 integer CFG_CHANGED = 7330;
+integer STRIP   = 7343;
 integer NOTE    = 7344;
 integer TIP     = 7345;
 integer TXT     = 7346;
@@ -22,9 +23,9 @@ integer TXT_ANS = 7347;
 integer MSG_VER = 7360;
 integer STATUS  = 7370;
 
-float   SHOW    = 3.0;            // s  a note stays this long
+float   SHOW    = 4.0;            // s  a note stays this long, and 1 s more for every 20 characters (at most 10 s; 8.0.5: 3 s was too short to read)
 
-// notes: id, important (1: also in chat; 2: only in chat), the words (%: the argument)
+// notes: id, important (1: also in chat; 2: only in chat; 3: stays until the next note or "clear"), the words (%: the argument)
 list NOTES = [
     "setup", 1, "Tap the [12] to set up.",
     "frameit", 0, "Frame it, Take 12 keeps it.",
@@ -53,7 +54,7 @@ list NOTES = [
     "full", 0, "In the full Take 12.",
     "lens", 0, "Lens % mm. Ctrl+0 zooms in.",
     "mm", 0, "% mm",
-    "eyeline", 0, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
+    "eyeline", 3, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
     "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
     "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
     "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
@@ -91,6 +92,7 @@ list HINTS = ["Double-tap the [12] for the strip.", "Hold the [12]: everything o
 key     gOwner;
 integer gNote;                    // the note part's link (0: none, then the root)
 float   gShownT;                  // a note shows since (0: none)
+float   gFor;                     // ... this long
 string  gShown;
 integer gHint;
 
@@ -125,8 +127,11 @@ string fill(string s, string a)
     return s;
 }
 
-show(string s)
+show(string s, integer stay)
 {
+    gFor = SHOW + llStringLength(s) * 0.05;
+    if (gFor > 10.0) gFor = 10.0;
+    if (stay) gFor = 100000.0;
     if (!gNote) gNote = link();
     llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, s, <1.0, 1.0, 1.0>, 1.0]);
     gShown = s;
@@ -136,12 +141,13 @@ show(string s)
 
 note(string id, string arg)
 {
+    if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
     integer i = llListFindList(NOTES, [id]);
     if (i < 0 || i % 3) return;
     string s = fill(llList2String(NOTES, i + 2), arg);
     integer imp = llList2Integer(NOTES, i + 1);
-    if (imp < 2) show(s);
-    if (imp) llOwnerSay("[Take 12] " + s);
+    if (imp != 2) show(s, imp == 3);
+    if (imp == 1 || imp == 2) llOwnerSay("[Take 12] " + s);
 }
 
 // a key's first three uses: its tip (words that share one tip count together)
@@ -168,7 +174,7 @@ tip(string w)
     if (n >= 3 || (w == "snapshot" && n >= 1)) return;          // the snapshot tip: once
     L += [w + ":" + (string)(n + 1)];
     llLinksetDataWriteProtected("cin.tips", llDumpList2String(L, ";"), PASS);
-    show(llList2String(TIPS, i + 1));
+    show(llList2String(TIPS, i + 1), FALSE);
 }
 
 // ---- dialog bodies ---------------------------------------------------------------
@@ -257,6 +263,7 @@ default
             note(llList2String(L, 0), llDumpList2String(llList2List(L, 1, -1), "|"));
         }
         else if (num == TIP) tip(str);
+        else if (num == STRIP && str == "eye|off") note("clear", "");    // the eye line is done: its instruction goes
         else if (num == TXT)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
@@ -272,7 +279,7 @@ default
 
     timer()
     {
-        if (gShownT > 0.0 && llGetTime() - gShownT >= SHOW)
+        if (gShownT > 0.0 && llGetTime() - gShownT >= gFor)
         {
             list t = llGetLinkPrimitiveParams(gNote, [PRIM_TEXT]);
             if (llList2String(t, 0) == gShown) llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]);

@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -458,7 +458,7 @@ eyeStart()
     gTall = sz.z;
     gFeet = P.z - 0.5 * gTall;
     float e = (float)cfg("eye");
-    if (e < 0.5) e = 0.935;
+    if (e < 0.5 || e > 1.5) e = 0.935;
     float ez = gFeet + e * gTall;
     gEyeCam = P + F * EYE_D;
     gEyeCam.z = ez;
@@ -747,6 +747,7 @@ default
             gVerT = 0;
             gVerStep = 0;
             if (gFirst == "start") note("setup", "");
+            else if (cfg("open") != "0") strip("open");    // set up: the strip shows as you left it (8.0.5: it started hidden)
         }
         timer0();
     }

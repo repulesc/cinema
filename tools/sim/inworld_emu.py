@@ -7,7 +7,11 @@ after 2 minutes, a reset never leaves the camera locked, and a dialog answered l
 And what the first real session of 8.0.3 showed (8.0.4): the lit words read cleanly (no ink on a white box, no grey
 block under them: thin sliced lines, no glow), the strip sits flush at the top on a solid black band, Portrait among
 bushes looks round for room instead of standing 1 m from you (and never cuts the head), no camera call while not worn or
-while Tracking walks into the next region, and the setup leaves the strip open."""
+while Tracking walks into the next region, and the setup leaves the strip open.
+And the second session (8.0.5): Portrait framed every picture for a 60° lens (it never asked for the permission that
+reads your zoom: at 38 mm the camera stood 1.8 times too close, the head out of the top), an eye line above 1.0 (a mesh
+body, hover height) was thrown away, notes sat right under the [12] and went in 3 s, the eye line's instruction went
+before you could read it, Room stayed dim after walking into a room, and the strip started hidden on every wear."""
 from emu_util import *
 
 w = World()
@@ -172,4 +176,72 @@ t0 = h.cam.get("t")
 h._changed(C["CHANGED_REGION"]); w.run(0.2)
 check(h.cam.get("t") == t0 and h.cam.get("active") and var(h, "core", "gTpT") == 0.0, "walking into the next region: the camera is left alone")
 no_errors(w, "region")
+
+# ==== 8.0.5 =========================================================================================================
+def picture(av, h, p):
+    """a point in the picture: x, y in -1..1 of its half-width / half-height"""
+    r = project(av, p)
+    ts = var(h, "portrait", "gTs")
+    return (r[0] / (0.5 * var(h, "portrait", "gAsp") * ts), r[1] / (0.5 * ts))
+
+w = World()
+ana = w.avatar("Ana", (128, 128, 21))
+L = ready(ana)
+L["cin.eye"] = ("1.12", PASS)                                       # a mesh body / hover height: the eyes above 1.0
+h = ana.wear(HUD_SCRIPTS, lsd=L)
+ana.fov = 2 * math.atan(12.0 / 38.0)                                 # the user's 38 mm lens
+w.run(5)
+ana.face(90)
+ana.double_tap(); w.run(1)
+ana.touch("t12 s1"); w.run(3)
+check(abs(var(h, "portrait", "gFov") - ana.fov) < 0.01, "Portrait reads your lens (%.3f, not 60°)" % var(h, "portrait", "gFov"))
+E = vec(ana.pos[0], ana.pos[1], ana.pos[2] + (1.12 - 0.5) * ana.size[2])
+for word in ("CLOSE", "MEDIUM", "WIDE"):
+    ana.touch(opt_part(h, word)); w.run(2)
+    y = picture(ana, h, E)[1]
+    if word == "WIDE": check(picture(ana, h, vec(E[0], E[1], E[2] + 0.15))[1] < 1.0, "Wide: the head in the picture")
+    else: check(abs(y - 0.333) < 0.05, "%s: the eyes (at 1.12) on the upper third (%.3f)" % (word, y))
+no_errors(w, "lens and eyes")
+
+# ---- the notes: lower, longer; the eye line's instruction stays --------------------------------------------------------------
+note = rect(h, ana, "t12 note")
+band = rect(h, ana, "t12 band")
+check(note[1] <= band[1] - band[3] / 2 - 56 / 1080.0, "the notes' part well under the band (%.0f px below)" % ((band[1] - band[3] / 2 - note[1]) * 1080))
+ana.double_tap(); w.run(1)
+check(rect(h, ana, "t12 note")[1] <= rect(h, ana, "Take 12")[1] - 80 / 1080.0, "closed: well under the [12]")
+h.send(7345, "SCENIC"); w.run(3.5)
+check(h.part("t12 note")["text"] != "", "a tip still shows after 3.5 s")
+w.run(8)
+check(h.part("t12 note")["text"] == "", "... and goes")
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Eye line"); w.run(0.5)
+w.run(30)
+check("PgUp" in h.part("t12 note")["text"], "the eye line's instruction stays while the line is up: %r" % h.part("t12 note")["text"])
+ana.tap(); w.run(0.6)
+check("PgUp" not in h.part("t12 note")["text"], "... and goes when it is kept")
+no_errors(w, "notes")
+
+# ---- the strip as you left it, worn again ------------------------------------------------------------------------------------------
+ana.double_tap(); w.run(1)
+check(var(h, "strip", "gOpen") == 1, "open")
+ana.take_off(h); w.run(1)
+ana.huds.append(h); h.attach(); w.run(5)
+check(var(h, "strip", "gOpen") == 1 and var(h, "screen", "gOpen") == 1, "worn again: the strip open, as left")
+ana.double_tap(); w.run(1)
+ana.take_off(h); w.run(1)
+ana.huds.append(h); h.attach(); w.run(5)
+check(var(h, "strip", "gOpen") == 0, "left closed: closed")
+no_errors(w, "re-wear")
+
+# ---- Room as soon as you walk in ----------------------------------------------------------------------------------------------------
+w = World()
+w.boxes += room(120, 120, 20.0, 130, 130, 3.0, door=(123, 127))
+ana, h = hud(w, pos=(115, 125, 21))
+ana.double_tap(); w.run(1)
+ana.touch("t12 s3"); w.run(4)
+check(var(h, "scenic", "gLocal") == 0, "outside: outdoors")
+ana.walk((124, 125, 21)); w.run(12)
+check(var(h, "scenic", "gLocal") == 1, "9 m on, inside the room: indoors")
+st = dict(zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")))
+check(st.get("ROOM") != "dim", "ROOM is no longer dim (%r)" % st)
+no_errors(w, "room")
 done("inworld_emu")

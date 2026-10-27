@@ -11,7 +11,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -167,11 +167,12 @@ layout()
     if (gProblem) rk = "ring9";
     part(gRing, 0.0, 0.0, -0.001, px(50.0), px(50.0), mark(rk), WHITE, 0.85 * (gProblem || gHold > 0 || gState == "film"), 0.0);
     part(gDot, px(15.0), px(15.0), -0.002, 0.01, 0.01, mark("dot"), WHITE, (gLinkSt != "alone" && gLinkSt != ""), 0.12 * (gLinkSt == "shared"));
-    // the notes' part: just under the strip (above it at the bottom), under the [12] when closed; its text is above it
-    float z = -px(48.0) * 0.5 - px(30.0);
-    if (gPlace >= 2) z = px(48.0) * 0.5 + px(6.0);
-    if (!gOpen) z = -px(48.0);
-    if (!gOpen && gPlace >= 2) z = px(26.0);
+    // the notes' part: well under the strip (above it at the bottom), under the [12] when closed; its text is drawn above
+    // it, so the part sits low enough for the text to clear the band and the [12] (8.0.5: it nearly touched the [12])
+    float z = -px(48.0) * 0.5 - px(60.0);
+    if (gPlace >= 2) z = px(48.0) * 0.5 + px(12.0);
+    if (!gOpen) z = -px(84.0);
+    if (!gOpen && gPlace >= 2) z = px(36.0);
     part(gNote, 0.0, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye
     float s = px(1.0) / 0.01;                                // a ~2 px line: a blank face cut down with PRIM_SLICE (8.0.4)
