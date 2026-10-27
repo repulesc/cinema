@@ -16,6 +16,7 @@ string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
 integer CFG_CHANGED = 7330;
+integer TIP         = 7345;
 integer SHAPE       = 7348;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
@@ -148,6 +149,7 @@ tell()
     s += "~" + lbl + "|" + st;
     if (s == gSent) return;
     gSent = s;
+    if (r > 0.0) llMessageLinked(LINK_SET, TIP, "snapshot", "");   // once ever: snapshots have no bars
     llMessageLinked(LINK_SET, CROP, (string)r + "|" + (string)gA, "");
     llMessageLinked(LINK_SET, SHAPE, lbl + "|" + st, "");
 }

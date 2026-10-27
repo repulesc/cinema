@@ -33,6 +33,7 @@ integer UI_STATE   = 7320;
 integer CAMSET     = 7325;
 integer CFG_CHANGED= 7330;
 integer NOTE       = 7344;
+integer TIP        = 7345;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
@@ -269,6 +270,7 @@ letgo(string why)
     gFollow = FALSE;
     gShotPos = ZERO_VECTOR;
     llMessageLinked(LINK_SET, PAUSE, why, "");
+    if (why == "fly") llMessageLinked(LINK_SET, TIP, "flying", "");
     share();
     ui("");
 }

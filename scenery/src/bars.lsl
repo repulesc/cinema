@@ -17,6 +17,7 @@ string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
 integer CFG_CHANGED = 7330;
+integer TIP         = 7345;
 integer SHAPE       = 7348;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
@@ -149,6 +150,7 @@ tell()
     s += "~" + lbl + "|" + st;
     if (s == gSent) return;
     gSent = s;
+    if (r > 0.0) llMessageLinked(LINK_SET, TIP, "snapshot", "");   // once ever: snapshots have no bars
     llMessageLinked(LINK_SET, CROP, (string)r + "|" + (string)gA, "");
     llMessageLinked(LINK_SET, SHAPE, lbl + "|" + st, "");
 }
@@ -222,7 +224,8 @@ default
         }
         else if (num == CMD && llGetSubString(str, 0, 10) == "bars|follow")
         {
-            gFollow = llStringTrim(llGetSubString(str, 11, -1), STRING_TRIM);   // "full": theirs has no bars
+            gFollow = "";                                   // "bars|follow": your own again
+            if (str != "bars|follow") gFollow = llStringTrim(llGetSubString(str, 12, -1), STRING_TRIM);   // "full": no bars
             cut();
         }
         else if (num == CFG_CHANGED && (llGetSubString(str, 0, 5) == "shape." || str == "bars" || str == "bstyle" || str == "flip" || str == "all"))

@@ -286,7 +286,7 @@ layout()
     if (gProblem) rk = "ring9";
     if (gRing) P += at(gRing, 0.0, 0.0, -0.001, px(50.0), px(50.0)) + uvMark(rk)
         + [PRIM_COLOR, ALL_SIDES, WHITE, 0.85 * ringOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE];
-    integer dotOn = (gLinkSt == "on" || gLinkSt == "shared" || gLinkSt == "theirs");
+    integer dotOn = (gLinkSt != "alone" && gLinkSt != "");             // connected (even when nobody films)
     if (gDot) P += at(gDot, px(15.0), px(15.0), -0.002, 0.01, 0.01) + uvMark("dot")
         + [PRIM_COLOR, ALL_SIDES, WHITE, 1.0 * dotOn, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.12 * (gLinkSt == "shared")];
     // closed: the strip shrinks away
@@ -410,7 +410,7 @@ layout()
                 P += at(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.86 * f, PRIM_GLOW, ALL_SIDES, 0.0];
                 halo = TRUE;
             }
-            gOptVis = [w] + gOptVis;
+            gOptVis += [w];                                  // the word on part k (right to left)
             part++;
             x -= wd + gap;
         }

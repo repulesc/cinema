@@ -39,7 +39,6 @@ list NOTES = [
     "left", 0, "% left.",
     "back", 0, "% is back.",
     "away", 0, "% is out of reach.",
-    "asks", 0, "% wants to share films.",
     "asked", 0, "% is asked.",
     "busy", 0, "% is busy.",
     "noanswer", 0, "% didn't answer.",
@@ -54,8 +53,6 @@ list NOTES = [
     "lens", 0, "Lens % mm. Ctrl+0 zooms in.",
     "mm", 0, "% mm",
     "eyeline", 0, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it.",
-    "snapshot", 0, "The bars are on your screen, not in snapshots: set the snapshot size to your shape.",
-    "flying", 0, "Flying: your own camera until you land.",
     "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
     "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
     "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
@@ -75,6 +72,8 @@ list TIPS = [
     "VIEW A", "Two kept views for this place.",
     "FORGET SEAT", "Forget this seat's view.",
     "kept", "Kept. Alt-click away and KEEP NEW replaces it.",
+    "flying", "Flying: your own camera until you land.",
+    "snapshot", "The bars are on your screen, not in snapshots: set the snapshot size to your shape.",
     "LET GO", "Take 12 lets go every time you sit on this vehicle.",
     "DRIFT", "How far the views go.",
     "shape", "The bars on or off. Each shot's shape: Settings.",
@@ -165,7 +164,7 @@ tip(string w)
             k = 99;
         }
     }
-    if (n >= 3) return;
+    if (n >= 3 || (w == "snapshot" && n >= 1)) return;          // the snapshot tip: once
     L += [w + ":" + (string)(n + 1)];
     llLinksetDataWriteProtected("cin.tips", llDumpList2String(L, ";"), PASS);
     show(llList2String(TIPS, i + 1));
