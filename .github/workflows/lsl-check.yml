@@ -16,7 +16,7 @@ jobs:
         run: |
           python3 -m pip install --quiet pillow
           sudo apt-get install -y -qq fonts-inter
-      - name: The textures' cell tables in screen.lsl match the art
+      - name: The textures' cell tables in strip.lsl and screen.lsl match the art
         run: python3 tools/art/make_strip.py --check
       - name: Run the REAL scripts in the LSL emulator (tools/emu)
         run: |
