@@ -152,6 +152,11 @@ Carry-over copies every key but `owner`, `ver`, `cfgv` and `peers`.
 ## 7. Checks
 `tools/lslcheck.sh` (compiles everything, fails under 15 KB free), `tools/build_scenery.py --check`, and the emulator
 runs on the real scripts in `tools/sim/*_emu.py` (CI runs them all; see `.github/workflows/lsl-check.yml`).
+**Memory at runtime (8.0.1):** a list and its copy while it grows are what runs a script out of memory (8.0.0's screen
+died in-world building one list for the whole strip). Never build a list of everything at once: send prim parameters
+in batches (`screen`'s `put` / `go`), page Linkset Data keys (`ui`'s `wipe`), keep indexes as strings (`fixed`'s `lru`),
+and use a sensor (16 nearest) rather than the region's avatar list. `tools/sim/memory_emu.py` measures every script's
+biggest runtime list against `tools/lslmem.py`'s model and fails under 3 KB to spare.
 
 ## 8. Building the HUD
 `hud/build/builder.lsl` (not shipped): rez a box, put the builder and one blank box named `t12 part` in it, touch it.

@@ -3,7 +3,8 @@
 //  Drift · Near · Room · Far (cin.scn "<0 drift … 3 far>"; Drift the first time). Still frames, locked off, with a
 //  clean cut about every 15 s (the lit tap: the next view now); Drift is the only one that moves: it starts close,
 //  slowly pulls out and comes back, a leg of about 15 s at a time, and stays near (under about 8 m) while anyone is
-//  within 10 m of you. Views are found with rays: an open line of sight, nothing judged by what objects are.
+//  within 10 m of you (a sensor: never the whole region's list, 8.0.1). Views are found with rays: an open line of
+//  sight, nothing judged by what objects are.
 //    Near  3 to 8 m from you, a little above eye level, you on a third
 //    Room  indoors only: the room you are in (7.x's inside views: high, eye level, you small; your floor under it)
 //    Far   20 to 60 m: high views over your area and wide eye-level ones along the horizon
@@ -12,7 +13,7 @@
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
 // ============================================================================
 
-string VERSION = "8.0.0";
+string VERSION = "8.0.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -64,6 +65,7 @@ list    gWallD;
 list    gFloorD;
 float   gNextT;                     // the next cut (still frames)
 integer gRetry;
+integer gCompany;                   // someone within 10 m (the sensor)
 // Drift
 integer gStage;
 vector  gA;                         // the leg: from, to (camera), and the focus beside you (relative)
@@ -484,17 +486,6 @@ integer here()
 }
 
 // anyone within 10 m keeps Drift near you
-integer company()
-{
-    list A = llGetAgentList(AGENT_LIST_REGION, []);
-    integer i;
-    for (i = 0; i < llGetListLength(A) && i < 40; i++)
-    {
-        key k = llList2Key(A, i);
-        if (k != gOwner && llVecDist(llList2Vector(llGetObjectDetails(k, [OBJECT_POS]), 0), gOP) < 10.0) return TRUE;
-    }
-    return FALSE;
-}
 
 // a still frame: the next view in the band
 still()
@@ -581,7 +572,7 @@ nextLeg()
 {
     if (!here()) return;
     list D = DRIFT_D;
-    if (gLocal || company()) D = NEAR_D;
+    if (gLocal || gCompany) D = NEAR_D;
     gStage = (gStage + 1) % llGetListLength(D);
     gA = gB;
     gFa = gFb;
@@ -634,6 +625,7 @@ step()
 begin()
 {
     gNextT = 0.0;
+    llSensorRepeat("", NULL_KEY, AGENT, 10.0, PI, 5.0);   // anyone within 10 m keeps Drift near (16 at most, not the region)
     if (gBand == 0) drift();
     else still();
     llSetTimerEvent(0.5);
@@ -664,7 +656,7 @@ default
         if (num == START)
         {
             gOn = (llList2String(llParseString2List(str, ["|"], []), 0) == "scenic");
-            if (!gOn) { llSetTimerEvent(0.0); return; }
+            if (!gOn) { llSetTimerEvent(0.0); llSensorRemove(); return; }
             llMessageLinked(LINK_SET, ACK, "scenic", "");
             gBand = (integer)cfg("scn");
             if (gBand < 0 || gBand > 3) gBand = 0;
@@ -688,6 +680,7 @@ default
         {
             gOn = FALSE;
             llSetTimerEvent(0.0);
+            llSensorRemove();
         }
         else if (num == PAUSE) gPaused = TRUE;
         else if (num == RESUME)
@@ -710,6 +703,16 @@ default
             opts();
             begin();
         }
+    }
+
+    sensor(integer n)
+    {
+        gCompany = TRUE;
+    }
+
+    no_sensor()
+    {
+        gCompany = FALSE;
     }
 
     timer()

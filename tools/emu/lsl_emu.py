@@ -26,6 +26,9 @@ try:
 finally:
     os.chdir(_cwd)
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from lslmem import value_bytes                        # tools/lslmem.py: the runtime cost of a value (8.0.1)
+
 CONST = LIB[1]
 FUNCS = LIB[2]
 TYPES = {"integer": int, "float": float, "string": str, "key": Key, "vector": Vector, "rotation": Quaternion, "list": list}
@@ -89,6 +92,7 @@ class Script:
         s.reset_vars()
 
     def reset_vars(s):
+        s.peak, s.peak_at = 0, ""                         # the biggest list built while running (bytes), and where
         s.g = {}
         s.state = "default"
         s.detected = []
@@ -103,6 +107,7 @@ class Script:
         if h is None: return None
         s.detected = detected or []
         s.steps = 0
+        s.event_name = event
         frame = {}
         for nm, t, v in zip(h.pnames, h.ptypes, args): frame[(h.pscope, nm)] = coerce(v, t)
         try:
@@ -143,6 +148,16 @@ class Script:
         elif nt == ";": pass
         else: raise NotImplementedError("statement " + nt)
 
+    def mem(s, v):
+        """note the size of a list as it is built (the runtime memory check, tools/sim/memory_emu.py)"""
+        if type(v) == list and len(v) > 4:
+            b = value_bytes(v)
+            if b > s.peak: s.peak, s.peak_at = b, "%s (%d elements)" % (getattr(s, "event_name", "?"), len(v))
+        return v
+
+    def globals_bytes(s):
+        return sum(value_bytes(v) for v in s.g.values())
+
     def tick(s):
         s.steps += 1
         if s.steps > s.STEP_LIMIT: raise LSLError("%s: a loop ran %d times" % (s.name, s.STEP_LIMIT))
@@ -153,18 +168,18 @@ class Script:
         if nt == "CONST": return _copy(n.value) if type(n.value) != str or n.t != "key" else Key(n.value)
         if nt == "IDENT": return s.get(n, fr)
         if nt == "FNCALL": return s.call(n, fr)
-        if nt == "=": return s.set(n.ch[0], coerce(s.eval(n.ch[1], fr), n.ch[0].t), fr)
+        if nt == "=": return s.set(n.ch[0], s.mem(coerce(s.eval(n.ch[1], fr), n.ch[0].t)), fr)
         if nt in ("+=", "-=", "*=", "/=", "%="):
             r = s.eval(n.ch[1], fr)
             v = _OPS[nt[0]](s.eval(n.ch[0], fr), r)
-            return s.set(n.ch[0], coerce(v, n.ch[0].t), fr)
+            return s.set(n.ch[0], s.mem(coerce(v, n.ch[0].t)), fr)
         if nt in ("V++", "V--", "++V", "--V"):
             old = s.eval(n.ch[0], fr)
             new = B.add(old, 1) if "+" in nt else B.sub(old, 1)
             s.set(n.ch[0], coerce(new, n.ch[0].t), fr)
             return old if nt[0] == "V" else new
         if nt == "CAST": return _cast(s.eval(n.ch[0], fr), n.t)
-        if nt == "LIST": return [s.eval(c, fr) for c in n.ch]
+        if nt == "LIST": return s.mem([s.eval(c, fr) for c in n.ch])
         if nt == "VECTOR": return Vector(tuple(F(_num(s.eval(c, fr))) for c in n.ch))
         if nt == "ROTATION": return Quaternion(tuple(F(_num(s.eval(c, fr))) for c in n.ch))
         if nt == "FLD":
@@ -181,6 +196,7 @@ class Script:
             if nt == "||": return int(B.cond(a) or B.cond(b))
             if nt in _CMP: return _CMP[nt](a, b)
             try:
+                if nt == "+" and type(a) == list: return s.mem(_OPS[nt](a, b))
                 return _OPS[nt](a, b)
             except B.ELSLMathError:
                 raise LSLError("%s: Math Error" % s.name)
@@ -214,11 +230,11 @@ class Script:
         spec = FUNCS.get(n.name, {})
         args = [coerce(a, t) for a, t in zip(args, spec.get("ParamTypes", []))]
         w = getattr(s.world, n.name, None)
-        if w is not None: return coerce(w(s, *args), spec.get("Type"))
+        if w is not None: return s.mem(coerce(w(s, *args), spec.get("Type")))
         fn = spec.get("Fn")
         if fn is None: raise NotImplementedError("%s: %s is not emulated" % (s.name, n.name))
         try:
-            return coerce(fn(*args), spec.get("Type"))
+            return s.mem(coerce(fn(*args), spec.get("Type")))
         except B.ELSLMathError:
             raise LSLError("%s: Math Error in %s" % (s.name, n.name))
 

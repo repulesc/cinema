@@ -29,6 +29,8 @@ jobs:
           python3 tools/sim/scenic_emu.py
           python3 tools/sim/carry_emu.py
           python3 tools/sim/builder_emu.py
+      - name: Runtime memory on the real scripts - no script runs out of memory at its heaviest (8.0.1)
+        run: python3 tools/sim/memory_emu.py
       - name: Connect on the real scripts - scenarios, then a fuzzer on two and three HUDs (and lost messages)
         run: python3 tools/sim/connect_emu.py 20 1000
       - name: Every word, the free build, the listings

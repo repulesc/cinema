@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.0";
+string VERSION = "8.0.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -80,6 +80,20 @@ note(string id, string a)
     llMessageLinked(LINK_SET, NOTE, id + "|" + a, "");
 }
 
+// delete the keys matching a pattern, ten at a time (a list of every key at once can run the script out of memory, 8.0.1);
+// a key it cannot delete (another password) is stepped over
+wipe(string re)
+{
+    integer skip;
+    list K = llLinksetDataFindKeys(re, 0, 10);
+    while (K != [] && skip < 200)
+    {
+        integer i;
+        for (i = 0; i < llGetListLength(K); i++) skip += (llLinksetDataDeleteProtected(llList2String(K, i), PASS) != 0);
+        K = llLinksetDataFindKeys(re, skip, 10);
+    }
+}
+
 // new owner, first wear, a 7.x HUD: settings
 checkOwner()
 {
@@ -94,9 +108,7 @@ checkOwner()
         // a 7.x HUD's settings: the friends and the window stay; 8.0 has new keys for the rest
         string fr = cfg("friends");
         string as = cfg("aspect");
-        list K = llLinksetDataFindKeys("^cin\\.", 0, 0);
-        integer i;
-        for (i = 0; i < llGetListLength(K); i++) llLinksetDataDeleteProtected(llList2String(K, i), PASS);
+        wipe("^cin\\.");
         llLinksetDataWriteProtected("cin.owner", (string)gOwner, PASS);
         if (fr != "") llLinksetDataWriteProtected("cin.friends", fr, PASS);
         if (as != "") llLinksetDataWriteProtected("cin.aspect", as, PASS);
@@ -367,9 +379,7 @@ choose(string m)
         if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
         else if (b == "Seats & views")
         {
-            list K = llLinksetDataFindKeys("^cin\\.(seat|view|places)", 0, 0);
-            integer i;
-            for (i = 0; i < llGetListLength(K); i++) llLinksetDataDeleteProtected(llList2String(K, i), PASS);
+            wipe("^cin\\.(seat|view|places)");
             llMessageLinked(LINK_SET, CFG_CHANGED, "seats", "");
             closeMenu();
         }
@@ -667,6 +677,7 @@ default
         }
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
+        else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
         else if (num == MSG_VER && str != "?")
         {
             if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];

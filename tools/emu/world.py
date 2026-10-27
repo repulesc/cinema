@@ -472,7 +472,28 @@ class Obj:
         if tg == sc.tgen and sc.timer > 0: s.w.post(sc.timer, s._timer, sc, tg, gen)
     def llResetScript(s, sc): raise _Reset()
     def llFrand(s, sc, m): return B.F32(s.w.rng.random() * m)
-    def llGetFreeMemory(s, sc): return 30000
+    def llGetFreeMemory(s, sc):
+        """64 KB less the static estimate (tools/lslmem.py), the globals, and the biggest list built (twice: += copies)"""
+        return int(LIMIT - static(sc.prog.path) - sc.globals_bytes() - 2 * sc.peak)
+    # sensors: avatars around the wearer (not the wearer), nearest first, at most 16
+    def llSensor(s, sc, name, k, kind, rng, arc): s._sense(sc, rng, getattr(sc, "sgen", 0))
+    def llSensorRepeat(s, sc, name, k, kind, rng, arc, rate):
+        sc.sgen = getattr(sc, "sgen", 0) + 1
+        sc.srate, sc.srange = rate, rng
+        s.w.post(rate, s._sweep, sc, sc.sgen, sc.timer_gen)
+    def llSensorRemove(s, sc): sc.sgen = getattr(sc, "sgen", 0) + 1
+    def _sweep(s, sc, g, gen):
+        if g != getattr(sc, "sgen", 0) or gen != sc.timer_gen or not (s.worn or s.rezzed): return
+        s._sense(sc, sc.srange, g)
+        s.w.post(sc.srate, s._sweep, sc, g, gen)
+    def _sense(s, sc, rng, g):
+        me = s.owner
+        L = sorted(((B.llVecDist(a.pos, me.pos), a) for a in s.w.avatars.values()
+                    if a is not me and s._here(a) and B.llVecDist(a.pos, me.pos) <= rng), key=lambda x: x[0])[:16]
+        det = [{"key": Key(a.key), "pos": a.pos, "name": a.name + " Resident", "link": 0} for d, a in L]
+        if det:
+            if sc.has("sensor"): s.event(sc, "sensor", (len(det),), det)
+        elif sc.has("no_sensor"): s.event(sc, "no_sensor", ())
     def llGetScriptName(s, sc): return sc.name
     def llSleep(s, sc, t): pass
     # messages
@@ -655,6 +676,8 @@ class Obj:
     # touches
     def llDetectedKey(s, sc, i): return sc.detected[i]["key"] if i < len(sc.detected) else Key(NULL)
     def llDetectedLinkNumber(s, sc, i): return sc.detected[i]["link"] if i < len(sc.detected) else 0
+    def llDetectedPos(s, sc, i): return sc.detected[i].get("pos", ZV) if i < len(sc.detected) else ZV
+    def llDetectedName(s, sc, i): return sc.detected[i].get("name", "") if i < len(sc.detected) else ""
     def llDetectedTouchST(s, sc, i): return sc.detected[i]["st"] if i < len(sc.detected) else vec(-1, -1, 0)
     def llDetectedTouchUV(s, sc, i): return sc.detected[i]["uv"] if i < len(sc.detected) else vec(-1, -1, 0)
     def llDetectedTouchFace(s, sc, i): return 4
@@ -721,6 +744,13 @@ class Obj:
 
 class _Reset(Exception): pass
 
+
+from lslmem import static_used, LIMIT                 # tools/lslmem.py (8.0.1)
+_STATIC = {}
+def static(path):
+    if path not in _STATIC: _STATIC[path] = static_used(path)[0]
+    return _STATIC[path]
+
 # how many values each PRIM_* rule takes (enough to walk the lists the scripts build)
 _NARGS = {C["PRIM_POS_LOCAL"]: 1, C["PRIM_POSITION"]: 1, C["PRIM_ROT_LOCAL"]: 1, C["PRIM_ROTATION"]: 1, C["PRIM_SIZE"]: 1,
           C["PRIM_COLOR"]: 3, C["PRIM_TEXTURE"]: 5, C["PRIM_FULLBRIGHT"]: 2, C["PRIM_GLOW"]: 2, C["PRIM_NAME"]: 1,
@@ -742,6 +772,6 @@ def lsd(o, k):
 
 def ready(av, first_run_done=True):
     """settings as after the first run (lens, eye line, size): the shots run without the setup"""
-    d = {"cin.owner": (str(av.key), PASS), "cin.ver": ("8.0.0", PASS)}
+    d = {"cin.owner": (str(av.key), PASS), "cin.ver": ("8.0.1", PASS)}
     if first_run_done: d["cin.firstrun"] = ("done", PASS)
     return d
