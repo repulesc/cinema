@@ -15,7 +15,7 @@ the top of the screen and the [12].
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.0.1** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.0.2** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,
@@ -24,7 +24,7 @@ and the notecard is `Take 12 - Read Me`.
 ## Repository layout
 | Path | Contents |
 |---|---|
-| `hud/src/` | The eleven HUD scripts (core, ui, text, screen, bars, tracking, portrait, fixed, scenic, sync, carry) |
+| `hud/src/` | The twelve HUD scripts (core, ui, text, screen, strip, bars, tracking, portrait, fixed, scenic, sync, carry) |
 | `hud/build/` | The builder script that makes the HUD object, and how to use it |
 | `hud/art/` | The two textures: `take12_words_1024.png` (the strip's words) and `take12_marks_1024.png` (the [12], rings, band, readouts) |
 | `hud/notecard/` | The in-world Read Me (the user guide) |
@@ -33,7 +33,7 @@ and the notecard is `Take 12 - Read Me`.
 | `tools/lslcheck.sh` | Compile check (LSL-PyOptimizer) and a memory estimate; fails under 15 KB free |
 | `tools/emu/` | An LSL emulator that runs the real scripts: a region, avatars, worn HUDs, furniture, builds and rays, chat, the camera |
 | `tools/sim/` | The tests on the real scripts (`*_emu.py`), the text, listing and free-build checks |
-| `tools/art/` | `make_strip.py` (the two textures, and the cell tables in `screen.lsl`), `make_adboard.py` (the boards) |
+| `tools/art/` | `make_strip.py` (the two textures, and the cell tables in `strip.lsl` and `screen.lsl`), `make_adboard.py` (the boards) |
 | `legacy/` | v3.0.0 (frozen, working) and the old v1/v2 |
 | `lab/` | Experiments, not part of the product |
 
@@ -50,7 +50,7 @@ and the notecard is `Take 12 - Read Me`.
 ## Building the HUD in-world
 1. Build the object with the builder: [`hud/build/README.md`](hud/build/README.md) (rez a box, add `builder.lsl` and a
    blank box named `t12 part`, touch it: 26 parts are made, linked and named).
-2. Add the eleven scripts of `hud/src/`, each with the file's name.
+2. Add the twelve scripts of `hud/src/`, each with the file's name.
 3. Upload the two textures of `hud/art/` once (named `take12_words` and `take12_marks`) and drop them in: the HUD keeps
    their UUIDs and takes them out of its contents, so it can be given away.
 4. Add a notecard named `Take 12 - Read Me` with the text of `hud/notecard/read_me.txt`; optionally a sound for the
@@ -62,7 +62,7 @@ and the notecard is `Take 12 - Read Me`.
 ## Checks (CI runs them on every push)
 - `bash tools/lslcheck.sh`: compiles every script; fails if one has less than 15 KB free (the model is in `tools/lslmem.py`).
 - `python3 tools/build_scenery.py --check`: the free build is up to date.
-- `python3 tools/art/make_strip.py --check`: the textures' cell tables in `screen.lsl` match the art.
+- `python3 tools/art/make_strip.py --check`: the textures' cell tables in `strip.lsl` and `screen.lsl` match the art.
 - The emulator tests:
   - `tools/sim/layout_emu.py`: every window from 5:4 to 32:9 × 4 places × 3 sizes;
   - `gestures_emu.py`, `shots_emu.py`;

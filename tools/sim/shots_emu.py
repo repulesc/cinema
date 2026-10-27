@@ -7,8 +7,8 @@ from emu_util import *
 
 def opts(h):
     """the option words on the strip now: [(word, state)]"""
-    sh = var(h, "screen", "gOptShot")
-    return sh, list(zip(var(h, "screen", "gOpts"), var(h, "screen", "gOptSt")))
+    sh = var(h, "strip", "gOptShot")
+    return sh, list(zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")))
 
 def lit(h): return [wd for wd, st in opts(h)[1] if st == "lit"]
 
@@ -53,10 +53,10 @@ ana.touch("t12 s1"); w.run(3)
 log0 = len(h.cam.get("log", []))
 sofa = w.furniture("Sofa", (130, 128, 20.5))
 ana.sit_on(sofa); w.run(2)
-check(var(h, "core", "gSitHold") == 1 and var(h, "screen", "gHint") == "fixed", "sitting in Portrait: it holds, FIXED glows")
+check(var(h, "core", "gSitHold") == 1 and var(h, "strip", "gHint") == "fixed", "sitting in Portrait: it holds, FIXED glows")
 check(len(h.cam.get("log", [])) == log0, "sitting: the frame holds (no new camera)")
 w.run(6)
-check(var(h, "screen", "gHint") == "", "the glow is once (5 s)")
+check(var(h, "strip", "gHint") == "", "the glow is once (5 s)")
 ana.stand(); ana.pos = vec(128, 128, 21); w.run(3)
 check(state(h) == ("film", "portrait") and var(h, "core", "gSitHold") == 0 and len(h.cam.get("log", [])) > log0, "standing up: Portrait frames you again")
 no_errors(w, "sitting")

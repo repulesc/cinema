@@ -1,6 +1,6 @@
 """Every word the 8.0 HUD shows, checked without running it: every note id the scripts send exists in text.lsl, the
 voice (no exclamation marks), every strip word and mark the scripts ask for is on the textures (tools/art/make_strip.py,
-and the tables generated into screen.lsl), every literal dialog button fits SL (24 bytes), every dialog page ui opens
+and the tables generated into strip.lsl and screen.lsl), every literal dialog button fits SL (24 bytes), every dialog page ui opens
 has its words in text.lsl, every script carries the same version, the free build's scripts likewise."""
 import os, re, sys
 from emu_util import check, done
@@ -29,9 +29,12 @@ for s in strings:
     if len(s) > 40: check(not re.search(r"\b(please|sorry|error|invalid|failed)\b", s, re.I), "text.lsl: calm words: %r" % s)
 
 # ---- the strip's words and marks are on the textures -------------------------------------------------------------------------
-screen = SRC["screen"]
+screen = SRC["strip"]
 WORDS = re.search(r'string WORDS = "([^"]*)"', screen).group(1)
 MARKS = re.search(r'string MARKS = "([^"]*)"', screen).group(1)
+SMARKS = re.search(r'string MARKS = "([^"]*)"', SRC["screen"]).group(1)
+for m in set(re.findall(r'mark\("([a-z0-9A-Z.]+)"\)', SRC["screen"])) | {"disc", "discamber"} | {"ring%d" % i for i in range(10)}:
+    check(("~" + m + "|") in SMARKS, "screen: mark %r is not in its table" % m)
 cell = lambda T, n: ("~" + n + "|") in T
 for shot in ("portrait", "tracking", "fixed", "scenic"):
     for line in re.findall(r'"%s\|([A-Z ,/]+)\|' % shot, SRC[shot]):
@@ -42,14 +45,14 @@ for wd in re.findall(r'\["([A-Z][A-Z ]+)"', fx) + re.findall(r'w \+= \["([A-Z][A
     check(cell(WORDS, wd), "fixed: %r is not on take12_words" % wd)
 for wd in ("TRACKING", "PORTRAIT", "FIXED", "SCENIC"): check(cell(WORDS, wd), "%r on take12_words" % wd)
 for m in set(re.findall(r'(?:uvMark|mark)\("([a-z0-9A-Z.]+)"\)', screen)):
-    check(cell(MARKS, m), "screen: mark %r is not on take12_marks" % m)
-for m in ["ring%d" % i for i in range(10)] + ["shape" + s for s in ("1.66", "1.85", "2.00", "2.39", "FULL", "DIM")] + \
+    check(cell(MARKS, m), "strip: mark %r is not on take12_marks" % m)
+for m in ["shape" + s for s in ("1.66", "1.85", "2.00", "2.39", "FULL", "DIM")] + \
          ["link" + s for s in ["ALONE", "SHARING", "THEIR FILM"] + [str(i) for i in range(1, 10)]]:
     check(cell(MARKS, m), "mark %r is not on take12_marks" % m)
 sys.path.insert(0, os.path.join(R, "tools", "art"))
 try:
     import make_strip
-    check(set(make_strip.WORDS) >= set(re.findall(r"~([A-Z ]+)\|", WORDS)), "make_strip.py draws every word screen.lsl knows")
+    check(set(make_strip.WORDS) >= set(re.findall(r"~([A-Z ]+)\|", WORDS)), "make_strip.py draws every word strip.lsl knows")
 except SystemExit:
     pass
 
@@ -69,8 +72,8 @@ for p in sorted(pages):
 
 # ---- versions ----------------------------------------------------------------------------------------------------------------
 vers = {n: re.search(r'string VERSION = "([^"]+)";', s).group(1) for n, s in SRC.items() if 'string VERSION' in s}
-for n in ("core", "ui", "text", "screen", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry"):
+for n in ("core", "ui", "text", "screen", "strip", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry"):
     check(n in SRC, "hud/src/%s.lsl exists" % n)
-check(len(set(v for n, v in vers.items() if n in ("core", "ui", "text", "screen", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry"))) == 1,
+check(len(set(v for n, v in vers.items() if n in ("core", "ui", "text", "screen", "strip", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry"))) == 1,
       "every script carries one version: %r" % vers)
 done("text_check")

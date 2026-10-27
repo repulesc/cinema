@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.1";
+string VERSION = "8.0.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -29,7 +29,7 @@ integer CMD         = 7371;
 float   TAP_GAP   = 0.35;           // s  a second tap within this: a double-tap
 float   LONG_HOLD = 0.8;            // s  held this long: everything off (or back)
 float   EYE_D     = 2.5;            // m  the eye-line check's camera, in front of you
-string  NEED = "core ui text screen bars tracking portrait fixed scenic sync carry";
+string  NEED = "core ui text screen strip bars tracking portrait fixed scenic sync carry";
 
 key     gOwner;
 integer gChan;
@@ -726,7 +726,7 @@ default
             list miss = [];
             integer i;
             list need = llParseString2List(NEED, [" "], []);
-            if (LITE) need = llDeleteSubList(need, 5, 7);  // the free build: no tracking, portrait, fixed
+            if (LITE) need = llDeleteSubList(need, 6, 8);  // the free build: no tracking, portrait, fixed
             for (i = 0; i < llGetListLength(need); i++) if (llListFindList(gVer, [llList2String(need, i)]) < 0) miss += llList2String(need, i);
             if (miss != [])
             {

@@ -65,7 +65,7 @@ ana.touch("t12 s1"); w.run(2); ana.touch("t12 s1"); w.run(2)       # the same si
 c2 = h.cam["pos"]
 d2 = B.llVecDist(vec(c2[0], c2[1], 0), vec(ana.pos[0], ana.pos[1], 0))
 check(c2[1] < yw and d2 < d, "a wall: the camera moves in, in front of it (%.2f m, was %.2f)" % (d2, d))
-check("MEDIUM" in [x for x, st in zip(var(h, "screen", "gOpts"), var(h, "screen", "gOptSt")) if st == "lit"], "the size word stays")
+check("MEDIUM" in [x for x, st in zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")) if st == "lit"], "the size word stays")
 check(abs(pic(ana, h, eyes(ana))[1] - 0.333) < 0.05, "the eyes stay on the third (%.3f)" % pic(ana, h, eyes(ana))[1])
 w.boxes.pop()
 no_errors(w, "wall")

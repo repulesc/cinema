@@ -1,13 +1,13 @@
 """Guards the free Take 12 Scenery build (8.0): scenery/src is hud/src's core, ui, text, screen, bars, scenic, sync and
-carry, line for line, with only the free switch (`integer LITE   = 1;`) changed where a script has one; it has no
+strip, line for line, with only the free switch (`integer LITE   = 1;`) changed where a script has one; it has no
 Tracking, Portrait or Fixed script; its notecard is the free one; every script carries one version."""
 import os, re
 from emu_util import check, done
 
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 rd = lambda *p: open(os.path.join(R, *p), encoding="utf-8").read()
-FILES = ("core.lsl", "ui.lsl", "text.lsl", "screen.lsl", "bars.lsl", "scenic.lsl", "sync.lsl", "carry.lsl")
-check(sorted(os.listdir(os.path.join(R, "scenery", "src"))) == sorted(FILES), "scenery/src holds exactly the eight free scripts")
+FILES = ("core.lsl", "ui.lsl", "text.lsl", "screen.lsl", "strip.lsl", "bars.lsl", "scenic.lsl", "sync.lsl", "carry.lsl")
+check(sorted(os.listdir(os.path.join(R, "scenery", "src"))) == sorted(FILES), "scenery/src holds exactly the nine free scripts")
 changed = 0
 for n in FILES:
     full, free = rd("hud", "src", n).splitlines(), rd("scenery", "src", n).splitlines()
@@ -23,10 +23,10 @@ for n in FILES:
 for n in ("tracking.lsl", "portrait.lsl", "fixed.lsl"):
     check(not os.path.exists(os.path.join(R, "scenery", "src", n)), f"the free build has no {n}")
 # what the switch does, where it matters
-core, screen, ui, sync, carry = (rd("hud", "src", n) for n in ("core.lsl", "screen.lsl", "ui.lsl", "sync.lsl", "carry.lsl"))
+core, screen, ui, sync, carry = (rd("hud", "src", n) for n in ("core.lsl", "strip.lsl", "ui.lsl", "sync.lsl", "carry.lsl"))
 check('if (LITE && shot != "scenic")' in core, "core: the free build starts only Scenic")
-check("if (LITE && k < 3)" in screen, "screen: TRACKING, PORTRAIT and FIXED are dim and say so")
-check("if (LITE) need = llDeleteSubList(need, 5, 7);" in ui, "ui: the free build does not miss tracking, portrait, fixed")
+check("if (LITE && k < 3)" in screen, "strip: TRACKING, PORTRAIT and FIXED are dim and say so")
+check("if (LITE) need = llDeleteSubList(need, 6, 8);" in ui, "ui: the free build does not miss tracking, portrait, fixed")
 check("!LITE && gHost == NULL_KEY" in sync and 'if (LITE || !gFilm' in sync, "sync: the free build watches, never films for others")
 check("if (lite != LITE) return LITE;" in carry, "carry: the free build gives way to the full one")
 card = rd("scenery", "notecard", "read_me.txt")

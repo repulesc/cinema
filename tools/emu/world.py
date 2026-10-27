@@ -757,9 +757,9 @@ _NARGS = {C["PRIM_POS_LOCAL"]: 1, C["PRIM_POSITION"]: 1, C["PRIM_ROT_LOCAL"]: 1,
           C["PRIM_DESC"]: 1, C["PRIM_TEXT"]: 3}
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-NAMES = ("core", "ui", "text", "screen", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry")
+NAMES = ("core", "ui", "text", "screen", "strip", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry")
 HUD_SCRIPTS = [os.path.join(ROOT, "hud", "src", n + ".lsl") for n in NAMES]
-FREE_SCRIPTS = [os.path.join(ROOT, "scenery", "src", n + ".lsl") for n in ("core", "ui", "text", "screen", "bars", "scenic", "sync", "carry")]
+FREE_SCRIPTS = [os.path.join(ROOT, "scenery", "src", n + ".lsl") for n in ("core", "ui", "text", "screen", "strip", "bars", "scenic", "sync", "carry")]
 BUILDER = os.path.join(ROOT, "hud", "build", "builder.lsl")
 PASS = "cinema-1.0-build1"
 

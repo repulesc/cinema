@@ -19,7 +19,7 @@ w.boxes += [Box((150, 120, 20, 160, 125, 30), "house"), Box((100, 140, 20, 104, 
 ana, h = hud(w, pos=(128, 128, 21))
 ana.double_tap(); w.run(1)
 ana.touch("t12 s3"); w.run(2)
-st = dict(zip(var(h, "screen", "gOpts"), var(h, "screen", "gOptSt")))
+st = dict(zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")))
 check(st.get("ROOM") == "dim" and st.get("FAR") == "", "outdoors: ROOM dim, FAR open (%r)" % st)
 ana.touch(opt_part(h, "FAR")); w.run(1)
 t0 = w.t
@@ -75,7 +75,7 @@ w2.boxes += room(100, 100, 30.0, 112, 110, 4.0)                    # a 12 x 10 m
 amy, h2 = hud(w2, "Amy", pos=(104, 104, 30.95))
 amy.double_tap(); w2.run(1)
 amy.touch("t12 s3"); w2.run(3)
-st = dict(zip(var(h2, "screen", "gOpts"), var(h2, "screen", "gOptSt")))
+st = dict(zip(var(h2, "strip", "gOpts"), var(h2, "strip", "gOptSt")))
 check(var(h2, "scenic", "gLocal") == 1 and st.get("FAR") == "dim" and st.get("ROOM") == "", "indoors: FAR dim, ROOM open (%r)" % st)
 inside = lambda p: 100 < p[0] < 112 and 100 < p[1] < 110 and 30 < p[2] < 34
 for band in ("ROOM", "NEAR", "DRIFT", "FAR"):

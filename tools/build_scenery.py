@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Builds the free Take 12 Scenery scripts (scenery/src) from the full ones (hud/src), 8.0.
 
-Same code, eight of the eleven scripts: core, ui, text, screen, bars, scenic, sync and carry. `integer LITE   = 0;`
-becomes `= 1;` where a script has the switch (core starts only Scenic, screen dims TRACKING, PORTRAIT and FIXED and
+Same code, nine of the twelve scripts: core, ui, text, screen, strip, bars, scenic, sync and carry. `integer LITE   = 0;`
+becomes `= 1;` where a script has the switch (core starts only Scenic, strip dims TRACKING, PORTRAIT and FIXED and
 says "In the full Take 12." on a tap, text names it Take 12 Scenery, sync can watch a friend's film but never films
-for others, carry always gives way to a full Take 12 worn with it); bars and scenic are copied as they are. tracking,
+for others, carry always gives way to a full Take 12 worn with it); screen, bars and scenic are copied as they are. tracking,
 portrait and fixed are simply not part of it. Every substitution must match exactly once, so a change in hud/src that
 moves one fails here instead of shipping a stale build.
 
@@ -22,7 +22,8 @@ SUBS = {
     "core.lsl": [LITE],
     "ui.lsl": [LITE],
     "text.lsl": [LITE],
-    "screen.lsl": [LITE],
+    "screen.lsl": [],
+    "strip.lsl": [LITE],
     "bars.lsl": [],
     "scenic.lsl": [],
     "sync.lsl": [LITE],

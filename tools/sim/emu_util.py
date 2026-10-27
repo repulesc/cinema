@@ -129,7 +129,7 @@ def dialog_ok(av, where):
 
 def opt_part(h, word):
     """the strip part that shows an option word (to touch it)"""
-    v = var(h, "screen", "gOptVis")
+    v = var(h, "strip", "gOptVis")
     if word not in v: raise AssertionError("%r is not on the strip: %r" % (word, v))
     return "t12 o%d" % v.index(word)
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.0.2 (screen split in two)
+- **Fixed for good: `screen: Stack-Heap Collision` on save.** 8.0.1's screen still crashed in-world the moment it was saved. It was simply too big for Second Life's 64 KB, and the memory estimate had shown room that wasn't there.
+  - It is now two scripts:
+    - **screen:** the [12], its ring and dot, the notes, the eye line and the textures;
+    - **strip:** the strip's band and words, the fade and the taps.
+  - The strip's drawing is folded into one helper. Compared with the script that crashed, strip has half its list values and a fifth fewer tokens, which keeps it inside the size of `ui`, a script that runs fine in-world.
+  - Each script carries only the texture cells it draws, and a cell lookup no longer copies the whole table.
+- Twelve scripts now (the free build: nine). Version 8.0.2 in all of them.
+
 ## 8.0.1 (the strip no longer runs out of memory)
 - **Fixed: `screen: Stack-Heap Collision`.** This was the first in-world report; "A Take 12 script is missing: screen" followed from it.
   - The strip was laid out as one list of about 460 values for every part, and while the list grew its old copy stayed alive too. That was far more than the script had room for.

@@ -13,11 +13,11 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 
 ## Build it in-world
 1. `hud/build/README.md`: rez a box, put `builder.lsl` and a blank box named `t12 part` in it, touch it.
-2. Add the eleven scripts of `hud/src/`; upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png`
+2. Add the twelve scripts of `hud/src/`; upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png`
    (as `take12_words`, `take12_marks`) and drop them in; add the Read Me (`hud/notecard/read_me.txt`) and, optionally,
    a chime sound.
 3. Take it, wear it on HUD Top Center. `/12 status`: every script answers, "parts found", "textures kept".
-4. The free build: the same with the eight scripts of `scenery/src/` and `scenery/notecard/read_me.txt`.
+4. The free build: the same with the nine scripts of `scenery/src/` and `scenery/notecard/read_me.txt`.
 
 ## Tester checklist
 Viewers: the official viewer, Firestorm and one more. UI scale 1.0 and 1.25. Windows 16:9, 16:10, 21:9 and 4:3,

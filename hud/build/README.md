@@ -11,7 +11,7 @@ and name parts by hand. HUD prims have no land impact.
    names it (`t12 ring`, `t12 s0`, … `t12 bar3`, docs/ARCHITECTURE.md §1) and lays it flat inside the box. When it is
    done it says so, and takes `t12 part` and itself out of the contents. Touching it again on a HUD that misses parts
    adds only the missing ones.
-5. **Add the scripts:** the 11 files of `hud/src/` (core, ui, text, screen, bars, tracking, portrait, fixed, scenic,
+5. **Add the scripts:** the 12 files of `hud/src/` (core, ui, text, screen, strip, bars, tracking, portrait, fixed, scenic,
    sync, carry), each as a new script with the file's name. Optionally a sound for the Connect chime (any sound in the
    contents; Settings › Friends › Chime turns it off).
 6. **The textures:** upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png` once (name them

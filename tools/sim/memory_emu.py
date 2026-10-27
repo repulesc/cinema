@@ -44,8 +44,8 @@ textures(h); w.run(1)
 ana.double_tap(); w.run(1)
 for shot in ("t12 s0", "t12 s1", "t12 s2", "t12 s3"):
     ana.touch(shot); w.run(3)
-    for wd in list(var(h, "screen", "gOptVis")):
-        if wd in var(h, "screen", "gOptVis"): ana.touch(opt_part(h, wd)); w.run(1.5)
+    for wd in list(var(h, "strip", "gOptVis")):
+        if wd in var(h, "strip", "gOptVis"): ana.touch(opt_part(h, wd)); w.run(1.5)
 h.send(7342, "theirs|3|Ben"); w.run(1)
 for a in (1.25, 1.778, 3.556):
     ana.aspect = a

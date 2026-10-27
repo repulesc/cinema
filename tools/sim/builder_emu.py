@@ -1,7 +1,7 @@
 """The HUD builder (8.0), on the REAL script: a rezzed box with hud/build/builder.lsl and a blank "t12 part" in its
 contents; a touch makes the 26 parts (rezzed, linked, named, laid flat), names the root "Take 12", then takes the part
 and itself out of the contents; touched again on a HUD that misses parts, it adds only those. The result, worn with
-the eleven scripts, is found by screen and lays out."""
+the twelve scripts, is found by screen and strip and lays out."""
 from emu_util import *
 from world import Obj, new_key, PARTS
 
@@ -39,7 +39,7 @@ no_errors(w, "repair")
 order = [p["name"] for p in box.prims[1:]]
 h = ana.wear(HUD_SCRIPTS, parts=order, lsd=ready(ana))
 w.run(5)
-check(var(h, "screen", "gFound") == 1, "screen finds the parts")
+check(var(h, "strip", "gFound") == 1, "strip finds the parts")
 ana.double_tap(); w.run(1)
 check(len(visible(h, ana)) >= 6, "the strip opens on the built HUD")
 no_errors(w, "worn")
