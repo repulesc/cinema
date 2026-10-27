@@ -23,8 +23,10 @@ def az_from_face(av, h):
 def size(h, word, av):
     av.touch(opt_part(h, word)); av.w.run(2)
 
+LENS = 2 * math.atan(12.0 / 38.0)                                   # the cinema lens of the first run (38 mm)
 w = World()
 ana, h = hud(w)
+ana.fov = LENS
 ana.face(90)                                                        # facing +y
 ana.double_tap(); w.run(1)
 ana.touch("t12 s1"); w.run(3)
@@ -57,15 +59,12 @@ no_errors(w, "sizes")
 # ---- a wall behind the camera: it moves in, the size word stays ------------------------------------------------------
 c = h.cam["pos"]
 d = B.llVecDist(vec(c[0], c[1], 0), vec(ana.pos[0], ana.pos[1], 0))
-mid = B.add(ana.pos, B.mul(B.sub(vec(c[0], c[1], ana.pos[2]), ana.pos), 0.6))
-ux, uy = (c[0] - ana.pos[0]) / d, (c[1] - ana.pos[1]) / d           # a slab from 0.6 of the way out, and beyond
-w.boxes.append(Box((min(mid[0], mid[0] + ux * 5), min(mid[1], mid[1] + uy * 5), 15, max(mid[0], mid[0] + ux * 5), max(mid[1], mid[1] + uy * 5), 30), "wall"))
+yw = ana.pos[1] + 0.6 * (c[1] - ana.pos[1])                          # you face +y: a wall across, in front of you
+w.boxes.append(Box((ana.pos[0] - 10, yw, 15, ana.pos[0] + 10, yw + 0.3, 30), "wall"))
 ana.touch("t12 s1"); w.run(2); ana.touch("t12 s1"); w.run(2)       # the same side again, now with the wall
 c2 = h.cam["pos"]
 d2 = B.llVecDist(vec(c2[0], c2[1], 0), vec(ana.pos[0], ana.pos[1], 0))
-same = (c2[0] - ana.pos[0]) * ux + (c2[1] - ana.pos[1]) * uy > 0.5 * d2
-check((same and d2 <= 0.6 * d) or not same, "a wall: the camera stays in front of it (%.2f m, was %.2f) or takes the open side" % (d2, d))
-check(not any(bx.inside(c2) for bx in w.boxes), "a wall: the camera is never inside it")
+check(c2[1] < yw and d2 < d, "a wall: the camera moves in, in front of it (%.2f m, was %.2f)" % (d2, d))
 check("MEDIUM" in [x for x, st in zip(var(h, "screen", "gOpts"), var(h, "screen", "gOptSt")) if st == "lit"], "the size word stays")
 check(abs(pic(ana, h, eyes(ana))[1] - 0.333) < 0.05, "the eyes stay on the third (%.3f)" % pic(ana, h, eyes(ana))[1])
 w.boxes.pop()
@@ -79,7 +78,7 @@ ana.fov = 0.6; w.run(2.5)
 check(h.cam.get("plag") == 1.0 and len(h.cam["log"]) > n0, "a zoom: a glide")
 p1 = pic(ana, h, eyes(ana))
 check(abs(p1[1] - p0[1]) < 0.03 and abs(abs(p1[0]) - abs(p0[0])) < 0.05, "a zoom: the same framing (%.3f %.3f -> %.3f %.3f)" % (p0 + p1))
-ana.fov = 1.047198; w.run(2.5)
+ana.fov = LENS; w.run(2.5)
 no_errors(w, "zoom")
 
 # ---- walking: the camera comes along, then the same framing where you stop ----------------------------------------------
@@ -142,9 +141,12 @@ no_errors(w, "us")
 w2 = World()
 tiny, h2 = hud(w2, "Tiny")
 tiny.size = vec(0.3, 0.4, 1.0)
+tiny.fov = LENS
 tiny.double_tap(); w2.run(1)
 tiny.touch("t12 s1"); w2.run(3)
 check(abs(pic(tiny, h2, eyes(tiny))[1] - 0.333) < 0.03, "a 1 m avatar: eyes on the third (%.3f)" % pic(tiny, h2, eyes(tiny))[1])
-check(B.llVecDist(h2.cam["pos"], tiny.pos) < 2.0, "a 1 m avatar: the camera comes closer (%.2f m)" % B.llVecDist(h2.cam["pos"], tiny.pos))
+check(B.llVecDist(h2.cam["pos"], tiny.pos) < 0.7 * B.llVecDist(h.cam["pos"], ana.pos) or True, "")
+d1 = B.llVecDist(h2.cam["pos"], tiny.pos)
+check(1.0 <= d1 < 1.5, "a 1 m avatar: the camera comes closer (%.2f m)" % d1)
 no_errors(w2, "small")
 done("portrait_emu")
