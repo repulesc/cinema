@@ -16,7 +16,7 @@
 //  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build: it can watch, never film for others
 
@@ -32,7 +32,7 @@ integer CMD        = 7371;
 integer CROP       = 7390;
 integer SYNC_CH    = -7712120;
 float   NEAR       = 20.0;          // m  who can be asked; beyond it a connection rests
-float   GONE       = 3.0;           // s  no word from the one you watch
+float   GONE       = 6.0;           // s  no word from the one you watch (8.0.6: 3 s dropped a slow sim's watch)
 float   QUIET      = 10.0;          // s  no word from a peer: it rests
 integer APART      = 1800;          // s  rested this long, it ends
 integer WAIT       = 20;            // s  an ask waits this long
@@ -67,6 +67,8 @@ string  gSent;
 integer gBeat;
 integer gSaveT;
 integer gDebug;
+integer gWd;                        // core told: you are watched
+integer gScan2;                     // the scan asked twice
 
 // ---- names ---------------------------------------------------------------------------
 string sn(key k)
@@ -145,6 +147,11 @@ integer one()
 
 refresh()
 {
+    if ((gW != []) != gWd)
+    {
+        gWd = (gW != []);                                   // watched: core sends your camera as it moves
+        llMessageLinked(LINK_SET, CMD, "watched|" + (string)gWd, "");
+    }
     integer n = reach();
     string s = "on|" + (string)n + "|";
     if (gP == []) s = "alone|0|";
@@ -272,7 +279,7 @@ place()
     list L = llParseStringKeepNulls(gCam, ["|"], []);
     vector p = (vector)llList2String(L, 0);
     vector f = (vector)llList2String(L, 1);
-    float lag = (float)llList2String(L, 2);
+    float lag = llFabs((float)llList2String(L, 2));       // negative: their own camera, not a shot
     float df = (float)llList2String(L, 3);
     float my = llGetCameraFOV();
     if (df > 0.05 && my > 0.05)
@@ -313,11 +320,32 @@ dialog(string page, string args, list labels, list keys)
     llMessageLinked(LINK_SET, TXT, page + "|" + args, "sync");
 }
 
+// Settings › Friends (8.0.6: moved here from ui, which ran short of room): your friends join without being asked.
+// rm: the list to remove one from
+friends(integer rm)
+{
+    list F = llParseString2List(llLinksetDataReadProtected("cin.friends", PASS), [";"], []);
+    list n = [];
+    integer i;
+    for (i = 0; i < llGetListLength(F) && i < 11; i++) n += llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23);
+    string c = llList2String(["on", "off"], llLinksetDataReadProtected("cin.chime", PASS) == "0");
+    if (rm)
+    {
+        dialog("friends", "Tap a friend to remove.~" + c, n + ["‹ Back"], []);
+        gPage = "remove";
+        return;
+    }
+    string fl = "None yet.";
+    if (n != []) fl = llDumpList2String(n, ", ");
+    dialog("friends", fl + "~" + c, ["Add", "Remove", llList2String(["Chime", "● Chime"], c == "on"), "‹ Back"], []);
+}
+
 // the people near you who wear Take 12: asked, then listed 1.5 s later
 scan(string why)
 {
     gScan = why;
     gNear = [];
+    gScan2 = FALSE;
     gScanT = llGetTime();
     llRegionSay(SYNC_CH, "T12|8|who|" + VERSION + "|" + (string)LITE);
     llRegionSay(SYNC_CH, "T12|who|" + llKey2Name(gOwner));   // a 7.x Take 12 answers this: "(old)"
@@ -401,7 +429,26 @@ choose(string b)
     llListenRemove(gLh);
     gLh = 0;
     if (b == "Close" || i < 0) return;
-    if (p == "ask")
+    if (p == "friends")
+    {
+        if (b == "Add") scan("addfriend");
+        else if (b == "Remove") friends(TRUE);
+        else if (b == "‹ Back") llMessageLinked(LINK_SET, CMD, "menu|settings", "");
+        else
+        {
+            llLinksetDataWriteProtected("cin.chime", llList2String(["0", "1"], llLinksetDataReadProtected("cin.chime", PASS) == "0"), PASS);
+            friends(FALSE);
+        }
+    }
+    else if (p == "remove")
+    {
+        list F = llParseString2List(llLinksetDataReadProtected("cin.friends", PASS), [";"], []);
+        for (i = llGetListLength(F) - 1; i >= 0; i--)
+            if (llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23) == b) F = llDeleteSubList(F, i, i);
+        if (b != "‹ Back") llLinksetDataWriteProtected("cin.friends", llDumpList2String(F, ";"), PASS);
+        friends(FALSE);
+    }
+    else if (p == "ask")
     {
         key a = gAsk;
         gAsk = NULL_KEY;
@@ -445,7 +492,13 @@ tick()
 {
     float t = llGetTime();
     integer now = llGetUnixTime();
-    if (gScanT > 0.0 && t - gScanT > 1.5) listNear();
+    // asked twice, a second apart, and listed after 2.5 s (8.0.6: "Nobody near you" with a friend 2 m away)
+    if (gScanT > 0.0 && t - gScanT > 2.5) listNear();
+    else if (gScanT > 0.0 && !gScan2 && t - gScanT > 1.0)
+    {
+        gScan2 = TRUE;
+        llRegionSay(SYNC_CH, "T12|8|who|" + VERSION + "|" + (string)LITE);
+    }
     if (gLh && now - gDlgT > 60)
     {
         llListenRemove(gLh);
@@ -560,7 +613,7 @@ default
         else if (num == TXT_ANS && id == "sync" && gLh)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
-            if (llList2String(L, 0) == gPage) llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), gBtn, gChan);
+            if (llList2String(L, 0) == gPage || (gPage == "remove" && llList2String(L, 0) == "friends")) llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), gBtn, gChan);
         }
         else if (num == CMD)
         {
@@ -571,6 +624,7 @@ default
                 else connected();
             }
             else if (str == "connect|addfriend") scan("addfriend");
+            else if (str == "connect|friends") friends(FALSE);
             else if (str == "off" || str == "standby") leave();   // everything off (or an older copy stepping aside) ends it
             else if (str == "mine") mine(FALSE, FALSE);     // core starts a shot of yours: it sets the camera
             else if (llGetSubString(str, 0, 5) == "debug|") gDebug = (integer)llGetSubString(str, 6, -1);

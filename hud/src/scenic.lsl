@@ -13,7 +13,7 @@
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -24,6 +24,7 @@ integer RESUME     = 7305;
 integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;
+integer FOLLOW     = 7314;
 integer ACK        = 7313;
 integer OPTS       = 7340;
 integer OPT        = 7341;
@@ -68,11 +69,10 @@ integer gRetry;
 integer gCompany;                   // someone within 10 m (the sensor)
 // Drift
 integer gStage;
-vector  gA;                         // the leg: from, to (camera), and the focus beside you (relative)
-vector  gB;
-vector  gFa;
+vector  gB;                         // the first spot (camera), and the focus beside you (relative)
 vector  gFb;
-float   gLegT;
+float   gLegT;                      // this leg began
+float   gFolT;                      // the follow camera takes over at this
 float   gAz;
 
 string cfg(string k)
@@ -352,46 +352,22 @@ list roomShot(float dmax, integer relaxed)
         if (edge(wi + 1) < lim) lim = edge(wi + 1);
         if (lim > dmax) lim = dmax;
         float nov = novelty(az);
-        if (lim >= 2.5 && (relaxed || nov >= 0.3))
+        if (lim >= 1.2 && (relaxed || nov >= 0.3))
         {
-            float roll = llFrand(1.0);
+            // 8.0.6: the room from its edge: the camera just in from the wall (a corner if the walls either side are
+            // near too), at eye height, level, looking back across the room past you, so most of it is in the picture
+            // (high views tilted down and views of a near wall showed too little of a small room)
             integer type = 11;
-            if (!relaxed && roll < 0.4) type = 10;
-            else if (!relaxed && roll >= 0.75 && lim >= 5.0) type = 12;
-            float d = 2.5 + llFrand(lim - 2.5);
-            float z = gFloorZ + 1.5 + llFrand(0.4);
-            if (type == 10)
-            {
-                d = lim * (0.6 + 0.4 * llFrand(1.0));
-                z = gCapZ - 0.2;
-                if (z < gFloorZ + 2.2) type = 11;
-            }
-            else if (type == 12)
-            {
-                d = lim * (0.75 + 0.25 * llFrand(1.0));
-                z = gFloorZ + 1.8 + llFrand(0.6);
-            }
+            float d = lim;
+            if (relaxed && d > 3.5) d = 3.5;                    // Drift's first cut: closer
+            float z = gFloorZ + 1.5 + llFrand(0.2);
             if (z > gCapZ) z = gCapZ;
             vector c = <gOP.x, gOP.y, z> + dirOf(az) * d;
-            vector foc;
-            if (type == 10)
-            {
-                vector T = O + <llFrand(4.0) - 2.0, llFrand(4.0) - 2.0, -0.2>;
-                vector hv = T - c;
-                hv.z = 0.0;
-                float pitch = clampf(llAtan2(c.z - T.z, llVecMag(hv)), 0.21, 0.61);
-                foc = c + llVecNorm(hv) * 10.0;
-                foc.z = c.z - 10.0 * llTan(pitch);
-            }
-            else if (type == 12) foc = O + <0.0, 0.0, 0.2>;
-            else
-            {
-                foc = c + dirOf(az + PI + (llFrand(1.4) - 0.7)) * 10.0;
-                foc.z = c.z - 0.5;
-            }
-            float need = d + 1.0;
+            vector foc = c + dirOf(az + PI + (llFrand(0.5) - 0.25)) * 10.0;
+            foc.z = c.z - 0.5;                                  // about 3° down: level
+            if (edge(wi + 7) < 1.5 || edge(wi + 2) < 1.5) nov += 0.3;   // a corner sees two walls: more of the room
+            float need = d + 1.0;                               // at least across to you and past
             if (need > 6.0) need = 6.0;
-            if (type == 12) need = llVecDist(c, foc) - 1.0;
             if (c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0)
             {
                 float dEc = llVecDist(E, c);
@@ -534,60 +510,8 @@ still()
     gNextT = llGetTime() + HOLD * (0.8 + 0.4 * llFrand(1.0));
 }
 
-// Drift: the next leg's spot, a slow orbit round you at the stage's distance ([] none)
-list leg(float d)
-{
-    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
-    integer k;
-    for (k = 0; k < 6; k++)
-    {
-        float az = gAz + (0.45 + llFrand(0.4)) * (1 - 2 * (k % 2));    // 25 to 50° on, either way
-        float dd = d * (0.85 + 0.3 * llFrand(1.0));
-        if (gLocal)
-        {
-            integer wi = (integer)(az / 0.785398);
-            float lim = edge(wi);
-            if (edge(wi + 1) < lim) lim = edge(wi + 1);
-            if (dd > lim) dd = lim;
-        }
-        if (dd >= 1.8)
-        {
-            vector c = <gOP.x, gOP.y, gFloorZ + 1.9 + 0.12 * dd> + dirOf(az) * dd;
-            if (gLocal && c.z > gCapZ) c.z = gCapZ;
-            integer ok;
-            if (gLocal) ok = (floorOK(c) && llList2Integer(ray(E, c), 0) == 0);
-            else ok = outOK(c, E);
-            if (ok && llList2Integer(ray(gA, c), 0) == 0)          // and the way there is clear
-            {
-                gAz = az;
-                vector side = dirOf(az + PI_BY_TWO) * (0.18 * dd);
-                return [c, <0.0, 0.0, -0.4> + side];
-            }
-        }
-    }
-    return [];
-}
-
-nextLeg()
-{
-    if (!here()) return;
-    list D = DRIFT_D;
-    if (gLocal || gCompany) D = NEAR_D;
-    gStage = (gStage + 1) % llGetListLength(D);
-    gA = gB;
-    gFa = gFb;
-    list n = leg(llList2Float(D, gStage));
-    if (n == [])
-    {
-        gLegT = llGetTime();                                // nowhere to go: hold here this leg
-        return;
-    }
-    gB = llList2Vector(n, 0);
-    gFb = llList2Vector(n, 1);
-    gLegT = llGetTime();
-}
-
-// Drift starts close: a cut to the first spot, then it moves
+// Drift starts close: a cut to the first spot, then the viewer's own follow camera takes it from there (8.0.6: Drift
+// moved a locked camera every 0.5 s, and Second Life does not ease a locked camera: it jumped twice a second)
 drift()
 {
     if (!here()) return;
@@ -600,26 +524,44 @@ drift()
     gB = llList2Vector(s, 0);
     gFb = llList2Vector(s, 1) - <gOP.x, gOP.y, gFloorZ + 1.6>;
     gAz = llList2Float(s, 3);
-    gA = gB;
-    gFa = gFb;
     gLegT = llGetTime();
+    gFolT = gLegT + 1.0;
     llMessageLinked(LINK_SET, SHOT, (string)gB + "|" + (string)(<gOP.x, gOP.y, gFloorZ + 1.6> + gFb) + "|cut", "");
 }
 
-// a step of the leg: eased from A to B over LEG seconds, looking at you
+// a Drift leg: out to (or in to) this distance, on the side the camera is on, short of any wall. The viewer eases it
+// every frame (a 2.5 s lag) and brings it along when you walk; behindness 180: it never swings round behind you
+dolly(float d)
+{
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    vector v = dirOf(gAz);
+    if (llGetPermissions() & PERMISSION_TRACK_CAMERA) v = llGetCameraPos() - E;
+    v.z = 0.0;
+    if (llVecMag(v) < 0.2) v = dirOf(gAz);
+    v = llVecNorm(v);
+    list r = ray(E, E + v * (d + 0.5));
+    if (llList2Integer(r, 0) == 1) d = llList2Float(r, 1) - 0.5;
+    if (d < 1.8) d = 1.8;
+    float p = llAtan2(0.3 + 0.12 * d, d) * RAD_TO_DEG;
+    llMessageLinked(LINK_SET, FOLLOW, (string)d + "|" + (string)p + "|<0.0, 0.0, 0.2>|0.0|2.5|1.0|180", "");
+}
+
+// Drift's clock: the follow camera a second after the first cut, then a new distance every leg
 step()
 {
-    float s = (llGetTime() - gLegT) / LEG;
-    if (s >= 1.0)
+    float t = llGetTime();
+    if (gFolT > 0.0 && t >= gFolT)
     {
-        nextLeg();
+        gFolT = 0.0;
+        dolly(llVecDist(gB, <gOP.x, gOP.y, gFloorZ + 1.6>));
         return;
     }
-    s = s * s * (3.0 - 2.0 * s);
-    vector O = llList2Vector(llGetObjectDetails(gOwner, [OBJECT_POS]), 0);
-    vector c = gA + (gB - gA) * s;
-    vector f = <O.x, O.y, gFloorZ + 1.6> + gFa + (gFb - gFa) * s;
-    llMessageLinked(LINK_SET, GLIDE, (string)c + "|" + (string)f + "|1.0", "");
+    if (gFolT > 0.0 || t - gLegT < LEG || !here()) return;
+    gLegT = t;
+    list D = DRIFT_D;
+    if (gLocal || gCompany) D = NEAR_D;
+    gStage = (gStage + 1) % llGetListLength(D);
+    dolly(llList2Float(D, gStage));
 }
 
 begin()
@@ -638,6 +580,7 @@ default
     {
         gOwner = llGetOwner();
         gBand = (integer)cfg("scn");
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);   // where the camera is (Drift)
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
     }
 

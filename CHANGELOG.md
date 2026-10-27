@@ -1,5 +1,28 @@
 # Changelog
 
+## 8.0.6 (tests with a friend: Connect shows her view; Drift smooth; Snappy Tracking)
+From the user's list of reports, confirmed with them before any change:
+- **Connect: you see exactly what she sees.** Only Take 12's own shots used to go out: her Alt-click framing, her
+  own camera or an idle Drift left you on an old frame. Now her real camera goes out, four times a second while you
+  watch (mouselook never). A watch lasts through 6 s of silence (3 s dropped it on a slow sim), and the "with you"
+  note says to tap the rings. The [12]'s dot is bigger.
+- **Settings › Friends › Add:** the nearby scan asks twice and waits 2.5 s ("Nobody near you" with a friend 2 m
+  away). The Friends pages moved into sync, which handles Connect, so ui has room for the new settings.
+- **Drift is smooth:** after its first cut it is the viewer's own follow camera, like Tracking, and it eases in and
+  out every 15 s. Before, it moved a locked camera twice a second, which Second Life doesn't ease.
+- **Room shows the room:** from just in from a wall (a corner when there is one), at eye height, level, looking
+  across. No more high, tilted-down views.
+- **Settings › Tracking: Smooth · Snappy.** Snappy stays right behind you and follows every turn, for anyone who
+  finds the steadicam lag hard to walk with.
+- **The setup asks "Is the whole strip in view?"** (Yes · Lower it), for viewers whose bars cover the top. Once it
+  has been started or put off, it never starts again when you wear the HUD.
+- **The [12] is smaller** (ring 41 px), so it sits inside the 48 px band.
+- **Tips:** the outline round PORTRAIT or FIXED now explains itself the first times, FORGET SEAT and LET GO
+  explain themselves when you sit, and after an Alt-click framing a tip says Esc gives the camera back.
+- **Portrait Us:** with a wall on the camera's side, it tries the other side of the two of you first. A wall
+  without physics stays invisible to every script.
+- Version 8.0.6 in all twelve scripts (the free build: nine).
+
 ## 8.0.5 (Portrait reads your lens; notes you can read)
 From the second in-world session, with screenshots ("the HUD is placed perfectly"):
 - **Fixed: Portrait framed for the wrong lens.** It never asked for the permission Second Life needs before it reports

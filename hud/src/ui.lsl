@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -186,7 +186,7 @@ open(string p)
 {
     if (p == "settings")
     {
-        list b = ["Lens", "Eye line", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        list b = ["Lens", "Eye line", "Tracking", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
         if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
         page(p, "", b);
     }
@@ -229,23 +229,8 @@ open(string p)
     }
     else if (p == "friends")
     {
-        list F = llParseString2List(cfg("friends"), [";"], []);
-        list n = [];
-        integer i;
-        for (i = 0; i < llGetListLength(F); i++) n += llList2String(llParseString2List(llList2String(F, i), [","], []), 1);
-        string c = cfg("chime");
-        string fl = "None yet.";
-        if (n != []) fl = llDumpList2String(n, ", ");
-        page(p, fl + "~" + llList2String(["on", "off"], c == "0"), ["Add", "Remove", mark("Chime", c != "0"), "‹ Back"]);
-    }
-    else if (p == "remove")
-    {
-        list F = llParseString2List(cfg("friends"), [";"], []);
-        list b = [];
-        integer i;
-        for (i = 0; i < llGetListLength(F) && i < 11; i++) b += llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23);
-        page("friends", "Tap a friend to remove.~" + llList2String(["on", "off"], cfg("chime") == "0"), b + ["‹ Back"]);
-        gPage = "remove";
+        closeMenu();                                        // Settings › Friends is sync's (8.0.6: room in this script)
+        llMessageLinked(LINK_SET, CMD, "connect|friends", "");
     }
     else if (p == "look")
     {
@@ -269,6 +254,12 @@ open(string p)
     else if (p == "help") page(p, "", ["Guide", "Tips again", "‹ Back"]);
     else if (p == "first") page(p, "", ["Start", "Later"]);
     else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
+    else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
+    else if (p == "feel")
+    {
+        integer sn = (cfg("feel") == "snappy");             // Tracking's feel (8.0.6): smooth, or snappy to steer by
+        page(p, llList2String(["Smooth", "Snappy"], sn), [mark("Smooth", !sn), mark("Snappy", sn), "‹ Back"]);
+    }
     else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
     else if (p == "tour3") page(p, "", ["Done"]);
     else menu();
@@ -276,10 +267,9 @@ open(string p)
 
 string up(string p)
 {
-    if (llListFindList(["lens", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
+    if (llListFindList(["lens", "feel", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
     if (p == "shape") return "shapes";
     if (p == "place") return "look";
-    if (p == "remove") return "friends";
     if (p == "everything") return "reset";
     return "main";
 }
@@ -299,8 +289,8 @@ choose(string m)
     else if (gPage == "settings")
     {
         if (b == "Eye line") { closeMenu(); eyeStart(); }
-        else open(llList2String(["lens", "shapes", "vehicles", "idle", "friends", "look", "reset"],
-            llListFindList(["Lens", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
+        else open(llList2String(["lens", "feel", "shapes", "vehicles", "idle", "friends", "look", "reset"],
+            llListFindList(["Lens", "Tracking", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
     }
     else if (gPage == "lens")
     {
@@ -343,25 +333,6 @@ choose(string m)
         set("veh", llDumpList2String(V, ";"));
         open("vehicles");
     }
-    else if (gPage == "friends")
-    {
-        if (b == "Add") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect|addfriend", ""); }
-        else if (b == "Remove") open("remove");
-        else if (b == "Chime")
-        {
-            set("chime", llList2String(["0", "1"], cfg("chime") == "0"));
-            open("friends");
-        }
-    }
-    else if (gPage == "remove")
-    {
-        list F = llParseString2List(cfg("friends"), [";"], []);
-        integer i;
-        for (i = llGetListLength(F) - 1; i >= 0; i--)
-            if (llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23) == b) F = llDeleteSubList(F, i, i);
-        set("friends", llDumpList2String(F, ";"));
-        open("friends");
-    }
     else if (gPage == "look")
     {
         if (b == "Place") { open("place"); return; }
@@ -402,6 +373,7 @@ choose(string m)
     }
     else if (gPage == "first")
     {
+        llLinksetDataWriteProtected("cin.firstrun", "done", PASS);   // asked once: a re-wear never starts it again (8.0.6)
         if (b == "Start") { gFirst = "lens"; open("lens"); }
         else { closeMenu(); gFirst = "later"; }
     }
@@ -412,8 +384,20 @@ choose(string m)
         if (b == "Smaller" && i > 0) i--;
         if (b == "Larger" && i < 2) i++;
         set("size", llList2String(["s", "m", "l"], i));
-        if (b == "Good") open("tour1");
+        if (b == "Good") open("inview");
         else open("size");
+    }
+    else if (gPage == "feel")
+    {
+        set("feel", llToLower(b));
+        open("feel");
+    }
+    else if (gPage == "inview")
+    {
+        // taller viewer bars (favourites, navigation) can cover the strip: lower it a step (8.0.6)
+        if (b == "Lower it") set("place", llList2String(["topl", "topl", "topl", "both", "both"], llListFindList(["top", "topl", "bot", "both"], [cfg("place")]) + 1));
+        if (b == "Yes") open("tour1");
+        else open("inview");
     }
     else if (gPage == "tour1") { if (b == "Skip") done(); else open("tour2"); }
     else if (gPage == "tour2") { if (b == "Skip") done(); else open("tour3"); }
@@ -670,7 +654,7 @@ default
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
             string p = llList2String(L, 0);
-            if (gListen && (p == gPage || llSubStringIndex(gPage, p + ":") == 0 || (p == "friends" && gPage == "remove")))
+            if (gListen && (p == gPage || llSubStringIndex(gPage, p + ":") == 0))
                 llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), order(gBtn), gChan);
         }
         else if (num == UI_STATE)
@@ -687,6 +671,7 @@ default
         }
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
         else if (num == CMD && str == "eyequit" && gEye) eyeEnd(FALSE);   // you walked off: skipped, the old line kept
+        else if (num == CMD && str == "menu|settings") open("settings");   // back from sync's Friends page
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
         else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
         else if (num == MSG_VER && str != "?")

@@ -15,7 +15,7 @@
 //  A view: "<cam>|<focus>|<where you were>|<your facing°>|<lens>" (a seat's in the furniture's frame).
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -666,9 +666,9 @@ default
             show("cut");
         }
         else if (num == OPT) option(llList2String(llParseStringKeepNulls(str, ["|"], []), 1));
-        else if (num == CAMSET && str != "-")
+        else if (num == CAMSET && str != "-" && llGetSubString(llList2String(llParseString2List(str, ["|"], []), 2), 0, 0) != "-")
         {
-            list L = llParseString2List(str, ["|"], []);
+            list L = llParseString2List(str, ["|"], []);       // a shot on screen (not your own camera: a negative lag)
             gCam = (vector)llList2String(L, 0);
             gFoc = (vector)llList2String(L, 1);
             gFov = (float)llList2String(L, 3);
