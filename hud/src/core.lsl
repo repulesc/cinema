@@ -13,7 +13,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -79,6 +79,7 @@ rotation gCamRot;
 integer gBlend;
 integer gFb;
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
+integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
 float   gEyeT;                      // ... since
 
 string cfg(string k)
@@ -98,11 +99,20 @@ vector ownerPos()
     return llList2Vector(d, 0);
 }
 
+// what your watchers see: exactly what you see (8.0.6: only Take 12's own shots went out, so an Alt-click framing, your
+// own camera or a held shot left them on an old frame). Never mouselook, never while you watch someone, never off.
 share()
 {
-    if (gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR)
+    if (gState == "off" || gState == "watch" || (llGetAgentInfo(gOwner) & AGENT_MOUSELOOK))
+        llMessageLinked(LINK_SET, CAMSET, "-", "");
+    else if (gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR)
         llMessageLinked(LINK_SET, CAMSET, (string)gShotPos + "|" + (string)gShotFoc + "|0|" + (string)llGetCameraFOV(), "");
-    else llMessageLinked(LINK_SET, CAMSET, "-", "");
+    else if (gPermOK)
+    {
+        vector cp = llGetCameraPos();
+        // a negative lag marks a camera that is not a shot (fixed keeps only shots); sync sends it on as 0.25 s
+        llMessageLinked(LINK_SET, CAMSET, (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|-0.25|" + (string)llGetCameraFOV(), "");
+    }
 }
 
 // ---- the camera ----------------------------------------------------------------------
@@ -162,7 +172,9 @@ follow(string s)
     gFollowS = s;
     gFree = FALSE;
     if (!worn()) return;
-    if (!gFollow) llClearCameraParams();
+    float beh = 10.0;                                   // how far round you it may be (Scenic's Drift: 180, anywhere, 8.0.6)
+    if (llGetListLength(L) > 6) beh = (float)llList2String(L, 6);
+    if (!gFollow && beh < 90.0) llClearCameraParams();   // Drift eases on from where its first cut put the camera
     gFollow = TRUE;
     if (llList2String(L, 0) == "lock")
     {
@@ -173,13 +185,14 @@ follow(string s)
     {
         llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION_LOCKED, FALSE, CAMERA_FOCUS_LOCKED, FALSE,
             CAMERA_DISTANCE, (float)llList2String(L, 0), CAMERA_PITCH, (float)llList2String(L, 1),
-            CAMERA_FOCUS_OFFSET, (vector)llList2String(L, 2), CAMERA_BEHINDNESS_ANGLE, 10.0,
+            CAMERA_FOCUS_OFFSET, (vector)llList2String(L, 2), CAMERA_BEHINDNESS_ANGLE, beh,
             CAMERA_BEHINDNESS_LAG, (float)llList2String(L, 3), CAMERA_POSITION_LAG, (float)llList2String(L, 4),
             CAMERA_FOCUS_LAG, (float)llList2String(L, 5), CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
     }
     gShotPos = ZERO_VECTOR;
     gApplyT = llGetTime();
     gSettle = GRACE + 1.0;
+    share();                                            // filming: friends can watch (the camera goes out once watched)
 }
 
 // a basic shot when the shot's script is silent: a level portrait of you, at eye height
@@ -273,7 +286,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     share();
     ui("");
-    llSetTimerEvent(1.0);
+    llSetTimerEvent(1.0 - 0.75 * gWatched);
 }
 
 // your camera for now (flying, mouselook, a marked vehicle); the shot comes back as it was
@@ -378,6 +391,12 @@ tick()
         gClrT = 0.0;
         if (gState == "film" && gShotPos == ZERO_VECTOR && !gFollow) clearCam();   // nothing new yet: the old frame goes
     }
+    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out 4 times a second
+    if (gWatched && t - gCamT > 0.25 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
+    {
+        gCamT = t;
+        share();
+    }
     idleCheck(now, info);
     if (gState == "wait" || gState == "off" || gState == "watch") return;
     // flying and mouselook: your camera until it ends
@@ -423,12 +442,6 @@ tick()
         basicShot();
     }
     if (gState == "film") heldCheck(t);
-    if (gState == "film" && gFollow && t - gCamT > 0.5)
-    {
-        gCamT = t;                                         // tracking: the viewer's camera, shared as it moves
-        vector cp = llGetCameraPos();
-        llMessageLinked(LINK_SET, CAMSET, (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|0.3|" + (string)fv, "");
-    }
 }
 
 // you took the camera (Alt-click, orbit): the shot is held, the lit word dims. Not while you frame in Fixed.
@@ -447,7 +460,7 @@ heldCheck(float t)
         vector F = llRot2Fwd(llList2Rot(d, 1));
         float D = (float)llList2String(L, 0);
         vector v = cp - P;
-        off = (llVecMag(v) > D * 1.8 + 1.5 || (v * F) > 0.5 * D + 0.5);   // far off, or in front of you
+        off = (llVecMag(v) > D * 1.8 + 1.5 || ((v * F) > 0.5 * D + 0.5 && (float)llList2String(L, 6) < 90.0));   // far off, or in front of you (not Drift)
     }
     else if (gShotPos != ZERO_VECTOR)
     {
@@ -684,6 +697,12 @@ default
                 else bail("watch");
             }
             else if (c == "hint") ui(a);
+            else if (c == "watched")
+            {
+                gWatched = (integer)a;
+                if (gWatched) llSetTimerEvent(0.25);
+                share();
+            }
             else if (c == "eyecam" && a != "off" && gPermOK)
             {
                 if (!gEyeOn && (gState == "film" || gState == "held")) llMessageLinked(LINK_SET, PAUSE, "eye", "");

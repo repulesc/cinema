@@ -11,7 +11,10 @@ while Tracking walks into the next region, and the setup leaves the strip open.
 And the second session (8.0.5): Portrait framed every picture for a 60° lens (it never asked for the permission that
 reads your zoom: at 38 mm the camera stood 1.8 times too close, the head out of the top), an eye line above 1.0 (a mesh
 body, hover height) was thrown away, notes sat right under the [12] and went in 3 s, the eye line's instruction went
-before you could read it, Room stayed dim after walking into a room, and the strip started hidden on every wear."""
+before you could read it, Room stayed dim after walking into a room, and the strip started hidden on every wear.
+And the tests with a friend (8.0.6): Room composes from the room's edge, level; the outline hint explains itself; the
+[12] sits inside the band; Settings › Friends works (now sync's); Settings › Tracking › Snappy; the setup asks whether
+the strip is in view; once asked, the setup never starts again on a re-wear."""
 from emu_util import *
 
 w = World()
@@ -65,6 +68,7 @@ free("walking")
 check(lsd(h, "eye") == eye0, "walking: the old eye line is kept")
 check(ana.labels() == ["Smaller", "Good", "Larger"], "walking: the setup goes on to the size: %r" % ana.labels())
 ana.click("Good"); w.run(0.5)
+ana.click("Yes"); w.run(0.5)
 for p in ("Next ›", "Next ›", "Done"): ana.click(p); w.run(0.5)
 check(lsd(h, "firstrun") == "done", "the setup is done")
 
@@ -244,4 +248,55 @@ check(var(h, "scenic", "gLocal") == 1, "9 m on, inside the room: indoors")
 st = dict(zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")))
 check(st.get("ROOM") != "dim", "ROOM is no longer dim (%r)" % st)
 no_errors(w, "room")
+
+# ==== 8.0.6 =========================================================================================================
+# ---- Room: from the room's edge, level, across ---------------------------------------------------------------------------
+w = World()
+w.boxes += room(120, 120, 20.0, 125, 124, 3.0)                       # a 5 x 4 m room
+ana, h = hud(w, pos=(122.5, 122, 21))
+ana.double_tap(); w.run(1)
+ana.touch("t12 s3"); w.run(4)
+ana.touch(opt_part(h, "ROOM")); w.run(3)
+for i in range(4):
+    c, f = h.cam["pos"], h.cam["focus"]
+    wall = min(c[0] - 120, 125 - c[0], c[1] - 120, 124 - c[1])
+    tilt = math.degrees(math.atan2(c[2] - f[2], math.hypot(f[0] - c[0], f[1] - c[1])))
+    check(wall < 1.3, "Room shot %d: the camera by a wall (%.2f m from it)" % (i, wall))
+    check(abs(tilt) <= 6.0, "Room shot %d: level (%.1f°)" % (i, tilt))
+    ana.touch("t12 s3"); w.run(3)                                    # the lit tap: the next view
+no_errors(w, "room shots")
+
+# ---- the [12] inside the band; the hint explains itself; Friends; Snappy -------------------------------------------------
+w = World()
+ana, h = hud(w)
+ana.double_tap(); w.run(1)
+ring, band = rect(h, ana, "t12 ring"), rect(h, ana, "t12 band")
+check(ring[3] < band[3] - 4 / 1080.0, "the [12]'s ring inside the band (%.0f px in %.0f px)" % (ring[3] * 1080, band[3] * 1080))
+ana.touch("t12 s0"); w.run(9)
+check(any("Portrait is ready" in n for n in ana.notes()), "the outline on PORTRAIT says why: %r" % ana.notes()[-3:])
+ana.dialog = None
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Friends"); w.run(1)
+check(ana.labels()[:2] == ["Add", "Remove"] and "Chime" in " ".join(ana.labels()), "Settings › Friends: %r" % ana.labels())
+ana.click("‹ Back"); w.run(1)
+check("Tracking" in ana.labels(), "Back: Settings again (%r)" % ana.labels())
+ana.click("Tracking"); w.run(0.5)
+check(ana.labels() == ["● Smooth", "Snappy", "‹ Back"], "Settings › Tracking: %r" % ana.labels())
+ana.click("Snappy"); w.run(1)
+ana.click("‹ Back"); w.run(0.5); ana.click("‹ Back"); w.run(0.5); ana.click("Close"); w.run(0.5)
+ana.touch("t12 s0"); w.run(1); ana.touch("t12 s0"); w.run(3)
+check(h.cam.get("plag", 1) <= 0.1 and h.cam.get("blag", 1) <= 0.1, "Snappy: Tracking right behind you (lags %r, %r)" % (h.cam.get("plag"), h.cam.get("blag")))
+no_errors(w, "look, hint, friends, snappy")
+
+# ---- the setup: asked once, never again on a re-wear -----------------------------------------------------------------------
+w = World()
+ana = w.avatar("Ana", (128, 128, 21))
+h = ana.wear(HUD_SCRIPTS)
+w.run(5)
+ana.tap(); w.run(0.6); ana.click("Start"); w.run(0.5)
+ana.dialog = None                                                    # the dialog closed half way (Ignore)
+ana.take_off(h); w.run(1)
+t = w.t
+ana.huds.append(h); h.attach(); w.run(6)
+check(not any("set up" in n for n in ana.notes(t)), "worn again after a setup begun: no setup again (%r)" % ana.notes(t))
+no_errors(w, "setup once")
 done("inworld_emu")

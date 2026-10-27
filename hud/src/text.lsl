@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -27,12 +27,12 @@ float   SHOW    = 4.0;            // s  a note stays this long, and 1 s more for
 // notes: id, important (1: also in chat; 2: only in chat; 3: stays until the next note or "clear"), the words (%: the argument)
 list NOTES = [
     "setup", 1, "Tap the [12] to set up.",
-    "frameit", 0, "Frame it, Take 12 keeps it.",
+    "frameit", 0, "Frame it with Alt-click, Take 12 keeps it. Esc gives the camera back.",
     "kept", 0, "Kept.",
     "forgot", 0, "Seat forgotten. UNDO brings it back.",
     "letgo", 0, "Take 12 lets go on this vehicle.",
     "takeback", 0, "Take 12 films here again.",
-    "with", 0, "% is with you.",
+    "with", 0, "% is with you. Tap the rings to watch their film.",
     "watching", 0, "% is watching your film.",
     "theirs", 0, "You're watching %'s film.",
     "mine", 0, "Your own film again.",
@@ -70,12 +70,15 @@ list TIPS = [
     "ME", "Us adds the people near you.",
     "SHOULDER", "Three ways to follow you.",
     "L", "The side of the picture you walk on.",
-    "VIEW A", "Two kept views for this place.",
-    "FORGET SEAT", "Forget this seat's view.",
-    "kept", "Kept. Alt-click away and KEEP NEW replaces it.",
+    "VIEW A", "Two kept views for this place. After an Alt-click, Esc gives the camera back to see them.",
+    "FORGET SEAT", "Forget this seat's view: frame it again.",
+    "kept", "Kept. Press Esc to give the camera back to Take 12.",
+    "hintportrait", "Standing still: Portrait is ready. Tap it for a standing shot.",
+    "hintfixed", "Sitting: Fixed has a view for this seat. Tap it.",
+    "seated", "FORGET SEAT: frame this seat again. LET GO: your viewer's camera whenever you sit here (boats, cars).",
     "flying", "Flying: your own camera until you land.",
     "snapshot", "The bars are on your screen, not in snapshots: set the snapshot size to your shape.",
-    "LET GO", "Take 12 lets go every time you sit on this vehicle.",
+    "LET GO", "Your viewer's camera every time you sit here. TAKE BACK undoes it.",
     "DRIFT", "How far the views go.",
     "shape", "The bars on or off. Each shot's shape: Settings.",
     "link", "Share films with people near you."
@@ -191,6 +194,7 @@ string body(string page, list a)
         return t + "\nTip: " + llList2String(HINTS, gHint);
     }
     if (page == "settings") return "Settings";
+    if (page == "feel") return "Tracking\nSmooth: eases into your turns, like a steadicam.\nSnappy: stays right behind you, easy to steer by.\nNow: " + a0;
     if (page == "lens") return "Lens\nNow: " + a0 + " mm. Cinema lens: " + a1 + " mm.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
     if (page == "shapes") return "Shapes & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3 + " · Bars: " + llList2String(a, 4);
@@ -216,6 +220,7 @@ string body(string page, list a)
     if (page == "connected") return "Connected\n" + a0 + "\nTap a name to watch their film.";
     if (page == "ask") return a0 + " wants to share films.";
     if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
+    if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Look › Place later.";
     if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
     if (page == "tour1") return "The strip\nDouble-tap the [12]: the four shots and their options. Tap a shot to start it.";
     if (page == "tour2") return "Connect\nThe linked rings share films with people near you.";

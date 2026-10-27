@@ -14,7 +14,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -546,6 +546,7 @@ default
             string h = llList2String(L, 2);
             if (h != "")
             {
+                if (h != gHint) llMessageLinked(LINK_SET, TIP, "hint" + h, "");   // what the outline means (8.0.6)
                 gHint = h;
                 gHintT = llGetTime();
             }
@@ -564,6 +565,7 @@ default
             gOpts = llParseStringKeepNulls(llList2String(L, 1), [","], []);
             gOptSt = llParseStringKeepNulls(llList2String(L, 2), [","], []);
             if (llList2String(L, 1) == "") gOpts = [];
+            if (llListFindList(gOpts, ["LET GO"]) >= 0) llMessageLinked(LINK_SET, TIP, "seated", "");   // the seat's two words
             layout();
         }
         else if (num == LINKST)

@@ -47,12 +47,14 @@ no_errors(w, "near")
 ana.touch(opt_part(h, "DRIFT")); w.run(1.5)
 first = cams(h, w.t - 1.5)[0][1]
 check(B.llVecDist(first, ana.pos) < 7, "Drift starts close (%.1f m)" % B.llVecDist(first, ana.pos))
-t0 = w.t
-w.run(90)
-C = cams(h, t0)
-check(len(C) > 100, "Drift moves continuously (%d steps)" % len(C))
-for t, p, f in C[::10]: ok_cam(w, ana, p, "Drift")
-far = max(B.llVecDist(p, ana.pos) for t, p, f in C)
+# 8.0.6: the viewer's follow camera does the moving (eased every frame), on the side the first cut chose
+C = []
+for i in range(90):
+    w.run(1)
+    C.append(ana.camera()[0])
+check(h.cam.get("distance") and h.cam.get("bangle") == 180 and not h.cam.get("plock"), "Drift: the viewer's follow camera, free to stay on its side")
+for p in C[::10]: ok_cam(w, ana, p, "Drift")
+far = max(B.llVecDist(p, ana.pos) for p in C)
 check(far > 12, "alone: Drift pulls out (%.1f m)" % far)
 ben = w.avatar("Ben", (132, 130, 21))
 w.run(20)

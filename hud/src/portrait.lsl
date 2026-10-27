@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -289,6 +289,12 @@ list two(vector P, vector F)
     float az = llAtan2(N.y, N.x) + gSide * tw;
     vector E = <M.x, M.y, eyes>;
     float r = room(E, E + dirOf(az) * D);
+    if (r < 0.8 * D)
+    {
+        // a wall on this side: the other side of the pair, if it has more room (8.0.6: it moved in, even through it)
+        float r2 = room(E, E - dirOf(az) * D);
+        if (r2 > r + 0.5) { az += PI; r = r2; }
+    }
     float Dc = D;
     if (r < D) Dc = r;
     if (Dc < DMIN) Dc = DMIN;

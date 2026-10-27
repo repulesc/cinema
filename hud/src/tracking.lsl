@@ -13,7 +13,7 @@
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -118,8 +118,10 @@ send(integer force)
     float side = llList2Float(SIDE, gLook) * s * (2 * gRight - 1);
     vector off = <0.0, side, (eyeFrac() - 0.5 + llList2Float(HIGH, gLook)) * 1.8 * s>;
     float bl = llList2Float(BLAG, gLook) + 0.3 * gRun;
+    string lags = "|0.5|0.25";
+    if (cfg("feel") == "snappy") { bl = 0.0; lags = "|0.05|0.05"; }   // Settings › Tracking: right behind you, easy to steer (8.0.6)
     llMessageLinked(LINK_SET, FOLLOW, (string)D + "|" + (string)llList2Float(PITCH, gLook) + "|" + (string)off + "|"
-        + (string)bl + "|0.5|0.25", "");
+        + (string)bl + lags, "");
 }
 
 // a small closed room: under about 4 x 4 m with a ceiling. Then the best corner: [corner] or []
@@ -274,7 +276,7 @@ default
             gMode = "";
             send(TRUE);
         }
-        else if (num == CFG_CHANGED && (str == "eye" || str == "all")) send(TRUE);
+        else if (num == CFG_CHANGED && (str == "eye" || str == "feel" || str == "all")) send(TRUE);
     }
 
     timer()

@@ -28,7 +28,7 @@ check(opts(h)[0] == "portrait" and lit(h) == ["MEDIUM", "ME"], "Portrait: Medium
 check(h.cam.get("plock") and h.cam.get("flock"), "Portrait is a locked shot")
 ana.touch("t12 s2"); w.run(3)
 check(opts(h)[0] == "fixed" and [x[0] for x in opts(h)[1]] == ["VIEW A", "VIEW B"] and lit(h) == ["VIEW A"], "Fixed standing: View A · View B: %r" % (opts(h),))
-check(var(h, "core", "gFree") == 1 and "Frame it, Take 12 keeps it." in ana.notes(), "Fixed with nothing kept: your camera and the note")
+check(var(h, "core", "gFree") == 1 and any(n.startswith("Frame it with Alt-click") for n in ana.notes()), "Fixed with nothing kept: your camera and the note")
 ana.touch("t12 s3"); w.run(3)
 check(opts(h)[0] == "scenic" and lit(h) == ["DRIFT"], "Scenic: Drift first: %r" % (opts(h),))
 check(dict(opts(h)[1]).get("ROOM") == "dim", "outdoors ROOM is dim")

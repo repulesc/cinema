@@ -24,7 +24,7 @@ ana.double_tap(); w.run(1)
 # ---- nothing kept: frame it ----------------------------------------------------------------------------------------------
 ana.touch("t12 s2"); w.run(2.5)
 check(var(h, "core", "gFree") == 1 and not h.cam.get("active"), "nothing kept: your own camera")
-check("Frame it, Take 12 keeps it." in ana.notes(), "the note says so")
+check(any(n.startswith("Frame it with Alt-click") for n in ana.notes()), "the note says so")
 check(not place_key(h), "nothing kept until you frame it")
 A = vec(143, 126, 22)
 frame_it(ana, w, A)

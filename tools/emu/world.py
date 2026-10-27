@@ -234,6 +234,9 @@ class Avatar:
             if "distance" in c:
                 foc = B.add(s.pos, _rotv(c.get("offset", ZV), s.rot))
                 p = math.radians(c.get("pitch", 0.0))
+                if "freeaz" in c:
+                    a = c["freeaz"]
+                    return B.add(foc, vec(math.cos(a) * math.cos(p) * c["distance"], math.sin(a) * math.cos(p) * c["distance"], math.sin(p) * c["distance"])), foc, True
                 back = _rotv(vec(-math.cos(p) * c["distance"], 0.0, math.sin(p) * c["distance"]), s.rot)
                 return B.add(foc, back), foc, True
         if s.own_cam: return s.own_cam[0], s.own_cam[1], False
@@ -533,8 +536,13 @@ class Obj:
     def llSetCameraParams(s, sc, rules):
         if not sc.perms & C["PERMISSION_CONTROL_CAMERA"]: return
         names = {C[k]: v for k, v in s._CAM.items()}
+        prev = s.owner.camera()[0]
         for i in range(0, len(rules) - 1, 2):
             if rules[i] in names: s.cam[names[rules[i]]] = rules[i + 1]
+        if s.cam.get("bangle", 0) >= 90 and not s.cam.get("plock") and "freeaz" not in s.cam:
+            d = B.sub(prev, s.owner.pos)                          # behindness 180: it stays on the side it is on
+            s.cam["freeaz"] = math.atan2(d[1], d[0])
+        if s.cam.get("bangle", 0) < 90: s.cam.pop("freeaz", None)
         s.cam["by"] = sc.name
         s.cam["t"] = s.w.t
         s.cam.setdefault("log", []).append((round(s.w.t, 2), sc.name, s.cam.get("pos"), s.cam.get("focus")))

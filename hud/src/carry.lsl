@@ -9,7 +9,7 @@
 //  old one.". A 7.x Take 12 cannot be seen this way (it speaks no carry) and is named in the guide.
 // ============================================================================
 
-string VERSION = "8.0.5";
+string VERSION = "8.0.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 

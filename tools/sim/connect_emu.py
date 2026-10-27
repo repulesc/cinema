@@ -37,9 +37,9 @@ def setup(names=("Ana", "Ben"), seed=1, free=()):
     return w, avs
 
 def ask(w, a, b, yes=True):
-    a.say(12, "connect"); w.run(2.5)
+    a.say(12, "connect"); w.run(4)                       # the scan: asked twice, listed after 2.5 s (8.0.6)
     if "Invite" in a.labels():
-        a.click("Invite"); w.run(2.5)
+        a.click("Invite"); w.run(4)
     nm = [x for x in a.labels() if x.lstrip("★ ").startswith(b.name)]
     check(nm, "%s's nearby list has %s: %r" % (a.name, b.name, a.labels()))
     if not nm: return
@@ -60,7 +60,7 @@ def scenarios():
     t = w.t
     ask(w, ana, ben)
     check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "Ana asks, Ben says yes: connected (%r, %r)" % (peers(ana), peers(ben)))
-    check("Ben is asked." in notes(ana, t) and "Ben is with you." in notes(ana, t) and "Ana is with you." in notes(ben, t), "the notes say it (%r / %r)" % (notes(ana, t), notes(ben, t)))
+    check("Ben is asked." in notes(ana, t) and any(n.startswith("Ben is with you.") for n in notes(ana, t)) and any(n.startswith("Ana is with you.") for n in notes(ben, t)), "the notes say it (%r / %r)" % (notes(ana, t), notes(ben, t)))
     check(ana.sounds and not ben.sounds, "the chime plays (Ana has a sound in her HUD, Ben has none)")
     check(linkst(ana) == "dim" and linkst(ben) == "dim", "connected, nobody films: the key is dim (%s %s)" % (linkst(ana), linkst(ben)))
     check(rect(ana.hud, ana, "t12 dot")[4] > 0.5, "the [12]'s dot: white while connected")
@@ -77,18 +77,11 @@ def scenarios():
     check(ana.hud.part("t12 dot")["glow"] > 0, "Ana's dot glows softly while shared")
     shot(w, ana, "portrait")                                          # her lit tap: the other side
     check(B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.05, "Ana's new angle reaches Ben")
-    # privacy: Ana takes the camera (Alt-click): Ben goes back to his own film
-    t = w.t
-    ana.alt_orbit(); w.run(4)
-    check(host(ben) is None and var(ben.hud, "core", "gState") != "watch", "Ana holds the camera: Ben back to his own film")
-    check("Ana isn't filming." in notes(ben, t), "Ben: Ana isn't filming.")
-    check(linkst(ben) == "dim", "Ben's key dims (%s)" % linkst(ben))
-    n = len([1 for c in w.chatlog if c[1] == "Ana" and "|cam|" in c[3] and c[0] > t + 1])
-    check(n == 0, "nothing of Ana's goes out while she holds the camera (%d)" % n)
+    # 8.0.6: Ben sees exactly what Ana sees, her own Alt-click framing too (only mouselook is never sent)
+    ana.alt_orbit(); w.run(3)
+    check(host(ben) is ana and B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.3, "Ana frames with Alt-click: Ben sees her framing")
     ana.esc(); shot(w, ana, "portrait"); w.run(2)
-    check(linkst(ben) == "on", "Ana films again: Ben's key lights")
-    link(w, ben)
-    check(host(ben) is ana, "Ben watches again")
+    check(host(ben) is ana and B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.05, "her shot again: Ben still with her")
     # one director per pair: Ana can't watch Ben while he watches her
     t = w.t
     link(w, ana)
@@ -114,8 +107,8 @@ def scenarios():
     check(host(ben) is ana, "Ben watches Ana")
     t = w.t
     kept = dict(ana.hud.lsd)
-    ana.take_off(); w.run(4)
-    check(host(ben) is None and "Ana left." in notes(ben, t), "Ana's HUD gone: after 3 s Ben's own film, Ana left.")
+    ana.take_off(); w.run(8)
+    check(host(ben) is None and "Ana left." in notes(ben, t), "Ana's HUD gone: after 6 s Ben's own film, Ana left.")
     ana.wear(HUD_SCRIPTS, lsd=kept)
     w.run(8)
     check(peers(ana) == ["Ben"] and "Ana" in peers(ben), "Ana wears it again within 30 min: they rejoin (%r %r)" % (peers(ana), peers(ben)))
@@ -130,7 +123,7 @@ def scenarios():
     check(peers(ana) == [] and "Ben didn't answer." in notes(ana, t), "a No: \"didn't answer\", never a rejection")
     ben.hud.lsd["cin.friends"] = (str(ana.key) + ",Ana Resident", PASS)
     t = w.t
-    ana.say(12, "connect"); w.run(2.5); ana.click("Ben"); w.run(2)
+    ana.say(12, "connect"); w.run(4); ana.click("Ben"); w.run(2)
     check(peers(ben) == ["Ana"] and not (ben.dialog and "share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
     # hold: everything off leaves too
     ana.long_press(); w.run(2)
@@ -155,7 +148,7 @@ def scenarios():
     o = Obj(w, olga, [], children=()); o.worn = True; w.objects[o.key] = o
     ana.say(12, "connect"); w.run(0.3)
     w.chat(o, CH, "T12|here|T|idle|", to=ana.key)
-    w.run(2.5)
+    w.run(4)
     check("Olga (old)" in ana.labels(), "a 7.x Take 12: listed as (old) (%r)" % ana.labels())
     t = w.t
     ana.click("Olga (old)"); w.run(1)
