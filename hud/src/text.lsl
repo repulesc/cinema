@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.2";
+string VERSION = "8.0.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -52,7 +52,7 @@ list NOTES = [
     "full", 0, "In the full Take 12.",
     "lens", 0, "Lens % mm. Ctrl+0 zooms in.",
     "mm", 0, "% mm",
-    "eyeline", 0, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it.",
+    "eyeline", 0, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
     "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
     "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
     "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
