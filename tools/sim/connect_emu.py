@@ -62,7 +62,7 @@ def scenarios():
     check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "Ana asks, Ben says yes: connected (%r, %r)" % (peers(ana), peers(ben)))
     check("Ben is asked." in notes(ana, t) and any(n.startswith("Ben is with you.") for n in notes(ana, t)) and any(n.startswith("Ana is with you.") for n in notes(ben, t)), "the notes say it (%r / %r)" % (notes(ana, t), notes(ben, t)))
     check(ana.sounds and not ben.sounds, "the chime plays (Ana has a sound in her HUD, Ben has none)")
-    check(linkst(ana) == "dim" and linkst(ben) == "dim", "connected, nobody films: the key is dim (%s %s)" % (linkst(ana), linkst(ben)))
+    check(linkst(ana) == "on" and linkst(ben) == "on", "connected: the key lights, even before a shot (your own camera can be watched too, 8.0.7) (%s %s)" % (linkst(ana), linkst(ben)))
     check(rect(ana.hud, ana, "t12 dot")[4] > 0.5, "the [12]'s dot: white while connected")
     shot(w, ana, "portrait")
     w.run(2)
@@ -253,10 +253,35 @@ def fuzz(runs, seed, names, drop=0.0):
                 break
     return broken
 
+# ---- 8.0.7: a just-worn friend can be watched; her moving camera reaches you; a stray update is ignored -----------------
+def streaming():
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); w.run(2)
+    link(w, ben)
+    check(host(ben) is ana, "a friend who has not picked a shot can be watched (her own camera)")
+    check(B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.3, "... and you see it")
+    link(w, ben); w.run(1)                                              # back to his own film
+    shot(w, ana, "tracking"); w.run(2)
+    link(w, ben); w.run(1)
+    ana.walk((140, 128, 21), speed=1.5)
+    far = 0.0
+    for i in range(16):
+        w.run(0.25)
+        far = max(far, B.llVecDist(ben.camera()[0], ana.camera()[0]))
+    check(far < 1.0, "Ana walks in Tracking: Ben's view keeps up within a step (%.2f m)" % far)
+    n = len([1 for c in w.chatlog if c[1] == "Ana" and "|cam|" in c[3] and c[0] > w.t - 4])
+    check(12 <= n <= 20, "her camera goes out about 4 times a second (%d in 4 s)" % n)
+    link(w, ben); w.run(0.5)
+    mine = ben.camera()[0]
+    w.chat(ana.hud, CH, "T12|8|cam|<1,1,30>|<2,2,30>|0|1.0|0", to=ben.key); w.run(0.5)
+    check(B.llVecDist(ben.camera()[0], mine) < 0.5, "a late update after he stopped watching is ignored")
+    no_errors(w, "streaming")
+
 if __name__ == "__main__":
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 20
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
     scenarios()
+    streaming()
     n = fuzz(runs, seed, ("Ana", "Ben"))
     n += fuzz(runs // 2, seed + 5000, ("Ana", "Ben", "Cy"))
     n += fuzz(runs // 2, seed + 9000, ("Ana", "Ben"), drop=0.05)

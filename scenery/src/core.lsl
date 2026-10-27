@@ -14,7 +14,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.6";
+string VERSION = "8.0.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -38,6 +38,8 @@ integer TIP        = 7345;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
+integer CROP       = 7390;
+integer SYNC_CH    = -7712120;      // Connect's channel (sync.lsl)
 integer CTL        = 831;           // the movement keys, Page Up / Down
 
 float   GRACE      = 2.5;           // s after a cut before the camera is checked (held)
@@ -81,6 +83,8 @@ integer gBlend;
 integer gFb;
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
 integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
+list    gWatchers;                  // ... who (their avatars: core tells them itself, 8.0.7)
+string  gShape = "0";               // your picture's shape (bars: CROP), for them
 float   gEyeT;                      // ... since
 
 string cfg(string k)
@@ -393,10 +397,20 @@ tick()
         if (gState == "film" && gShotPos == ZERO_VECTOR && !gFollow) clearCam();   // nothing new yet: the old frame goes
     }
     // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out 4 times a second
-    if (gWatched && t - gCamT > 0.25 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
+    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out 4 times a second,
+    // straight to the watchers (8.0.7: through sync it woke all twelve scripts every time)
+    if (gWatched && t - gCamT > 0.2 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
     {
         gCamT = t;
-        share();
+        if (gState == "off" || gState == "watch" || (info & AGENT_MOUSELOOK) || !gPermOK) share();
+        else
+        {
+            vector cp = llGetCameraPos();
+            string m = "T12|8|cam|" + (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|-0.25|"
+                + (string)llGetCameraFOV() + "|" + gShape;
+            integer i;
+            for (i = 0; i < llGetListLength(gWatchers); i++) llRegionSayTo(llList2Key(gWatchers, i), SYNC_CH, m);
+        }
     }
     idleCheck(now, info);
     if (gState == "wait" || gState == "off" || gState == "watch") return;
@@ -566,6 +580,7 @@ default
         {
             llTakeControls(CTL, TRUE, TRUE);               // one request (a second replaces the first); the keys still walk you
             if (gState != "film" && gState != "held") clearCam();   // nothing left locked by a reset (8.0.3)
+            share();                                        // friends can watch from the start, your own camera too (8.0.7)
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
@@ -698,9 +713,11 @@ default
                 else bail("watch");
             }
             else if (c == "hint") ui(a);
+            else if (c == "camq") share();                  // sync: someone connected, what is your film now
             else if (c == "watched")
             {
-                gWatched = (integer)a;
+                gWatchers = llParseString2List(a, [","], []);
+                gWatched = (gWatchers != []);
                 if (gWatched) llSetTimerEvent(0.25);
                 share();
             }
@@ -731,6 +748,7 @@ default
             }
         }
         else if (num == CFG_CHANGED && (str == "blend" || str == "all")) gBlend = (cfg("blend") == "1");
+        else if (num == CROP) gShape = llList2String(llParseString2List(str, ["|"], []), 0);
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/core] v" + VERSION + " " + gState + " " + gShot + " " + gWhy + ", permissions " + (string)gPermOK

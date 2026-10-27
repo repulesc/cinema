@@ -1,5 +1,21 @@
 # Changelog
 
+## 8.0.7 (hold the lit shot: your viewer's camera)
+- **Hold the lit shot word (0.8 s) and your viewer has the camera.** Its underline drains as you hold; the strip, the
+  bars and Connect stay on. Tap any shot to take the camera back. A short tap on the lit shot is still its next view.
+  It is the [12]'s own grammar one level down: hold the [12] for everything off, hold a shot for that shot off.
+  Nothing new on the strip, and no new texture upload.
+- The shot tips say it once ("Hold it: your viewer's camera."); a note says so when you do.
+- **Connect, checked again:**
+  - A friend who has just put the HUD on, and hasn't picked a shot, can be watched (her own camera). Before, she
+    showed as "isn't filming" until she picked one.
+  - While you are watched, your camera goes out 4 times a second (it was 2), straight to the watchers. Before, every
+    update woke all twelve scripts of your HUD: about 58 script events a second while watched, now about 10.
+  - A late camera update after you stop watching is ignored.
+  - Connect's nearby list shows as soon as anyone answers (1.5 s); only when nobody has does it ask again and wait
+    3 s.
+- Version 8.0.7 in all twelve scripts (the free build: nine).
+
 ## 8.0.6 (tests with a friend: Connect shows her view; Drift smooth; Snappy Tracking)
 From the user's list of reports, confirmed with them before any change:
 - **Connect: you see exactly what she sees.** Only Take 12's own shots used to go out: her Alt-click framing, her
