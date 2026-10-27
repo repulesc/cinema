@@ -130,15 +130,24 @@ list smallRoom(vector P)
     list up = llCastRay(E, E + <0.0, 0.0, 4.0>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
     if (llList2Integer(up, -1) != 1) return [];
     list D = [];
+    integer miss;
     integer i;
     for (i = 0; i < 8; i++)
     {
         vector u = <llCos(i * 0.785398), llSin(i * 0.785398), 0.0>;
         list r = llCastRay(E, E + u * 6.0, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
-        if (llList2Integer(r, -1) != 1) return [];
-        D += [llVecDist(E, llList2Vector(r, 1))];
+        if (llList2Integer(r, -1) == 1) D += [llVecDist(E, llList2Vector(r, 1))];
+        else { D += [-1.0]; miss++; }
     }
-    if (llList2Float(D, 0) + llList2Float(D, 4) > 4.5 || llList2Float(D, 2) + llList2Float(D, 6) > 4.5) return [];
+    if (miss > 1) return [];                                // one ray may go out through a door
+    for (i = 0; i < 4; i++)
+    {
+        float a = llList2Float(D, i);
+        float b = llList2Float(D, i + 4);
+        if (a < 0.0) a = b;                                 // the door: as far as the other side
+        if (b < 0.0) b = a;
+        if (i % 2 == 0 && a + b > 4.5) return [];
+    }
     // the corner furthest from you (the diagonals 1, 3, 5, 7)
     float best;
     integer bi = 1;

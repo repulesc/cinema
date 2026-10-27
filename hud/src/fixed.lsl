@@ -60,6 +60,7 @@ integer gKeys;
 float   gStillT;
 float   gCtxT;                      // the place where you are changed at
 string  gCtxNew;
+vector  gSpotL;                     // where you sit (in the furniture's frame; on the ground, in the region)
 vector  gRel0;                      // framing: the camera as it was handed to you, in your frame
 vector  gDir0;
 float   gFreeT;
@@ -86,6 +87,8 @@ set(string k, string v)
 // two decimals is a centimetre: the views stay small in Linkset Data
 string f2(float x)
 {
+    if (x < 0.0) x -= 0.005;
+    else x += 0.005;
     string s = (string)x;
     return llGetSubString(s, 0, llSubStringIndex(s, ".") + 2);
 }
@@ -237,7 +240,7 @@ list recall()
     }
     // kept with another lens: the camera moves along its line so the picture stays
     float now = llGetCameraFOV();
-    if (fv > 0.05 && now > 0.05) c = f + (c - f) * (llTan(fv * 0.5) / llTan(now * 0.5));
+    if (fv > 0.05 && now > 0.05 && llFabs(fv - now) > 0.01) c = f + (c - f) * (llTan(fv * 0.5) / llTan(now * 0.5));
     return [clear(c, f), f];
 }
 
@@ -277,7 +280,7 @@ keep(vector c, vector f)
         P = (P - O) / R;
         y -= yaw(R);
     }
-    string e = v2(c) + "|" + v2(f) + "|" + v2(P) + "|" + (string)llRound(y) + "|" + f2(fv);
+    string e = v2(c) + "|" + v2(f) + "|" + v2(P) + "|" + (string)llRound(y) + "|" + llGetSubString((string)fv, 0, 4);
     if (gCtx == "stand") V = llListReplaceList(slots(V), [e], gPick, gPick);
     else if (gSpot >= 0) V = llListReplaceList(V, [e], gSpot, gSpot);
     else
@@ -362,11 +365,21 @@ show(string kind)
     opts();
 }
 
+// where you sit: in the furniture's frame (it may move, a vehicle), or on the ground in the region
+vector spot()
+{
+    vector P = llList2Vector(llGetObjectDetails(gOwner, [OBJECT_POS]), 0);
+    if (gCtx == "stand" || gCtx == "ground") return P;
+    list o = frameOf();
+    return (P - llList2Vector(o, 0)) / llList2Rot(o, 1);
+}
+
 // where you are changed: the view for it (a marked vehicle lets go)
 arrive()
 {
     gCtx = ctx();
     gCtxNew = gCtx;
+    gSpotL = spot();
     gSpot = -1;
     gUndo = "";
     gVeh = FALSE;
@@ -387,14 +400,14 @@ integer marked()
 }
 
 // the camera: has it been framed (moved off the camera you were handed) and held still for a second?
-integer framed(float t, integer still)
+integer framed(float t, integer still, float need)
 {
     vector c = llGetCameraPos();
     rotation r = llGetCameraRot();
     if (llVecDist(c, gLastC) > 0.03 || llAngleBetween(r, gLastR) > 0.02 || !still) gCamStillT = t;
     gLastC = c;
     gLastR = r;
-    return (t - gCamStillT >= 1.0);
+    return (t - gCamStillT >= need);
 }
 
 tick()
@@ -406,8 +419,13 @@ tick()
     rotation R = llList2Rot(d, 1);
     vector v = llList2Vector(d, 2);
     integer still = (llVecMag(<v.x, v.y, 0.0>) < 0.1 && !gKeys);
-    // sat down, changed seats, stood up: the view for where you are, once it has settled
+    // sat down, changed seats or spots on one, stood up: the view for where you are, once it has settled
     string c = ctx();
+    if (c == gCtx && c != "stand" && llVecDist(spot(), gSpotL) > 0.5 + 1.5 * (c == "ground"))
+    {
+        gCtx = "~";                                         // another spot (multi-pose furniture): as a new seat
+        gCtxNew = "";
+    }
     if (c != gCtx)
     {
         if (c != gCtxNew) { gCtxNew = c; gCtxT = t; }
@@ -432,7 +450,7 @@ tick()
     if (gHold == "held")
     {
         // you took the camera from a kept view: KEEP NEW once it holds still on a new framing
-        if (framed(t, still) && gNewT == 0.0 && (llVecDist(gLastC, gCam) > 0.3 || llRot2Fwd(gLastR) * llVecNorm(gFoc - gCam) < 0.996))
+        if (framed(t, still, 1.0) && gNewT == 0.0 && (llVecDist(gLastC, gCam) > 0.3 || llRot2Fwd(gLastR) * llVecNorm(gFoc - gCam) < 0.996))
         {
             if (llVecDist(gLastC, gNewC) > 0.05)
             {
@@ -450,10 +468,10 @@ tick()
         // your own camera: what it shows a second after you start is "as handed"; framed away from that and still, kept
         vector rel = (llGetCameraPos() - P) / R;
         vector dir = llRot2Fwd(llGetCameraRot()) / R;
-        integer f = framed(t, still);
+        integer f = framed(t, still, 1.0);
         if (gRel0 == ZERO_VECTOR)
         {
-            if (t - gFreeT > 1.0 && f) { gRel0 = rel; gDir0 = dir; }
+            if (t - gFreeT >= 0.5 && t - gCamStillT >= 0.5) { gRel0 = rel; gDir0 = dir; }   // the camera as handed to you
             return;
         }
         if (f && (llVecDist(rel, gRel0) > 0.4 || dir * gDir0 < 0.985))

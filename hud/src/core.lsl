@@ -53,6 +53,7 @@ string  gOffShot;                   // the shot running when you held: everythin
 string  gLetWhy;                    // letgo: fly / ml / veh
 string  gPend;                      // a shot that came in while it could not be shown
 integer gSat;                       // you sit (last tick)
+integer gSitSeen;                   // ... for the idle clock, in every state
 integer gSitHold;                   // a shot holds its frame because you sat (not Fixed)
 integer gFree;                      // Fixed with no view kept: your own camera to frame it
 integer gFollow;                    // tracking: the viewer's follow camera
@@ -326,9 +327,15 @@ tick()
     integer now = llGetUnixTime();
     float t = llGetTime();
     integer info = llGetAgentInfo(gOwner);
-    // you are here: typing, mouselook, your own camera moving while you wait
+    // you are here: typing, mouselook, sitting down or standing up, your own camera moving (waiting, framing in
+    // Fixed, holding the camera with an Alt-click)
     if (info & (AGENT_TYPING | AGENT_MOUSELOOK)) { gLastAct = now; back(); }
-    if (gState == "wait" && gPermOK)
+    if (((info & AGENT_SITTING) != 0) != gSitSeen)
+    {
+        gSitSeen = !gSitSeen;
+        gLastAct = now;
+    }
+    if ((gState == "wait" || gState == "held" || gFree) && gPermOK)
     {
         vector cp = llGetCameraPos();
         rotation cr = llGetCameraRot();
