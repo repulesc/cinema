@@ -66,7 +66,7 @@ string  gSent;
 integer gBeat;
 integer gSaveT;
 integer gDebug;
-integer gWd;                        // core told: you are watched
+string  gWd;                        // core told: who watches you
 integer gScan2;                     // the scan asked twice
 
 // ---- names ---------------------------------------------------------------------------
@@ -146,10 +146,10 @@ integer one()
 
 refresh()
 {
-    if ((gW != []) != gWd)
+    if (llDumpList2String(gW, ",") != gWd)
     {
-        gWd = (gW != []);                                   // watched: core sends your camera as it moves
-        llMessageLinked(LINK_SET, CMD, "watched|" + (string)gWd, "");
+        gWd = llDumpList2String(gW, ",");                   // watched: core sends them your camera as it moves
+        llMessageLinked(LINK_SET, CMD, "watched|" + gWd, "");
     }
     integer n = reach();
     string s = "on|" + (string)n + "|";
@@ -203,6 +203,7 @@ add(key k)
     gPT += [llGetTime()];
     gPR += [near(k)];
     gPA += [0];
+    llMessageLinked(LINK_SET, CMD, "camq", "");             // core says whether you film now (8.0.7: a new wear never had)
     save();
     refresh();
 }
@@ -339,7 +340,7 @@ friends(integer rm)
     dialog("friends", fl + "~" + c, ["Add", "Remove", llList2String(["Chime", "● Chime"], c == "on"), "‹ Back"], []);
 }
 
-// the people near you who wear Take 12: asked, then listed 1.5 s later
+// the people near you who wear Take 12: asked, then listed
 scan(string why)
 {
     gScan = why;
@@ -491,9 +492,10 @@ tick()
 {
     float t = llGetTime();
     integer now = llGetUnixTime();
-    // asked twice, a second apart, and listed after 2.5 s (8.0.6: "Nobody near you" with a friend 2 m away)
-    if (gScanT > 0.0 && t - gScanT > 2.5) listNear();
-    else if (gScanT > 0.0 && !gScan2 && t - gScanT > 1.0)
+    // listed after 1.5 s if anyone answered; else asked again and listed after 3 s (8.0.6: "Nobody near you" with a
+    // friend 2 m away; 8.0.7: without waiting when someone has answered)
+    if (gScanT > 0.0 && ((t - gScanT > 1.4 && gNear != []) || t - gScanT > 3.0)) listNear();
+    else if (gScanT > 0.0 && !gScan2 && t - gScanT > 1.4)
     {
         gScan2 = TRUE;
         llRegionSay(SYNC_CH, "T12|8|who|" + VERSION + "|" + (string)LITE);
@@ -779,6 +781,7 @@ default
         // from the one you watch
         else if (w == "cam")
         {
+            if (who != gHost) return;                       // only the one you watch (a late one after you stopped)
             gCam = llDumpList2String(llList2List(L, 3, -1), "|");
             place();
         }
