@@ -13,7 +13,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.2";
+string VERSION = "8.0.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -78,6 +78,7 @@ rotation gCamRot;
 integer gBlend;
 integer gFb;
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
+float   gEyeT;                      // ... since
 
 string cfg(string k)
 {
@@ -300,6 +301,17 @@ held()
     ui("");
 }
 
+// the eye-line check ends without keeping (you walk, teleport, or leave it 2 minutes): your camera again (8.0.3: it
+// stayed locked in front of you)
+eyeQuit()
+{
+    if (!gEyeOn) return;
+    gEyeOn = FALSE;
+    llMessageLinked(LINK_SET, CMD, "eyequit", "");
+    if (gState == "film" || gState == "held") resume("eye");
+    else if (gPermOK) llClearCameraParams();
+}
+
 // ---- the tick -------------------------------------------------------------------------------
 idleCheck(integer now, integer info)
 {
@@ -345,6 +357,7 @@ tick()
         gCamPos = cp;
         gCamRot = cr;
     }
+    if (gEyeOn && t - gEyeT > 120.0) eyeQuit();
     idleCheck(now, info);
     if (gState == "wait" || gState == "off" || gState == "watch") return;
     // flying and mouselook: your camera until it ends
@@ -518,6 +531,7 @@ default
         if (gPermOK)
         {
             llTakeControls(CTL, TRUE, TRUE);               // one request (a second replaces the first); the keys still walk you
+            if (gState != "film" && gState != "held") llClearCameraParams();   // nothing left locked by a reset (8.0.3)
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
@@ -526,6 +540,11 @@ default
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
+        if (c & (CHANGED_TELEPORT | CHANGED_REGION))
+        {
+            eyeQuit();
+            if (gState == "wait" && gPermOK) llClearCameraParams();
+        }
         if ((c & (CHANGED_TELEPORT | CHANGED_REGION)) && (gState == "film" || gState == "held"))
         {
             if (gPermOK) llRequestPermissions(gOwner, gNeed);
@@ -543,6 +562,7 @@ default
     control(key id, integer level, integer edge)
     {
         if (!(level | edge)) return;
+        if (gEyeOn && (edge & level & 783)) eyeQuit();     // walking or turning ends the eye-line check
         gLastAct = llGetUnixTime();
         if (gWhy == "idle") { back(); return; }
         if (gState == "held" && (level & 15)) { resume("held"); return; }   // walking off: the shot again
@@ -650,6 +670,7 @@ default
             {
                 if (!gEyeOn && (gState == "film" || gState == "held")) llMessageLinked(LINK_SET, PAUSE, "eye", "");
                 gEyeOn = TRUE;
+                gEyeT = llGetTime();
                 cut((vector)a, (vector)llList2String(L, 2));
             }
             else if (c == "eyecam" && gEyeOn)

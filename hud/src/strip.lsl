@@ -13,7 +13,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.2";
+string VERSION = "8.0.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -219,7 +219,7 @@ list at(integer link, float x, float z, float d, float w, float h)
 list away(integer link)
 {
     if (!link) return [];
-    return [PRIM_LINK_TARGET, link, PRIM_POS_LOCAL, <0.002, 0.0, 0.0>, PRIM_SIZE, <0.01, 0.01, 0.01>, PRIM_COLOR, ALL_SIDES, WHITE, 0.0,
+    return [PRIM_LINK_TARGET, link, PRIM_POS_LOCAL, <0.02, 0.0, 0.0>, PRIM_SIZE, <0.01, 0.01, 0.01>, PRIM_COLOR, ALL_SIDES, WHITE, 0.0,
         PRIM_GLOW, ALL_SIDES, 0.0];
 }
 

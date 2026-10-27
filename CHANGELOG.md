@@ -1,5 +1,21 @@
 # Changelog
 
+## 8.0.3 (the [12] answers every tap; the camera is never left locked)
+From the first in-world use of 8.0.2:
+- **Fixed: taps on the [12] were lost, so it took several tries (and up to half a minute) to get the dialog.**
+  - The [12]'s ring sits just in front of the disc, and the strip's and bars' hidden parts are parked right behind it.
+    A tap often landed on one of those, and only a tap on the disc itself counted.
+  - Now a tap on any of them is a tap on the [12]. The hidden parts are also parked further back.
+- **Fixed: the camera stayed fixed in front of you.** The setup's eye-line step holds the camera in front of you while
+  you move the line. Walking did not end it, and neither did a teleport (you still saw your house) or a script reset.
+  - Walking or turning now ends the step and keeps your old eye line; the setup goes on.
+  - A teleport ends it too, and it ends by itself after 2 minutes.
+  - When its scripts start (a reset, a new wear), Take 12 hands the camera back unless a shot is running.
+  - The note says it: "Tap the [12] to keep it, or walk to skip."
+- **Fixed: a dialog button pressed after a minute and a half did nothing.** Dialogs now listen for 10 minutes.
+- New test `tools/sim/inworld_emu.py` (in CI) replays these reports; on 8.0.2 it fails, on 8.0.3 it passes.
+- Version 8.0.3 in all twelve scripts (the free build: nine).
+
 ## 8.0.2 (screen split in two)
 - **Fixed for good: `screen: Stack-Heap Collision` on save.** 8.0.1's screen still crashed in-world the moment it was saved. It was simply too big for Second Life's 64 KB, and the memory estimate had shown room that wasn't there.
   - It is now two scripts:

@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.2";
+string VERSION = "8.0.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -500,6 +500,16 @@ strip(string a)
 }
 
 // ---- gestures -------------------------------------------------------------------------------
+// the [12]: the root, its ring and dot (in front of it), and the parts parked behind it while hidden (the strip's, the
+// bars'). 8.0.3: a tap often landed on one of those and was lost
+integer twelve(integer link)
+{
+    if (link == 1) return TRUE;
+    string n = llGetLinkName(link);
+    vector s = llList2Vector(llGetLinkPrimitiveParams(link, [PRIM_SIZE]), 0);
+    return (n == "t12 ring" || n == "t12 dot" || s.y < 0.011);
+}
+
 onTap()
 {
     if (gEye) { eyeEnd(TRUE); return; }
@@ -611,7 +621,7 @@ default
 
     touch_start(integer n)
     {
-        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) != 1) return;
+        if (llDetectedKey(0) != gOwner || !twelve(llDetectedLinkNumber(0))) return;
         float now = llGetTime();
         if (gTapN)
         {
@@ -628,7 +638,7 @@ default
 
     touch_end(integer n)
     {
-        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) != 1) return;
+        if (llDetectedKey(0) != gOwner || !twelve(llDetectedLinkNumber(0))) return;
         gHeld = FALSE;
         if (gFill) llMessageLinked(LINK_SET, STRIP, "hold|0", "");
         gFill = 0;
@@ -676,6 +686,7 @@ default
             }
         }
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
+        else if (num == CMD && str == "eyequit" && gEye) eyeEnd(FALSE);   // you walked off: skipped, the old line kept
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
         else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
         else if (num == MSG_VER && str != "?")
@@ -711,7 +722,7 @@ default
             gTapN = FALSE;
             onTap();
         }
-        if (gListen && llGetUnixTime() - gMenuT > 90) closeMenu();
+        if (gListen && llGetUnixTime() - gMenuT > 600) closeMenu();
         if (gLensL) note("mm", (string)mm());
         if (gVerT && gVerStep == 0 && llGetUnixTime() - gVerT >= 2)
         {

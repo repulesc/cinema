@@ -13,7 +13,7 @@
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
 // ============================================================================
 
-string VERSION = "8.0.2";
+string VERSION = "8.0.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
