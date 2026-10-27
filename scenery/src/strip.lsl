@@ -14,7 +14,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.6";
+string VERSION = "8.0.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -78,6 +78,9 @@ string  gLinkN = "0";
 float   gEye = -9.0;               // the eye-line guide (screen z), -9 hidden
 integer gClear;                    // Look › Keys: Clear
 list    gP;                        // the batch being built (put / go)
+integer gHoldL;                    // the lit shot held down (its link; -1 done)
+float   gHoldT;
+float   gDrain;                    // ... its underline drains as you hold (0-1)
 
 // ============================================================================
 string cfg(string k)
@@ -330,7 +333,7 @@ layout()
         {
             float la = 0.94;
             if (gState != "film" && gState != "wait") { a = 0.6; la = 0.35; }   // you hold the camera, let go, watching: dimmed
-            put(line(gBox, cx, -px(10.5), tw, la * f));                       // the box part is the shot's underline
+            put(line(gBox, cx, -px(10.5), tw * (1.0 - gDrain), la * f));      // the box part is the shot's underline
             litBox = TRUE;
         }
         else if (llToLower(w) == gHint && gHalo)
@@ -472,6 +475,7 @@ tick()
 {
     float t = 2.0;
     if (gFade < 3 && gOpen) t = 0.07;
+    else if (gHoldL > 0) t = 0.1;
     else if (gHint != "") t = 1.0;
     llSetTimerEvent(t * (llGetAttached() != 0));
 }
@@ -533,7 +537,26 @@ default
     {
         if (llDetectedKey(0) != gOwner) return;
         integer link = llDetectedLinkNumber(0);
-        if (link > 1 && gOpen) touched(link);
+        if (link <= 1 || !gOpen) return;
+        // the lit shot: a tap is its next view, a hold (0.8 s) hands the camera to your viewer (8.0.7)
+        integer k = llListFindList(gSL, [link]);
+        if (k >= 0 && llToLower(llList2String(SHOTS, k)) == gShot && (gState == "film" || gState == "held"))
+        {
+            gHoldL = link;
+            gHoldT = llGetTime();
+            tick();
+            return;
+        }
+        touched(link);
+    }
+
+    touch_end(integer n)
+    {
+        if (llDetectedKey(0) != gOwner || !gHoldL) return;
+        if (gHoldL > 0) touched(gHoldL);                    // let go early: a tap
+        gHoldL = 0;
+        gDrain = 0.0;
+        layout();
     }
 
     link_message(integer sender, integer num, string str, key id)
@@ -618,6 +641,18 @@ default
 
     timer()
     {
+        if (gHoldL > 0)
+        {
+            gDrain = (llGetTime() - gHoldT) / 0.8;
+            if (gDrain >= 1.0)
+            {
+                gHoldL = -1;                                // held: the camera is your viewer's, the strip stays
+                gDrain = 0.0;
+                llMessageLinked(LINK_SET, CMD, "stop", "");
+                llMessageLinked(LINK_SET, NOTE, "released", "");
+            }
+            layout();
+        }
         if (gFade < 3 && gOpen)
         {
             gFade++;

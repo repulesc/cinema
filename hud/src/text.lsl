@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.6";
+string VERSION = "8.0.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -27,6 +27,7 @@ float   SHOW    = 4.0;            // s  a note stays this long, and 1 s more for
 // notes: id, important (1: also in chat; 2: only in chat; 3: stays until the next note or "clear"), the words (%: the argument)
 list NOTES = [
     "setup", 1, "Tap the [12] to set up.",
+    "released", 0, "Your viewer's camera. Tap a shot to take it back.",
     "frameit", 0, "Frame it with Alt-click, Take 12 keeps it. Esc gives the camera back.",
     "kept", 0, "Kept.",
     "forgot", 0, "Seat forgotten. UNDO brings it back.",
@@ -62,10 +63,10 @@ list NOTES = [
 
 // tips: a key's first three uses
 list TIPS = [
-    "TRACKING", "Tracking follows you. Tap it again: back behind you.",
-    "PORTRAIT", "Portrait frames you standing. Us adds the people near you.",
-    "FIXED", "Fixed keeps your own framing. Alt-click to frame it.",
-    "SCENIC", "Scenic shows the place. It also starts when you're away.",
+    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera.",
+    "PORTRAIT", "Portrait frames you standing. Us adds the people near you. Hold it: your viewer's camera.",
+    "FIXED", "Fixed keeps your own framing. Alt-click to frame it. Hold it: your viewer's camera.",
+    "SCENIC", "Scenic shows the place. It also starts when you're away. Hold it: your viewer's camera.",
     "CLOSE", "How much of you is in the picture.",
     "ME", "Us adds the people near you.",
     "SHOULDER", "Three ways to follow you.",

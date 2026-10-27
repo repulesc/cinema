@@ -1,5 +1,13 @@
 # Changelog
 
+## 8.0.7 (hold the lit shot: your viewer's camera)
+- **Hold the lit shot word (0.8 s) and your viewer has the camera.** Its underline drains as you hold; the strip, the
+  bars and Connect stay on. Tap any shot to take the camera back. A short tap on the lit shot is still its next view.
+  It is the [12]'s own grammar one level down: hold the [12] for everything off, hold a shot for that shot off.
+  Nothing new on the strip, and no new texture upload.
+- The shot tips say it once ("Hold it: your viewer's camera."); a note says so when you do.
+- Version 8.0.7 in all twelve scripts (the free build: nine).
+
 ## 8.0.6 (tests with a friend: Connect shows her view; Drift smooth; Snappy Tracking)
 From the user's list of reports, confirmed with them before any change:
 - **Connect: you see exactly what she sees.** Only Take 12's own shots used to go out: her Alt-click framing, her

@@ -14,7 +14,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.6";
+string VERSION = "8.0.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 

@@ -14,7 +14,8 @@ body, hover height) was thrown away, notes sat right under the [12] and went in 
 before you could read it, Room stayed dim after walking into a room, and the strip started hidden on every wear.
 And the tests with a friend (8.0.6): Room composes from the room's edge, level; the outline hint explains itself; the
 [12] sits inside the band; Settings › Friends works (now sync's); Settings › Tracking › Snappy; the setup asks whether
-the strip is in view; once asked, the setup never starts again on a re-wear."""
+the strip is in view; once asked, the setup never starts again on a re-wear.
+8.0.7: hold the lit shot (0.8 s) and your viewer has the camera; a short tap is still its next view."""
 from emu_util import *
 
 w = World()
@@ -299,4 +300,26 @@ t = w.t
 ana.huds.append(h); h.attach(); w.run(6)
 check(not any("set up" in n for n in ana.notes(t)), "worn again after a setup begun: no setup again (%r)" % ana.notes(t))
 no_errors(w, "setup once")
+
+# ==== 8.0.7: hold the lit shot: your viewer's camera ================================================================
+w = World()
+ana, h = hud(w)
+ana.double_tap(); w.run(1)
+ana.touch("t12 s1"); w.run(3)                                          # Portrait
+side = var(h, "portrait", "gSide")
+ana.touch("t12 s1", hold=0.2); w.run(2)
+check(var(h, "portrait", "gSide") == -side and var(h, "core", "gState") == "film", "a short tap on the lit shot: its next view")
+t = w.t
+ana.touch("t12 s1", hold=0.5); w.run(0.3)
+w.run(2)
+check(var(h, "core", "gState") == "film", "let go before 0.8 s: nothing released")
+t = w.t
+ana.touch("t12 s1", hold=1.2); w.run(0.5)
+check(var(h, "strip", "gDrain") > 0.2, "holding: the underline drains (%.2f)" % var(h, "strip", "gDrain"))
+w.run(2)
+check(var(h, "core", "gState") == "wait" and not ana.camera()[2], "held 0.8 s: your viewer's camera (%s)" % var(h, "core", "gState"))
+check(var(h, "strip", "gOpen") == 1 and any(n.startswith("Your viewer's camera") for n in ana.notes(t)), "the strip stays, a note says so")
+ana.touch("t12 s0"); w.run(3)
+check(var(h, "core", "gShot") == "tracking" and ana.camera()[2], "tap a shot: Take 12 has it again")
+no_errors(w, "release")
 done("inworld_emu")
