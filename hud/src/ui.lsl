@@ -1,605 +1,552 @@
 // ============================================================================
-//  Take 12  -  ui.lsl  (v4)
-//  Touch decoding (tap / double-tap / long press), the menus (7.0: six entries, one quiet style), /77 chat
-//  commands, settings in protected Linkset Data, the button look (the plain logo, always the same),
-//  first-run welcome, owner-change reset.
-//  Lives in the ROOT prim with core, scenery, people and
-//  friends.
+//  Take 12  -  ui.lsl  (8.0)  - the [12]'s gestures, the dialogs, the first run, /12 commands
+//  Tap the [12]: the dialog (setup only: Connect · Settings · Help). Double-tap: the strip opens or closes. Hold 0.8 s
+//  (the ring fills as you hold): everything off; hold again: back exactly as it was. The dialog's words come from
+//  text.lsl (TXT); the labels here are the buttons' ids.
+//  First wear: nothing pops up; a note says "Tap the [12] to set up", and the first tap starts it: the lens (a live mm
+//  reading), the eye line (a line on screen, PgUp / PgDn onto your eyes, tap to keep), the size of the strip, and a
+//  three-step tour. Every step can be skipped. /12 <command>: tracking, portrait, fixed, scenic, bars, off, next,
+//  status, debug on|off, blend on|off, place …, size s|m|l, idle off|away|5, flip, help (bind them to gesture keys).
+//  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "7.2.0";
-string PASS     = "cinema-1.0-build1";      // same in all scripts; change per build
-integer LITE    = 0;                              // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
-string BUY_URL  = "https://marketplace.secondlife.com/";   // TODO: your Take 12 listing (Take 12 Scenery's "More cameras" opens it)
-string NOTECARD = "Take 12 - Read Me";   // any notecard whose name contains "Read Me" also works
+string VERSION = "8.0.0";
+string PASS    = "cinema-1.0-build1";
+integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
 integer UI_STATE    = 7320;
-integer UI_MENU     = 7321;
-integer UI_FRIENDS  = 7322;
 integer CFG_CHANGED = 7330;
+integer LINKST      = 7342;
+integer STRIP       = 7343;
+integer NOTE        = 7344;
+integer TXT         = 7346;
+integer TXT_ANS     = 7347;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
 integer CMD         = 7371;
 
-float TAP_GAP   = 0.35;     // s  second tap within this = double-tap
-float LONG_HOLD = 0.8;      // s  hold this long = long press
-
-string DEFAULTS = "afk_on=1~afk_sec=180~afk_away=1~hold=60~reach=100~reach_set=100~reach_ok=0~indoors=auto~chat_cuts=1~skin=1~tips=1~tipn=0~status=1~look=1~face=-1~peek=1~peek_bail=0~phantom=0~cutmode=0~trace=0~cmd_chan=77~theta_max=10~seat_deg=45~aspect=1.778";
-
-// menu items (7.0): id, a quiet mark, the title
-string ITEMS = "~framing|○|Framing~me|○|Me~us|◎|Us~friends|♡|Friends~flist||Friends list~adjust|✛|Adjust~showme||Show me~free|✥|Freehand~share|⇄|Connect~scenery|◇|Scenery~start|›|Start~crop|◰|Format~opts|≡|Settings~help|?|Help~close|×|Close~back|‹|Back~save|☆|Save~next|»|Next~stop|■|Stop~modes|☰|Menu~release|↺|Release~pace||Pace~afk||Idle start~indoors||Indoors~reach||Reach~sfmt||Format~camcfg||Camera~look||Look~test||Test camera~reset||Reset~gotit||Got it~lively||Lively~easy||Easy~calm||Calm~slow||Slow~still||Slowest~off||Off~a60||1 min~a90||90 s~a120||2 min~a180||3 min~a300||5 min~a600||10 min~mcheck||Mouse check~auto||Auto~inside||Inside~outside||Outside~on||On~pause||Pause~end||End~ignore||Ignore~seat||Seated view~high||Higher~low||Lower~r50||50 m~r100||100 m~r150||150 m~r200||200 m~relearn||Re-learn~yes||Yes, reset~altcam||Alt-cam~chat||Chat cuts~phantom||Phantom~trace||Chat text~th0||Classic~th1||Rec~th2||Viewfinder~stline||Status line~size||Size~full|›|More cameras~readme||Read Me~tips||Tips~";
-list PACE_IDS  = ["lively", "easy", "calm", "slow", "still"];
-list PACE_SECS = [30, 45, 60, 90, 120];
+float   TAP_GAP   = 0.35;           // s  a second tap within this: a double-tap
+float   LONG_HOLD = 0.8;            // s  held this long: everything off (or back)
+float   EYE_D     = 2.5;            // m  the eye-line check's camera, in front of you
+string  NEED = "core ui text screen bars tracking portrait fixed scenic sync carry";
 
 key     gOwner;
 integer gChan;
 integer gListen;
+integer gCmdL;
 integer gMenuT;
-integer gVerAsked;
-list    gBtn;                   // the ids of the buttons on screen
-list    gLbl;                   // ... and their labels, as shown
-integer gFirst;
 string  gPage;
-
-// touch decoder
+list    gBtn;                       // the buttons shown (labels)
+string  gState = "wait";            // core
+string  gShot;
+string  gLink = "alone";
+integer gOpen;                      // the strip is open
+integer gOpenOff;                   // ... it was, when everything went off
+// gestures
 float   gDown;
 float   gTapT;
 integer gHeld;
 integer gLongDone;
 integer gTapN;
 integer gDbl;
-// what the camera is doing
-string  gUiState = "idle";    // idle / rolling
-string  gUiMode  = "scenery";
-integer gAdj;               // the keys adjust the shot (core)
-integer gNextCut;
-integer gShownIdle = TRUE;
-integer gLook = 1;          // 0 classic, 1 rec, 2 viewfinder (frames 2n open, 2n+1 clapped on the sheet)
-integer gFace = ALL_SIDES;  // the prim face that carries the picture
+integer gFill;
+// the first run and the eye line
+string  gFirst;                     // "" done; else the step
+integer gEye;                       // the eye-line check runs
+float   gEyeZ;                      // the line, screen height from the middle
+vector  gEyeCam;
+float   gFeet;
+float   gTall;
+integer gLensL;                     // the lens page shows the live mm
+list    gVer;                       // the scripts that answered
+integer gVerT;                      // the version check: asked at
+integer gVerStep;
+integer gLensTold;
 
 // ============================================================================
-// show frame k of the 4 x 2 sprite sheet (frame k: column k % 4, row k / 4, row 0 on top)
-frame(integer k)
-{
-    float oy = 0.25;
-    if (k > 3) oy = -0.25;
-    llScaleTexture(0.25, 0.5, gFace);
-    llOffsetTexture(((float)(k % 4) + 0.5) / 4.0 - 0.5, oy, gFace);
-}
-
-string cfgGet(string k)
+string cfg(string k)
 {
     return llLinksetDataReadProtected("cin." + k, PASS);
 }
 
-cfgWrite(string k, string v)
+set(string k, string v)
 {
     llLinksetDataWriteProtected("cin." + k, v, PASS);
-}
-
-cfgSet(string k, string v)
-{
-    cfgWrite(k, v);
     llMessageLinked(LINK_SET, CFG_CHANGED, k, "");
-    if (k == "trace") gNote = (integer)v;
-    if (k == "look") { gLook = (integer)v; frame(2 * gLook); }
-    if (k == "face") { gFace = (integer)v; frame(2 * gLook); }
 }
 
-initDefaults(integer force)
+note(string id, string a)
 {
-    integer i;
-    list D = llParseString2List(DEFAULTS, ["~"], []);
-    integer n = llGetListLength(D);
-    for (i = 0; i < n; i++)
-    {
-        list kv = llParseString2List(llList2String(D, i), ["="], []);
-        string k = llList2String(kv, 0);
-        if (force || cfgGet(k) == "") cfgWrite(k, llList2String(kv, 1));
-    }
-    cfgWrite("ver", VERSION);
-    cfgWrite("owner", (string)gOwner);
+    llMessageLinked(LINK_SET, NOTE, id + "|" + a, "");
 }
 
-giveHelp()
-{
-    string card = "";
-    if (llGetInventoryType(NOTECARD) == INVENTORY_NOTECARD) card = NOTECARD;
-    else
-    {
-        // forgiving: any notecard in this prim with "Read Me" in its name
-        integer i;
-        for (i = llGetInventoryNumber(INVENTORY_NOTECARD) - 1; i >= 0; i--)
-        {
-            string nm = llGetInventoryName(INVENTORY_NOTECARD, i);
-            if (llSubStringIndex(nm, "Read Me") >= 0) card = nm;
-        }
-    }
-    if (card != "") llGiveInventory(gOwner, card);
-    else llOwnerSay("[Take 12] No Read Me notecard in this prim. Add one with \"Read Me\" in its name.");
-    llOwnerSay("[Take 12] Tap: menu. Double-tap: scenery, or the next view. Hold: connect with people near you. Commands: /" + cfgGet("cmd_chan") + " help");
-}
-
-// new owner (or first run): wipe whatever was configured before
+// new owner, first wear, a 7.x HUD: settings
 checkOwner()
 {
-    if (cfgGet("owner") != (string)gOwner)
+    string v = cfg("ver");
+    if (cfg("owner") != (string)gOwner)
     {
         llLinksetDataReset();
-        initDefaults(TRUE);
-        giveHelp();
+        llLinksetDataWriteProtected("cin.owner", (string)gOwner, PASS);
     }
-    else initDefaults(FALSE);
-    integer v = (integer)cfgGet("cfgv");            // settings version: each step runs once
-    if (v < 2) cfgWrite("trace", "0");             // 4.4.2: chat feedback is off by default
-    if (v < 4)                                     // 4.4.5: reach 100 m; a reach shrunk by false alarms starts over
+    else if (v != "" && llGetSubString(v, 0, 0) != "8")
     {
-        string rr = cfgGet("reach_set");
-        if (rr != "50" && rr != "200") rr = "100";
-        setReach(rr);
+        // a 7.x HUD's settings: the friends and the window stay; 8.0 has new keys for the rest
+        string fr = cfg("friends");
+        string as = cfg("aspect");
+        list K = llLinksetDataFindKeys("^cin\\.", 0, 0);
+        integer i;
+        for (i = 0; i < llGetListLength(K); i++) llLinksetDataDeleteProtected(llList2String(K, i), PASS);
+        llLinksetDataWriteProtected("cin.owner", (string)gOwner, PASS);
+        if (fr != "") llLinksetDataWriteProtected("cin.friends", fr, PASS);
+        if (as != "") llLinksetDataWriteProtected("cin.aspect", as, PASS);
     }
-    if (v < 5)                                     // 4.7.0: idle start 3 min + mouse check by default
-    {
-        string a = cfgGet("afk_sec");
-        if (a == "away" || a == "90" || a == "") cfgWrite("afk_sec", "180");
-        cfgWrite("afk_away", "1");
-        cfgWrite("cfgv", "5");
-    }
-    if (v < 7)                                     // 5.7.0: menus with quiet symbols by default, and the tips on
-    {
-        if (cfgGet("skin") == "0") cfgWrite("skin", "1");
-        cfgWrite("tips", "1");
-        cfgWrite("tipn", "0");
-        cfgWrite("cfgv", "7");
-    }
-    gNote = (cfgGet("trace") == "1");
-    gLook = (integer)cfgGet("look");
-    gFace = (integer)cfgGet("face");
-    gFirst = (cfgGet("seen_intro") != "1");
-    llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
+    llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
+    if (cfg("firstrun") != "done") gFirst = "start";
 }
 
-// ============================================================================
-//  the button: the plain logo, always at full strength, the same idle or rolling (the screen shows the state).
-// ============================================================================
-nextTimer()
+// ---- dialogs ------------------------------------------------------------------------------
+// llDialog fills from the bottom-left: rows bottom-first, padded
+list order(list b)
 {
-    if (gHeld || gTapN) llSetTimerEvent(0.1);
-    else if (gListen) llSetTimerEvent(5.0);
-    else if (!gVerAsked) llSetTimerEvent(3.0);
-    else llSetTimerEvent(0.0);
-}
-
-setLook(string st)
-{
-    gShownIdle = (st == "off" || st == "armed");
-    frame(2 * gLook);
-    llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, 1.0]);
-    nextTimer();
-}
-
-// ============================================================================
-//  menu
-// ============================================================================
-// chat feedback after menu choices: only when Options > Chat text is on (off by default, the menu itself shows the value)
-integer gNote;
-note(string s)
-{
-    if (gNote) llOwnerSay("[Take 12] " + s);
-}
-
-// buttons a build does not show: the full Take 12 has no "More cameras"; Take 12 Scenery only the scenery camera
-integer locked(string id)
-{
-    if (!LITE) return (id == "full");
-    return (llListFindList(["framing", "free", "share", "crop", "save", "seat", "chat", "modes", "release", "me", "us", "friends", "flist", "adjust", "sfmt", "showme"], [id]) >= 0);
-}
-
-string label(string id)
-{
-    integer i = llSubStringIndex(ITEMS, "~" + id + "|");
-    if (i < 0) return id;
-    i += 2 + llStringLength(id);
-    string r = llGetSubString(ITEMS, i, i + 30);                // one entry is shorter than this
-    list p = llParseStringKeepNulls(llGetSubString(r, 0, llSubStringIndex(r, "~") - 1), ["|"], []);
-    if (llList2String(p, 0) == "") return llList2String(p, 1);
-    // the live menu: the camera running and Adjust on carry a dot
-    if (gPage == "live" && (id == llList2String(["me", "us", "friends"], llListFindList(["frame", "social", "friends"], [gUiMode])) || (id == "adjust" && gAdj)))
-        return "● " + llList2String(p, 1);
-    return llList2String(p, 0) + " " + llList2String(p, 1);
-}
-
-// Take 12 Scenery's More cameras: tell about the full version and open its listing
-upsell()
-{
-    llOwnerSay("[Take 12 Scenery] Framing, Freehand and Connect are in the full Take 12.");
-    llLoadURL(gOwner, "Get the full Take 12", BUY_URL);
-}
-
-// the keys strip is linked (keys.lsl): it already has Next, so the live menu leaves it out
-integer strip()
-{
-    integer i;
-    for (i = 2; i <= llGetNumberOfPrims(); i++) if (llGetLinkName(i) == "Take 12 keys") return TRUE;
-    return FALSE;
-}
-
-string idOf(string msg)
-{
-    integer i = llListFindList(gLbl, [msg]);
-    if (i >= 0) return llList2String(gBtn, i);
-    return msg;
-}
-
-// llDialog fills from the bottom-left: give it the rows bottom-first, padded to full rows
-list order(list ids)
-{
-    list b = [];
-    integer i;
-    for (i = 0; i < llGetListLength(ids); i++) if (!locked(llList2String(ids, i))) b += [llList2String(ids, i)];
-    ids = b;
-    b = [];
-    gBtn = ids;
-    integer n = llGetListLength(ids);
-    for (i = 0; i < n; i++) b += label(llList2String(ids, i));
-    gLbl = b;
     while (llGetListLength(b) % 3) b += " ";
     list o = [];
+    integer i;
     for (i = llGetListLength(b) - 3; i >= 0; i -= 3) o += llList2List(b, i, i + 2);
     return o;
-}
-
-string onoff(string k)
-{
-    if (cfgGet(k) == "1") return "on";
-    return "off";
-}
-
-string afkText()
-{
-    if (cfgGet("afk_on") != "1") return "off";
-    string a = cfgGet("afk_sec");
-    integer n = (integer)a;
-    string t = (string)n + " s";
-    if (n % 60 == 0) t = (string)(n / 60) + " min";
-    if (cfgGet("afk_away") == "1") t += " + mouse check";
-    return t;
-}
-
-string seatText()
-{
-    integer d = (integer)cfgGet("seat_deg");
-    if (d <= 0) return "off";
-    if (d == 45) return "auto (45°)";
-    return (string)d + "°";
-}
-
-string paceName()
-{
-    integer i = llListFindList(PACE_SECS, [(integer)cfgGet("hold")]);
-    if (i < 0) return "custom";
-    return llToUpper(llGetSubString(llList2String(PACE_IDS, i), 0, 0)) + llDeleteSubString(llList2String(PACE_IDS, i), 0, 0);
-}
-
-// the modes by the names on the menu
-string modeName()
-{
-    integer i = llListFindList(["scenery", "personal", "social", "friends", "frame", "free"], [gUiMode]);
-    return llList2String(["Scenery", "Me", "Us", "Friends", "Me", "Freehand"], i);
-}
-
-// where Back goes
-string up(string p)
-{
-    if (llSubStringIndex("~afk~indoors~reach~", "~" + p + "~") >= 0) return "scenery";
-    if (llSubStringIndex("~seat~altcam~chat~", "~" + p + "~") >= 0) return "camcfg";
-    if (llSubStringIndex("~pace~camcfg~look~reset~", "~" + p + "~") >= 0) return "opts";
-    return "main";
-}
-
-string title()
-{
-    string h = "Take 12";
-    if (gUiState == "rolling") return h + " · " + modeName();
-    return h;
 }
 
 closeMenu()
 {
     if (gListen) llListenRemove(gListen);
     gListen = 0;
-    nextTimer();
+    gLensL = FALSE;
 }
 
-openMenu(string page)
+// a page: its buttons now, its words from text.lsl (TXT_ANS opens it)
+page(string p, string args, list b)
 {
     closeMenu();
-    gPage = page;
+    gPage = p;
+    gBtn = b;
     gChan = -(integer)(llFrand(1000000000.0) + 1000.0);
     gListen = llListen(gChan, "", gOwner, "");
     gMenuT = llGetUnixTime();
-    nextTimer();
-    string text = title() + "\n";
-    list b;
-    if (page == "main")
-    {
-        text += "Framing · you, or you and the people with you, composed (it starts the last one: Me, Us or Friends)\nFreehand · you frame it, it holds it\nConnect · one camera for everyone near you\nScenery · the place, while you are away\nFormat · the shape of the picture";
-        b = ["framing", "free", "share", "scenery", "crop", "opts", "full", "help", "close"];
-    }
-    else if (page == "scenery")
-    {
-        text += "Scenery · the place, while you are away. It starts by itself when you are idle.\nIdle start: " + afkText() + "\nIndoors: " + cfgGet("indoors") + " · Reach: " + cfgGet("reach") + " m";
-        b = ["start", "afk", "indoors", "reach", "sfmt", "back"];
-    }
-    else if (page == "live")
-    {
-        // 7.1: switch Me / Us / Friends here; Adjust (the keys trim the shot); Next only without the keys strip
-        integer fr = (llListFindList(["frame", "social", "friends"], [gUiMode]) >= 0);
-        if (gUiMode == "free") b += ["save"];
-        if (fr) b += ["me", "us", "friends"];
-        if (fr || gUiMode == "free") b += ["adjust"];
-        if (fr) b += ["showme"];                                // 7.2: show where your face is (fit.lsl)
-        if (gUiMode == "friends") b += ["flist", "release"];
-        if (gUiMode == "scenery" || !strip()) b += ["next"];
-        b += ["stop", "share", "modes", "close"];
-        if (fr || gUiMode == "free") text += "Adjust · the keys trim the shot: W/S tilt · A/D around · Shift+A/D side · PgUp/PgDn height (seated: always)\n";
-        if (gNextCut > llGetUnixTime() && gUiState == "rolling") text += "next cut in " + (string)(gNextCut - llGetUnixTime()) + " s";
-    }
-    else if (page == "pace")
-    {
-        text += "How long each shot is held.\nNow: " + paceName() + ", about " + cfgGet("hold") + " s\nLively 30 · Easy 45 · Calm 60 · Slow 90 · Slowest 120";
-        b = ["lively", "easy", "calm", "slow", "still", "back"];
-    }
-    else if (page == "afk")
-    {
-        text += "Start scenery after this long with no keys.\nNow: " + afkText() + "\nMouse check: also wait until your viewer sets you Away (it notices the mouse).";
-        b = ["off", "a60", "a90", "a120", "a180", "a300", "a600", "mcheck", "back"];
-    }
-    else if (page == "opts")
-    {
-        text += "Pace: " + paceName() + " (about " + cfgGet("hold") + " s per shot)\nLook · the button, the line above it, its size\nCamera · seated view, Alt-cam, chat cuts";
-        b = ["pace", "look", "camcfg", "test", "reset", "back"];
-    }
-    else if (page == "help")
-    {
-        text += "Read Me · the whole guide, as a notecard\nTips · short hints above the button, now " + onoff("tips");
-        b = ["readme", "tips", "back"];
-    }
-    else if (page == "camcfg")
-    {
-        text += "Seated view: " + seatText() + " · Alt-cam: "
-            + llList2String(["ignored", "pauses", "ignored", "ends"], (integer)cfgGet("peek") + 2 * (integer)cfgGet("peek_bail"))
-            + "\nChat cuts: " + onoff("chat_cuts") + " · Phantom (see-through objects block the camera too): " + onoff("phantom");
-        b = ["seat", "altcam", "chat", "phantom", "back"];
-    }
-    else if (page == "seat")
-    {
-        text += "Sitting or lying down: look down on you and your friends from above.\nNow: " + seatText();
-        b = ["auto", "high", "low", "off", "back"];
-    }
-    else if (page == "look")
-    {
-        text += "Button: " + llList2String(["Classic", "Rec", "Viewfinder"], gLook)
-            + "\nStatus line (the mode above the button): " + onoff("status") + " · Chat text: " + onoff("trace");
-        b = ["th0", "th1", "th2", "stline", "size", "trace", "back"];
-    }
-    else if (page == "indoors")
-    {
-        text += "Inside or outside?\nNow: " + cfgGet("indoors") + " (auto: inside in the sky)";
-        b = ["auto", "inside", "outside", "back"];
-    }
-    else if (page == "chat")
-    {
-        text += "Cut to whoever speaks.\nNow: " + onoff("chat_cuts");
-        b = ["on", "off", "back"];
-    }
-    else if (page == "altcam")
-    {
-        text += "When you Alt-orbit while it rolls:";
-        b = ["pause", "end", "ignore", "back"];
-    }
-    else if (page == "reach")
-    {
-        text += "Furthest scenery camera.\nChosen " + cfgGet("reach_set") + " m, using " + cfgGet("reach") + " m (lowers itself if your viewer holds the camera closer).";
-        b = ["r50", "r100", "r150", "r200", "relearn", "back"];
-    }
-    else if (page == "reset")
-    {
-        text += "Reset ALL settings to defaults?";
-        b = ["yes", "back"];
-    }
-    else
-    {
-        text = "Welcome to Take 12\nTap: menu\nDouble-tap: scenery, or the next view\nHold: connect with people near you\nAny movement key: your camera back";
-        b = ["gotit", "help"];
-    }
-    llDialog(gOwner, text, order(b), gChan);
+    llMessageLinked(LINK_SET, TXT, p + "|" + args, "ui");
+    timer0();
 }
 
-toggle(string k, string name)
+string mark(string label, integer on)
 {
-    string v = "1";
-    if (cfgGet(k) == "1") v = "0";
-    cfgSet(k, v);
-    note(name + ": " + onoff(k));
+    if (on) return "● " + label;
+    return label;
 }
 
-// the furthest scenery distance you chose (reach_set) and what the HUD is using now (reach: it lowers itself if your
-// viewer refuses far cameras, and grows back up to reach_set)
-setReach(string m)
+string bare(string m)
 {
-    cfgSet("reach_set", m);
-    cfgSet("reach", m);
-    cfgSet("reach_ok", "0");
+    if (llGetSubString(m, 0, 1) == "● ") return llGetSubString(m, 2, -1);
+    return m;
 }
 
-// "2 min" -> 120, "90 s" -> 90, "75 m" -> 75
-integer toNum(string msg)
+integer mm()
 {
-    integer n = (integer)msg;
-    if (llSubStringIndex(msg, "min") >= 0) n = n * 60;
-    return n;
+    return llRound(12.0 / llTan(llGetCameraFOV() * 0.5));
 }
 
-onChoice(string msg)
+string lensWant()
 {
-    string id = idOf(msg);
-    if (id == "close" || id == " ") { closeMenu(); return; }
-    if (id == "full") { closeMenu(); upsell(); return; }
-    if (id == "back")
+    string l = cfg("lens");
+    if (l == "") l = "38";
+    return l;
+}
+
+menu()
+{
+    string st = "Your own camera";
+    if (gState == "off") st = "Everything off · hold the [12] to come back";
+    else if (gShot != "") st = llToUpper(llGetSubString(gShot, 0, 0)) + llGetSubString(gShot, 1, -1);
+    if (gLink == "on" || gLink == "shared") st += " · connected";
+    if (gLink == "theirs") st += " · watching";
+    page("main", st, ["Connect", "Settings", "Help", "Close"]);
+}
+
+open(string p)
+{
+    if (p == "settings")
     {
-        openMenu(up(gPage));
-        return;
+        list b = ["Lens", "Eye line", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
+        page(p, "", b);
     }
+    else if (p == "lens")
+    {
+        string w = lensWant();
+        string bk = "‹ Back";
+        if (gFirst == "lens") bk = "Skip";
+        page(p, (string)mm() + "~" + w, [mark("35 mm", w == "35"), mark("38 mm", w == "38"), mark("40 mm", w == "40"), bk]);
+        gLensL = TRUE;
+    }
+    else if (p == "shapes")
+    {
+        list S = [];
+        integer i;
+        for (i = 0; i < 4; i++)
+        {
+            string s = cfg("shape." + llList2String(["tracking", "portrait", "fixed", "scenic"], i));
+            if (s == "") s = llList2String(["2.39", "1.85", "1.85", "2.39"], i);
+            S += s;
+        }
+        string bs = cfg("bstyle");
+        page(p, llDumpList2String(S, "~") + "~" + llList2String(["black", "dimmed"], bs == "dim"),
+            ["Tracking", "Portrait", "Fixed", "Scenic", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
+    }
+    else if (p == "idle")
+    {
+        string i = cfg("idle");
+        if (i == "") i = "5";
+        page(p, llList2String(["after 5 min still, or Away", "only when Away", "off"], llListFindList(["5", "away", "off"], [i])),
+            [mark("Off", i == "off"), mark("Away", i == "away"), mark("5 min", i == "5"), "‹ Back"]);
+    }
+    else if (p == "vehicles")
+    {
+        list V = llParseString2List(cfg("veh"), [";"], []);
+        list b = [];
+        integer i;
+        for (i = 0; i < llGetListLength(V) && i < 9; i++) b += llGetSubString(llList2String(llParseString2List(llList2String(V, i), ["|"], []), 0), 0, 23);
+        page(p, llDumpList2String(V, "~"), b + ["‹ Back"]);
+    }
+    else if (p == "friends")
+    {
+        list F = llParseString2List(cfg("friends"), [";"], []);
+        list n = [];
+        integer i;
+        for (i = 0; i < llGetListLength(F); i++) n += llList2String(llParseString2List(llList2String(F, i), [","], []), 1);
+        string c = cfg("chime");
+        string fl = "None yet.";
+        if (n != []) fl = llDumpList2String(n, ", ");
+        page(p, fl + "~" + llList2String(["on", "off"], c == "0"), ["Add", "Remove", mark("Chime", c != "0"), "‹ Back"]);
+    }
+    else if (p == "remove")
+    {
+        list F = llParseString2List(cfg("friends"), [";"], []);
+        list b = [];
+        integer i;
+        for (i = 0; i < llGetListLength(F) && i < 11; i++) b += llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23);
+        page("friends", "Tap a friend to remove.~" + llList2String(["on", "off"], cfg("chime") == "0"), b + ["‹ Back"]);
+        gPage = "remove";
+    }
+    else if (p == "look")
+    {
+        string pl = cfg("place");
+        string sz = cfg("size");
+        if (sz == "") sz = "m";
+        string ks = cfg("keys");
+        page(p, llList2String(["Top", "Top, lower", "Bottom", "Bottom, higher"], llListFindList(["top", "topl", "bot", "both"], [pl]) * (pl != "")) + "~"
+            + llToUpper(sz) + "~" + llList2String(["Soft", "Clear"], ks == "clear"),
+            ["Place", mark("S", sz == "s"), mark("M", sz == "m"), mark("L", sz == "l"), mark("Soft", ks != "clear"), mark("Clear", ks == "clear"), "‹ Back"]);
+    }
+    else if (p == "place")
+    {
+        string pl = cfg("place");
+        if (pl == "") pl = "top";
+        page(p, llList2String(["Top", "Top, lower", "Bottom", "Bottom, higher"], llListFindList(["top", "topl", "bot", "both"], [pl])),
+            [mark("Top", pl == "top"), mark("Top, lower", pl == "topl"), mark("Bottom", pl == "bot"), mark("Bottom, higher", pl == "both"), "‹ Back"]);
+    }
+    else if (p == "reset") page(p, "", ["Tips again", "Seats & views", "Everything", "‹ Back"]);
+    else if (p == "everything") page(p, "", ["Yes, reset", "‹ Back"]);
+    else if (p == "help") page(p, "", ["Guide", "Tips again", "‹ Back"]);
+    else if (p == "first") page(p, "", ["Start", "Later"]);
+    else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
+    else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
+    else if (p == "tour3") page(p, "", ["Done"]);
+    else menu();
+}
+
+string up(string p)
+{
+    if (llListFindList(["lens", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
+    if (p == "shape") return "shapes";
+    if (p == "place") return "look";
+    if (p == "remove") return "friends";
+    if (p == "everything") return "reset";
+    return "main";
+}
+
+choose(string m)
+{
+    string b = bare(m);
+    if (b == "Close" || b == " ") { closeMenu(); return; }
+    if (b == "Skip" && gPage == "lens") { closeMenu(); eyeStart(); return; }
+    if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
     {
-        if (id == "framing") id = cfgGet("fwho");           // 7.1: one click, the last one used (Me the first time)
-        if (id == "") id = "frame";
-        if (id == "free" || id == "share" || id == "crop" || id == "frame" || id == "social" || id == "friends")
+        if (b == "Connect") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect|menu", ""); }
+        else if (b == "Settings") open("settings");
+        else if (b == "Help") open("help");
+    }
+    else if (gPage == "settings")
+    {
+        if (b == "Eye line") { closeMenu(); eyeStart(); }
+        else open(llList2String(["lens", "shapes", "vehicles", "idle", "friends", "look", "reset"],
+            llListFindList(["Lens", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
+    }
+    else if (gPage == "lens")
+    {
+        set("lens", llGetSubString(b, 0, 1));
+        if (gFirst == "lens") { closeMenu(); eyeStart(); return; }
+        open("lens");
+    }
+    else if (gPage == "shapes")
+    {
+        if (b == "Black" || b == "Dimmed")
         {
-            closeMenu();
-            llMessageLinked(LINK_SET, CMD, id, "");
+            set("bstyle", llList2String(["black", "dim"], b == "Dimmed"));
+            open("shapes");
+            return;
         }
-        else openMenu(id);
-    }
-    else if (gPage == "scenery")
-    {
-        if (id == "start") { closeMenu(); llMessageLinked(LINK_SET, CMD, "scenery", ""); }
-        else if (id == "sfmt") { closeMenu(); llMessageLinked(LINK_SET, CMD, "cropsc", ""); }   // crop.lsl: Scenery's own Format
-        else openMenu(id);
-    }
-    else if (gPage == "live")
-    {
+        string s = llToLower(b);
+        string now = cfg("shape." + s);
+        if (now == "") now = llList2String(["2.39", "1.85", "1.85", "2.39"], llListFindList(["tracking", "portrait", "fixed", "scenic"], [s]));
         closeMenu();
-        if (id == "save") llMessageLinked(LINK_SET, CMD, "fav", "");
-        else if (id == "next" || id == "stop" || id == "share" || id == "adjust" || id == "showme") llMessageLinked(LINK_SET, CMD, id, "");
-        else if (id == "me" || id == "us" || id == "friends")
-            llMessageLinked(LINK_SET, CMD, llList2String(["frame", "social", "friends"], llListFindList(["me", "us", "friends"], [id])), "");
-        else if (id == "flist") llMessageLinked(LINK_SET, UI_FRIENDS, "page", "");
-        else if (id == "release") llMessageLinked(LINK_SET, CMD, "auto", "");
-        else if (id == "modes") openMenu("main");
+        gPage = "shape";
+        page("shape", b + "~" + now, [mark("1.66", now == "1.66"), mark("1.85", now == "1.85"), mark("2.00", now == "2.00"), mark("2.39", now == "2.39"), mark("Full", now == "full"), "‹ Back"]);
+        gPage = "shape:" + s;
     }
-    else if (gPage == "help")
+    else if (llGetSubString(gPage, 0, 5) == "shape:")
     {
-        if (id == "readme") { giveHelp(); closeMenu(); return; }
-        if (cfgGet("tips") != "1") cfgWrite("tipn", "0");    // back on: every tip from the start
-        toggle("tips", "Tips");
-        openMenu("help");
+        set("shape." + llGetSubString(gPage, 6, -1), llToLower(b));
+        open("shapes");
     }
-    else if (gPage == "pace")
+    else if (gPage == "idle")
     {
-        integer i = llListFindList(PACE_IDS, [id]);
-        if (i >= 0) cfgSet("hold", llList2String(PACE_SECS, i));
-        note("Pace: " + paceName() + " (about " + cfgGet("hold") + " s per shot)");
-        openMenu("opts");
+        set("idle", llList2String(["off", "away", "5"], llListFindList(["Off", "Away", "5 min"], [b])));
+        open("idle");
     }
-    else if (gPage == "afk")
+    else if (gPage == "vehicles")
     {
-        if (id == "mcheck") { toggle("afk_away", "Mouse check"); openMenu("afk"); return; }
-        if (id == "off") cfgSet("afk_on", "0");
-        else
+        list V = llParseString2List(cfg("veh"), [";"], []);
+        integer i;
+        for (i = llGetListLength(V) - 1; i >= 0; i--)
+            if (llGetSubString(llList2String(llParseString2List(llList2String(V, i), ["|"], []), 0), 0, 23) == b) V = llDeleteSubList(V, i, i);
+        set("veh", llDumpList2String(V, ";"));
+        open("vehicles");
+    }
+    else if (gPage == "friends")
+    {
+        if (b == "Add") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect|addfriend", ""); }
+        else if (b == "Remove") open("remove");
+        else if (b == "Chime")
         {
-            cfgSet("afk_sec", (string)toNum(msg));
-            cfgSet("afk_on", "1");
+            set("chime", llList2String(["0", "1"], cfg("chime") == "0"));
+            open("friends");
         }
-        note("Idle start: " + afkText());
-        openMenu("scenery");
     }
-    else if (gPage == "opts")
+    else if (gPage == "remove")
     {
-        if (id == "test")
-        {
-            closeMenu();
-            llMessageLinked(LINK_SET, CMD, "grab", "");
-        }
-        else openMenu(id);
-    }
-    else if (gPage == "camcfg")
-    {
-        if (id == "phantom")
-        {
-            toggle("phantom", "Phantom obstacles");
-            openMenu("camcfg");
-        }
-        else openMenu(id);
+        list F = llParseString2List(cfg("friends"), [";"], []);
+        integer i;
+        for (i = llGetListLength(F) - 1; i >= 0; i--)
+            if (llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23) == b) F = llDeleteSubList(F, i, i);
+        set("friends", llDumpList2String(F, ";"));
+        open("friends");
     }
     else if (gPage == "look")
     {
-        if (llGetSubString(id, 0, 1) == "th") cfgSet("look", llGetSubString(id, 2, 2));
-        else if (id == "trace") toggle("trace", "Chat text");
-        else if (id == "stline") toggle("status", "Status line");
-        else if (id == "size") llMessageLinked(LINK_SET, CMD, "size", "");    // keys.lsl draws it
-        if (id != "size") openMenu("look");
+        if (b == "Place") { open("place"); return; }
+        if (b == "S" || b == "M" || b == "L") set("size", llToLower(b));
+        else set("keys", llToLower(b));
+        open("look");
     }
-    else if (gPage == "indoors")
+    else if (gPage == "place")
     {
-        cfgSet("indoors", id);
-        note("Indoors: " + id);
-        openMenu(up(gPage));
-    }
-    else if (gPage == "chat")
-    {
-        if (id == "on") cfgSet("chat_cuts", "1");
-        else cfgSet("chat_cuts", "0");
-        note("Chat cuts: " + onoff("chat_cuts"));
-        openMenu(up(gPage));
-    }
-    else if (gPage == "seat")
-    {
-        cfgSet("seat_deg", llList2String(["0", "45", "60", "30"], llListFindList(["off", "auto", "high", "low"], [id])));
-        note("Seated view: " + seatText());
-        openMenu(up(gPage));
-    }
-    else if (gPage == "altcam")
-    {
-        if (id == "pause") { cfgSet("peek", "1"); cfgSet("peek_bail", "0"); }
-        else if (id == "end") { cfgSet("peek", "1"); cfgSet("peek_bail", "1"); }
-        else if (id == "ignore") cfgSet("peek", "0");
-        openMenu(up(gPage));
-    }
-    else if (gPage == "reach")
-    {
-        if (id == "relearn") setReach(cfgGet("reach_set"));
-        else setReach((string)toNum(msg));
-        openMenu(up(gPage));
+        set("place", llList2String(["top", "topl", "bot", "both"], llListFindList(["Top", "Top, lower", "Bottom", "Bottom, higher"], [b])));
+        open("place");
     }
     else if (gPage == "reset")
     {
-        if (id == "yes")
+        if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
+        else if (b == "Seats & views")
         {
-            initDefaults(TRUE);
-            llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
-            note("Settings reset to defaults.");
+            list K = llLinksetDataFindKeys("^cin\\.(seat|view|places)", 0, 0);
+            integer i;
+            for (i = 0; i < llGetListLength(K); i++) llLinksetDataDeleteProtected(llList2String(K, i), PASS);
+            llMessageLinked(LINK_SET, CFG_CHANGED, "seats", "");
+            closeMenu();
         }
-        openMenu("opts");
+        else if (b == "Everything") open("everything");
     }
-    else
+    else if (gPage == "everything")
     {
         closeMenu();
-        if (id == "help") giveHelp();
+        llLinksetDataReset();
+        llLinksetDataWriteProtected("cin.owner", (string)gOwner, PASS);
+        llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
+        llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
+        gFirst = "start";
+        first();
+    }
+    else if (gPage == "help")
+    {
+        if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
+        else if (b == "Guide") { closeMenu(); guide(); }
+    }
+    else if (gPage == "first")
+    {
+        if (b == "Start") { gFirst = "lens"; open("lens"); }
+        else { closeMenu(); gFirst = "later"; }
+    }
+    else if (gPage == "size")
+    {
+        integer i = llListFindList(["s", "m", "l"], [cfg("size")]);
+        if (i < 0) i = 1;
+        if (b == "Smaller" && i > 0) i--;
+        if (b == "Larger" && i < 2) i++;
+        set("size", llList2String(["s", "m", "l"], i));
+        if (b == "Good") open("tour1");
+        else open("size");
+    }
+    else if (gPage == "tour1") { if (b == "Skip") done(); else open("tour2"); }
+    else if (gPage == "tour2") { if (b == "Skip") done(); else open("tour3"); }
+    else if (gPage == "tour3") done();
+}
+
+guide()
+{
+    string card = "";
+    integer i;
+    for (i = llGetInventoryNumber(INVENTORY_NOTECARD) - 1; i >= 0; i--)
+        if (llSubStringIndex(llGetInventoryName(INVENTORY_NOTECARD, i), "Read Me") >= 0) card = llGetInventoryName(INVENTORY_NOTECARD, i);
+    if (card != "") llGiveInventory(gOwner, card);
+}
+
+// ---- the first run ------------------------------------------------------------------------
+first()
+{
+    if (gFirst == "start") open("first");
+}
+
+done()
+{
+    closeMenu();
+    gFirst = "";
+    llLinksetDataWriteProtected("cin.firstrun", "done", PASS);
+    if (gOpen) strip("close");
+}
+
+// ---- the eye line: a line on screen, PgUp / PgDn onto your eyes, tap to keep ----------------------------------------
+eyeStart()
+{
+    if (LITE && gFirst == "lens") { eyeEnd(FALSE); return; }            // the free build: no Portrait, no eye line
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
+    if (llGetListLength(d) < 2 || !(llGetPermissions() & PERMISSION_TAKE_CONTROLS)) return;
+    vector P = llList2Vector(d, 0);
+    vector F = llRot2Fwd(llList2Rot(d, 1));
+    F.z = 0.0;
+    F = llVecNorm(F);
+    vector sz = llGetAgentSize(gOwner);
+    gTall = sz.z;
+    gFeet = P.z - 0.5 * gTall;
+    float e = (float)cfg("eye");
+    if (e < 0.5) e = 0.935;
+    float ez = gFeet + e * gTall;
+    gEyeCam = P + F * EYE_D;
+    gEyeCam.z = ez;
+    llMessageLinked(LINK_SET, CMD, "eyecam|" + (string)gEyeCam + "|" + (string)<P.x, P.y, ez>, "");
+    gEyeZ = 0.0;                                            // the camera is at your eyes: the line starts in the middle
+    gEye = TRUE;
+    llTakeControls(CONTROL_UP | CONTROL_DOWN, TRUE, FALSE);
+    llMessageLinked(LINK_SET, STRIP, "eye|" + (string)gEyeZ, "");
+    note("eyeline", "");
+}
+
+eyeEnd(integer keep)
+{
+    gEye = FALSE;
+    llTakeControls(CONTROL_UP | CONTROL_DOWN, FALSE, TRUE);
+    llMessageLinked(LINK_SET, STRIP, "eye|off", "");
+    llMessageLinked(LINK_SET, CMD, "eyecam|off", "");
+    if (keep)
+    {
+        // the line's screen height back to a height on you: tan of the half-height is gEyeZ / 0.5 of the lens
+        float h = gEyeCam.z + (gEyeZ / 0.5) * EYE_D * llTan(llGetCameraFOV() * 0.5);
+        set("eye", (string)((h - gFeet) / gTall));
+        note("kept", "");
+    }
+    if (gFirst == "lens" || gFirst == "eye")
+    {
+        gFirst = "size";
+        strip("open");
+        open("size");
     }
 }
 
-// ============================================================================
-//  touch gestures
-// ============================================================================
-// tap: always a menu. Idle: the main menu; a camera running: the live menu. Any movement key stops it
+// ---- the strip -------------------------------------------------------------------------------
+strip(string a)
+{
+    if (a == "toggle") gOpen = !gOpen;
+    else if (a == "open") gOpen = TRUE;
+    else if (a == "close") gOpen = FALSE;
+    llMessageLinked(LINK_SET, STRIP, a, "");
+}
+
+// ---- gestures -------------------------------------------------------------------------------
 onTap()
 {
-    openMenu(llList2String(["main", "live"], gUiState != "idle"));
+    if (gEye) { eyeEnd(TRUE); return; }
+    if (gFirst == "start" || gFirst == "later") { gFirst = "start"; first(); return; }
+    menu();
 }
 
 onDouble()
 {
-    if (gUiState == "idle") llMessageLinked(LINK_SET, CMD, "scenery", "");
-    else llMessageLinked(LINK_SET, CMD, "next", "");
+    if (gEye) return;
+    if (gState == "off") return;
+    strip("toggle");
 }
 
-// hold: a shortcut to the Connect panel (connect.lsl); Connect is in both menus too. Its ⋯ More comes back here
 onLong()
 {
-    if (LITE) onTap();                                      // Take 12 Scenery: no sharing
-    else llMessageLinked(LINK_SET, CMD, "share", "");
+    if (gEye) { eyeEnd(FALSE); return; }
+    if (gState == "off")
+    {
+        llMessageLinked(LINK_SET, CMD, "on", "");
+        if (gOpenOff) strip("open");
+    }
+    else
+    {
+        gOpenOff = gOpen;
+        if (gOpen) strip("close");
+        llMessageLinked(LINK_SET, CMD, "off", "");
+        llMessageLinked(LINK_SET, CMD, "mine", "");
+    }
+}
+
+timer0()
+{
+    if (gHeld || gTapN) llSetTimerEvent(0.1);
+    else if (gListen || gVerT || gLensL) llSetTimerEvent(1.0);
+    else llSetTimerEvent(0.0);
+}
+
+// ---- /12 ---------------------------------------------------------------------------------------
+command(string m)
+{
+    list L = llParseString2List(llToLower(llStringTrim(m, STRING_TRIM)), [" "], []);
+    string c = llList2String(L, 0);
+    string a = llList2String(L, 1);
+    if (llListFindList(["tracking", "portrait", "fixed", "scenic"], [c]) >= 0) llMessageLinked(LINK_SET, CMD, "shot|" + c, "");
+    else if (c == "bars" || c == "next") llMessageLinked(LINK_SET, CMD, c, "");
+    else if (c == "off") onLong();
+    else if (c == "strip") strip("toggle");
+    else if (c == "status") llMessageLinked(LINK_SET, STATUS, "?", "");
+    else if (c == "debug") llMessageLinked(LINK_SET, CMD, "debug|" + (string)(a == "on"), "");
+    else if (c == "blend") llMessageLinked(LINK_SET, CMD, "blend|" + (string)(a == "on"), "");
+    else if (c == "flip") set("flip", llList2String(["1", "0"], cfg("flip") == "1"));
+    else if (c == "place" && llListFindList(["top", "topl", "bot", "both"], [a]) >= 0) set("place", a);
+    else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
+    else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);
+    else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect|menu", "");
+    else note("commands", "");
 }
 
 // ============================================================================
@@ -609,15 +556,10 @@ default
     {
         gOwner = llGetOwner();
         checkOwner();
-        llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_GLOW, ALL_SIDES, 0.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]);
-        frame(2 * gLook);
-        setLook("armed");
-        if (gFirst)
-        {
-            cfgWrite("seen_intro", "1");
-            openMenu("welcome");
-        }
-        nextTimer();
+        gCmdL = llListen(12, "", gOwner, "");
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
+        gVerT = llGetUnixTime();
+        timer0();
     }
 
     on_rez(integer p)
@@ -625,14 +567,41 @@ default
         llResetScript();
     }
 
+    attach(key id)
+    {
+        if (id == NULL_KEY) return;
+        gOpen = FALSE;
+        gEye = FALSE;
+        gState = "wait";
+        gShot = "";
+        gLensTold = FALSE;
+        closeMenu();
+        llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
+        if (cfg("firstrun") != "done") gFirst = "start";
+        gVerStep = 0;
+        gVerT = llGetUnixTime();
+        timer0();
+    }
+
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
     }
 
+    control(key id, integer level, integer edge)
+    {
+        if (!gEye) return;
+        float dz = 0.004;                                   // a press (and every repeat): a few pixels
+        if (level & CONTROL_UP) gEyeZ += dz;
+        if (level & CONTROL_DOWN) gEyeZ -= dz;
+        if (gEyeZ > 0.45) gEyeZ = 0.45;
+        if (gEyeZ < -0.45) gEyeZ = -0.45;
+        llMessageLinked(LINK_SET, STRIP, "eye|" + (string)gEyeZ, "");
+    }
+
     touch_start(integer n)
     {
-        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) > 1) return;   // not the Frame's bars (crop)
+        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) != 1) return;
         float now = llGetTime();
         if (gTapN)
         {
@@ -643,14 +612,17 @@ default
         gDown = now;
         gHeld = TRUE;
         gLongDone = FALSE;
-        nextTimer();
+        gFill = 0;
+        timer0();
     }
 
     touch_end(integer n)
     {
-        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) > 1) return;
+        if (llDetectedKey(0) != gOwner || llDetectedLinkNumber(0) != 1) return;
         gHeld = FALSE;
-        if (gLongDone) { frame(2 * gLook); nextTimer(); return; }
+        if (gFill) llMessageLinked(LINK_SET, STRIP, "hold|0", "");
+        gFill = 0;
+        if (gLongDone) { timer0(); return; }
         if (gDbl)
         {
             gDbl = FALSE;
@@ -661,66 +633,98 @@ default
             gTapN = TRUE;
             gTapT = llGetTime();
         }
-        nextTimer();
+        timer0();
+    }
+
+    listen(integer ch, string name, key id, string m)
+    {
+        if (id != gOwner) return;
+        if (ch == 12) { command(m); return; }
+        gMenuT = llGetUnixTime();
+        choose(m);
     }
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == CMD && (str == "livemenu" || str == "mainmenu")) openMenu(llGetSubString(str, 0, -5));
+        if (num == TXT_ANS && id == "ui")
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            string p = llList2String(L, 0);
+            if (gListen && (p == gPage || llSubStringIndex(gPage, p + ":") == 0 || (p == "friends" && gPage == "remove")))
+                llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), order(gBtn), gChan);
+        }
         else if (num == UI_STATE)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
-            string st = llList2String(L, 0);
-            gUiMode = llList2String(L, 1);
-            gNextCut = (integer)llList2String(L, 2);
-            gAdj = (integer)llList2String(L, 4);
-            if (st == "rolling" && llListFindList(["frame", "social", "friends"], [gUiMode]) >= 0 && cfgGet("fwho") != gUiMode) cfgWrite("fwho", gUiMode);   // Framing starts it next time
-            if (st == "rolling" || st == "peek") gUiState = "rolling";
-            else gUiState = "idle";
-            setLook(st);
+            string was = gState;
+            gState = llList2String(L, 0);
+            gShot = llList2String(L, 1);
+            if (gState == "film" && was != "film" && !gLensTold && llGetPermissions() & PERMISSION_TRACK_CAMERA)
+            {
+                gLensTold = TRUE;                           // the first shot after you wear it: is the cinema lens on?
+                if (mm() < (integer)lensWant() * 0.85) note("lens", (string)mm());
+            }
         }
-        else if (num == UI_MENU) openMenu(llList2String([str, "main"], str == "live" && gUiState == "idle"));   // the Friends list's Back
-        else if (num == CFG_CHANGED)                        // a chat command (picker) may have changed these
+        else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
+        else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
+        else if (num == MSG_VER && str != "?")
         {
-                    gNote = (cfgGet("trace") == "1");
-            gFace = (integer)cfgGet("face");
-            gLook = (integer)cfgGet("look");
-            frame(2 * gLook);
+            if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];
+            if (str != VERSION) note("mixed", (string)id);
         }
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/ui] v" + VERSION + " idle start " + afkText() + ", pace " + paceName() + " (" + cfgGet("hold") + " s), reach "
-                + cfgGet("reach") + " m, free mem " + (string)llGetFreeMemory());
-        else if (num == MSG_VER && str != "?" && str != VERSION)
-            llOwnerSay("[Take 12] WARNING: " + (string)id + " script is version " + str + ", ui is " + VERSION + ". Re-drop all Take 12 scripts from the same release.");
-    }
-
-    listen(integer channel, string name, key id, string msg)
-    {
-        if (id != gOwner) return;
-        gMenuT = llGetUnixTime();
-        onChoice(msg);
+            llOwnerSay("[Take 12/ui] v" + VERSION + " " + gState + " " + gShot + ", strip " + llList2String(["closed", "open"], gOpen)
+                + ", first run " + llList2String([gFirst, "done"], gFirst == "") + ", free mem " + (string)llGetFreeMemory());
     }
 
     timer()
     {
         float now = llGetTime();
-        if (!gVerAsked)
+        if (gHeld && !gLongDone && !gDbl)
         {
-            gVerAsked = TRUE;
-            llMessageLinked(LINK_SET, MSG_VER, "?", "ui");
-        }
-        if (gHeld && !gLongDone && !gDbl && now - gDown >= LONG_HOLD)
-        {
-            gLongDone = TRUE;
-            frame(2 * gLook + 1);                           // the clapper claps: the hold has taken, let go
-            onLong();
+            integer f = (integer)((now - gDown) / LONG_HOLD * 8.0);
+            if (f > 8) f = 8;
+            if (f != gFill && f > 0)
+            {
+                gFill = f;                                  // the ring fills as you hold
+                llMessageLinked(LINK_SET, STRIP, "hold|" + (string)f, "");
+            }
+            if (now - gDown >= LONG_HOLD)
+            {
+                gLongDone = TRUE;
+                onLong();
+            }
         }
         if (gTapN && now - gTapT > TAP_GAP)
         {
             gTapN = FALSE;
             onTap();
         }
-        if (gListen && llGetUnixTime() - gMenuT > 60) closeMenu();
-        nextTimer();
+        if (gListen && llGetUnixTime() - gMenuT > 90) closeMenu();
+        if (gLensL) note("mm", (string)mm());
+        if (gVerT && gVerStep == 0 && llGetUnixTime() - gVerT >= 2)
+        {
+            gVer = ["ui"];                                  // every script answers with its name
+            gVerStep = 1;
+            llMessageLinked(LINK_SET, MSG_VER, "?", "ui");
+        }
+        else if (gVerT && gVerStep == 1 && llGetUnixTime() - gVerT >= 4)
+        {
+            // which scripts did not answer: amber, and the note says which
+            list miss = [];
+            integer i;
+            list need = llParseString2List(NEED, [" "], []);
+            if (LITE) need = llDeleteSubList(need, 5, 7);  // the free build: no tracking, portrait, fixed
+            for (i = 0; i < llGetListLength(need); i++) if (llListFindList(gVer, [llList2String(need, i)]) < 0) miss += llList2String(need, i);
+            if (miss != [])
+            {
+                note("missing", llDumpList2String(miss, ", "));
+                llMessageLinked(LINK_SET, STRIP, "problem|1", "");
+            }
+            gVerT = 0;
+            gVerStep = 0;
+            if (gFirst == "start") note("setup", "");
+        }
+        timer0();
     }
 }

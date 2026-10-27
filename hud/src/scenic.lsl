@@ -1,0 +1,721 @@
+// ============================================================================
+//  Take 12  -  scenic.lsl  (8.0)  - Scenic: views of the place; the idle camera
+//  Drift · Near · Room · Far (cin.scn "<0 drift … 3 far>"; Drift the first time). Still frames, locked off, with a
+//  clean cut about every 15 s (the lit tap: the next view now); Drift is the only one that moves: it starts close,
+//  slowly pulls out and comes back, a leg of about 15 s at a time, and stays near (under about 8 m) while anyone is
+//  within 10 m of you. Views are found with rays: an open line of sight, nothing judged by what objects are.
+//    Near  3 to 8 m from you, a little above eye level, you on a third
+//    Room  indoors only: the room you are in (7.x's inside views: high, eye level, you small; your floor under it)
+//    Far   20 to 60 m: high views over your area and wide eye-level ones along the horizon
+//  Indoors (a build floor with a roof over you, or a skybox) every band stays in the room: Far is dim, Near and Drift
+//  stay inside. Outdoors Room is dim. Always within 60 m of you, inside your region, above the ground and the water.
+//  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
+// ============================================================================
+
+string VERSION = "8.0.0";
+string PASS    = "cinema-1.0-build1";
+
+integer START      = 7301;
+integer STOP       = 7302;
+integer NEXT       = 7303;
+integer PAUSE      = 7304;
+integer RESUME     = 7305;
+integer SHOT       = 7310;
+integer NO_SHOT    = 7311;
+integer GLIDE      = 7312;
+integer ACK        = 7313;
+integer OPTS       = 7340;
+integer OPT        = 7341;
+integer MSG_VER    = 7360;
+integer STATUS     = 7370;
+
+list    BANDS      = ["DRIFT", "NEAR", "ROOM", "FAR"];
+float   HOLD       = 15.0;          // s  a still frame, about
+float   LEG        = 15.0;          // s  a Drift leg
+list    DRIFT_D    = [5.0, 9.0, 16.0, 26.0, 16.0, 9.0];    // m  Drift alone, outdoors: out and back
+list    NEAR_D     = [4.5, 6.0, 5.0, 7.0];                  // m  Drift near people, or indoors
+list    FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0];
+list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>, <0.0, 0.423, 0.906>, <0.0, -0.423, 0.906>];
+
+key     gOwner;
+integer gOn;
+integer gPaused;
+integer gBand;
+integer gErr;
+integer gRayErr;
+list    gRay = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
+vector  gOP;
+float   gWater;
+integer gCtxOK;
+vector  gCtxPos;
+list    gLastAz;
+integer gLastType = -1;
+integer gCuts;
+integer gLocal;                     // indoors: the camera stays in the room
+vector  gLocalAt;
+integer gPrimFloor;
+integer gSky;
+integer gRoofs;
+float   gTopZ;
+float   gFloorZ;
+float   gCapZ;
+float   gDmax;
+list    gWallD;
+list    gFloorD;
+float   gNextT;                     // the next cut (still frames)
+integer gRetry;
+// Drift
+integer gStage;
+vector  gA;                         // the leg: from, to (camera), and the focus beside you (relative)
+vector  gB;
+vector  gFa;
+vector  gFb;
+float   gLegT;
+float   gAz;
+
+string cfg(string k)
+{
+    return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+float clampf(float v, float lo, float hi)
+{
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
+vector dirOf(float a)
+{
+    return <llCos(a), llSin(a), 0.0>;
+}
+
+// how new a direction is (0..1: 90° or more from the last shots)
+float novelty(float az)
+{
+    float m = PI;
+    integer i;
+    for (i = 0; i < llGetListLength(gLastAz); i++)
+    {
+        float d = az - llList2Float(gLastAz, i);
+        while (d > PI) d -= TWO_PI;
+        while (d < -PI) d += TWO_PI;
+        if (llFabs(d) < m) m = llFabs(d);
+    }
+    return clampf(m / PI_BY_TWO, 0.0, 1.0);
+}
+
+// [status, distance]: 0 clear, 1 hit, <0 refused (gErr)
+list ray(vector a, vector b)
+{
+    list r = llCastRay(a, b, gRay);
+    integer st = llList2Integer(r, -1);
+    if (st < 0)
+    {
+        gErr = TRUE;
+        gRayErr++;
+        return [st, 0.0];
+    }
+    if (st == 0) return [0, llVecDist(a, b)];
+    return [1, llVecDist(a, llList2Vector(r, 1))];
+}
+
+float surfaceAt(float x, float y, float zTop, float zBottom)
+{
+    list r = ray(<x, y, zTop>, <x, y, zBottom>);
+    if (llList2Integer(r, 0) != 1) return zBottom;
+    return zTop - llList2Float(r, 1);
+}
+
+// your level's floor under c (a build, or the land when the land is your floor)
+integer floorOK(vector c)
+{
+    list r = llCastRay(c, <c.x, c.y, gFloorZ - 1.0>, gRay);
+    integer st = llList2Integer(r, -1);
+    if (st < 0) { gErr = TRUE; return FALSE; }
+    if (st == 0) return FALSE;
+    if (llList2Key(r, 0) == NULL_KEY && gPrimFloor) return FALSE;
+    vector h = llList2Vector(r, 1);
+    return (h.z >= gFloorZ - 1.0 && h.z <= gFloorZ + 1.5);
+}
+
+// where are we: indoors (a build floor, and a roof or the sky below) or out. Builds are judged by their floor, the one
+// surface that always has physics. Sticky within 30 m so a door does not flip it.
+context()
+{
+    gCtxOK = FALSE;
+    gRayErr = 0;
+    integer i;
+    list bd = llCastRay(<gOP.x, gOP.y, gOP.z + 0.3>, <gOP.x, gOP.y, gOP.z - 100.0>, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 4]);
+    integer nb = llList2Integer(bd, -1);
+    if (nb < 0) { gErr = TRUE; return; }
+    gPrimFloor = FALSE;
+    gSky = TRUE;
+    gFloorZ = gOP.z - 1.0;
+    if (nb > 0)
+    {
+        vector fh = llList2Vector(bd, 1);
+        gFloorZ = fh.z;
+        gPrimFloor = (llList2Key(bd, 0) != NULL_KEY);
+    }
+    for (i = 0; i < nb; i++) if (llList2Key(bd, i * 2) == NULL_KEY) gSky = FALSE;
+    vector U = <gOP.x, gOP.y, gFloorZ + 1.8>;
+    gRoofs = 0;
+    float ceil = 1.0e6;
+    for (i = 0; i < 5; i++)
+    {
+        list u = ray(U, U + llList2Vector(UP_DIRS, i) * 40.0);
+        if (llList2Integer(u, 0) == 1)
+        {
+            gRoofs++;
+            float hz = U.z + llList2Float(u, 1) * llList2Vector(UP_DIRS, i) * <0.0, 0.0, 1.0>;
+            if (hz < ceil) ceil = hz;
+        }
+    }
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    gWallD = [];
+    integer nHit = 0;
+    for (i = 0; i < 8; i++)
+    {
+        list r = ray(E, E + dirOf(i * 0.785398) * 60.0);
+        float wd = llList2Float(r, 1);
+        if (llList2Integer(r, 0) < 0) wd = 4.0;
+        if (llList2Integer(r, 0) == 1) nHit++;
+        gWallD += [wd];
+    }
+    gFloorD = [];
+    for (i = 0; i < 8; i++)
+    {
+        float fd = 0.0;
+        integer j;
+        for (j = 0; j < 5; j++)
+        {
+            float sd = llList2Float(FLOOR_STEPS, j);
+            gErr = FALSE;
+            if (sd > llList2Float(gWallD, i)) j = 5;
+            else if (floorOK(<gOP.x, gOP.y, gFloorZ + 1.0> + dirOf(i * 0.785398) * sd)) fd = sd;
+            else if (gErr) gRayErr++;
+            else j = 5;
+        }
+        gFloorD += [fd];
+    }
+    gTopZ = surfaceAt(gOP.x, gOP.y, gOP.z + 80.0, gOP.z - 5.0);
+    gErr = FALSE;
+    gWater = llWater(ZERO_VECTOR);
+    integer raw = (gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5)));
+    if (!raw && gLocal && (gPrimFloor || gRoofs > 0 || nHit >= 5) && llVecDist(gOP, gLocalAt) < 30.0) raw = TRUE;
+    gLocal = raw;
+    if (raw) gLocalAt = gOP;
+    gCapZ = gFloorZ + 3.4;
+    if (gRoofs > 0) gCapZ = clampf(ceil - 0.4, gFloorZ + 1.6, gFloorZ + 6.0);
+    integer open = 0;
+    for (i = 0; i < 8; i++) if (llList2Float(gWallD, i) >= 25.0) open++;
+    gDmax = 12.0;
+    if (open >= 5) gDmax = 20.0;
+    gCtxPos = gOP;
+    gCtxOK = (gRayErr <= 3);
+}
+
+// a camera spot outdoors is fine: inside the region, above the ground and the water, a clear line from your eye
+integer outOK(vector c, vector E)
+{
+    if (c.x < 3.0 || c.x > 253.0 || c.y < 3.0 || c.y > 253.0 || c.z < gWater + 0.5) return FALSE;
+    if (surfaceAt(c.x, c.y, c.z + 0.5, c.z - 30.0) > c.z - 0.5) return FALSE;
+    float dEc = llVecDist(E, c);
+    list r = ray(E, E + llVecNorm(c - E) * (dEc + 0.6));
+    return (llList2Integer(r, 0) == 0 || (llList2Integer(r, 0) == 1 && llList2Float(r, 1) >= dEc + 0.5));
+}
+
+// Far: 20 to 60 m, high over your area or along the horizon. [cam, focus, type, az] or []
+list farShot(float minD, float clearMin)
+{
+    list best = [];
+    float bestS = -1000.0;
+    float base = llFrand(TWO_PI);
+    integer i;
+    for (i = 0; i < 10; i++)
+    {
+        float az = base + i * 0.628319;
+        float nov = novelty(az);
+        if (nov >= 0.44)
+        {
+            vector c = gOP + dirOf(az) * (minD + llFrand(60.0 - minD));
+            c.x = clampf(c.x, 3.0, 253.0);
+            c.y = clampf(c.y, 3.0, 253.0);
+            vector fl = c - gOP;
+            fl.z = 0.0;
+            if (llVecMag(fl) >= minD * 0.75)
+            {
+                float sZ = surfaceAt(c.x, c.y, clampf(gOP.z, gTopZ, 4000.0) + 80.0, gOP.z - 40.0);
+                if (gErr) return [];
+                if (sZ <= gOP.z - 39.9) sZ = gOP.z - 1.0;
+                if (sZ < gWater) sZ = gWater;
+                integer type = 6;
+                float h = 2.5 + llFrand(1.5);
+                if (llFrand(1.0) < 0.6)
+                {
+                    type = 5;
+                    h = 10.0 + llFrand(14.0);
+                }
+                c.z = sZ + h;
+                vector foc;
+                float pitch = 0.0349;
+                float need = clearMin;
+                if (type == 5)
+                {
+                    vector T = gOP + <llFrand(20.0) - 10.0, llFrand(20.0) - 10.0, -1.0>;
+                    vector hv = T - c;
+                    hv.z = 0.0;
+                    if (llVecMag(hv) < 1.0) hv = -fl;
+                    pitch = clampf(llAtan2(c.z - T.z, llVecMag(hv)), 0.1745, 0.6981);
+                    foc = c + llVecNorm(hv) * 30.0;
+                    foc.z = c.z - 30.0 * llTan(pitch);
+                    need = clampf(0.8 * llVecDist(c, T), 8.0, clearMin);
+                }
+                else
+                {
+                    foc = c + dirOf(az + PI + (llFrand(2.0) - 1.0) * 1.047198) * 30.0;
+                    foc.z = c.z - 30.0 * llTan(pitch);
+                }
+                list r = ray(c, c + llVecNorm(foc - c) * 60.0);
+                if (gErr) return [];
+                float clear = llList2Float(r, 1);
+                if (clear >= need)
+                {
+                    float s = 3.0 * clear / 60.0 + 2.0 * nov + llFrand(0.5);
+                    if (type != gLastType) s += 1.0;
+                    if (pitch <= 0.4363) s += 0.5;
+                    if (s > bestS)
+                    {
+                        bestS = s;
+                        best = [c, foc, type, az];
+                    }
+                }
+            }
+        }
+    }
+    return best;
+}
+
+// Near, outdoors: a camera dmin to dmax from you, a little above eye level, you on a third. [cam, focus, 1, az] or []
+list nearShot(float dmin, float dmax)
+{
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    float base = llFrand(TWO_PI);
+    integer k;
+    for (k = 0; k < 6; k++)
+    {
+        float az = base + k * 1.047198;
+        if (novelty(az) >= 0.3 || k >= 4)
+        {
+            float d = dmin + llFrand(dmax - dmin);
+            vector c = <gOP.x, gOP.y, gFloorZ + 1.8 + llFrand(0.9)> + dirOf(az) * d;
+            if (outOK(c, E))
+            {
+                vector side = dirOf(az + PI_BY_TWO) * (0.22 * d * (2 * (llFrand(1.0) < 0.5) - 1));
+                vector foc = <gOP.x, gOP.y, gFloorZ + 1.2> + side;
+                list r = ray(c, c + llVecNorm(foc - c) * (d + 4.0));
+                if (llList2Integer(r, 0) == 0 || llList2Float(r, 1) > d - 0.5) return [c, foc, 1, az];
+            }
+        }
+    }
+    return [];
+}
+
+float edge(integer i)
+{
+    i = i % 8;
+    float w = llList2Float(gWallD, i) - 0.8;
+    float f = llList2Float(gFloorD, i) - 0.5;
+    if (f < w) return f;
+    return w;
+}
+
+// Room (indoors): the best of up to 8 spots on your floor, inside the walls, with a view. relaxed: closer, eye level
+list roomShot(float dmax, integer relaxed)
+{
+    list best = [];
+    float bestS = -1000.0;
+    integer found = 0;
+    gRayErr = 0;
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    vector O = <gOP.x, gOP.y, gFloorZ + 1.0>;
+    float base = llFrand(TWO_PI);
+    integer k;
+    for (k = 0; k < 8 && found < 3 && gRayErr < 6; k++)
+    {
+        float az = base + k * 0.785398 + llFrand(0.4) - 0.2;
+        integer wi = (integer)(az / 0.785398);
+        float lim = edge(wi);
+        if (edge(wi + 1) < lim) lim = edge(wi + 1);
+        if (lim > dmax) lim = dmax;
+        float nov = novelty(az);
+        if (lim >= 2.5 && (relaxed || nov >= 0.3))
+        {
+            float roll = llFrand(1.0);
+            integer type = 11;
+            if (!relaxed && roll < 0.4) type = 10;
+            else if (!relaxed && roll >= 0.75 && lim >= 5.0) type = 12;
+            float d = 2.5 + llFrand(lim - 2.5);
+            float z = gFloorZ + 1.5 + llFrand(0.4);
+            if (type == 10)
+            {
+                d = lim * (0.6 + 0.4 * llFrand(1.0));
+                z = gCapZ - 0.2;
+                if (z < gFloorZ + 2.2) type = 11;
+            }
+            else if (type == 12)
+            {
+                d = lim * (0.75 + 0.25 * llFrand(1.0));
+                z = gFloorZ + 1.8 + llFrand(0.6);
+            }
+            if (z > gCapZ) z = gCapZ;
+            vector c = <gOP.x, gOP.y, z> + dirOf(az) * d;
+            vector foc;
+            if (type == 10)
+            {
+                vector T = O + <llFrand(4.0) - 2.0, llFrand(4.0) - 2.0, -0.2>;
+                vector hv = T - c;
+                hv.z = 0.0;
+                float pitch = clampf(llAtan2(c.z - T.z, llVecMag(hv)), 0.21, 0.61);
+                foc = c + llVecNorm(hv) * 10.0;
+                foc.z = c.z - 10.0 * llTan(pitch);
+            }
+            else if (type == 12) foc = O + <0.0, 0.0, 0.2>;
+            else
+            {
+                foc = c + dirOf(az + PI + (llFrand(1.4) - 0.7)) * 10.0;
+                foc.z = c.z - 0.5;
+            }
+            float need = d + 1.0;
+            if (need > 6.0) need = 6.0;
+            if (type == 12) need = llVecDist(c, foc) - 1.0;
+            if (c.x > 1.0 && c.x < 255.0 && c.y > 1.0 && c.y < 255.0)
+            {
+                float dEc = llVecDist(E, c);
+                list r = ray(E, E + llVecNorm(c - E) * (dEc + 0.6));
+                if (llList2Integer(r, 0) == 0 || (llList2Integer(r, 0) == 1 && llList2Float(r, 1) >= dEc + 0.5))
+                {
+                    if (floorOK(c) && floorOK(c + dirOf(az) * 0.6))
+                    {
+                        integer room = TRUE;
+                        if (!relaxed) room = (llList2Integer(ray(c, c + <0.0, 0.0, 0.5>), 0) == 0);
+                        if (room)
+                        {
+                            r = ray(c, c + llVecNorm(foc - c) * 30.0);
+                            float clear = llList2Float(r, 1);
+                            if (llList2Integer(r, 0) >= 0 && clear >= need)
+                            {
+                                found++;
+                                float sc = 2.0 * clear / 30.0 + 2.0 * nov + llFrand(0.5);
+                                if (type != gLastType) sc += 1.0;
+                                if (sc > bestS)
+                                {
+                                    bestS = sc;
+                                    best = [c, foc, type, az];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return best;
+}
+
+// the last resort indoors: just behind you at eye height, looking where you look
+list safeShot()
+{
+    vector F = llRot2Fwd(llList2Rot(llGetObjectDetails(gOwner, [OBJECT_ROT]), 0));
+    F.z = 0.0;
+    if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
+    F = llVecNorm(F);
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    float fa = llAtan2(F.y, F.x);
+    float bestD = 0.8;
+    vector B = ZERO_VECTOR - F;
+    integer i;
+    for (i = 0; i < 3; i++)
+    {
+        vector b = dirOf(fa + PI + (i - 1) * 0.785398);
+        list r = ray(E, E + b * 2.5);
+        float dd = 2.2;
+        if (llList2Integer(r, 0) == 1) dd = llList2Float(r, 1) - 0.3;
+        else if (llList2Integer(r, 0) < 0) dd = 0.8;
+        if (dd > 2.2) dd = 2.2;
+        if (dd > bestD + 0.1)
+        {
+            bestD = dd;
+            B = b;
+        }
+    }
+    vector c = E + B * bestD + <0.0, 0.0, 0.3>;
+    return [c, c + F * 10.0 - <0.0, 0.0, 0.6>, 13, llAtan2(B.y, B.x)];
+}
+
+// the band in effect here: indoors Far becomes Room, outdoors Room becomes Near
+integer band()
+{
+    if (gLocal && gBand == 3) return 2;
+    if (!gLocal && gBand == 2) return 1;
+    return gBand;
+}
+
+opts()
+{
+    list st = ["", "", "", ""];
+    st = llListReplaceList(st, ["lit"], gBand, gBand);
+    if (gLocal) st = llListReplaceList(st, ["dim"], 3, 3);
+    else st = llListReplaceList(st, ["dim"], 2, 2);
+    llMessageLinked(LINK_SET, OPTS, "scenic|DRIFT,NEAR,ROOM,FAR|" + llDumpList2String(st, ","), "");
+}
+
+integer here()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
+    if (d == []) return FALSE;
+    gOP = llList2Vector(d, 0);
+    gErr = FALSE;
+    integer was = gLocal;
+    if (!gCtxOK || llVecDist(gOP, gCtxPos) > 10.0) context();
+    if (was != gLocal) opts();
+    return TRUE;
+}
+
+// anyone within 10 m keeps Drift near you
+integer company()
+{
+    list A = llGetAgentList(AGENT_LIST_REGION, []);
+    integer i;
+    for (i = 0; i < llGetListLength(A) && i < 40; i++)
+    {
+        key k = llList2Key(A, i);
+        if (k != gOwner && llVecDist(llList2Vector(llGetObjectDetails(k, [OBJECT_POS]), 0), gOP) < 10.0) return TRUE;
+    }
+    return FALSE;
+}
+
+// a still frame: the next view in the band
+still()
+{
+    if (!here()) return;
+    integer b = band();
+    list s = [];
+    if (!gErr && gLocal)
+    {
+        float dm = gDmax;
+        if (b == 1) dm = 6.0;
+        s = roomShot(dm, FALSE);
+        if (s == []) s = roomShot(5.0, TRUE);
+        if (s == []) s = safeShot();
+    }
+    else if (!gErr)
+    {
+        if (b == 3)
+        {
+            s = farShot(20.0, 25.0);
+            if (s == [] && !gErr) s = farShot(15.0, 12.0);
+        }
+        if (s == [] && !gErr) s = nearShot(3.0, 8.0);
+        if (s == [] && !gErr) s = nearShot(2.0, 4.0);
+    }
+    if (s != []) gErr = FALSE;
+    if (s == [])
+    {
+        if (gErr && gRetry < 2)
+        {
+            gRetry++;                                       // a busy region refused the rays: again shortly
+            gNextT = llGetTime() + 0.7;
+            return;
+        }
+        gRetry = 0;
+        gLastAz = [];
+        llMessageLinked(LINK_SET, NO_SHOT, "none", "");
+        gNextT = llGetTime() + HOLD;
+        return;
+    }
+    gRetry = 0;
+    llMessageLinked(LINK_SET, SHOT, (string)llList2Vector(s, 0) + "|" + (string)llList2Vector(s, 1) + "|cut", "");
+    gLastAz = [llList2Float(s, 3)] + llList2List(gLastAz, 0, 0);
+    gLastType = llList2Integer(s, 2);
+    gCuts++;
+    gNextT = llGetTime() + HOLD * (0.8 + 0.4 * llFrand(1.0));
+}
+
+// Drift: the next leg's spot, a slow orbit round you at the stage's distance ([] none)
+list leg(float d)
+{
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    integer k;
+    for (k = 0; k < 6; k++)
+    {
+        float az = gAz + (0.45 + llFrand(0.4)) * (1 - 2 * (k % 2));    // 25 to 50° on, either way
+        float dd = d * (0.85 + 0.3 * llFrand(1.0));
+        if (gLocal)
+        {
+            integer wi = (integer)(az / 0.785398);
+            float lim = edge(wi);
+            if (edge(wi + 1) < lim) lim = edge(wi + 1);
+            if (dd > lim) dd = lim;
+        }
+        if (dd >= 1.8)
+        {
+            vector c = <gOP.x, gOP.y, gFloorZ + 1.9 + 0.12 * dd> + dirOf(az) * dd;
+            if (gLocal && c.z > gCapZ) c.z = gCapZ;
+            integer ok;
+            if (gLocal) ok = (floorOK(c) && llList2Integer(ray(E, c), 0) == 0);
+            else ok = outOK(c, E);
+            if (ok && llList2Integer(ray(gA, c), 0) == 0)          // and the way there is clear
+            {
+                gAz = az;
+                vector side = dirOf(az + PI_BY_TWO) * (0.18 * dd);
+                return [c, <0.0, 0.0, -0.4> + side];
+            }
+        }
+    }
+    return [];
+}
+
+nextLeg()
+{
+    if (!here()) return;
+    list D = DRIFT_D;
+    if (gLocal || company()) D = NEAR_D;
+    gStage = (gStage + 1) % llGetListLength(D);
+    gA = gB;
+    gFa = gFb;
+    list n = leg(llList2Float(D, gStage));
+    if (n == [])
+    {
+        gLegT = llGetTime();                                // nowhere to go: hold here this leg
+        return;
+    }
+    gB = llList2Vector(n, 0);
+    gFb = llList2Vector(n, 1);
+    gLegT = llGetTime();
+}
+
+// Drift starts close: a cut to the first spot, then it moves
+drift()
+{
+    if (!here()) return;
+    gStage = 0;
+    gAz = llFrand(TWO_PI);
+    list s;
+    if (gLocal) s = roomShot(5.0, TRUE);
+    else s = nearShot(3.5, 5.5);
+    if (s == []) s = safeShot();
+    gB = llList2Vector(s, 0);
+    gFb = llList2Vector(s, 1) - <gOP.x, gOP.y, gFloorZ + 1.6>;
+    gAz = llList2Float(s, 3);
+    gA = gB;
+    gFa = gFb;
+    gLegT = llGetTime();
+    llMessageLinked(LINK_SET, SHOT, (string)gB + "|" + (string)(<gOP.x, gOP.y, gFloorZ + 1.6> + gFb) + "|cut", "");
+}
+
+// a step of the leg: eased from A to B over LEG seconds, looking at you
+step()
+{
+    float s = (llGetTime() - gLegT) / LEG;
+    if (s >= 1.0)
+    {
+        nextLeg();
+        return;
+    }
+    s = s * s * (3.0 - 2.0 * s);
+    vector O = llList2Vector(llGetObjectDetails(gOwner, [OBJECT_POS]), 0);
+    vector c = gA + (gB - gA) * s;
+    vector f = <O.x, O.y, gFloorZ + 1.6> + gFa + (gFb - gFa) * s;
+    llMessageLinked(LINK_SET, GLIDE, (string)c + "|" + (string)f + "|1.0", "");
+}
+
+begin()
+{
+    gNextT = 0.0;
+    if (gBand == 0) drift();
+    else still();
+    llSetTimerEvent(0.5);
+}
+
+// ============================================================================
+default
+{
+    state_entry()
+    {
+        gOwner = llGetOwner();
+        gBand = (integer)cfg("scn");
+        llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
+    }
+
+    on_rez(integer p)
+    {
+        llResetScript();
+    }
+
+    changed(integer c)
+    {
+        if (c & CHANGED_OWNER) llResetScript();
+    }
+
+    link_message(integer sender, integer num, string str, key id)
+    {
+        if (num == START)
+        {
+            gOn = (llList2String(llParseString2List(str, ["|"], []), 0) == "scenic");
+            if (!gOn) { llSetTimerEvent(0.0); return; }
+            llMessageLinked(LINK_SET, ACK, "scenic", "");
+            gBand = (integer)cfg("scn");
+            if (gBand < 0 || gBand > 3) gBand = 0;
+            gPaused = FALSE;
+            gCtxOK = FALSE;
+            gLocal = FALSE;
+            gLastAz = [];
+            gLastType = -1;
+            gCuts = 0;
+            gRetry = 0;
+            here();
+            opts();
+            begin();
+        }
+        else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
+        else if (num == STATUS && str == "?")
+            llOwnerSay("[Take 12/scenic] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(BANDS, gBand)
+                + llList2String([" outdoors", " indoors"], gLocal) + ", cuts " + (string)gCuts + ", free mem " + (string)llGetFreeMemory());
+        else if (!gOn) return;
+        else if (num == STOP)
+        {
+            gOn = FALSE;
+            llSetTimerEvent(0.0);
+        }
+        else if (num == PAUSE) gPaused = TRUE;
+        else if (num == RESUME)
+        {
+            gPaused = FALSE;
+            gCtxOK = FALSE;
+            begin();
+        }
+        else if (num == NEXT)
+        {
+            if (gBand == 0) drift();                        // the lit tap: the next view now (Drift starts close again)
+            else still();
+        }
+        else if (num == OPT)
+        {
+            integer i = llListFindList(BANDS, [llList2String(llParseStringKeepNulls(str, ["|"], []), 1)]);
+            if (i < 0) return;
+            gBand = i;
+            llLinksetDataWriteProtected("cin.scn", (string)i, PASS);
+            opts();
+            begin();
+        }
+    }
+
+    timer()
+    {
+        if (gPaused) return;
+        if (gBand == 0) step();
+        else if (llGetTime() >= gNextT) still();
+    }
+}

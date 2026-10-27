@@ -1,0 +1,70 @@
+"""Tracking (8.0), on the REAL scripts: the viewer's own follow camera (FOLLOW), the three looks (Shoulder 1.6 m,
+Film 3.5 m a little low, Classic 3 m above), L · R the side of the picture you walk on, a steadicam lag, running pulls
+back 30 %, a wall behind you pulls the camera in (never through it), a small closed room gives its corner (panning
+with you) and leaving it gives you the camera behind you again, standing still 5 s lights PORTRAIT once, the lit tap
+goes back into the look, everything scales with your size."""
+from emu_util import *
+
+w = World()
+ana, h = hud(w)
+ana.face(0)
+ana.double_tap(); w.run(1)
+ana.touch("t12 s0"); w.run(2)
+c = h.cam
+check(not c.get("plock") and abs(c["distance"] - 3.5) < 0.05 and abs(c["pitch"] + 3.0) < 0.01, "Film: 3.5 m, a little low (%r, %r)" % (c.get("distance"), c.get("pitch")))
+check(c["blag"] > 0.4 and c["plag"] > 0.3, "a steadicam lag (behind %.2f s, position %.2f s)" % (c["blag"], c["plag"]))
+p = project(ana, eyes(ana))
+check(p and p[0] > 0.05, "R: you on the right of the picture (%.3f)" % (p[0] if p else -9))
+ana.touch(opt_part(h, "L")); w.run(1)
+p = project(ana, eyes(ana))
+check(p and p[0] < -0.05, "L: you on the left (%.3f)" % (p[0] if p else 9))
+ana.touch(opt_part(h, "SHOULDER")); w.run(1)
+check(abs(h.cam["distance"] - 1.6) < 0.05, "Shoulder: 1.6 m")
+ana.touch(opt_part(h, "CLASSIC")); w.run(1)
+check(abs(h.cam["distance"] - 3.0) < 0.05 and h.cam["pitch"] > 10, "Classic: 3 m, from above")
+check(lsd(h, "trk") == "2|0", "kept: %r" % lsd(h, "trk"))
+ana.touch(opt_part(h, "FILM")); w.run(1)
+no_errors(w, "looks")
+
+# ---- running pulls back ---------------------------------------------------------------------------------------------
+ana.walk((200, 128, 21), speed=5.0); w.run(1.5)
+check(abs(h.cam["distance"] - 3.5 * 1.3) < 0.1, "running: 30 %% further (%.2f)" % h.cam["distance"])
+w.run(20)
+check(abs(h.cam["distance"] - 3.5) < 0.1, "stopped: back in (%.2f)" % h.cam["distance"])
+no_errors(w, "running")
+
+# ---- a wall behind you: in, never through it ------------------------------------------------------------------------
+ana.pos = vec(128, 128, 21); ana.face(0); w.run(1)
+w.boxes.append(Box((126.3, 120, 15, 126.6, 136, 30), "wall"))       # 1.7 m behind you
+ana.touch("t12 s0"); w.run(2)
+check(h.cam["distance"] < 1.5, "a wall 1.7 m behind: the camera pulls in (%.2f)" % h.cam["distance"])
+cam = ana.camera()[0]
+check(cam[0] > 126.6, "never through the wall (camera at x %.2f)" % cam[0])
+w.boxes.pop()
+w.run(1); ana.touch("t12 s0"); w.run(2)
+check(abs(h.cam["distance"] - 3.5) < 0.1, "the wall gone: 3.5 m again")
+no_errors(w, "wall")
+
+# ---- a small closed room: its corner, panning with you; out of it, behind you again ----------------------------------
+w.boxes += room(140, 140, 20.0, 143.5, 143.5, 3.0, door=(141.2, 142.3))
+ana.teleport((141.7, 141.7, 21.0)); w.run(5)
+check(h.cam.get("plock") and not h.cam.get("flock", True), "a small room: a corner, the focus on you (%r)" % {k: h.cam.get(k) for k in ("plock", "flock")})
+cp = h.cam.get("pos", vec(0, 0, 0))
+check(140 < cp[0] < 143.5 and 140 < cp[1] < 143.5 and 20 < cp[2] < 23, "the corner is inside the room (%s)" % (cp,))
+check(B.llVecDist(cp, ana.pos) > 1.2, "the corner is across the room from you")
+ana.walk((135, 141.7, 21.0), speed=1.5); w.run(6)
+check(not h.cam.get("plock") and h.cam.get("distance"), "out of the room: behind you again")
+no_errors(w, "room")
+
+# ---- standing still: PORTRAIT lights once; the lit tap; your size ---------------------------------------------------------
+w.run(6)
+check(var(h, "screen", "gHint") == "portrait" or var(h, "tracking", "gHinted") == 1, "standing 5 s: PORTRAIT lights")
+w.run(6)
+check(var(h, "screen", "gHint") == "", "... once")
+n = len(h.cam["log"])
+ana.touch("t12 s0"); w.run(1)
+check(len(h.cam["log"]) > n and not h.cam.get("plock"), "the lit tap: back into the look behind you")
+ana.size = vec(0.3, 0.4, 0.9); ana.touch("t12 s0"); w.run(1)
+check(abs(h.cam["distance"] - 3.5 * 0.5) < 0.05, "a 0.9 m avatar: half the distance (%.2f)" % h.cam["distance"])
+no_errors(w, "still")
+done("tracking_emu")

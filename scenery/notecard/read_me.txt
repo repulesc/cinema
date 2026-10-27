@@ -1,53 +1,41 @@
-Take 12 Scenery  -  READ ME  (7.0)
-Free. The scenery camera of Take 12, on its own. It only moves your view: nothing is recorded.
+Take 12 Scenery  -  READ ME  (8.0)
+Free. The Scenic camera of Take 12, on its own. It only moves your view: nothing is recorded.
 
 
 === START ===============================================
 
-1. Wear the HUD (Attach To HUD > Top Right) and accept the camera permission once.
-2. DOUBLE-TAP the small sepia clapper: the camera lifts off and shows you the place.
-3. ANY MOVEMENT KEY gives your own camera back.
+1. Wear the HUD on HUD Top Center (any HUD point works) and accept the camera permission once.
+2. Tap the [12] to set up (your lens and the size of the strip; you can skip).
+3. Double-tap the [12]: the strip. Tap SCENIC.
 
-Stay idle for 3 minutes and it starts by itself.
-
-
-=== THE BUTTON ==========================================
-
-TAP         the menu (while it runs: Next, Stop)
-DOUBLE-TAP  idle: start · running: the next view
-ANY MOVEMENT KEY  your own camera, instantly
+When you wear it, it waits: your own camera, until you tap SCENIC. It also starts by itself when you are idle.
 
 
-=== THE SCENERY CAMERA ==================================
+=== THE [12] ============================================
 
-High drone views over the area and wide views along the horizon, up to about 100 m away, always with a clear view. On a build in the sky (a skybox, a sky mall, a club) it stays INSIDE, on your own floor. The menu > Scenery holds its settings:
- IDLE START  when it starts by itself (off, 1 to 10 min; Mouse check: it also waits until your viewer marks you Away)
- INDOORS     Auto, Inside (always inside, near you), Outside
- REACH       how far it may go (50 to 200 m)
-
-A quiet line above the button says it runs: "◇ Scenery · auto · 21 mm ✓". The number is your lens (Ctrl+0 in, Ctrl+8 out, Ctrl+9 back); Scenery likes it wide.
+TAP         the menu (Connect, Settings, Help)
+DOUBLE-TAP  the strip opens or closes
+HOLD        everything off; hold again: back as it was
 
 
-=== SETTINGS ============================================
+=== SCENIC ==============================================
 
- PACE      how long each view is held (30 s to 2 min)
- LOOK      the line above the button, chat text
- CAMERA    Alt-cam (what an Alt-orbit does), phantom
- TEST CAMERA  a 3-second check that the HUD can move your camera
- RESET     factory settings
+DRIFT · NEAR · ROOM · FAR   a slowly moving camera, views near you, the room you are in, views out to 60 m
+Still frames change about every 15 seconds; Drift moves slowly and stays near you when people are around.
+Indoors (a skybox, a club, a house) every band stays in the room. Tap SCENIC again: the next view now.
+The bars key (▭) turns the letterbox on and off. Settings > Idle start: Off, Away, or 5 minutes.
 
-
-=== MORE CAMERAS ========================================
-
-The full Take 12 adds Framing (you, or you and your friends, composed, following you as you walk), Freehand (you frame it, it holds it) and Connect (one camera for everyone near you). Tap the button > More cameras.
+TRACKING, PORTRAIT and FIXED are on the strip too, dim: they are in the full Take 12.
 
 
-=== QUESTIONS ===========================================
+=== CONNECT =============================================
 
-Nothing happens when I double-tap.
-Tap once and use the menu > Scenery > Start. If that works, tap twice a little quicker.
+Watch a friend's film: tap the Connect key, tap their name, they are asked. Then the Connect key flips between their
+film and your own. Take 12 Scenery can watch, it does not film for others.
 
-It does not stay inside my skybox.
-Scenery > Indoors > Inside keeps it inside, near you.
 
-Free to keep and to give to friends. Enjoy the view.
+=== GOOD TO KNOW ========================================
+
+- The bars are on your screen, not in snapshots.
+- Wearing the full Take 12 too: this one steps aside and the full one carries your setup over.
+- /12 scenic, /12 next, /12 off, /12 strip work as chat commands (and in gestures).

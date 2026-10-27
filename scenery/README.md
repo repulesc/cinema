@@ -1,30 +1,32 @@
 # Take 12 Scenery (free)
 
-The scenery camera of Take 12, on its own, for L$0: a free way in to the full Take 12.
+The Scenic camera of Take 12, on its own, for L$0: a free way in to the full Take 12.
 
-- **What it has:** the scenery camera (drone views, wide horizons, skybox rooms from the inside), idle start, tap / double-tap, Next, Stop, Pace, Indoors, Reach, Alt-cam, the status line with your lens, tips and the little clap. (7.0: no Photo hold, in either build.)
-- **What it leaves to the full Take 12:** Framing (Me, Us, Friends), Freehand, Connect, Format, the seated view, Size and the three button looks.
-- **Its own button:** the Take 12 clapper and "12" in sepia, like an old film, with only the red recording light in colour. The full Take 12 is the colour picture; Scenery is the same camera in sepia. One design; Options > Look has no Button choice.
-- **The one pointer:** a "More cameras" button on the main menu opens the full Take 12's Marketplace listing. Nothing else asks you to buy.
-- **Hold:** with no Connect, holding the button opens the menu (the live menu while it rolls: Next, Stop).
+- **What it has:** the same strip and [12] as Take 12, with Scenic (Drift · Near · Room · Far), idle start, the bars
+  and their shapes, the setup (lens, size), Connect to **watch** a friend's Take 12 film, and carry-over to a full Take 12.
+- **What it leaves to the full Take 12:** Tracking, Portrait and Fixed. They are on the strip, dim; a tap says "In the
+  full Take 12." and nothing else ever asks you to buy. It never films for others.
+- **Two worn:** with a full Take 12 worn too, the free one steps aside and the full one carries your setup over.
 
 ## The scripts are generated
-`scenery/src/` is generated from `hud/src/` by `tools/build_scenery.py`: the same `core`, `ui`, `scenery` and `tips`, with `integer LITE = 1;` and a few texts of its own ("Take 12 Scenery", the welcome, the hold help, the notecard name). Never edit `scenery/src` by hand. After changing `hud/src`:
+`scenery/src/` is generated from `hud/src/` by `tools/build_scenery.py`: core, ui, text, screen, bars, scenic, sync
+and carry, with `integer LITE   = 1;` where a script has the switch. Never edit `scenery/src` by hand. After
+changing `hud/src`:
 ```
 python3 tools/build_scenery.py
 ```
-CI runs `python3 tools/build_scenery.py --check` (fails if `scenery/src` is out of date) and `tools/sim/free_test.py` (the free scripts are the full ones with only those lines changed).
+CI runs `python3 tools/build_scenery.py --check` (fails if `scenery/src` is out of date) and `tools/sim/free_test.py`
+(the free scripts are the full ones with only the switch changed).
 
 ## Make it
-1. **Set the listing link first.** In `hud/src/ui.lsl`, set `BUY_URL` to the full Take 12's Marketplace page, then run `python3 tools/build_scenery.py`. (The full Take 12 never shows that button.)
-2. **The texture:** upload `scenery/art/take12_scenery_icon_sheet_512x256.png` (keep the alpha). It has the Take 12 sheet's layout, with the Scenery clapper (open and clapped) in every look column, so the scripts need nothing else. `scenery/art/take12_scenery_icon_128.png` is the same button on its own, for the Marketplace or a vendor. Both come from `python3 tools/art/make_icon.py`.
-3. **The prim:** one box, size `<0.01, 0.04, 0.04>`, named **Take 12 Scenery**, built exactly as Take 12 (see the main `README.md`, step 2).
-4. **The scripts:** the four from `scenery/src/`: `core`, `ui`, `scenery`, `tips`. Each prints a `ready` line with its free memory. Then Build › Scripts › Set Scripts to Running in Selection.
-5. **The notecard:** a notecard named `Take 12 Scenery - Read Me` with the text of `scenery/notecard/read_me.txt`.
-6. **Before giving it away:** set the scripts to no-modify (`PASS` comes from `hud/src`, so change it there, before you build, if you change it at all). Next owner: copy and transfer, no modify.
-7. **Box and folder:** `Take 12 Scenery`.
-
-Settings live in protected Linkset Data in the HUD itself, so someone who later buys the full Take 12 starts the full HUD fresh; the two never share a prim.
+1. **The object:** build it with the same builder as Take 12 (`hud/build/README.md`), and name the root
+   **Take 12 Scenery**.
+2. **The textures:** the same two as Take 12 (`hud/art/take12_words_1024.png`, `hud/art/take12_marks_1024.png`).
+3. **The scripts:** the eight from `scenery/src/`. `/12 status` lists them.
+4. **The notecard:** `Take 12 Scenery - Read Me` with the text of `scenery/notecard/read_me.txt`.
+5. **Before giving it away:** the scripts no-modify (`PASS` comes from `hud/src`). Next owner: copy and transfer.
+6. **Box and folder:** `Take 12 Scenery`.
 
 ## Listing and ads
-The Marketplace text is in [`marketing/marketplace_listing_scenery.md`](marketing/marketplace_listing_scenery.md) (price L$0), and the boards are `marketing/*_scenery.png`, generated with the full Take 12's by `python3 tools/art/make_adboard.py`.
+The Marketplace text is in [`marketing/marketplace_listing_scenery.md`](marketing/marketplace_listing_scenery.md)
+(price L$0); the boards are `marketing/*_scenery.png`, made with the full Take 12's by `python3 tools/art/make_adboard.py`.

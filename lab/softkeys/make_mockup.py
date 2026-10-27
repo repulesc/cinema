@@ -10,7 +10,7 @@ import os, sys
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "tools", "art"))
+sys.path.insert(0, HERE)                                              # make_icon.py (the 7.x clapper) lives here now
 import make_icon as icon
 import make_adboard as ab
 

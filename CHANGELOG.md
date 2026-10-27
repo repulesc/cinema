@@ -1,5 +1,68 @@
 # Changelog
 
+## 8.0.0 (a rebuild: the Monitor, four shots, two equal cameras)
+7.2's in-world test showed the product did not work where it mattered:
+- bad compositions when sitting, lying or cuddling;
+- gimmicky Adjust and Show me;
+- a zoom cutting to another shot;
+- yesterday's text at login;
+- inconsistent menus.
+
+8.0 is the result of a long design review (`docs/PRODUCT.md`): directing is manual, and intelligence is kept only where a script can truly see.
+
+**The look and the controls**
+- **The Monitor:** a thin strip of small-caps words at the top of the screen (or the bottom), like a cinema camera's display:
+  - the shots on the left, the running shot's options on the right;
+  - in the middle, the bars key, the [12] and Connect.
+  - Double-tap the [12] opens it with a quick fade. Tap: the setup dialog. Hold: everything off; hold again: back exactly.
+  - The [12] shows a thin ring while filming, a white dot when connected, a soft glow when your film is shared, and amber for a problem.
+  - Notes stay 3 s; tips come only the first three times.
+  - Two textures and a builder script make the HUD (`hud/build/`).
+- **A first-run setup:** your lens (with a live mm reading), your eye line (a line on screen, Page Up / Page Down), the strip's size, and a short tour.
+
+**The shots**
+- **Tracking** (Shoulder · Film · Classic, L · R): the viewer's own follow camera. A steadicam lag, never through a wall, a small room's corner.
+- **Portrait** (Close · Medium · Wide, Me · Us): eye level, eyes on the upper third, a soft 3/4, lead room; two-shots and groups. A zoom keeps the framing; never a cut.
+- **Fixed** (View A · B; Forget seat · Let go):
+  - your own Alt-click framing, kept per place and per seat spot (48 pieces of furniture), and never replaced silently (Keep new);
+  - marked vehicles let go.
+- **Scenic** (Drift · Near · Room · Far): still frames about every 15 s or a slow drift, within 60 m. It is the idle camera.
+- Each shot has its own shape (2.39, 1.85 …).
+- Sitting holds the frame; Alt-click holds the shot; flying, mouselook and teleports are handled.
+
+**Connect, copies, the free build**
+- **Connect:** two equal cameras; one tap flips to your friend's film; friends join without asking. It rests beyond 20 m and rejoins. Only Take 12's shots are shared.
+- **Two copies:** a new copy takes the setup over; the older steps aside.
+- **The free Take 12 Scenery** has the same strip with Scenic, and can watch a friend's film.
+- `/12` commands for gesture keys.
+
+**Tested on the real scripts**
+- The emulator (`tools/emu/`) now models prims, rays against builds, furniture, ground sits, teleports, parcels, several worn copies, and rezzing and linking.
+- New tests run every window shape × place × size, every gesture and dialog, each shot's composition measured in the picture, Connect with a fuzzer, carry-over and the builder.
+- Bugs they found before any in-world test:
+  - Screen:
+    - option taps went to the wrong word;
+    - the THEIR FILM word overlapped the options on narrow windows;
+    - the [12]'s dot showed only while someone filmed.
+  - Portrait:
+    - a float comparison made it see a wall that wasn't there (Wide lost its tilt);
+    - lead room shrank the picture;
+    - the two-shot leaned to the wrong side.
+  - Fixed:
+    - a new spot on the same seat went unnoticed;
+    - views were stored too coarsely.
+  - Core: framing with Alt-click counted as idle, so Scenic took over after 5 minutes.
+  - Bars: an `llGetSubString` quirk kept a friend's shape after you stopped watching.
+  - Tracking: a doorway hid a small room.
+- `tools/lslcheck.sh` now fails a script under 15 KB free.
+
+**Removed:**
+- Framing (Me / Us / Friends), Freehand, Adjust, Show me, Format and the keys strip, replaced by the four shots and the strip;
+- the Watch, since the free Take 12 Scenery can watch;
+- the 7.x scripts, their sims, `docs/FRAME.md` and `docs/CALIBRATION.md`.
+
+Version 8.0.0 in all eleven scripts.
+
 ## 7.2.0 (Show me, Scenery's own Format, a texture you just drop in)
 - **Show me: where your face really is.** Second Life plays poses in each viewer, so no script can see where a body ended up on a bed or a sofa (nor can an attachment: it only reports where the avatar is anchored). Your camera can: tap > Show me, Alt-click your face, hold still, Alt-drag a little round it, hold still. Take 12 finds the face where the two views meet (to a few cm), keeps it per seat in your own frame (a turned bed turns it with you), and Me, Us and Friends frame that face, from the side it looks to, with the eyes on the golden line. Show me again redoes it; `/77 showme clear` forgets it. Views taken before you move the camera, and views that do not aim at one point near you, are never used (the emulator found the first case).
 - **Scenery has its own Format** (Scenery > Format, off by default): the idle views no longer wear the shape you chose for your own shots, and the cameras that compose keep composing in yours.
