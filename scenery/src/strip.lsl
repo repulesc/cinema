@@ -14,7 +14,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -592,6 +592,7 @@ default
                 if (a == "close") o = FALSE;
                 if (o && !gOpen) gFade = 1;
                 gOpen = o;
+                llLinksetDataWriteProtected("cin.open", (string)gOpen, PASS);   // worn again, as you left it (8.0.5)
             }
             else if (a == "eye")
             {

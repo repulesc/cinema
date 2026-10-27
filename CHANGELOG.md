@@ -1,5 +1,23 @@
 # Changelog
 
+## 8.0.5 (Portrait reads your lens; notes you can read)
+From the second in-world session, with screenshots ("the HUD is placed perfectly"):
+- **Fixed: Portrait framed for the wrong lens.** It never asked for the permission Second Life needs before it reports
+  your zoom, so it read 0 and framed every picture for the viewer's default 60°. At the setup's 38 mm lens the camera
+  stood 1.8 times too close: Close showed lips and chin, Wide only the torso, Medium the face at the top right. (The
+  lens step's mm reading worked, because another script reads it with the permission.) The emulator now answers
+  `llGetCameraFOV` and `llGetCameraAspect` only with that permission, as Second Life does, so this cannot slip by again.
+- **Fixed: an eye line above your reported height was thrown away.** With a mesh body or a hover height your eyes can
+  sit above the top Second Life reports. Portrait and Tracking ignored such a value and aimed lower. They now accept it,
+  and Wide keeps the whole head above it.
+- **Notes sit lower,** clear of the [12], and stay 4 to 10 s depending on their length (3 s was too short). The eye
+  line's instruction stays on screen until you keep or skip the line.
+- **The strip is as you left it** when you wear the HUD again: open after the setup, unless you closed it.
+- **Room shows up as you walk in:** Scenic looks again after 4 m (it was 10 m).
+- Tracking still eases out of a wall it swings into, on purpose: stopping it hard would cost the smooth moves.
+- `tools/sim/inworld_emu.py` replays this session too: 11 checks fail on 8.0.4, all pass on 8.0.5.
+- Version 8.0.5 in all twelve scripts (the free build: nine).
+
 ## 8.0.4 (the first real session: readable words, the strip at the top, Portrait among bushes)
 From the first in-world session of 8.0.3 (Tracking: "smooth, looks awesome"), with screenshots:
 - **Fixed: the lit words were unreadable.**

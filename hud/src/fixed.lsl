@@ -15,7 +15,7 @@
 //  A view: "<cam>|<focus>|<where you were>|<your facing°>|<lens>" (a seat's in the furniture's frame).
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.0.4";
+string VERSION = "8.0.5";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -151,7 +151,7 @@ float room(vector a, vector b)
 float eyeFrac()
 {
     float e = (float)cfg("eye");
-    if (e < 0.6 || e > 1.0) e = 0.935;
+    if (e < 0.5 || e > 1.5) e = 0.935;                  // above 1.0 too: a mesh body or hover height puts the eyes there
     return e;
 }
 
@@ -182,11 +182,13 @@ list frame()
     if (h < 0.3) h = 1.8;
     float z0 = P.z - 0.5 * h;
     float ez = z0 + eyeFrac() * h;
+    float top = z0 + h;                                 // your head's top: above the eyes, wherever they are (a hover)
+    if (ez + 0.08 * h > top) top = ez + 0.08 * h;
     float z1 = ez;
     float y1 = THIRD;
     float z2 = z0 + llList2Float([0.72, 0.52, 0.0], gSize) * h;
     float y2 = llList2Float([-1.0, -1.0, -0.9], gSize);
-    if (gSize == 2) { z1 = z0 + h; y1 = 0.85; }
+    if (gSize == 2) { z1 = top; y1 = 0.85; }
     float D = solveD(z1, y1, z2, y2, ez, gT);
     if (D < 0.0) return [];
     float yaw = llAtan2(F.y, F.x);
@@ -223,7 +225,7 @@ list frame()
         if (Dc < DMIN) Dc = DMIN;
         gPhi = tiltFor(ez, THIRD, ez, Dc * llCos(th), gT);
     }
-    if (yOf(z0 + h, ez, Dc * llCos(th), gT) > 0.92) gPhi = tiltFor(z0 + h, 0.92, ez, Dc * llCos(th), gT);   // the head never cut
+    if (yOf(top, ez, Dc * llCos(th), gT) > 0.92) gPhi = tiltFor(top, 0.92, ez, Dc * llCos(th), gT);   // the head never cut
     if (gDebug) llOwnerSay("[Take 12/portrait] " + llList2String(["close", "medium", "wide"], gSize) + " D " + llGetSubString((string)D, 0, 3)
         + " → " + llGetSubString((string)Dc, 0, 3) + ", tried" + dbg + "; eye " + llGetSubString((string)eyeFrac(), 0, 4) + " of "
         + llGetSubString((string)h, 0, 3) + " m, fov " + llGetSubString((string)gFov, 0, 4) + ", t " + llGetSubString((string)gT, 0, 4)
@@ -481,6 +483,9 @@ default
     {
         gOwner = llGetOwner();
         load();
+        // your lens: Second Life answers llGetCameraFOV only with this permission (8.0.5: it was never asked, read 0,
+        // and every picture was framed for 60°: at a 38 mm lens 1.8 times too close, the head out of the top)
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "portrait");
     }
 

@@ -549,8 +549,9 @@ class Obj:
         yaw = math.atan2(d[1], d[0])
         pitch = -math.atan2(d[2], math.hypot(d[0], d[1]))
         return B.mul(Quaternion((0.0, math.sin(pitch / 2), 0.0, math.cos(pitch / 2))), Quaternion((0.0, 0.0, math.sin(yaw / 2), math.cos(yaw / 2))))
-    def llGetCameraFOV(s, sc): return B.F32(s.owner.fov)
-    def llGetCameraAspect(s, sc): return B.F32(s.owner.aspect)
+    # as in Second Life, 0 without PERMISSION_TRACK_CAMERA (8.0.5: portrait never asked, read 0, and framed for 60°)
+    def llGetCameraFOV(s, sc): return B.F32(s.owner.fov) if sc.perms & C["PERMISSION_TRACK_CAMERA"] else 0.0
+    def llGetCameraAspect(s, sc): return B.F32(s.owner.aspect) if sc.perms & C["PERMISSION_TRACK_CAMERA"] else 0.0
     # the object
     def llGetOwner(s, sc): return Key(s.owner.key)
     def llGetKey(s, sc): return Key(s.key)
@@ -776,4 +777,5 @@ def ready(av, first_run_done=True):
     """settings as after the first run (lens, eye line, size): the shots run without the setup"""
     d = {"cin.owner": (str(av.key), PASS), "cin.ver": ("8.0.1", PASS)}
     if first_run_done: d["cin.firstrun"] = ("done", PASS)
+    d["cin.open"] = ("0", PASS)          # the strip as left closed: the tests open it themselves (8.0.5 restores it on wear)
     return d
