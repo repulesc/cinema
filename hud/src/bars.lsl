@@ -1,0 +1,237 @@
+// ============================================================================
+//  Take 12  -  bars.lsl  (8.0)  - the letterbox: each shot's own shape
+//  Four parts named "t12 bar0" … "t12 bar3" become the bars round the picture: top and bottom when the shape is wider
+//  than your window, left and right when it is narrower (pillarbox, ultrawide windows). Each shot has its own shape
+//  (Settings › Shapes & bars; cin.shape.<shot>: 1.66 · 1.85 · 2.00 · 2.39 · full; the cinema set by default: Tracking
+//  and Scenic 2.39, Portrait and Fixed 1.85). The bars key (the strip's ▭) turns them on and off for every shot
+//  (cin.bars); Black or Dimmed (cin.bstyle). They show only while a Take 12 shot is on screen (not with your own
+//  camera); watching someone's film, their shape (sync: CMD "bars|follow <shape>", "bars|follow" to end).
+//  Tells the shots the picture to compose in (CROP "<ratio>|<window>", 0 = the whole window) and the strip what to
+//  show by the bars key (SHAPE "<label>|<on/off/dim>"). HUD geometry as crop.lsl (7.x): HUD space is 1.0 tall and
+//  llGetCameraAspect() wide, +Y left; the bars sit behind the [12] so it stays clickable.
+// ============================================================================
+
+string VERSION = "8.0.0";
+string PASS    = "cinema-1.0-build1";
+
+integer UI_STATE    = 7320;
+integer CFG_CHANGED = 7330;
+integer SHAPE       = 7348;
+integer MSG_VER     = 7360;
+integer STATUS      = 7370;
+integer CMD         = 7371;
+integer CROP        = 7390;
+
+list    SHOTS   = ["tracking", "portrait", "fixed", "scenic"];
+list    DEFAULT = ["2.39", "1.85", "1.85", "2.39"];
+float   DEPTH   = 0.006;           // m behind the [12] (+X into the screen)
+
+key     gOwner;
+list    gBars;                     // the four bars' links
+float   gA = 1.778;                // your window
+integer gSY = 1;
+string  gState = "wait";
+string  gShot;
+string  gFollow;                   // watching: their shape ("" none)
+integer gOn = TRUE;                // the bars key
+float   gDim = 1.0;                // Black 1.0, Dimmed 0.6
+string  gSent;
+
+string cfg(string k)
+{
+    return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+find()
+{
+    gBars = [0, 0, 0, 0];
+    integer i;
+    for (i = 2; i <= llGetNumberOfPrims(); i++)
+    {
+        string n = llGetLinkName(i);
+        integer k = (integer)llGetSubString(n, 7, -1);
+        if (llGetSubString(n, 0, 6) == "t12 bar" && k < 4) gBars = llListReplaceList(gBars, [i], k, k);
+    }
+}
+
+load()
+{
+    gOn = (cfg("bars") != "0");
+    gDim = 1.0;
+    if (cfg("bstyle") == "dim") gDim = 0.6;
+    gSY = 1;
+    if (cfg("flip") == "1") gSY = -1;
+}
+
+// a shot's shape: "2.39", … or "full"
+string shapeOf(string shot)
+{
+    integer i = llListFindList(SHOTS, [shot]);
+    if (i < 0) return "full";
+    string s = cfg("shape." + shot);
+    if (s == "") s = llList2String(DEFAULT, i);
+    return s;
+}
+
+// the shape on screen now: 0 = none (your own camera, bars off, Full)
+float ratio()
+{
+    if (gFollow != "") return (float)gFollow;
+    if (!gOn || gShot == "" || gState == "wait" || gState == "off" || gState == "letgo") return 0.0;
+    return (float)shapeOf(gShot);
+}
+
+// the screen centre from the HUD point worn on (crop.lsl)
+vector centre()
+{
+    integer p = llListFindList([ATTACH_HUD_TOP_RIGHT, ATTACH_HUD_TOP_CENTER, ATTACH_HUD_TOP_LEFT, ATTACH_HUD_BOTTOM_LEFT,
+        ATTACH_HUD_BOTTOM, ATTACH_HUD_BOTTOM_RIGHT], [llGetAttached()]);
+    if (p < 0) return ZERO_VECTOR;
+    return <0.0, gA * 0.5 * gSY * llList2Float([1.0, 0.0, -1.0, -1.0, 0.0, 1.0], p), 0.5 * llList2Float([-1.0, -1.0, -1.0, 1.0, 1.0, 1.0], p)>;
+}
+
+list bar(integer link, float y, float z, float w, float h)
+{
+    if (!link) return [];
+    vector p = llGetLocalPos();
+    rotation r = llGetLocalRot();
+    vector at = centre() + <p.x + DEPTH, y * gSY, z>;
+    float a = gDim;
+    if (w <= 0.0 || h <= 0.0)
+    {
+        w = 0.01;
+        h = 0.01;
+        a = 0.0;
+        at = p + <DEPTH, 0.0, 0.0>;
+    }
+    return [PRIM_LINK_TARGET, link, PRIM_POS_LOCAL, (at - p) / r, PRIM_ROT_LOCAL, ZERO_ROTATION / r, PRIM_SIZE, <0.01, w, h>,
+        PRIM_COLOR, ALL_SIDES, ZERO_VECTOR, a, PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0];
+}
+
+cut()
+{
+    if (!llGetAttached()) return;
+    float r = ratio();
+    float a = gA;
+    float sw = 0.0;
+    float th = 0.0;
+    if (r > 0.0 && r < a) sw = (a - r) * 0.5;
+    else if (r > a) th = (1.0 - a / r) * 0.5;
+    llSetLinkPrimitiveParamsFast(LINK_ROOT, bar(llList2Integer(gBars, 0), (r + sw) * 0.5, 0.0, sw, 1.0)
+        + bar(llList2Integer(gBars, 1), -(r + sw) * 0.5, 0.0, sw, 1.0)
+        + bar(llList2Integer(gBars, 2), 0.0, 0.5 - th * 0.5, a, th)
+        + bar(llList2Integer(gBars, 3), 0.0, th * 0.5 - 0.5, a, th));
+    tell();
+}
+
+// the shots compose inside the shape; the strip's ▭ shows it
+tell()
+{
+    float r = ratio();
+    string s = (string)r + "|" + (string)gA;
+    string lbl = "DIM";
+    string st = "dim";
+    if (gShot != "" && gState != "off" && gState != "wait")
+    {
+        st = llList2String(["off", "on"], gOn);
+        lbl = shapeOf(gShot);
+        if (!gOn || lbl == "full") lbl = "FULL";
+    }
+    if (gFollow != "") { lbl = gFollow; st = "on"; }
+    s += "~" + lbl + "|" + st;
+    if (s == gSent) return;
+    gSent = s;
+    llMessageLinked(LINK_SET, CROP, (string)r + "|" + (string)gA, "");
+    llMessageLinked(LINK_SET, SHAPE, lbl + "|" + st, "");
+}
+
+measure()
+{
+    if (!(llGetPermissions() & PERMISSION_TRACK_CAMERA)) return;
+    float a = llGetCameraAspect();
+    if (a < 0.3 || llFabs(a - gA) < 0.005) return;
+    gA = a;
+    if (llFabs(a - (float)cfg("aspect")) >= 0.01) llLinksetDataWriteProtected("cin.aspect", (string)a, PASS);
+    cut();
+}
+
+default
+{
+    state_entry()
+    {
+        gOwner = llGetOwner();
+        find();
+        load();
+        gA = (float)cfg("aspect");
+        if (gA < 0.3) gA = 1.778;
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
+        llMessageLinked(LINK_SET, MSG_VER, VERSION, "bars");
+        cut();
+        llSetTimerEvent(2.0);
+    }
+
+    on_rez(integer p)
+    {
+        llResetScript();
+    }
+
+    attach(key id)
+    {
+        if (id == NULL_KEY) return;
+        gState = "wait";
+        gShot = "";
+        gFollow = "";
+        llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
+    }
+
+    run_time_permissions(integer p)
+    {
+        measure();
+        cut();
+    }
+
+    changed(integer c)
+    {
+        if (c & CHANGED_OWNER) llResetScript();
+        if (c & CHANGED_LINK) { find(); cut(); }
+    }
+
+    link_message(integer sender, integer num, string str, key id)
+    {
+        if (num == UI_STATE)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            gState = llList2String(L, 0);
+            gShot = llList2String(L, 1);
+            cut();
+        }
+        else if (num == CMD && str == "bars")
+        {
+            if (gShot == "" || gState == "wait" || gState == "off") return;   // your own camera: the key is dim
+            gOn = !gOn;
+            llLinksetDataWriteProtected("cin.bars", (string)gOn, PASS);
+            cut();
+        }
+        else if (num == CMD && llGetSubString(str, 0, 10) == "bars|follow")
+        {
+            gFollow = llStringTrim(llGetSubString(str, 11, -1), STRING_TRIM);
+            if (gFollow == "full") gFollow = "";
+            cut();
+        }
+        else if (num == CFG_CHANGED && (llGetSubString(str, 0, 5) == "shape." || str == "bars" || str == "bstyle" || str == "flip" || str == "all"))
+        {
+            load();
+            gSent = "";
+            cut();
+        }
+        else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "bars");
+        else if (num == STATUS && str == "?")
+            llOwnerSay("[Take 12/bars] v" + VERSION + " " + (string)ratio() + " on a " + (string)gA + " window, bars " + llList2String(["off", "on"], gOn)
+                + ", " + (string)llGetListLength(llParseString2List(llDumpList2String(gBars, ","), ["0", ","], [])) + " parts, free mem " + (string)llGetFreeMemory());
+    }
+
+    timer()
+    {
+        measure();
+    }
+}
