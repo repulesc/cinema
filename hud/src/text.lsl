@@ -71,6 +71,7 @@ list TIPS = [
     "L", "The side of the picture you walk on.",
     "VIEW A", "Two kept views for this place.",
     "FORGET SEAT", "Forget this seat's view.",
+    "kept", "Kept. Alt-click away and KEEP NEW replaces it.",
     "LET GO", "Take 12 lets go every time you sit on this vehicle.",
     "DRIFT", "How far the views go.",
     "shape", "The bars on or off. Each shot's shape: Settings.",
