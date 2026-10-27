@@ -16,7 +16,7 @@
 //  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "8.0.3";
+string VERSION = "8.0.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build: it can watch, never film for others
 
@@ -259,7 +259,7 @@ mine(integer clear, integer tellCore)
     if (llListFindList(gP, [gHost]) >= 0) say(gHost, "unwatch");
     gHost = NULL_KEY;
     gCam = "";
-    if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
+    if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA) && llGetAttached()) llClearCameraParams();
     if (gFollowed != "") llMessageLinked(LINK_SET, CMD, "bars|follow", "");
     gFollowed = "";
     if (tellCore) llMessageLinked(LINK_SET, CMD, "unwatch", "");
@@ -287,7 +287,7 @@ place()
     }
     if (lag > 0.0 && lag < 0.3) lag = 0.3;                  // between their updates the camera eases; a cut stays a cut
     if (lag > 3.0) lag = 3.0;
-    if (llGetPermissions() & PERMISSION_CONTROL_CAMERA)
+    if ((llGetPermissions() & PERMISSION_CONTROL_CAMERA) && llGetAttached())   // worn only (8.0.4)
         llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
             CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag, CAMERA_POSITION_THRESHOLD, 0.0,
             CAMERA_FOCUS_THRESHOLD, 0.0]);

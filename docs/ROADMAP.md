@@ -51,7 +51,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - [ ] Wear the free build with the full one: the free one steps aside.
 
 ## Tuning numbers to watch
-- Strip: the margins per place (24 / 76 / 46 / 96 px), the inset of 180 px, the band's height and fade.
+- Strip: the margins per place (0 / 52 / 46 / 96 px), the inset of 180 px, the lit words (white, underlined) readable.
 - Tracking: the distances 1.6 / 3.5 / 3.0 m, the pitches, the side offsets, the behind lag, the small room's 4.5 m.
 - Portrait: THIRD 0.333, the Wide feet at −0.9, 30° and 20°, the join and leave times (2 s, 3 s), the crowd rule.
 - Fixed: the capture time (1 s still), KEEP NEW's 5 s, the spot sizes (0.5 m and 45°; 2 m on the ground).

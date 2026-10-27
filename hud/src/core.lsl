@@ -13,7 +13,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.3";
+string VERSION = "8.0.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -65,6 +65,7 @@ float   gStartT;
 float   gApplyT;                    // the last cut / glide, and how long it moves
 float   gSettle;
 float   gTpT;                       // a teleport: a fresh frame after this
+float   gClrT;                      // ... and the old frame let go at this (not in the move itself, 8.0.4)
 float   gFovSent;
 integer gLastAct;
 integer gTyping;
@@ -105,6 +106,18 @@ share()
 }
 
 // ---- the camera ----------------------------------------------------------------------
+// Second Life takes camera calls only from a worn object ("Camera control currently only supported for attachments",
+// seen in-world while crossing into the next region): every call checks it is worn (8.0.4)
+integer worn()
+{
+    return gPermOK && llGetAttached();
+}
+
+clearCam()
+{
+    if (worn()) llClearCameraParams();
+}
+
 // a cut (with /12 blend on, a 1.5 s glide instead, from a shot already on screen)
 setCam(vector p, vector f)
 {
@@ -118,6 +131,7 @@ cut(vector p, vector f)
     gShotFoc = f;
     gFree = FALSE;
     gFollow = FALSE;
+    if (!worn()) return;
     llClearCameraParams();
     llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
         CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, 0.0, CAMERA_FOCUS_LAG, 0.0, CAMERA_POSITION_THRESHOLD, 0.0,
@@ -133,7 +147,7 @@ glide(vector p, vector f, float lag)
     if (gFree || gFollow || gShotPos == ZERO_VECTOR) { cut(p, f); return; }
     gShotPos = p;
     gShotFoc = f;
-    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
+    if (worn()) llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
         CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
     gApplyT = llGetTime();
     gSettle = lag + 2.0;
@@ -147,6 +161,7 @@ follow(string s)
     list L = llParseStringKeepNulls(s, ["|"], []);
     gFollowS = s;
     gFree = FALSE;
+    if (!worn()) return;
     if (!gFollow) llClearCameraParams();
     gFollow = TRUE;
     if (llList2String(L, 0) == "lock")
@@ -216,7 +231,7 @@ engage(string shot, string why)
 {
     if (!gPermOK)
     {
-        llRequestPermissions(gOwner, gNeed);
+        if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
         return;
     }
     if (gStandby) { llMessageLinked(LINK_SET, NOTE, "older", ""); return; }
@@ -245,7 +260,7 @@ engage(string shot, string why)
 // back to your own camera (waiting)
 bail(string why)
 {
-    if (gPermOK) llClearCameraParams();
+    clearCam();
     if (gShot != "") llMessageLinked(LINK_SET, STOP, why, "");
     gShot = "";
     gWhy = "";
@@ -267,7 +282,7 @@ letgo(string why)
     if (gState != "film" && gState != "held") return;
     gLetWhy = why;
     gState = "letgo";
-    if (gPermOK) llClearCameraParams();
+    clearCam();
     gFollow = FALSE;
     gShotPos = ZERO_VECTOR;
     llMessageLinked(LINK_SET, PAUSE, why, "");
@@ -309,7 +324,7 @@ eyeQuit()
     gEyeOn = FALSE;
     llMessageLinked(LINK_SET, CMD, "eyequit", "");
     if (gState == "film" || gState == "held") resume("eye");
-    else if (gPermOK) llClearCameraParams();
+    else clearCam();
 }
 
 // ---- the tick -------------------------------------------------------------------------------
@@ -358,6 +373,11 @@ tick()
         gCamRot = cr;
     }
     if (gEyeOn && t - gEyeT > 120.0) eyeQuit();
+    if (gClrT > 0.0 && t >= gClrT)
+    {
+        gClrT = 0.0;
+        if (gState == "film" && gShotPos == ZERO_VECTOR && !gFollow) clearCam();   // nothing new yet: the old frame goes
+    }
     idleCheck(now, info);
     if (gState == "wait" || gState == "off" || gState == "watch") return;
     // flying and mouselook: your camera until it ends
@@ -531,7 +551,7 @@ default
         if (gPermOK)
         {
             llTakeControls(CTL, TRUE, TRUE);               // one request (a second replaces the first); the keys still walk you
-            if (gState != "film" && gState != "held") llClearCameraParams();   // nothing left locked by a reset (8.0.3)
+            if (gState != "film" && gState != "held") clearCam();   // nothing left locked by a reset (8.0.3)
             gCamPos = llGetCameraPos();
             gCamRot = llGetCameraRot();
         }
@@ -540,15 +560,13 @@ default
     changed(integer c)
     {
         if (c & CHANGED_OWNER) llResetScript();
-        if (c & (CHANGED_TELEPORT | CHANGED_REGION))
-        {
-            eyeQuit();
-            if (gState == "wait" && gPermOK) llClearCameraParams();
-        }
+        if (c & (CHANGED_TELEPORT | CHANGED_REGION)) eyeQuit();
+        // walking into the next region in Tracking: its camera follows you there by itself, nothing to set mid-move
+        if ((c & CHANGED_TELEPORT) == 0 && gFollow && gState == "film") return;
         if ((c & (CHANGED_TELEPORT | CHANGED_REGION)) && (gState == "film" || gState == "held"))
         {
             if (gPermOK) llRequestPermissions(gOwner, gNeed);
-            llClearCameraParams();                          // the same shot, a fresh frame once the place has loaded
+            gClrT = llGetTime() + 1.0;                      // the old frame goes once the move is over, a fresh one at 2 s
             gState = "film";
             gFollow = FALSE;
             gFree = FALSE;
@@ -609,7 +627,7 @@ default
                 gFree = TRUE;                               // Fixed, nothing kept here: your own camera to frame it
                 gFollow = FALSE;
                 gShotPos = ZERO_VECTOR;
-                llClearCameraParams();
+                clearCam();
                 share();
             }
             else basicShot();
@@ -677,7 +695,7 @@ default
             {
                 gEyeOn = FALSE;
                 if (gState == "film" || gState == "held") resume("eye");
-                else if (gPermOK) llClearCameraParams();
+                else clearCam();
             }
             else if (c == "stop") bail("stop");
             else if (c == "next" && gState == "film") llMessageLinked(LINK_SET, NEXT, "tap", "");

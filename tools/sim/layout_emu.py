@@ -7,7 +7,7 @@ from emu_util import *
 
 ASPECTS = [1.25, 1.333, 1.6, 1.778, 2.0, 2.37, 2.4, 3.2, 3.556]
 PLACES = ["top", "topl", "bot", "both"]
-MARGIN = {"top": 24, "topl": 76, "bot": 46, "both": 96}
+MARGIN = {"top": 0, "topl": 52, "bot": 46, "both": 96}
 SIZES = {"s": 0.8, "m": 1.0, "l": 1.25}
 PADX = 8.0
 
