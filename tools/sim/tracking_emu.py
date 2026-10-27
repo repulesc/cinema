@@ -58,9 +58,9 @@ no_errors(w, "room")
 
 # ---- standing still: PORTRAIT lights once; the lit tap; your size ---------------------------------------------------------
 w.run(6)
-check(var(h, "screen", "gHint") == "portrait" or var(h, "tracking", "gHinted") == 1, "standing 5 s: PORTRAIT lights")
+check(var(h, "strip", "gHint") == "portrait" or var(h, "tracking", "gHinted") == 1, "standing 5 s: PORTRAIT lights")
 w.run(6)
-check(var(h, "screen", "gHint") == "", "... once")
+check(var(h, "strip", "gHint") == "", "... once")
 n = len(h.cam["log"])
 ana.touch("t12 s0"); w.run(1)
 check(len(h.cam["log"]) > n and not h.cam.get("plock"), "the lit tap: back into the look behind you")

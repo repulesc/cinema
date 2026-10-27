@@ -1,4 +1,4 @@
-"""Connect on the REAL scripts (8.0): two equal cameras. Two and three avatars wear the full Take 12 (the eleven
+"""Connect on the REAL scripts (8.0): two equal cameras. Two and three avatars wear the full Take 12 (the twelve
 hud/src scripts, run by tools/emu), or the free Take 12 Scenery. Scenarios, then a fuzzer: random Connect taps, shots,
 Alt-clicks, walking away and back, taking the HUD off and on, holds, Leave, lost chat messages. After every settled step
 it checks what everyone believes:

@@ -30,11 +30,11 @@ Every part is found by its name (any link order):
 Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD; `screen` adopts them, keeping each UUID
 in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
 - `take12_words` (1024²): every word in small caps, white on transparent, one cell 512 × 48 each (2 columns × 21 rows).
-  The script tints a word per state. The cell table (column, row, width in px) is generated into `screen.lsl`'s WORDS.
+  The script tints a word per state. The cell tables (column, row, width in px) are generated into `strip.lsl` (WORDS, the strip's marks) and `screen.lsl` (the [12]'s marks).
 - `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the box, the halo, the band fade, and the shape and
   link cells (256 × 48).
 
-## 2. Screen geometry (`screen.lsl`)
+## 2. Screen geometry (`screen.lsl`: the [12]; `strip.lsl`: the strip)
 - **HUD space:** 1.0 tall (the window's height) and `llGetCameraAspect()` wide; +Y to the left, +Z up, +X into the
   screen. The root is placed from the attach point (crop.lsl's `centre()` table, kept in `bars`/`screen`); wear it on
   **HUD Top Center** (any point works).
@@ -50,7 +50,7 @@ in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking t
   +0.006 (crop's DEPTH rule: behind the button so it stays clickable).
 - **Closed:** every strip part is shrunk to 0.01, alpha 0, at the root (invisible prims still catch clicks). Opening
   fades in over 0.2 s (alpha in 3 steps).
-- **Touch:** `screen` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
+- **Touch:** `strip` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
   option word → OPT `<shot>|<word>`, the shape → CMD `bars`, the link → CMD `connect`. `ui` reads the root (gestures).
 
 ## 3. Scripts
@@ -61,7 +61,8 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `core` | Owns the camera (CONTROL_CAMERA, TRACK_CAMERA, TAKE_CONTROLS; one `llTakeControls`). States: `wait` (your own camera), `film`, `held` (you took the camera: Alt-click), `letgo` (flying, mouselook, a marked vehicle), `off` (hold), `watch` (you watch someone's film). Routes shots (START / STOP / NEXT / PAUSE / RESUME), applies SHOT / GLIDE / FOLLOW, the jump-cut rule, sit / stand, teleport, idle start, hold off / on, CAMSET for Connect |
 | `ui` | The [12]'s gestures (tap 0.35 s → dialog, double-tap → the strip, hold 0.8 s → everything off / back), every dialog (main, Connect lists, Settings and its pages, Help, Reset), the first run, `/12` commands, defaults, the 7.x settings migration, owner change |
 | `text` | Every word the user reads, by id (dialog bodies and labels, notes, tips); the notes on `t12 note` (3 s; important ones also in owner chat); the first-three-uses tip counters |
-| `screen` | The strip and the [12] (section 2): places, sizes, the 16:9 cap, word states, the fade, touches, texture adoption |
+| `screen` | The [12] (section 2): the root's place, its ring and dot, the notes' part, the eye line, texture adoption |
+| `strip` | The strip (section 2): the band, the words and their states, the 16:9 cap, the fade, touches (8.0.2: split from `screen`, which was too big for 64 KB) |
 | `bars` | The letterbox per shot (`cin.shape.<shot>`), Black or Dimmed, on / off; a watched film's shape; tells the shots the picture (CROP) and the strip the readout (SHAPE) |
 | `tracking` | Shoulder · Film · Classic, L · R: the viewer's own follow camera (FOLLOW), walls, small rooms, running |
 | `portrait` | Me · Us, Close · Medium · Wide: composed shots of you standing (SHOT / GLIDE) |
@@ -70,7 +71,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `sync` | Connect: the nearby list, invites, two equal cameras, watching, sharing (`docs/CONNECT.md`) |
 | `carry` | Between two copies worn by the same owner: carry-over of the settings, two worn (the older steps aside) |
 
-The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, text, screen, bars, scenic, sync with
+The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, text, screen, strip, bars, scenic, sync, carry with
 `LITE = 1` (Tracking / Portrait / Fixed dim; it can watch a friend's film, never film for others).
 
 ## 4. Link messages
@@ -91,14 +92,14 @@ The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, 
 | 7320 UI_STATE | core → all | `<state>\|<shot>\|<hint>\|<why>`: hint = a shot to glow once (`fixed`, `portrait`) |
 | 7325 CAMSET | core → sync | `<pos>\|<focus>\|<lag>\|<fov>` while filming; `-` when it stops (nothing is shared then) |
 | 7330 CFG_CHANGED | any → all | the `cin.` key changed (`all` after a reset) |
-| 7340 OPTS | shot → screen | `<shot>\|<words, comma>\|<states, comma>`; a word `/` is the divider; states `` · `lit` · `accent` · `dim` |
-| 7341 OPT | screen → shots | `<shot>\|<word>` |
-| 7342 LINKST | sync → screen, core, ui | `<alone / on / shared / theirs / dim>\|<count>\|<name>` |
-| 7343 STRIP | ui → screen | `toggle` · `open` · `close` · `hide` (off) · `show` (back) · `hold\|<0–8>` · `eye\|<z>` · `problem\|<0/1>` · `layout` |
+| 7340 OPTS | shot → strip | `<shot>\|<words, comma>\|<states, comma>`; a word `/` is the divider; states `` · `lit` · `accent` · `dim` |
+| 7341 OPT | strip → shots | `<shot>\|<word>` |
+| 7342 LINKST | sync → screen, strip, ui | `<alone / on / shared / theirs / dim>\|<count>\|<name>` |
+| 7343 STRIP | ui → screen, strip | `toggle` · `open` · `close` · `hide` (off) · `show` (back) · `hold\|<0–8>` · `eye\|<z>` · `problem\|<0/1>` · `layout` |
 | 7344 NOTE | any → text | `<id>\|<arg>` (text shows it 3 s on `t12 note`; important ids also go to owner chat) |
-| 7345 TIP | screen, ui → text | `<word>` (a key's first three uses) |
+| 7345 TIP | strip, ui → text | `<word>` (a key's first three uses) |
 | 7346 TXT / 7347 TXT_ANS | ui ↔ text | `<id>\|<args>` → `<id>\|<text>` |
-| 7348 SHAPE | bars → screen | `<label>\|<on / off / dim>` |
+| 7348 SHAPE | bars → strip | `<label>\|<on / off / dim>` |
 | 7360 MSG_VER | all | `?` or a version (ui warns on a mismatch) |
 | 7370 STATUS | ui → all | `?`: each script says one line |
 | 7371 CMD | any → any | below |
@@ -154,7 +155,7 @@ Carry-over copies every key but `owner`, `ver`, `cfgv` and `peers`.
 runs on the real scripts in `tools/sim/*_emu.py` (CI runs them all; see `.github/workflows/lsl-check.yml`).
 **Memory at runtime (8.0.1):** a list and its copy while it grows are what runs a script out of memory (8.0.0's screen
 died in-world building one list for the whole strip). Never build a list of everything at once: send prim parameters
-in batches (`screen`'s `put` / `go`), page Linkset Data keys (`ui`'s `wipe`), keep indexes as strings (`fixed`'s `lru`),
+in batches (`strip`'s `put` / `go`), page Linkset Data keys (`ui`'s `wipe`), keep indexes as strings (`fixed`'s `lru`),
 and use a sensor (16 nearest) rather than the region's avatar list. `tools/sim/memory_emu.py` measures every script's
 biggest runtime list against `tools/lslmem.py`'s model and fails under 3 KB to spare.
 

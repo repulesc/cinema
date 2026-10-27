@@ -11,7 +11,7 @@ def frame_it(av, w, to, focus=None):
     av.alt_orbit(to=to, focus=focus or B.add(av.pos, vec(0, 0, 0.6)))
     w.run(2.5)
 
-def opts(h): return list(zip(var(h, "screen", "gOpts"), var(h, "screen", "gOptSt")))
+def opts(h): return list(zip(var(h, "strip", "gOpts"), var(h, "strip", "gOptSt")))
 def words(h): return [x for x, st in opts(h)]
 def place_key(h):
     return [k for k in h.lsd if k.startswith("cin.view.")]

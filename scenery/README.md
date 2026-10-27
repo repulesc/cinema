@@ -9,7 +9,7 @@ The Scenic camera of Take 12, on its own, for L$0: a free way in to the full Tak
 - **Two worn:** with a full Take 12 worn too, the free one steps aside and the full one carries your setup over.
 
 ## The scripts are generated
-`scenery/src/` is generated from `hud/src/` by `tools/build_scenery.py`: core, ui, text, screen, bars, scenic, sync
+`scenery/src/` is generated from `hud/src/` by `tools/build_scenery.py`: core, ui, text, screen, strip, bars, scenic, sync
 and carry, with `integer LITE   = 1;` where a script has the switch. Never edit `scenery/src` by hand. After
 changing `hud/src`:
 ```
@@ -22,7 +22,7 @@ CI runs `python3 tools/build_scenery.py --check` (fails if `scenery/src` is out 
 1. **The object:** build it with the same builder as Take 12 (`hud/build/README.md`), and name the root
    **Take 12 Scenery**.
 2. **The textures:** the same two as Take 12 (`hud/art/take12_words_1024.png`, `hud/art/take12_marks_1024.png`).
-3. **The scripts:** the eight from `scenery/src/`. `/12 status` lists them.
+3. **The scripts:** the nine from `scenery/src/`. `/12 status` lists them.
 4. **The notecard:** `Take 12 Scenery - Read Me` with the text of `scenery/notecard/read_me.txt`.
 5. **Before giving it away:** the scripts no-modify (`PASS` comes from `hud/src`). Next owner: copy and transfer.
 6. **Box and folder:** `Take 12 Scenery`.
