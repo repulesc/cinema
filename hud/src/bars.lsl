@@ -137,7 +137,12 @@ tell()
         lbl = shapeOf(gShot);
         if (!gOn || lbl == "full") lbl = "FULL";
     }
-    if (gFollow != "") { lbl = gFollow; st = "on"; }
+    if (gFollow != "")
+    {
+        lbl = gFollow;
+        st = "on";
+        if (lbl == "full") lbl = "FULL";
+    }
     s += "~" + lbl + "|" + st;
     if (s == gSent) return;
     gSent = s;
@@ -214,8 +219,7 @@ default
         }
         else if (num == CMD && llGetSubString(str, 0, 10) == "bars|follow")
         {
-            gFollow = llStringTrim(llGetSubString(str, 11, -1), STRING_TRIM);
-            if (gFollow == "full") gFollow = "";
+            gFollow = llStringTrim(llGetSubString(str, 11, -1), STRING_TRIM);   // "full": theirs has no bars
             cut();
         }
         else if (num == CFG_CHANGED && (llGetSubString(str, 0, 5) == "shape." || str == "bars" || str == "bstyle" || str == "flip" || str == "all"))

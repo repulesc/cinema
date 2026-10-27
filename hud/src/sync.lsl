@@ -1,200 +1,282 @@
 // ============================================================================
-//  Take 12  -  sync.lsl  (v6.8)  - Connect
-//  6.8.0: sharing became Connect. You connect with the people near you; once connected, WHOEVER FILMS LEADS: start
-//  any camera and everyone connected sees it; when nobody films, everyone has their own camera, still connected.
-//  Hold the HUD button: the Connect panel (connect.lsl draws it), whatever you are doing.
-//    NOT CONNECTED  who is near (a quick "who" check), + <name> (connect one), + Everyone, ⇄ Join <connected>, Give Watch
-//    CONNECTED      you film / nobody films: Next or Film, + Invite, Disconnect;  watching: My turn, Next, Disconnect
-//    ASKED          Connect, No (a double-tap also connects)
-//  Under the hood it is still one hub (the "director": whoever filmed last, or who connected the others) and its
-//  viewers. A viewer whose own camera starts asks the hub ("ask"), which always hands over ("lead|1", "director|<key>"
-//  to everyone): everyone, the hub too, then follows the new one. The hub's Disconnect hands the connection to
-//  another Take 12 ("lead|2": you hold it, no camera started) or, with only Watches left, ends it (it asks first).
-//  A movement key while watching: your own camera for a moment, then back on the shared view (4 s still).
-//  A Take 12 Watch, or Take 12 with you in its Friends, connects at once; anyone else is asked. Above the HUD:
-//  "⇄ You film · Ana, Ben see it", "⇄ Ana films", "⇄ Connected · nobody films", "Ana wants to connect".
-//  Channel SYNC_CH, messages "T12|<what>|...":
-//    who|<name> (llRegionSay) -> here|<T/W>|<idle/live/view/pend>|<director name>
-//    invite|<name> -> ack|1 (joined) / ack|0 (asked) / busy|<what>
-//    viewer -> director: join leave next away back ask        director -> viewer: cam|<pos>|<focus>|<lag> hb pause
-//    fmt|<format> (7.1: the director's Format; a Take 12 viewer shows it while connected, its own comes back after;
-//    7.1.2: the director's heartbeat hb|<format> carries it too)
-//    lead|<1 you lead / 2 you hold it / 0 no>   director|<key>|<name> (a hand-over) kick end
-//  The panels are drawn by connect.lsl (SHARE_UI / SHARE_DO; share.lsl before 6.8). Full description:
-//  docs/CONNECT.md. Checked in tools/sim/sync_sim.py.
+//  Take 12  -  sync.lsl  (8.0)  - Connect: two equal cameras
+//  Everyone connected films with their own shot; anyone can watch anyone's film. With one other person the strip's
+//  Connect key flips between your film and theirs; with more, it opens their names. You find people in Dialog ›
+//  Connect (within 20 m, wearing Take 12): a tap asks them ("Ana wants to share films", Yes / No); your Friends
+//  (Settings › Friends) join without being asked. A soft chime (the HUD's sound, only you hear it; Settings ›
+//  Friends › Chime) when someone asks or joins. The strip: the linked rings and a count, SHARING while someone watches
+//  your film, THEIR FILM while you watch; the [12]'s dot is white when connected and glows softly when shared.
+//  One director per pair: while you watch someone you film for nobody (your watchers go back to their own film).
+//  Only Take 12's shots are shared (core's CAMSET; your own camera, Alt-click looks and mouselook never are): their
+//  film stopping sends you back to yours ("Ben isn't filming."). Beyond 20 m a connection rests (the count drops) and
+//  comes back by itself; 3 s without a word from the one you watch is "Ben left"; 30 min apart and it ends. Leave
+//  (or a hold: everything off) ends it. A re-worn Take 12 rejoins the ones it was with in the last 30 min.
+//  A 7.x Take 12 shows as "(old)" and never connects. Meeting a newer Take 12: "A newer Take 12 is out." once.
+//  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "7.2.0";
+string VERSION = "8.0.0";
 string PASS    = "cinema-1.0-build1";
+integer LITE   = 0;                 // the free Take 12 Scenery build: it can watch, never film for others
 
-integer START      = 7301;
-integer STOP       = 7302;
-integer CAMSET     = 7325;   // core -> sync  "<pos>|<focus>|<lag>|<lens>" (6.0.1: viewers place it through their own lens)
-integer CROP       = 7390;   // crop -> cameras  "<format>|<window>": your Format, for the people connected (7.1)
+integer UI_STATE   = 7320;
+integer CAMSET     = 7325;
+integer LINKST     = 7342;
+integer NOTE       = 7344;
+integer TXT        = 7346;
+integer TXT_ANS    = 7347;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
-integer TEXT       = 7380;   // sync -> tips  "<live/view/inv or empty>|<the state above the HUD>"
-integer SHARE_UI   = 7392;   // sync -> connect: open a panel "<camOn>|<page>|..." (connect.lsl draws the Connect panel)
-integer SHARE_DO   = 7393;   // connect -> sync: the choice
-integer SYNC_CH    = -7712120;   // Take 12 and Take 12 Watch speak on this channel
-float   NEAR       = 20.0;       // m  who is found and asked to connect
-integer NEXT_GAP   = 5;          // s  two viewers' double-taps close together cut once
-integer WAIT       = 20;         // s  an invitation waits this long
-integer GONE       = 25;         // s  no camera and no heartbeat from the director: it is gone
-integer QUIET      = 25;         // s  a viewer not heard from this long shows "(no signal)"...
-integer LOST       = 45;         // s  ... and this long is dropped
-integer gBeatT;              // viewing: your last heartbeat to the director
-float   OWN        = 4.0;        // s  still after a movement key while watching: back on the shared view
+integer CROP       = 7390;
+integer SYNC_CH    = -7712120;
+float   NEAR       = 20.0;          // m  who can be asked; beyond it a connection rests
+float   GONE       = 3.0;           // s  no word from the one you watch
+float   QUIET      = 10.0;          // s  no word from a peer: it rests
+integer APART      = 1800;          // s  rested this long, it ends
+integer WAIT       = 20;            // s  an ask waits this long
 
 key     gOwner;
-integer gSharing;            // CONNECTED, as the hub: you film, or filmed last, or connected the others
-integer gCamOn;              // your own camera runs
-integer gHand;               // you just handed the camera over: your stop is not the end
-integer gToggleT;            // Connect / Disconnect: repeats within 2 s are ignored
-string  gMyMode = "social";  // your last camera (My turn starts it)
-list    gWatchers;           // LIVE: who watches you
-list    gSeen;               // ... when each was last heard from (their heartbeat), same order as gWatchers
-list    gAway;               // ... and who of them is looking around
-integer gNextT;              // ... the last "next" asked
-integer gHbT;                // ... the last heartbeat and roster check
-string  gLastCam;            // the camera on your screen now
-list    gInv;                // invited, no answer yet
-list    gRes;                // ... the answers
-integer gInvT;
-key     gHost = NULL_KEY;    // VIEWING: whose view you follow (7.1.2: an unset key is "", not NULL_KEY)
-vector  gApplied;            // ... the camera last set from it
-float   gApplyT;             // ... and until when it may still be moving there
-integer gIsAway;             // ... you are looking around on your own
-integer gHeld;               // ... the director paused (their camera stopped): their last shot stays
-integer gHearT;              // ... the last word from the director
-integer gAskT;               // ... your camera started: you asked for the lead, waiting
-float   gOwnT;               // ... a movement key: your own camera since (0: following)
-key     gOffer = NULL_KEY;   // INVITED by
-integer gPendT;              // ... since
-list    gNear;               // the "who" check: [key, "<T/W>~<state>~<director>", ...]
-float   gWhoT;               // ... sent at (0 = none running)
-float   gTextT;              // a short notice above the HUD, until it gives way to the state again
-string  gCam;                // the director's last camera, as sent: re-placed when your own lens changes
-float   gMyFov;              // your lens when it was placed
-string  gFmt = "0";          // your Format (0: none), sent to the people connected
-integer gFmtOn;              // viewing: the director's Format is on your screen
-string  gFmtCur;             // ... which one
-integer gLensTold;           // ... the lens note was shown
-string  gNoteS;              // ... its text
-string  gSent;               // the sharing block last sent to tips (TEXT), which shows it above the HUD
+list    gP;                         // the people connected: keys
+list    gPN;                        // ... their short names
+list    gPF;                        // ... their film (1 filming, 2 watching someone)
+list    gPT;                        // ... heard from at (llGetTime)
+list    gPR;                        // ... in reach (1), resting (0)
+list    gPA;                        // ... apart since (unix, 0 near)
+list    gW;                         // who watches your film
+key     gHost = NULL_KEY;           // whose film you watch
+string  gCam;                       // their last camera
+integer gFilm;                      // your film is shareable now (core: CAMSET)
+string  gLast;                      // your last camera, for a new watcher
+string  gShape = "0";               // your shape (bars: CROP)
+string  gFollowed;                  // their shape on your bars
+list    gInv;                       // asked, no answer yet: [key, unix]
+key     gAsk = NULL_KEY;            // asking you
+integer gAskT;
+list    gNear;                      // the scan: [key, "8" / "old", lite]
+float   gScanT;
+string  gScan;                      // connect / addfriend
+integer gChan;
+integer gLh;
+integer gDlgT;
+string  gPage;
+list    gBtn;
+list    gBtnK;
+string  gSent;
+integer gBeat;
+integer gSaveT;
+integer gDebug;
 
-// ---- above the HUD: the state, and short notices ------------------------------
-// a name, also for someone who has just left the region (llKey2Name is "" then): the last ones seen are remembered
-list    gBook;               // [key, name, ...]
-string name(key k)
-{
-    string n = llKey2Name(k);
-    integer i = llListFindList(gBook, [k]);
-    if (n == "" && i >= 0) return llList2String(gBook, i + 1);
-    if (n != "" && i < 0)
-    {
-        gBook += [k, n];
-        if (llGetListLength(gBook) > 40) gBook = llDeleteSubList(gBook, 0, 1);
-    }
-    return n;
-}
-
-// a short name: "Ana Resident" -> "Ana"
+// ---- names ---------------------------------------------------------------------------
 string sn(key k)
 {
-    string n = name(k);
-    if (n == "") n = "someone";
-    integer i = llSubStringIndex(n, " Resident");
-    if (i > 0) n = llGetSubString(n, 0, i - 1);
+    integer i = llListFindList(gP, [k]);
+    string n = llKey2Name(k);
+    if (n == "" && i >= 0) return llList2String(gPN, i);
+    if (n == "") return "someone";
+    integer j = llSubStringIndex(n, " Resident");
+    if (j > 0) n = llGetSubString(n, 0, j - 1);
     return n;
 }
 
-string ind()
+note(string id, key k)
 {
-    integer now = llGetUnixTime();
-    if (gSharing)
-    {
-        // who is connected with you, live: names, looking around, no signal
-        integer n = llGetListLength(gWatchers);
-        if (n == 0) return "⇄ Connecting… · nobody has joined yet";
-        list s = [];
-        integer i;
-        for (i = 0; i < n && i < 4; i++)
-        {
-            key k = llList2Key(gWatchers, i);
-            string t = sn(k);
-            if (now - llList2Integer(gSeen, i) > QUIET) t += " (no signal)";
-            else if (llListFindList(gAway, [k]) >= 0) t += " (own camera)";
-            s += [t];
-        }
-        string r = llDumpList2String(s, ", ");
-        if (n > 4) r += " +" + (string)(n - 4);
-        if (!gCamOn) return "⇄ Connected · " + r + "\nnobody films · double-tap: film";
-        return "⇄ You film · " + r + " see it";
-    }
-    if (gHost != NULL_KEY)
-    {
-        if (gAskT) return "⇄ Taking the camera…";
-        if (now - gHearT > 15) return "⇄ " + sn(gHost) + " · no signal…";
-        if (gHeld) return "⇄ Connected with " + sn(gHost) + "\nnobody films · double-tap: film";
-        if (gOwnT > 0.0) return "⇄ " + sn(gHost) + " films · your camera for a moment";
-        if (gIsAway) return "⇄ " + sn(gHost) + " films · looking around (Esc: back)";
-        return "⇄ " + sn(gHost) + " films\ndouble-tap: next for all";
-    }
-    if (gPendT) return sn(gOffer) + " wants to connect · double-tap: yes";
-    return "";
+    llMessageLinked(LINK_SET, NOTE, id + "|" + sn(k), "");
 }
 
-// the state goes to tips, the one owner of the text above the HUD (with the status line and the tips)
+dbg(string s)
+{
+    if (gDebug) llOwnerSay("[T12 sync " + (string)(llGetUnixTime() % 1000) + "] " + s);
+}
+
+say(key k, string m)
+{
+    llRegionSayTo(k, SYNC_CH, "T12|8|" + m);
+    if (llGetSubString(m, 0, 1) != "hb" && llGetSubString(m, 0, 2) != "cam") dbg("→ " + sn(k) + ": " + m);
+}
+
+integer near(key k)
+{
+    list d = llGetObjectDetails(k, [OBJECT_POS]);
+    return (d != [] && llVecDist(llList2Vector(d, 0), llGetPos()) <= NEAR);
+}
+
+integer vnum(string v)
+{
+    list L = llParseString2List(v, ["."], []);
+    return (integer)llList2String(L, 0) * 10000 + (integer)llList2String(L, 1) * 100 + (integer)llList2String(L, 2);
+}
+
+// a newer Take 12 met: say it once per version
+newer(string v)
+{
+    if (vnum(v) <= vnum(VERSION) || vnum(v) <= vnum(llLinksetDataReadProtected("cin.newer", PASS))) return;
+    llLinksetDataWriteProtected("cin.newer", v, PASS);
+    llMessageLinked(LINK_SET, NOTE, "newer", "");
+}
+
+chime()
+{
+    string s = llGetInventoryName(INVENTORY_SOUND, 0);
+    if (s != "" && llLinksetDataReadProtected("cin.chime", PASS) != "0") llPlaySound(s, 0.5);
+}
+
+integer friend(key k)
+{
+    return (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)k) >= 0);
+}
+
+// ---- the strip: the Connect key and the [12]'s dot ------------------------------------
+integer reach()
+{
+    integer n;
+    integer i;
+    for (i = 0; i < llGetListLength(gP); i++) n += llList2Integer(gPR, i);
+    return n;
+}
+
+// the one other person you can flip to (-1: none, or more than one)
+integer one()
+{
+    if (reach() != 1) return -1;
+    return llListFindList(gPR, [1]);
+}
+
 refresh()
 {
-    string k = "";
-    if (gSharing) k = "live";
-    else if (gHost != NULL_KEY) k = "view";
-    else if (gPendT) k = "inv";
-    k += "|" + ind();
-    if (k != gSent) llMessageLinked(LINK_SET, TEXT, k, "");
-    gSent = k;
-    llSetTimerEvent(1.0);
+    integer n = reach();
+    string s = "on|" + (string)n + "|";
+    if (gP == []) s = "alone|0|";
+    else if (gHost != NULL_KEY) s = "theirs|" + (string)n + "|" + sn(gHost);
+    else if (gW != []) s = "shared|" + (string)n + "|";
+    else if (n == 0 || (one() >= 0 && !(llList2Integer(gPF, one()) & 1))) s = "dim|" + (string)n + "|";
+    if (s == gSent) return;
+    gSent = s;
+    llMessageLinked(LINK_SET, LINKST, s, "");
 }
 
-// a short notice: the whole text for 4 s, then it gives way (tips draws the state again)
-show(string s)
+// who you were with, and when: a re-worn Take 12 rejoins them within 30 min
+save()
 {
-    llSetText(s, <1.0, 1.0, 1.0>, 0.85);
-    gNoteS = llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0);     // as kept (cut short past 254 bytes)
-    gTextT = llGetTime();
-    llSetTimerEvent(1.0);
+    integer now = llGetUnixTime();
+    list R = [];
+    integer i;
+    for (i = 0; i < llGetListLength(gP); i++) R += [llList2String(gP, i) + "=" + (string)now];
+    if (R == []) llLinksetDataDeleteProtected("cin.peers", PASS);
+    else llLinksetDataWriteProtected("cin.peers", llDumpList2String(R, ";"), PASS);
+    gSaveT = now;
 }
 
-quiet()
+integer recent(key k)
 {
-    if (gTextT > 0.0 && llList2String(llGetPrimitiveParams([PRIM_TEXT]), 0) == gNoteS) llSetText("", ZERO_VECTOR, 0.0);
-    gTextT = 0.0;
+    list R = llParseString2List(llLinksetDataReadProtected("cin.peers", PASS), [";"], []);
+    integer i;
+    for (i = 0; i < llGetListLength(R); i++)
+    {
+        list kv = llParseString2List(llList2String(R, i), ["="], []);
+        if ((key)llList2String(kv, 0) == k && llGetUnixTime() - (integer)llList2String(kv, 1) < APART) return TRUE;
+    }
+    return FALSE;
+}
+
+// ---- people --------------------------------------------------------------------------
+add(key k)
+{
+    if (k == gOwner || k == NULL_KEY) return;
+    integer i = llListFindList(gP, [k]);
+    if (i >= 0)
+    {
+        gPT = llListReplaceList(gPT, [llGetTime()], i, i);
+        return;
+    }
+    if (llGetListLength(gP) >= 8) return;
+    gP += [k];
+    gPN += [sn(k)];
+    gPF += [0];
+    gPT += [llGetTime()];
+    gPR += [near(k)];
+    gPA += [0];
+    save();
     refresh();
 }
 
-note(string s)
+drop(key k)
 {
-    llOwnerSay("[Take 12] " + s);
-    show(s);
+    integer i = llListFindList(gP, [k]);
+    if (i >= 0)
+    {
+        gP = llDeleteSubList(gP, i, i);
+        gPN = llDeleteSubList(gPN, i, i);
+        gPF = llDeleteSubList(gPF, i, i);
+        gPT = llDeleteSubList(gPT, i, i);
+        gPR = llDeleteSubList(gPR, i, i);
+        gPA = llDeleteSubList(gPA, i, i);
+    }
+    i = llListFindList(gW, [k]);
+    if (i >= 0) gW = llDeleteSubList(gW, i, i);
+    if (k == gHost) mine(TRUE, TRUE);
+    save();
+    refresh();
 }
 
-// the director's camera through YOUR lens: the same line to the same focus, at the distance that gives the same
-// picture size (k = tan(theirs / 2) / tan(yours / 2)); a wall on the way stops it 0.3 m short. again: your zoom changed
-place(integer again)
+// Leave, or everything off: the connection ends for you
+leave()
+{
+    integer i;
+    for (i = 0; i < llGetListLength(gP); i++) say(llList2Key(gP, i), "bye");
+    if (gHost != NULL_KEY) mine(TRUE, TRUE);
+    gP = [];
+    gPN = [];
+    gPF = [];
+    gPT = [];
+    gPR = [];
+    gPA = [];
+    gW = [];
+    save();
+    refresh();
+}
+
+// ---- watching ----------------------------------------------------------------------------
+watch(key k)
+{
+    if (gHost != NULL_KEY && gHost != k) say(gHost, "unwatch");
+    gHost = k;
+    gCam = "";
+    say(k, "watch");
+    integer i;
+    for (i = 0; i < llGetListLength(gW); i++) say(llList2Key(gW, i), "pause");   // one director per pair
+    gW = [];
+    llMessageLinked(LINK_SET, CMD, "watch|" + (string)k, "");
+    note("theirs", k);
+    refresh();
+}
+
+// back to your own film. clear: the camera is yours to set again (not when core already starts a new shot)
+mine(integer clear, integer tellCore)
+{
+    if (gHost == NULL_KEY) return;
+    if (llListFindList(gP, [gHost]) >= 0) say(gHost, "unwatch");
+    gHost = NULL_KEY;
+    gCam = "";
+    if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
+    if (gFollowed != "") llMessageLinked(LINK_SET, CMD, "bars|follow", "");
+    gFollowed = "";
+    if (tellCore) llMessageLinked(LINK_SET, CMD, "unwatch", "");
+    refresh();
+}
+
+// their camera through YOUR lens: the same line to the same focus at the distance that keeps the picture size
+place()
 {
     list L = llParseStringKeepNulls(gCam, ["|"], []);
     vector p = (vector)llList2String(L, 0);
     vector f = (vector)llList2String(L, 1);
     float lag = (float)llList2String(L, 2);
     float df = (float)llList2String(L, 3);
-    gMyFov = llGetCameraFOV();
-    if (again) lag = 0.5;
-    if (df > 0.05 && gMyFov > 0.05)
+    float my = llGetCameraFOV();
+    if (df > 0.05 && my > 0.05)
     {
-        float k = llTan(df * 0.5) / llTan(gMyFov * 0.5);
+        float k = llTan(df * 0.5) / llTan(my * 0.5);
         if (k < 0.2) k = 0.2;
         if (k > 5.0) k = 5.0;
         vector q = f + (p - f) * k;
@@ -202,256 +284,214 @@ place(integer again)
         if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
         p = q;
     }
-    gApplied = p;
-    gApplyT = llGetTime() + lag + 2.0;
-    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f,
-        CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag,
-        CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
-}
-
-say(key k, string m)
-{
-    llRegionSayTo(k, SYNC_CH, "T12|" + m);
-    if (gDebug && m != "hb" && llGetSubString(m, 0, 2) != "hb|") dbg("→ " + sn(k) + ": " + m);
-}
-
-// 7.1.3, /77 debug on: every Connect message and change of state in your chat (not kept past a reset)
-integer gDebug;
-dbg(string s)
-{
-    if (gDebug) llOwnerSay("[T12 sync " + (string)(llGetUnixTime() % 1000) + "] " + s + "  · hub " + (string)gSharing
-        + " host " + sn(gHost) + " ask " + (string)(gAskT > 0) + " own " + (string)(gOwnT > 0.0) + " held " + (string)gHeld
-        + " away " + (string)gIsAway + " cam " + (string)gCamOn);
-}
-
-all(string m)
-{
-    integer i;
-    for (i = 0; i < llGetListLength(gWatchers); i++) say(llList2Key(gWatchers, i), m);
-}
-
-integer near(key k)
-{
-    list d = llGetObjectDetails(k, [OBJECT_POS]);
-    return (llGetListLength(d) > 0 && llVecDist(llList2Vector(d, 0), llGetPos()) <= NEAR);
-}
-
-list    gW;                  // the viewers on a Take 12 Watch ("join|W"): they cannot lead
-drop(key k)
-{
-    integer w = llListFindList(gW, [k]);
-    if (w >= 0) gW = llDeleteSubList(gW, w, w);
-    integer i = llListFindList(gWatchers, [k]);
-    if (i >= 0)
+    if (lag > 0.0 && lag < 0.3) lag = 0.3;                  // between their updates the camera eases; a cut stays a cut
+    if (lag > 3.0) lag = 3.0;
+    if (llGetPermissions() & PERMISSION_CONTROL_CAMERA)
+        llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
+            CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag, CAMERA_POSITION_THRESHOLD, 0.0,
+            CAMERA_FOCUS_THRESHOLD, 0.0]);
+    string s = llGetSubString(llList2String(L, 4), 0, 3);   // "2.39", or 0: no bars
+    if ((float)s == 0.0) s = "full";
+    if (s != gFollowed)
     {
-        gWatchers = llDeleteSubList(gWatchers, i, i);
-        gSeen = llDeleteSubList(gSeen, i, i);
+        gFollowed = s;
+        llMessageLinked(LINK_SET, CMD, "bars|follow " + s, "");
     }
-    i = llListFindList(gAway, [k]);
-    if (i >= 0) gAway = llDeleteSubList(gAway, i, i);
 }
 
-// ---- the panels --------------------------------------------------------------
-// ask who is near; the IDLE (or Invite more) panel opens when they have answered
-who()
+// ---- dialogs --------------------------------------------------------------------------
+dialog(string page, string args, list labels, list keys)
 {
-    llRegionSay(SYNC_CH, "T12|who|" + name(gOwner));
+    gPage = page;
+    gBtn = labels;
+    gBtnK = keys;
+    if (gLh) llListenRemove(gLh);
+    gChan = -100000 - (integer)llFrand(900000000.0);
+    gLh = llListen(gChan, "", gOwner, "");
+    gDlgT = llGetUnixTime();
+    llMessageLinked(LINK_SET, TXT, page + "|" + args, "sync");
+}
+
+// the people near you who wear Take 12: asked, then listed 1.5 s later
+scan(string why)
+{
+    gScan = why;
     gNear = [];
-    gWhoT = llGetTime();
-    show("Looking for people near you…");
+    gScanT = llGetTime();
+    llRegionSay(SYNC_CH, "T12|8|who|" + VERSION + "|" + (string)LITE);
+    llRegionSay(SYNC_CH, "T12|who|" + llKey2Name(gOwner));   // a 7.x Take 12 answers this: "(old)"
 }
 
-// the Connect panel is drawn by connect.lsl: it gets what it needs, when it should open
-ui(string page)
+listNear()
 {
-    llMessageLinked(LINK_SET, SHARE_UI, (string)gCamOn + "|" + page, "");
-}
-
-panel()
-{
-    if (gSharing) ui("live|" + llDumpList2String(gWatchers, ",") + "|" + llDumpList2String(gW, ","));
-    else if (gHost != NULL_KEY) ui("view|" + (string)gHost + "|" + (string)gHeld);
-    else if (gPendT) ui("inv|" + (string)gOffer);
-    else who();
-}
-
-// your turn: your last camera (Scenery is the idle double-tap's: Us instead); starting it asks the hub for the lead
-film()
-{
-    string m = gMyMode;
-    if (m == "scenery") m = "sharecam";
-    llMessageLinked(LINK_SET, CMD, m, "");
-}
-
-// a choice in the Connect panel (connect.lsl) or a key (keys.lsl)
-act(string s)
-{
-    list A = llParseString2List(s, ["|"], []);
-    string a = llList2String(A, 0);
-    key k = (key)llList2String(A, 1);
-    if (a == "everyone") golive(TRUE);
-    else if (a == "connect")                                // connect one: you hold the connection for them
+    gScanT = 0.0;
+    list b = [];
+    list k = [];
+    integer i;
+    for (i = 0; i < llGetListLength(gNear) && llGetListLength(b) < 9; i += 3)
     {
-        golive(FALSE);
-        if (gSharing) invite(k);
+        key p = llList2Key(gNear, i);
+        string n = llGetSubString(sn(p), 0, 17);
+        if (llList2String(gNear, i + 1) == "old") n += " (old)";
+        else if (friend(p)) n = "★ " + n;
+        if (llListFindList(gP, [p]) < 0 && llListFindList(b, [n]) < 0)
+        {
+            b += [n];
+            k += [p];
+        }
     }
-    else if (a == "join") watch(k);
-    else if (a == "who") who();
-    else if (a == "film") film();
-    else if (a == "next" && gHost != NULL_KEY) say(gHost, "next");
-    else if (a == "next") llMessageLinked(LINK_SET, CMD, "next", "");
-    else if (a == "disconnect") disconnect();
-    else if (a == "end") endlive("Disconnected");
-    else if (a == "panel") panel();
-    else if (a == "accept" && gPendT) watch(gOffer);
-    else if (a == "no") unpend();
-    else if (a == "note") note(llList2String(A, 1));
-}
-
-// Disconnect: a viewer just leaves; the hub hands the others on to another Take 12, or (only Watches left) asks first
-disconnect()
-{
-    if (gHost != NULL_KEY)
+    if (b == [])
     {
-        leave(TRUE, TRUE);
-        show("Disconnected");
+        llMessageLinked(LINK_SET, NOTE, "nobody", "");
         return;
     }
-    if (!gSharing) return;
+    dialog(gScan, llDumpList2String(b, ", "), b + ["Close"], k);
+}
+
+connected()
+{
+    list b = [];
+    list k = [];
+    list names = [];
     integer i;
-    for (i = 0; i < llGetListLength(gWatchers); i++)
-        if (llListFindList(gW, [llList2Key(gWatchers, i)]) < 0)
+    for (i = 0; i < llGetListLength(gP); i++)
+    {
+        key p = llList2Key(gP, i);
+        string n = llGetSubString(sn(p), 0, 17);
+        string s = n;
+        if (!llList2Integer(gPR, i)) s += " (away)";
+        else if (p == gHost) s += " (watching)";
+        else if (!(llList2Integer(gPF, i) & 1)) s += " (not filming)";
+        names += [s];
+        if (llList2Integer(gPR, i) && p != gHost && (llList2Integer(gPF, i) & 1) && llGetListLength(b) < 8)
         {
-            handOn(llList2Key(gWatchers, i));
-            return;
+            b += [n];
+            k += [p];
         }
-    if (gWatchers == []) endlive("Disconnected");
-    else ui("end|" + llDumpList2String(gWatchers, ","));
+    }
+    if (gHost != NULL_KEY) { b += ["My film"]; k += [NULL_KEY]; }
+    dialog("connected", llDumpList2String(names, ", "), b + ["Invite", "Leave", "Close"], k);
 }
 
-// ---- directing -----------------------------------------------------------------
-invite(key k)
+// the strip's Connect key: alone, find people; with one, flip between your film and theirs; with more, their names
+tapKey()
 {
-    if (llListFindList(gInv, [k]) >= 0 || llListFindList(gWatchers, [k]) >= 0) return;
-    say(k, "invite|" + name(gOwner));
-    gInv += [k];
-    gInvT = llGetUnixTime();
+    if (gP == []) { scan("connect"); return; }
+    if (gHost != NULL_KEY && reach() <= 1)
+    {
+        mine(TRUE, TRUE);
+        llMessageLinked(LINK_SET, NOTE, "mine", "");
+        return;
+    }
+    if (reach() > 1) { connected(); return; }
+    integer o = one();
+    if (o < 0) { note("away", llList2Key(gP, 0)); return; }
+    key k = llList2Key(gP, o);
+    if (llList2Integer(gPF, o) & 1) watch(k);
+    else note("notfilming", k);
 }
 
-// you hold the connection (no camera is started: connecting is not filming); with "everyone", all the free people found
-// are asked
-golive(integer everyone)
+choose(string b)
 {
-    if (!gSharing && llGetUnixTime() - gToggleT < 2) return;
-    if (gHost != NULL_KEY) leave(TRUE, FALSE);              // 7.1.3: one role at a time (the emulator found both at once)
-    gToggleT = llGetUnixTime();
-    gSharing = TRUE;
-    dbg("holding the connection");
-    gHbT = llGetUnixTime();
+    integer i = llListFindList(gBtn, [b]);
+    key k = NULL_KEY;
+    if (i >= 0 && i < llGetListLength(gBtnK)) k = llList2Key(gBtnK, i);
+    string p = gPage;
+    llListenRemove(gLh);
+    gLh = 0;
+    if (b == "Close" || i < 0) return;
+    if (p == "ask")
+    {
+        key a = gAsk;
+        gAsk = NULL_KEY;
+        if (b == "Yes" && a != NULL_KEY)
+        {
+            say(a, "yes|" + VERSION);
+            add(a);
+            note("with", a);
+        }
+        else if (a != NULL_KEY) say(a, "no");
+    }
+    else if (p == "connect")
+    {
+        if (llSubStringIndex(b, " (old)") > 0) { note("old", k); return; }
+        if (k == NULL_KEY) return;
+        say(k, "ask|" + VERSION);
+        gInv += [k, llGetUnixTime()];
+        note("asked", k);
+    }
+    else if (p == "addfriend" && llSubStringIndex(b, " (old)") < 0)
+    {
+        string f = llLinksetDataReadProtected("cin.friends", PASS);
+        if (!friend(k))
+        {
+            list F = llParseString2List(f, [";"], []) + [(string)k + "," + llKey2Name(k)];
+            llLinksetDataWriteProtected("cin.friends", llDumpList2String(llList2List(F, -20, -1), ";"), PASS);
+        }
+        note("friend", k);
+    }
+    else if (p == "connected")
+    {
+        if (b == "Leave") leave();
+        else if (b == "Invite") scan("connect");
+        else if (b == "My film") { mine(TRUE, TRUE); llMessageLinked(LINK_SET, NOTE, "mine", ""); }
+        else if (k != NULL_KEY) watch(k);
+    }
+}
+
+// ---- the tick ---------------------------------------------------------------------------------
+tick()
+{
+    float t = llGetTime();
+    integer now = llGetUnixTime();
+    if (gScanT > 0.0 && t - gScanT > 1.5) listNear();
+    if (gLh && now - gDlgT > 60)
+    {
+        llListenRemove(gLh);
+        gLh = 0;
+        if (gPage == "ask" && gAsk != NULL_KEY) say(gAsk, "no");
+        gAsk = NULL_KEY;
+    }
     integer i;
-    if (everyone)
-        for (i = 0; i < llGetListLength(gNear); i += 2)
-            if (llList2String(llParseStringKeepNulls(llList2String(gNear, i + 1), ["~"], []), 1) == "idle") invite(llList2Key(gNear, i));
-    refresh();
-}
-
-endlive(string why)
-{
-    if (!gSharing && gWatchers == []) return;
-    dbg("ending the connection: " + why);
-    all("end");
-    gWatchers = [];
-    gSeen = [];
-    gAway = [];
-    gW = [];
-    gSharing = FALSE;
-    gToggleT = llGetUnixTime();
-    show(why);
-    refresh();
-}
-
-// whoever films leads: a viewer's camera started, so everyone (you too) follows theirs
-grant(key k)
-{
-    drop(k);
-    say(k, "lead|1");
-    all("director|" + (string)k + "|" + name(k));
-    gWatchers = [];
-    gSeen = [];
-    gAway = [];
-    gW = [];
-    gSharing = FALSE;
-    gHand = gCamOn;
-    watch(k);                                               // (it stops your camera)
-    show(sn(k) + " films now");
-}
-
-// you leave; another Take 12 holds the connection for the others ("lead|2": no camera is started for them)
-handOn(key k)
-{
-    drop(k);
-    say(k, "lead|2");
-    all("director|" + (string)k + "|" + name(k));
-    gWatchers = [];
-    gSeen = [];
-    gAway = [];
-    gW = [];
-    gSharing = FALSE;
-    gToggleT = llGetUnixTime();
-    show("Disconnected · " + sn(k) + " keeps the others connected");
-    refresh();
-}
-
-// ---- viewing -------------------------------------------------------------------
-// an invite nobody took up: the double-tap is yours again
-unpend()
-{
-    if (!gPendT) return;
-    gPendT = 0;
-    if (gHost == NULL_KEY) llMessageLinked(LINK_SET, CMD, "unwatch", "");
-    refresh();
-}
-
-watch(key host)
-{
-    if (gSharing) endlive("");                              // 7.1.3: joining someone ends the connection you held
-    gPendT = 0;
-    gHost = host;
-    gHeld = FALSE;
-    gCam = "";
-    gIsAway = FALSE;
-    gAskT = 0;
-    gOwnT = 0.0;
-    gApplied = ZERO_VECTOR;
-    gHearT = llGetUnixTime();
-    say(host, "join");
-    dbg("following " + sn(host));
-    if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, TRUE, TRUE);   // any movement key: your camera back
-    llMessageLinked(LINK_SET, CMD, "watch", "");
-    if (gCamOn) llMessageLinked(LINK_SET, CMD, "stop", "");    // viewing never runs your own camera too
-    show("Connected with " + sn(host) + "\nwhoever films, the others see it");
-}
-
-leave(integer tell, integer clear)
-{
-    if (gHost == NULL_KEY) return;
-    if (tell) say(gHost, "leave");
-    dbg("leaving " + sn(gHost) + ", clear " + (string)clear);
-    gHost = NULL_KEY;
-    gHeld = FALSE;
-    gCam = "";
-    gAskT = 0;
-    gOwnT = 0.0;
-    gLensTold = FALSE;
-    if (gFmtOn) llMessageLinked(LINK_SET, CMD, "crop|follow", "");   // your own Format again
-    gFmtOn = FALSE;
-    // taking the HUD off: Second Life has already withdrawn the camera and gives it back by itself. 7.1.1: never while
-    // your own camera runs (you started Framing while still connected to someone who had gone: it was cleared)
-    clear = clear && !gCamOn && llGetAttached() && llGetPermissionsKey() == gOwner;
-    if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
-    if (llGetAttached() && (llGetPermissions() & PERMISSION_TAKE_CONTROLS)) llTakeControls(831, FALSE, TRUE);   // keys are yours again (the permission stays), your own camera running too
-    llMessageLinked(LINK_SET, CMD, "unwatch", "");
-    refresh();
+    for (i = llGetListLength(gInv) - 2; i >= 0; i -= 2)
+        if (now - llList2Integer(gInv, i + 1) > WAIT)
+        {
+            note("noanswer", llList2Key(gInv, i));
+            gInv = llDeleteSubList(gInv, i, i + 1);
+        }
+    if (gP == []) return;
+    // a word to everyone connected every second: whether you film, and whether you watch someone
+    string hb = "hb|" + (string)(gFilm + 2 * (gHost != NULL_KEY));
+    for (i = llGetListLength(gP) - 1; i >= 0; i--)
+    {
+        key k = llList2Key(gP, i);
+        say(k, hb);
+        integer r = (near(k) && t - llList2Float(gPT, i) < QUIET);
+        if (r != llList2Integer(gPR, i))
+        {
+            gPR = llListReplaceList(gPR, [r], i, i);
+            if (r) { gPA = llListReplaceList(gPA, [0], i, i); note("back", k); }
+            else
+            {
+                gPA = llListReplaceList(gPA, [now], i, i);
+                if (k == gHost) mine(TRUE, TRUE);
+                note("away", k);
+            }
+            refresh();
+        }
+        if (!r && now - llList2Integer(gPA, i) > APART) drop(k);
+    }
+    if (gHost != NULL_KEY)
+    {
+        i = llListFindList(gP, [gHost]);
+        if (i >= 0 && t - llList2Float(gPT, i) > GONE)
+        {
+            key h = gHost;
+            mine(TRUE, TRUE);
+            note("left", h);
+        }
+    }
+    if (now - gSaveT > 60) save();
 }
 
 // ============================================================================
@@ -461,9 +501,10 @@ default
     {
         gOwner = llGetOwner();
         llListen(SYNC_CH, "", NULL_KEY, "");
-        llRegionSay(SYNC_CH, "T12|reset");                  // 7.1.3: a restarted HUD knows nobody: whoever was connected lets go now
-        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_CONTROL_CAMERA | PERMISSION_TAKE_CONTROLS | PERMISSION_TRACK_CAMERA);
+        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_CONTROL_CAMERA | PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
+        refresh();
+        llSetTimerEvent(1.0);
     }
 
     on_rez(integer p)
@@ -471,371 +512,208 @@ default
         llResetScript();
     }
 
-    changed(integer c)
-    {
-        if (c & CHANGED_OWNER) llResetScript();
-        if (c & CHANGED_REGION)                             // a connection does not cross regions
-        {
-            unpend();
-            leave(FALSE, TRUE);
-            endlive("Disconnected (new region)");
-        }
-    }
-
     attach(key id)
     {
-        if (id != NULL_KEY) return;
-        leave(TRUE, FALSE);                                 // taken off: tell the director, or your viewers
-        endlive("");
+        if (id == NULL_KEY) return;
+        // a clean start; the ones you were with in the last 30 min are told you are back
+        llRequestPermissions(gOwner, PERMISSION_CONTROL_CAMERA | PERMISSION_TRACK_CAMERA);
+        list R = llParseString2List(llLinksetDataReadProtected("cin.peers", PASS), [";"], []);
+        integer i;
+        for (i = 0; i < llGetListLength(R); i++)
+        {
+            list kv = llParseString2List(llList2String(R, i), ["="], []);
+            if (llGetUnixTime() - (integer)llList2String(kv, 1) < APART) say((key)llList2String(kv, 0), "back|" + VERSION);
+        }
     }
 
-    // a movement key while watching: your own camera for a moment (you stay connected); OWN s still and it is back
-    control(key id, integer level, integer edge)
+    changed(integer c)
     {
-        if (gHost == NULL_KEY || gAskT || !(level | edge)) return;     // (taking the camera: it is your own already)
-        if (gOwnT == 0.0)
+        if (c & CHANGED_OWNER)
         {
-            if (llGetPermissions() & PERMISSION_CONTROL_CAMERA) llClearCameraParams();
-            say(gHost, "away");
-            gOwnT = llGetTime();
-            refresh();
+            llLinksetDataDeleteProtected("cin.peers", PASS);
+            llResetScript();
         }
-        gOwnT = llGetTime();
     }
 
     link_message(integer sender, integer num, string str, key id)
     {
-        if (num == CROP && !gFmtOn)
+        if (num == CAMSET)
         {
-            gFmt = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
-            if (gSharing) all("fmt|" + gFmt);
-        }
-        else if (num == CAMSET)
-        {
-            gLastCam = str;
-            all("cam|" + str);
-        }
-        else if (num == START)                              // your own camera starts: watching, it is your turn
-        {
-            gCamOn = TRUE;
-            gMyMode = llList2String(llParseString2List(str, ["|"], []), 0);
-            unpend();
-            if (gHost != NULL_KEY && llGetUnixTime() - gHearT > 15)
+            integer was = gFilm;
+            gFilm = (str != "-" && !LITE && gHost == NULL_KEY);
+            if (gFilm)
             {
-                string n = sn(gHost);                       // the one you followed has gone quiet: no one to ask, you film alone
-                leave(FALSE, FALSE);
-                show(n + " is gone · disconnected");
+                gLast = str + "|" + gShape;
+                integer i;
+                for (i = 0; i < llGetListLength(gW); i++) say(llList2Key(gW, i), "cam|" + gLast);
             }
-            if (gHost != NULL_KEY && !gAskT)
+            else if (was)
             {
-                say(gHost, "ask");                          // the hub hands over: everyone follows you
-                gAskT = llGetUnixTime();
+                integer i;
+                for (i = 0; i < llGetListLength(gW); i++) say(llList2Key(gW, i), "pause");
+                gW = [];
                 refresh();
             }
         }
-        else if (num == STOP && str != "switch")
+        else if (num == CROP) gShape = llList2String(llParseString2List(str, ["|"], []), 0);
+        else if (num == TXT_ANS && id == "sync" && gLh)
         {
-            // your camera stopping (Stop, a movement key in Scenery, typing) never disconnects: nobody films now, and
-            // everyone has their own camera until someone films again. Only Disconnect ends it.
-            gCamOn = FALSE;
-            if (gHand) gHand = FALSE;                       // you handed the camera on: not the end
-            else if (gSharing)
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            if (llList2String(L, 0) == gPage) llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), gBtn, gChan);
+        }
+        else if (num == CMD)
+        {
+            if (str == "connect") tapKey();
+            else if (str == "connect|menu")
             {
-                all("pause");
-                show("Nobody films now · everyone has their own camera\ndouble-tap: film again");
+                if (gP == []) scan("connect");
+                else connected();
             }
+            else if (str == "connect|addfriend") scan("addfriend");
+            else if (str == "off" || str == "standby") leave();   // everything off (or an older copy stepping aside) ends it
+            else if (str == "mine") mine(FALSE, FALSE);     // core starts a shot of yours: it sets the camera
+            else if (llGetSubString(str, 0, 5) == "debug|") gDebug = (integer)llGetSubString(str, 6, -1);
         }
-        else if (num == CMD && str == "share") panel();     // hold the HUD button, or Connect in the menu
-        else if (num == SHARE_DO) act(str);
-        else if (num == CMD && str == "scenery" && gHost != NULL_KEY && gHeld) film();       // double-tap, nobody films: you do
-        else if (num == CMD && str == "next" && gSharing && !gCamOn) film();                 // NEXT with nobody filming: you film
-        else if (num == CMD && str == "scenery" && gHost != NULL_KEY) say(gHost, "next");    // double-tap while watching
-        else if (num == CMD && str == "scenery" && gPendT) watch(gOffer);                    // double-tap: accept the invite
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "sync");
-        else if (num == CMD && llGetSubString(str, 0, 5) == "debug|")
-        {
-            gDebug = (integer)llGetSubString(str, 6, -1);
-            llOwnerSay("[Take 12] Connect debug " + llList2String(["off", "on: every message and state change in your chat"], gDebug));
-            dbg("now");
-        }
         else if (num == STATUS && str == "?")
         {
-            string ws = "";
+            string s = "";
             integer i;
-            for (i = 0; i < llGetListLength(gWatchers); i++)
-                ws += " " + sn(llList2Key(gWatchers, i)) + "(" + (string)(llGetUnixTime() - llList2Integer(gSeen, i)) + "s)";
-            llOwnerSay("[Take 12/sync] v" + VERSION + " hub " + (string)gSharing + ", connected with you:" + ws
-                + "; following " + sn(gHost) + " (heard " + (string)(llGetUnixTime() - gHearT) + " s ago), ask " + (string)(gAskT > 0)
-                + " own " + (string)(gOwnT > 0.0) + " held " + (string)gHeld + " looking around " + (string)gIsAway
-                + ", camera " + (string)gCamOn + ", free mem " + (string)llGetFreeMemory());
+            for (i = 0; i < llGetListLength(gP); i++)
+                s += " " + llList2String(gPN, i) + "(" + llList2String(["away", "near"], llList2Integer(gPR, i)) + ", film "
+                    + (string)llList2Integer(gPF, i) + ", " + (string)llRound(llGetTime() - llList2Float(gPT, i)) + " s)";
+            llOwnerSay("[Take 12/sync] v" + VERSION + " connected:" + s + "; watching " + sn(gHost) + ", watched by "
+                + (string)llGetListLength(gW) + ", filming " + (string)gFilm + ", free mem " + (string)llGetFreeMemory());
         }
     }
 
     listen(integer ch, string name, key id, string msg)
     {
-        // the share channel: only what an avatar's own HUD says counts
+        if (ch == gChan) { choose(msg); return; }
         if (llGetSubString(msg, 0, 3) != "T12|") return;
         key who = llGetOwnerKey(id);
         if (who == gOwner) return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
-        string w = llList2String(L, 1);
-        if (gDebug && w != "hb" && w != "who" && w != "here") dbg("← " + sn(who) + ": " + llGetSubString(msg, 4, 60));
-        integer wi = llListFindList(gWatchers, [who]);
-        if (wi >= 0) gSeen = llListReplaceList(gSeen, [llGetUnixTime()], wi, wi);   // a viewer's word: still connected
+        if (llList2String(L, 1) != "8")
+        {
+            // a 7.x Take 12: listed as "(old)", never connected
+            string w7 = llList2String(L, 1);
+            if (w7 == "here" && gScanT > 0.0 && near(who) && llListFindList(gNear, [who]) < 0) gNear += [who, "old", 0];
+            else if (w7 == "invite") llRegionSayTo(who, SYNC_CH, "T12|busy|on a newer Take 12");
+            return;
+        }
+        string w = llList2String(L, 2);
+        string a = llList2String(L, 3);
+        integer pi = llListFindList(gP, [who]);
+        if (pi >= 0) gPT = llListReplaceList(gPT, [llGetTime()], pi, pi);
+        if (w != "hb" && w != "cam") dbg("← " + sn(who) + ": " + llGetSubString(msg, 6, 60));
+        if (w == "who" || w == "here" || w == "ask" || w == "yes" || w == "back" || w == "hi") newer(a);
         if (w == "who")
         {
-            if (!near(who)) return;
-            string st = "idle";
-            string d = "";
-            if (gSharing) st = "live";
-            else if (gHost != NULL_KEY) { st = "view"; d = name(gHost); }
-            else if (gPendT) st = "pend";
-            say(who, "here|T|" + st + "|" + d);
+            if (near(who)) say(who, "here|" + VERSION + "|" + (string)LITE);
         }
         else if (w == "here")
         {
-            if (gWhoT > 0.0 && llListFindList(gNear, [who]) < 0 && near(who)) gNear += [who, llDumpList2String(llList2List(L, 2, 4), "~")];
+            if (gScanT > 0.0 && near(who) && llListFindList(gNear, [who]) < 0) gNear += [who, "8", (integer)llList2String(L, 4)];
         }
-        else if (w == "invite")
+        else if (w == "ask")
         {
-            if (gSharing) say(who, "busy|connected");
-            else if (gHost != NULL_KEY) say(who, "busy|connected with " + sn(gHost));
-            else if (near(who))
+            if (pi >= 0) { say(who, "yes|" + VERSION); return; }
+            if (!near(who)) return;
+            if (friend(who))
             {
-                // someone in your Friends: connected at once. Anyone else: asked, so no stranger takes your camera
-                if (llSubStringIndex(llLinksetDataReadProtected("cin.friends", PASS), (string)who) >= 0)
-                {
-                    say(who, "ack|1");
-                    watch(who);
-                }
-                else
-                {
-                    say(who, "ack|0");
-                    if (!gPendT) llMessageLinked(LINK_SET, CMD, "watch", "");     // core: keep the double-tap for this
-                    gOffer = who;
-                    gPendT = llGetUnixTime();
-                    quiet();
-                }
+                say(who, "yes|" + VERSION);                 // your Friends join without being asked
+                add(who);
+                chime();
+                note("with", who);
+            }
+            else if (gAsk != NULL_KEY && gAsk != who) say(who, "busy");
+            else
+            {
+                gAsk = who;
+                gAskT = llGetUnixTime();
+                chime();
+                dialog("ask", sn(who), ["Yes", "No"], [who, who]);
             }
         }
-        else if (w == "ack" || w == "busy")
+        else if (w == "yes" || w == "no" || w == "busy")
         {
             integer i = llListFindList(gInv, [who]);
-            if (i < 0) return;
-            gInv = llDeleteSubList(gInv, i, i);
-            if (w == "busy") gRes += [sn(who) + " is busy (" + llList2String(L, 2) + ")"];
-            else if (llList2String(L, 2) == "1") gRes += [sn(who) + " connected"];
-            else gRes += [sn(who) + " is asked"];
-        }
-        else if (w == "join")
-        {
-            if (!gSharing && gHost != NULL_KEY)             // the lead moved on meanwhile: point them to whoever films
+            if (i < 0 || i % 2) return;
+            gInv = llDeleteSubList(gInv, i, i + 1);
+            if (w == "busy") { note("busy", who); return; }
+            if (w == "no") { note("noanswer", who); return; }   // a quiet No: never a rejection on screen
+            // everyone already connected meets the new one: one group
+            for (i = 0; i < llGetListLength(gP); i++)
             {
-                say(who, "director|" + (string)gHost + "|" + name(gHost));
-                return;
+                key c = llList2Key(gP, i);
+                say(c, "add|" + (string)who);
+                say(who, "add|" + (string)c);
             }
-            if (!gSharing) { say(who, "end"); return; }     // only a held connection can be joined (a late yes after Disconnect)
-            if (llList2String(L, 2) == "W" && llListFindList(gW, [who]) < 0) gW += [who];
-            if (llListFindList(gWatchers, [who]) < 0)
-            {
-                gWatchers += [who];
-                gSeen += [llGetUnixTime()];
-            }
-            show(sn(who) + " connected");
-            if (!gCamOn) say(who, "pause");                 // nobody films: their own camera, connected
-            else if (gLastCam != "") say(who, "cam|" + gLastCam);
-            say(who, "fmt|" + gFmt);
+            add(who);
+            chime();
+            note("with", who);
         }
-        else if ((w == "leave" || w == "reset") && llListFindList(gWatchers, [who]) >= 0)
+        else if (w == "add" && pi >= 0)
         {
+            key k = (key)a;
+            if (llListFindList(gP, [k]) < 0 && k != gOwner) { add(k); note("with", k); }
+        }
+        else if (w == "back")
+        {
+            if (pi >= 0 || recent(who)) { say(who, "hi|" + VERSION); add(who); }
+        }
+        else if (w == "hi")
+        {
+            if (pi < 0 && recent(who)) { add(who); note("back", who); }
+        }
+        else if (pi < 0) return;
+        // from someone connected
+        else if (w == "hb")
+        {
+            integer f = (integer)a;
+            if (f != llList2Integer(gPF, pi))
+            {
+                gPF = llListReplaceList(gPF, [f], pi, pi);
+                refresh();
+            }
+        }
+        else if (w == "watch")
+        {
+            if (LITE || !gFilm || gHost != NULL_KEY) { say(who, "pause"); return; }
+            if (llListFindList(gW, [who]) < 0) gW += [who];
+            if (gLast != "") say(who, "cam|" + gLast);
+            note("watching", who);
+            refresh();
+        }
+        else if (w == "unwatch")
+        {
+            integer i = llListFindList(gW, [who]);
+            if (i >= 0) gW = llDeleteSubList(gW, i, i);
+            refresh();
+        }
+        else if (w == "bye")
+        {
+            if (who == gHost) note("left", who);
             drop(who);
-            show(sn(who) + " disconnected");
         }
-        else if (w == "away" && llListFindList(gWatchers, [who]) >= 0)
-        {
-            if (llListFindList(gAway, [who]) < 0) gAway += [who];
-            show(sn(who) + " has their own camera");
-        }
-        else if (w == "back" && llListFindList(gAway, [who]) >= 0)
-        {
-            integer i = llListFindList(gAway, [who]);
-            gAway = llDeleteSubList(gAway, i, i);
-            show(sn(who) + " is back");
-        }
-        else if (w == "next" && llListFindList(gWatchers, [who]) >= 0 && llGetUnixTime() - gNextT >= NEXT_GAP)
-        {
-            gNextT = llGetUnixTime();
-            llMessageLinked(LINK_SET, CMD, "next", "");
-        }
-        else if (w == "ask" && llListFindList(gWatchers, [who]) >= 0 && llListFindList(gW, [who]) < 0) grant(who);   // their camera started: they lead
-        else if (wi >= 0 && w == "hb") return;            // a viewer's heartbeat (seen above)
         else if (who != gHost) return;
-        // from the director you follow
-        else if (w == "cam" && (llGetPermissions() & PERMISSION_CONTROL_CAMERA))
+        // from the one you watch
+        else if (w == "cam")
         {
-            gHearT = llGetUnixTime();
-            gCam = llDumpList2String(llList2List(L, 2, -1), "|");    // pos | focus | lag | their lens (6.0.1)
-            if (gHeld) { gHeld = FALSE; refresh(); }            // someone films again
-            if (!gAskT && gOwnT == 0.0) place(FALSE);           // (your own camera, or yours for a moment: kept)
-            float df = (float)llList2String(L, 5);
-            if (!gLensTold && df > 0.05 && llFabs(df / llGetCameraFOV() - 1.0) > 0.15)
-            {
-                gLensTold = TRUE;                               // the same picture through your lens, another perspective: how to match
-                show(sn(gHost) + llList2String([" zooms closer · Ctrl+0 to match", " zooms wider · Ctrl+8 to match"], df > llGetCameraFOV()));
-            }
-        }
-        else if (w == "hb" || w == "fmt")
-        {
-            gHearT = llGetUnixTime();
-            string f = llList2String(L, 2);                 // the director's Format, while connected (crop.lsl)
-            if (f != "" && (!gFmtOn || f != gFmtCur))
-            {
-                gFmtOn = TRUE;
-                gFmtCur = f;
-                llMessageLinked(LINK_SET, CMD, "crop|follow " + f, "");
-            }
+            gCam = llDumpList2String(llList2List(L, 3, -1), "|");
+            place();
         }
         else if (w == "pause")
         {
-            gHearT = llGetUnixTime();
-            gHeld = TRUE;                                   // nobody films: your own camera, still connected
-            if (!gAskT && (llGetPermissions() & PERMISSION_CONTROL_CAMERA)) llClearCameraParams();
-            refresh();
-        }
-        else if (w == "lead")
-        {
-            gAskT = 0;
-            string v = llList2String(L, 2);
-            string n = sn(gHost);
-            if (v == "0")                                   // an older Take 12 kept it: you film on your own
-            {
-                leave(TRUE, FALSE);
-                show(n + " kept the camera (an older Take 12): disconnected");
-                return;
-            }
-            leave(FALSE, v == "2");                         // 1: your camera runs, keep it; 2: you were watching
-            if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) llTakeControls(831, FALSE, TRUE);
-            gToggleT = 0;
-            golive(FALSE);                                  // you hold the connection now
-            if (v == "2") show(n + " disconnected · you keep the others connected");
-            else show("You film · everyone connected sees it");
-        }
-        else if (w == "director")
-        {
-            gHost = (key)llList2String(L, 2);              // the director changed: follow the new one
-            gHeld = FALSE;
-            if (llListFindList(gBook, [gHost]) < 0) gBook += [gHost, llList2String(L, 3)];
-            gIsAway = FALSE;
-            gApplied = ZERO_VECTOR;
-            gHearT = llGetUnixTime();
-            say(gHost, "join");
-            if (gAskT) say(gHost, "ask");                   // you started a camera meanwhile: ask the new one
-            show(llList2String(L, 3) + " films now");
-        }
-        else if (w == "kick")
-        {
-            string n = sn(gHost);
-            leave(FALSE, TRUE);
-            show(n + " disconnected you");
-        }
-        else if (w == "end" || w == "reset")
-        {
-            string n = sn(gHost);
-            leave(FALSE, TRUE);
-            show(n + " disconnected");
+            gPF = llListReplaceList(gPF, [0], pi, pi);
+            mine(TRUE, TRUE);
+            note("notfilming", who);
         }
     }
 
     timer()
     {
-        integer now = llGetUnixTime();
-        if (gWhoT > 0.0 && llGetTime() - gWhoT > 1.5)
-        {
-            gWhoT = 0.0;                                    // the "who" check is in: the panel
-            quiet();
-            ui("near|" + (string)gSharing + "|" + llDumpList2String(gWatchers, ",") + "|" + llDumpList2String(gNear, ","));
-        }
-        if (gInv != [] && now - gInvT >= 3)
-        {
-            integer i;
-            for (i = 0; i < llGetListLength(gInv); i++) gRes += [sn(llList2Key(gInv, i)) + " didn't answer (out of range or HUD off)"];
-            gInv = [];
-        }
-        if (gRes != [] && gInv == [])
-        {
-            note(llDumpList2String(gRes, " · "));
-            gRes = [];
-        }
-        if (gPendT && now - gPendT > WAIT) unpend();
-        if (gAskT && now - gAskT > WAIT)
-        {
-            gAskT = 0;                                      // no hand-over (an older Take 12): you film on your own
-            leave(TRUE, FALSE);
-            show("No answer: you film on your own (disconnected)");
-        }
-        if (gOwnT > 0.0 && llGetTime() - gOwnT > OWN && gHost != NULL_KEY)
-        {
-            gOwnT = 0.0;                                    // still again: back on the shared view
-            say(gHost, "back");
-            if (gCam != "" && !gHeld && !gAskT) place(FALSE);
-            refresh();
-        }
-        // directing: a heartbeat, and anyone who has left the region leaves the roster
-        if (gSharing && now - gHbT >= 10)
-        {
-            gHbT = now;
-            all("hb|" + gFmt);                              // 7.1.2: the heartbeat carries your Format (a lost fmt heals)
-            integer i;
-            for (i = llGetListLength(gWatchers) - 1; i >= 0; i--)
-            {
-                key k = llList2Key(gWatchers, i);
-                if (llGetAgentSize(k) == ZERO_VECTOR)
-                {
-                    drop(k);
-                    show(sn(k) + " disconnected");
-                }
-                else if (now - llList2Integer(gSeen, i) > LOST)
-                {
-                    drop(k);
-                    show(sn(k) + " lost the connection");
-                }
-            }
-        }
-        // viewing: the director gone quiet; your own camera (Alt-orbit) = looking around, Esc brings you back
-        if (gHost != NULL_KEY && gCam != "" && llFabs(llGetCameraFOV() - gMyFov) > 0.004) place(TRUE);   // you zoomed: same picture
-        if (gHost != NULL_KEY && now - gBeatT >= 10)
-        {
-            gBeatT = now;
-            say(gHost, "hb");                               // your heartbeat: the director sees you are connected
-        }
-        if (gHost != NULL_KEY)
-        {
-            if (now - gHearT > GONE)
-            {
-                string n = sn(gHost);
-                leave(FALSE, TRUE);
-                show(n + " is gone · disconnected");
-            }
-            else if (gApplied != ZERO_VECTOR && gOwnT == 0.0 && !gHeld && !gAskT && llGetTime() > gApplyT && (llGetPermissions() & PERMISSION_TRACK_CAMERA))
-            {
-                float d = llVecDist(llGetCameraPos(), gApplied);
-                if (!gIsAway && d > 0.6)
-                {
-                    gIsAway = TRUE;
-                    say(gHost, "away");
-                    refresh();
-                }
-                else if (gIsAway && d < 0.3)
-                {
-                    gIsAway = FALSE;
-                    say(gHost, "back");
-                    refresh();
-                }
-            }
-        }
-        if (gTextT > 0.0 && llGetTime() - gTextT > 4.0) quiet();       // the notice gives way to the state again
-        else refresh();                                                 // keep the state current ("no signal")
-        if (ind() == "" && gTextT == 0.0 && gWhoT == 0.0 && gInv == [] && gRes == [])
-            llSetTimerEvent(0.0);
+        tick();
     }
 }

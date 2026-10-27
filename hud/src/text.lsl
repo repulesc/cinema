@@ -45,6 +45,7 @@ list NOTES = [
     "noanswer", 0, "% didn't answer.",
     "old", 0, "%'s Take 12 is older. A new copy fixes it.",
     "nobody", 0, "Nobody near you wears Take 12.",
+    "friend", 0, "% joins you without being asked now.",
     "newer", 1, "A newer Take 12 is out. Ask the store for a new copy.",
     "moved", 1, "Moved. You can take off the old one.",
     "older", 1, "An older Take 12 is worn too. Take it off.",

@@ -276,7 +276,7 @@ choose(string m)
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
     {
-        if (b == "Connect") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect", ""); }
+        if (b == "Connect") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect|menu", ""); }
         else if (b == "Settings") open("settings");
         else if (b == "Help") open("help");
     }
@@ -540,7 +540,7 @@ command(string m)
     else if (c == "place" && llListFindList(["top", "topl", "bot", "both"], [a]) >= 0) set("place", a);
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);
-    else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect", "");
+    else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect|menu", "");
     else llOwnerSay("[Take 12] /12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip");
 }
 
@@ -705,19 +705,20 @@ default
         }
         else if (gVerT && gVerStep == 1 && llGetUnixTime() - gVerT >= 4)
         {
+            // which scripts did not answer: amber, and the note says which
+            list miss = [];
+            integer i;
+            list need = NEED;
+            if (LITE) need = ["core", "ui", "text", "screen", "bars", "scenic", "sync", "carry"];
+            for (i = 0; i < llGetListLength(need); i++) if (llListFindList(gVer, [llList2String(need, i)]) < 0) miss += llList2String(need, i);
+            if (miss != [])
             {
-                // which scripts did not answer: amber, and the note says which
-                list miss = [];
-                integer i;
-                list need = NEED;
-                if (LITE) need = ["core", "ui", "text", "screen", "bars", "scenic", "sync"];
-                for (i = 0; i < llGetListLength(need); i++) if (llListFindList(gVer, [llList2String(need, i)]) < 0) miss += llList2String(need, i);
-                if (miss != []) note("missing", llDumpList2String(miss, ", "));
-                llMessageLinked(LINK_SET, STRIP, "problem|" + (string)(miss != []), "");
-                gVerT = 0;
-                gVerStep = 0;
-                if (gFirst == "start") note("setup", "");
+                note("missing", llDumpList2String(miss, ", "));
+                llMessageLinked(LINK_SET, STRIP, "problem|1", "");
             }
+            gVerT = 0;
+            gVerStep = 0;
+            if (gFirst == "start") note("setup", "");
         }
         timer0();
     }
