@@ -121,14 +121,33 @@ CMD strings: `shot|<name>` (a shot word: start it, or its lit-tap job), `off` / 
 - **Teleport / region crossing:** the same shot, a fresh frame after ~2 s.
 - **Idle start** (`cin.idle`: off · away · 5): Scenic starts by itself; a key or typing brings back the shot you had.
 - **Off** (hold): camera, bars, strip all off; hold again restores exactly.
+- **Portrait's solver** (from 7.x `frame.lsl`): two heights on you must land on two picture heights (Medium: the eyes
+  on the upper third, y = +0.333, and the belt line, 52 % of your height, at the bottom, y = −1). With the camera at
+  your eye height and a tilt φ, a height z shows at y = tan(atan((z − zc) / D) + φ) / t (t: the picture's half-height
+  as a tangent, the bars' shape included). The angle between the two shrinks as D grows, so D is found by bisection
+  and the tilt follows. Lead room turns the view by θ = atan(x · t · aspect), x = ⅓ (Wide ¼), and the camera stands
+  back to D / cos θ, so your depth along the picture's axis is still D. A wall moves the camera in; the eyes stay on
+  the third (the size word stays). Every height comes from your size and your eye line (`cin.eye`).
 
 ## 6. Linkset Data (`cin.*`, protected, PASS)
-`ver`, `owner`, `place`, `size`, `open`, `shot` (the last shot, for Off / On), `por` (`<size 0–2>|<who 0 Me / 1 Us>`),
-`trk` (`<look 0–2>|<side 0 L / 1 R>`), `scn` (`<band 0 drift … 3 far>`), `shape.<shot>`, `bars` (1 / 0), `bstyle`
-(black / dim), `idle` (off / away / 5), `eye` (your eye line, a fraction of your height), `lens` (35 / 38 / 40),
-`tips` (the uses per key), `chime`, `friends` (`key,name;…`), `veh` (`name|creator;…`), `view.<region>.<parcel>`
-(Fixed's A and B), `seat.<object key>` (its spots), `seats` (the index for eviction), `gsit.<region>.<parcel>`
-(ground sits), `firstrun`, `cfgv`.
+| Key | Value |
+|---|---|
+| `owner`, `ver` | whose settings these are (an owner change wipes them), the version that wrote them |
+| `firstrun` | `done` after the first run |
+| `lens`, `eye` | 35 / 38 / 40; your eye line as a fraction of your height |
+| `place`, `size`, `keys`, `flip` | the strip: top / topl / bot / both; s / m / l; soft / clear; a mirrored HUD axis |
+| `aspect` | your window, last measured (bars) |
+| `trk`, `por`, `scn` | `<look 0–2>\|<side 0 L / 1 R>`; `<size 0–2>\|<who 0 Me / 1 Us>`; `<band 0 drift … 3 far>` |
+| `shape.<shot>`, `bars`, `bstyle` | each shot's shape (1.66 … 2.39, full); 1 / 0; black / dim |
+| `idle`, `blend` | off / away / 5; 1: every cut a 1.5 s glide (`/12 blend on`) |
+| `view.<region>.<parcel>` | Fixed: `<A>~<B>~<ground spots…>`, each `<cam>\|<focus>\|<where you were>\|<facing°>\|<lens>` |
+| `places` | those places, least used first (20 kept) |
+| `seat.<object key>`, `seats` | a piece of furniture's spots (up to 4, in its own frame); the furniture, least used first (48 kept) |
+| `veh` | marked vehicles, `name\|creator;…`, newest first |
+| `tips` | `WORD:uses;…` (three each, the snapshot tip once) |
+| `friends`, `chime`, `peers`, `newer` | Connect: `key,name;…`; 0 = off; who you were with and when (rejoin); the newer version already told |
+
+Carry-over copies every key but `owner`, `ver`, `cfgv` and `peers`.
 
 ## 7. Checks
 `tools/lslcheck.sh` (compiles everything, fails under 15 KB free), `tools/build_scenery.py --check`, and the emulator

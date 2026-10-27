@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Take 12 icon: a deliberately pixel-art clapperboard with "12" on the slate, 16x16, two frames.
+"""(7.x, kept for lab/softkeys/make_mockup.py only: 8.0's mark is the [12] disc of tools/art/make_strip.py. Running
+this file on its own would write the retired 7.x icons back into hud/, scenery/ and watch/.)
+
+Take 12 icon: a deliberately pixel-art clapperboard with "12" on the slate, 16x16, two frames.
 
   frame 1 (left half)  = open   (idle look)
   frame 2 (right half) = clapped (shown for 0.3 s when the camera starts)

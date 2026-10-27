@@ -14,7 +14,7 @@
 //  again where you are. Turned away for 2 s: the same framing from your new front. A wall: the camera moves in (the
 //  size word stays: never a cut to another angle). Your zoom: the same framing (a glide, never a cut).
 //  The lit tap: Me the other 3/4 side; the two-shot swaps sides inside the 180° line (a second tap crosses it).
-//  Every distance scales with your size. Solver from 7.x (frame.lsl): docs/FRAME.md.
+//  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
 string VERSION = "8.0.0";

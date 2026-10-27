@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Take 12 marketing graphics (7.0.1: minimal) for the Second Life Marketplace and in-world vendors.
+"""Take 12 marketing graphics (8.0) for the Second Life Marketplace and in-world vendors.
 
-One idea per picture: a single quiet frame fills the board, golden-line ticks barely visible at its edges, the small
-clapper in a corner, the name and one line. Nothing else (the product is one button; the boards say so).
-  Take 12          the dusk horizon     "A camera for Second Life."
+One idea per picture: a single quiet frame fills the board, golden-line ticks barely visible at its edges, the [12]
+(the HUD's own disc, from tools/art/make_strip.py) in a corner, the name and one line. Nothing else.
+  Take 12          the dusk horizon     "A cinematic camera for Second Life."
   Take 12 Scenery  the drone view       "Free. The place, while you are away."
-  Take 12 Watch    friends at dusk      "Free. See your friend's camera."
 Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor
 (1024 and 512: the same frame, bigger type). The views are pixel-art drawn here, not screenshots.
 
@@ -15,12 +14,11 @@ import os, sys, random
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import make_icon as icon
+import make_strip
 
 NAME = "TAKE 12"
-TAGLINE = "A camera for Second Life."
+TAGLINE = "A cinematic camera for Second Life."
 FREE_NAME, FREE_LINE = "TAKE 12 SCENERY", "Free. The place, while you are away."
-WATCH_NAME, WATCH_LINE = "TAKE 12 WATCH", "Free. See your friend's camera."
 BG, PANEL, INK, CHALK, CORAL = (22, 24, 32), (36, 39, 52), (16, 16, 20), (244, 241, 232), (255, 90, 95)
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -178,13 +176,12 @@ def scene_friends(w, h, r):
 
 def font(sz, bold=True): return ImageFont.truetype(BOLD if bold else REG, sz)
 
-def clapper(px, kind="full"):
-    g = {"full": lambda: icon.draw(True, icon.DEFAULT), "free": lambda: icon.draw_scenery(True)}.get(kind)
-    im = icon.watch_icon() if kind == "watch" else icon.frame_img(g())
-    return im.resize((px, px), Image.NEAREST)
+def mark(px, kind="full"):
+    """the [12]: the HUD's disc, as on screen"""
+    return make_strip.disc((255, 255, 255)).resize((px, px), Image.LANCZOS)
 
 def board(W, H, scene, seed, name, line, kind, big=1.0):
-    """one frame: the scene fills the board; a soft dark foot for the type; golden-line ticks; clapper, name, line"""
+    """one frame: the scene fills the board; a soft dark foot for the type; golden-line ticks; the [12], name, line"""
     px = 8
     im = scene(-(-W // px), -(-H // px), random.Random(seed)).resize((-(-W // px) * px, -(-H // px) * px), Image.NEAREST).crop((0, 0, W, H)).convert("RGBA")
     foot = Image.new("RGBA", (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(foot)
@@ -201,7 +198,7 @@ def board(W, H, scene, seed, name, line, kind, big=1.0):
     u = int((W * H) ** 0.5)                                 # the type follows the board's area (a wide strip too)
     ic = int(u * 0.085 * big)
     pad = int(u * 0.06)
-    c = clapper(ic, kind)
+    c = mark(ic, kind)
     im.paste(c, (pad, H - pad - ic), c)
     sc = max(2, int(u * 0.0068 * big))
     tx = pad + ic + int(u * 0.03)
@@ -211,7 +208,6 @@ def board(W, H, scene, seed, name, line, kind, big=1.0):
 
 def the(kind):
     """the frame, the name and the line of each product"""
-    if kind == "watch": return scene_friends, 31, WATCH_NAME, WATCH_LINE
     if kind == "free": return scene_drone, 23, FREE_NAME, FREE_LINE
     return scene_wide, 41, NAME, TAGLINE
 
@@ -220,7 +216,6 @@ def wide(kind="full"):     f, sd, n, l = the(kind); return board(1024, 512, f, s
 def portrait(kind="full"): f, sd, n, l = the(kind); return board(768, 1024, f, sd, n, l, kind)
 def landscape43(kind="full"): f, sd, n, l = the(kind); return board(1024, 768, f, sd, n, l, kind)
 def vendor(kind="full"):   f, sd, n, l = the(kind); return board(1024, 1024, f, sd, n, l, kind, big=1.45)   # read from across a store
-def watch():               return square("watch")
 
 if __name__ == "__main__":
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
@@ -231,5 +226,3 @@ if __name__ == "__main__":
         portrait(kind).save(os.path.join(out, f"adboard_portrait_3x4_768x1024{suf}.png")); landscape43(kind).save(os.path.join(out, f"adboard_landscape_4x3_1024x768{suf}.png"))
         v = vendor(kind); v.save(os.path.join(out, f"adboard_vendor_1024{suf}.png")); v.resize((512, 512), Image.LANCZOS).save(os.path.join(out, f"adboard_vendor_512{suf}.png"))
         print("wrote", os.path.normpath(out))
-    wo = os.path.join(base, "watch", "marketing"); os.makedirs(wo, exist_ok=True)
-    watch().save(os.path.join(wo, "adboard_watch_1024.png")); print("wrote", os.path.normpath(wo))

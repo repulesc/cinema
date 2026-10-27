@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # Compile-check LSL scripts with LSL-PyOptimizer (a full LSL parser + type checker),
 # then print a rough Mono memory estimate per script.
-#   usage: tools/lslcheck.sh [files...]      (default: hud/src, the Watch, the free Take 12 Scenery in scenery/src, and legacy/v3/src)
+#   usage: tools/lslcheck.sh [files...]      (default: hud/src, hud/build, the free Take 12 Scenery in scenery/src, and legacy/v3/src)
+# 8.0: a script of hud/src, hud/build or scenery/src with less than 15 KB free (by the estimate) fails the check: every
+# script keeps real headroom for the server's own use and for the next change (legacy/v3 is frozen and only warned).
 set -u
 DIR="${LSLOPT_DIR:-$HOME/.cache/lsl-pyoptimizer}"
 if [ ! -f "$DIR/main.py" ]; then
     git clone -q --depth 1 https://github.com/Sei-Lisa/LSL-PyOptimizer "$DIR" || { echo "cannot fetch LSL-PyOptimizer"; exit 2; }
 fi
 files=("$@")
-[ ${#files[@]} -eq 0 ] && files=(hud/src/*.lsl watch/*.lsl scenery/src/*.lsl legacy/v3/src/*.lsl)
+[ ${#files[@]} -eq 0 ] && files=(hud/src/*.lsl hud/build/*.lsl scenery/src/*.lsl legacy/v3/src/*.lsl)
 rc=0
 for f in "${files[@]}"; do
     if python3 "$DIR/main.py" -O clear -o /dev/null "$f"; then
         # rough Mono size model fitted on in-world readings: ~18 KB base + ~58 B per statement + 2 B per string char,
         # plus ~30 B for each element of a constant list (every element is an object): 4.8.0 crashed with "Stack-Heap
         # Collision" in the UI script while this model, then without that term, still showed 15 KB free
-        python3 -I - "$f" <<'PY'
+        python3 -I - "$f" <<'PY' || rc=1
 import re, sys
 f = sys.argv[1]
 # one pass: keep string literals as they are, drop // comments (a "//" inside a string, such as a URL, is not a comment)
@@ -25,7 +27,10 @@ stmts = re.sub(r'"(?:\\.|[^"\\])*"', '""', t).count(';')
 clean = re.sub(r'"(?:\\.|[^"\\])*"', '""', t)
 elems = sum(m.group(1).count(',') + 1 for m in re.finditer(r'\blist\s+\w+\s*=\s*\[(.*?)\];', clean, re.S) if m.group(1).strip())
 free = 64 - (18372 + 58.3 * stmts + 2 * chars + 30 * elems) / 1024
-print(f"OK    {f}: {stmts} statements, est. free memory {free:.1f} KB" + ("   <-- LOW" if free < 10 else ""))
+strict = not f.startswith("legacy/")
+low = free < 15.0
+print(("FAIL  " if low and strict else "OK    ") + f"{f}: {stmts} statements, est. free memory {free:.1f} KB" + ("   <-- under 15 KB" if low else ""))
+sys.exit(1 if low and strict else 0)
 PY
     else
         echo "FAIL  $f"

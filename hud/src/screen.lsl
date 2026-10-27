@@ -84,6 +84,7 @@ string  gLinkN = "0";
 integer gProblem;
 integer gHold;                     // the hold fill, 0-8
 float   gEye = -9.0;               // the eye-line guide (screen z), -9 hidden
+integer gClear;                    // Look › Keys: Clear
 
 // ============================================================================
 string cfg(string k)
@@ -265,7 +266,7 @@ float alphaOf(string st)
 {
     if (st == "lit" || st == "accent" || st == "glow") return 1.0;
     if (st == "dim") return 0.22;
-    return 0.51;
+    return 0.51 + 0.24 * gClear;                        // Look › Keys: Soft (quiet words) or Clear (brighter)
 }
 
 // ============================================================================
@@ -494,6 +495,7 @@ measure()
 
 load()
 {
+    gClear = (cfg("keys") == "clear");
     gPlace = llListFindList(PLACES, [cfg("place")]);
     if (gPlace < 0) gPlace = 0;
     integer s = llListFindList(["s", "m", "l"], [cfg("size")]);
@@ -674,7 +676,7 @@ default
             layout();
             tick();
         }
-        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "all"))
+        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "keys" || str == "all"))
         {
             load();
             layout();

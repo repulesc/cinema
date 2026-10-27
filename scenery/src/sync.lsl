@@ -462,11 +462,11 @@ tick()
         }
     if (gP == []) return;
     // a word to everyone connected every second: whether you film, and whether you watch someone
-    string hb = "hb|" + (string)(gFilm + 2 * (gHost != NULL_KEY));
+    // (and 8: "I watch you", so a lost watch, unwatch or pause is mended within a second)
     for (i = llGetListLength(gP) - 1; i >= 0; i--)
     {
         key k = llList2Key(gP, i);
-        say(k, hb);
+        say(k, "hb|" + (string)(gFilm + 2 * (gHost != NULL_KEY) + 8 * (k == gHost)));
         integer r = (near(k) && t - llList2Float(gPT, i) < QUIET);
         if (r != llList2Integer(gPR, i))
         {
@@ -680,6 +680,27 @@ default
             {
                 gPF = llListReplaceList(gPF, [f], pi, pi);
                 refresh();
+            }
+            integer wi = llListFindList(gW, [who]);
+            if ((f & 8) && wi < 0)                          // they watch you, and their "watch" was lost
+            {
+                if (LITE || !gFilm || gHost != NULL_KEY) say(who, "pause");
+                else
+                {
+                    gW += [who];
+                    if (gLast != "") say(who, "cam|" + gLast);
+                    refresh();
+                }
+            }
+            else if (!(f & 8) && wi >= 0)                   // their "unwatch" was lost
+            {
+                gW = llDeleteSubList(gW, wi, wi);
+                refresh();
+            }
+            if (who == gHost && !(f & 1))                   // the one you watch stopped filming (a lost "pause")
+            {
+                mine(TRUE, TRUE);
+                note("notfilming", who);
             }
         }
         else if (w == "watch")

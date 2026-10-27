@@ -2,7 +2,7 @@ name: LSL compile check
 on: [push, pull_request]
 jobs:
   lslcheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -10,36 +10,29 @@ jobs:
           python-version: "3.12"
       - name: The free Take 12 Scenery (scenery/src) is generated from hud/src and up to date
         run: python3 tools/build_scenery.py --check
-      - name: Compile-check the full (hud/src), the Watch HUD (watch), Take 12 Scenery (scenery/src) and frozen v3 (legacy/v3/src) scripts
+      - name: Compile-check every script (hud/src, hud/build, scenery/src, legacy/v3/src); fail under 15 KB free
         run: bash tools/lslcheck.sh
-      - name: Install Pillow (the sprite-sheet test reads the real texture)
-        run: python3 -m pip install --quiet pillow
-      - name: Simulate the scenery spot finder, room views, people framing, reach learning and the tap decoder
+      - name: Install Pillow and the Inter font (the strip's textures and the boards)
         run: |
-          python3 tools/sim/scenery_sim.py
-          python3 tools/sim/people_geometry.py
-          python3 tools/sim/indoor_sim.py
-          python3 tools/sim/tap_test.py
-          python3 tools/sim/friends_sim.py
-          python3 tools/sim/sheet_test.py
-          python3 tools/sim/reach_sim.py
-          python3 tools/sim/framing_sim.py
-          python3 tools/sim/frame_sim.py
-          python3 tools/sim/seated_sim.py
-          python3 tools/sim/lens_sim.py
-          python3 tools/sim/sync_sim.py
-          python3 tools/sim/menu_sim.py
-          python3 tools/sim/tips_sim.py
-          python3 tools/sim/zoom_sim.py
-          python3 tools/sim/listing_check.py
+          python3 -m pip install --quiet pillow
+          sudo apt-get install -y -qq fonts-inter
+      - name: The textures' cell tables in screen.lsl match the art
+        run: python3 tools/art/make_strip.py --check
+      - name: Run the REAL scripts in the LSL emulator (tools/emu)
+        run: |
+          python3 tools/sim/layout_emu.py
+          python3 tools/sim/gestures_emu.py
+          python3 tools/sim/shots_emu.py
+          python3 tools/sim/portrait_emu.py
+          python3 tools/sim/tracking_emu.py
+          python3 tools/sim/fixed_emu.py
+          python3 tools/sim/scenic_emu.py
+          python3 tools/sim/carry_emu.py
+          python3 tools/sim/builder_emu.py
+      - name: Connect on the real scripts - scenarios, then a fuzzer on two and three HUDs (and lost messages)
+        run: python3 tools/sim/connect_emu.py 20 1000
+      - name: Every word, the free build, the listings
+        run: |
+          python3 tools/sim/text_check.py
           python3 tools/sim/free_test.py
-          python3 tools/sim/crop_sim.py
-          python3 tools/sim/free_sim.py
-          python3 tools/sim/keys_sim.py
-          python3 tools/sim/fit_sim.py
-      - name: Run the REAL scripts in the LSL emulator (tools/emu) - Connect scenarios and a fuzzer on two and three HUDs
-        run: python3 tools/sim/connect_emu.py 40 1000
-      - name: Run the REAL scripts - Show me (the face found by two views), the keys texture drop-in, Scenery's own Format
-        run: |
-          python3 tools/sim/showme_emu.py
-          python3 tools/sim/hud_emu.py
+          python3 tools/sim/listing_check.py
