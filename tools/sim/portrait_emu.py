@@ -59,7 +59,8 @@ no_errors(w, "sizes")
 # ---- a wall behind the camera: it moves in, the size word stays ------------------------------------------------------
 c = h.cam["pos"]
 d = B.llVecDist(vec(c[0], c[1], 0), vec(ana.pos[0], ana.pos[1], 0))
-yw = ana.pos[1] + 0.6 * (c[1] - ana.pos[1])                          # you face +y: a wall across, in front of you
+yw = ana.pos[1] + 0.45 * (c[1] - ana.pos[1])                         # you face +y: a wall across, close in front of you
+#   (close enough that no angle has room: 8.0.4 first looks round, 60° and square-on, before it moves in)
 w.boxes.append(Box((ana.pos[0] - 10, yw, 15, ana.pos[0] + 10, yw + 0.3, 30), "wall"))
 ana.touch("t12 s1"); w.run(2); ana.touch("t12 s1"); w.run(2)       # the same side again, now with the wall
 c2 = h.cam["pos"]

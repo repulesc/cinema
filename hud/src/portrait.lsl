@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.0.3";
+string VERSION = "8.0.4";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -35,6 +35,7 @@ integer OPTS       = 7340;
 integer OPT        = 7341;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
+integer CMD        = 7371;
 integer CROP       = 7390;
 
 float   THIRD  = 0.333;              // the upper third line (screen y, +1 the top edge)
@@ -45,6 +46,8 @@ list    SIZES  = ["CLOSE", "MEDIUM", "WIDE"];
 
 key     gOwner;
 integer gOn;                         // Portrait runs
+integer gDebug;                      // /12 debug on: each picture's numbers to you (8.0.4)
+string  gHit;                        // what the last ray met
 integer gHold;                       // paused (you hold the camera, sat down, watching)
 integer gSize = 1;
 integer gUs;
@@ -137,7 +140,10 @@ float room(vector a, vector b)
 {
     if (b.x < 1.0 || b.x > 255.0 || b.y < 1.0 || b.y > 255.0) return 0.0;
     list r = llCastRay(a, b, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+    gHit = "";
     if (llList2Integer(r, -1) <= 0) return llVecDist(a, b);
+    gHit = llKey2Name(llList2Key(r, 0));
+    if (llList2Key(r, 0) == NULL_KEY) gHit = "land";
     return llVecDist(a, llList2Vector(r, 1)) - 0.3;
 }
 
@@ -191,16 +197,20 @@ list frame()
     if (gSize == 2) x = 0.25;
     float th = llAtan2(x * gT * gAsp, 1.0);
     D = D / llCos(th);
-    // a soft 3/4 (30°) on your side; the other side if a wall stands right there; then in as far as it must
-    list tries = [gSide, -gSide];
+    // a soft 3/4 (30°) on your side; else the other side, 60° either side, or square-on: the first with room for the
+    // whole shot (8.0.4: only the two 3/4s were tried, and among bushes the camera ended up 1 m from you); if none has,
+    // the roomiest, in as far as it must
+    list tries = [gSide, -gSide, 2.0 * gSide, -2.0 * gSide, 0.0];
     integer i;
     float best = -1.0;
     float az;
-    for (i = 0; i < 2; i++)
+    string dbg;
+    for (i = 0; i < 5 && best < 0.9 * D; i++)
     {
         float a = yaw + llList2Float(tries, i) * 0.5236;
         float r = room(E, E + dirOf(a) * D);
-        if (r > best + 0.5)
+        dbg += " " + (string)llRound(llList2Float(tries, i) * 30.0) + "°:" + llGetSubString((string)r, 0, 3) + gHit;
+        if (r > best + 0.5 || best < 0.0)
         {
             best = r;
             az = a;
@@ -213,6 +223,11 @@ list frame()
         if (Dc < DMIN) Dc = DMIN;
         gPhi = tiltFor(ez, THIRD, ez, Dc * llCos(th), gT);
     }
+    if (yOf(z0 + h, ez, Dc * llCos(th), gT) > 0.92) gPhi = tiltFor(z0 + h, 0.92, ez, Dc * llCos(th), gT);   // the head never cut
+    if (gDebug) llOwnerSay("[Take 12/portrait] " + llList2String(["close", "medium", "wide"], gSize) + " D " + llGetSubString((string)D, 0, 3)
+        + " → " + llGetSubString((string)Dc, 0, 3) + ", tried" + dbg + "; eye " + llGetSubString((string)eyeFrac(), 0, 4) + " of "
+        + llGetSubString((string)h, 0, 3) + " m, fov " + llGetSubString((string)gFov, 0, 4) + ", t " + llGetSubString((string)gT, 0, 4)
+        + ", shape " + llGetSubString((string)gAsp, 0, 3));
     vector cam = E + dirOf(az) * Dc;
     vector V = ZERO_VECTOR - dirOf(az);
     // the open space in front of your face
@@ -554,6 +569,7 @@ default
             gFovT = llGetTime();
         }
         else if (num == MOVING) gKeys = (integer)str;
+        else if (num == CMD && llGetSubString(str, 0, 5) == "debug|") gDebug = (integer)llGetSubString(str, 6, -1);
         else if (num == CFG_CHANGED && (str == "eye" || str == "all")) shoot("glide");
     }
 

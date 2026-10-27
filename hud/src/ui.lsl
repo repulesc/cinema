@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.3";
+string VERSION = "8.0.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -440,7 +440,7 @@ done()
     closeMenu();
     gFirst = "";
     llLinksetDataWriteProtected("cin.firstrun", "done", PASS);
-    if (gOpen) strip("close");
+    if (!gOpen) strip("open");                              // the controls stay in view (8.0.4: they vanished after the setup)
 }
 
 // ---- the eye line: a line on screen, PgUp / PgDn onto your eyes, tap to keep ----------------------------------------

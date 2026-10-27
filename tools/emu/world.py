@@ -369,7 +369,7 @@ def _rotv(v, q):
 def _prim(name, desc=""):
     return {"key": new_key(), "name": name, "desc": desc, "text": "", "pos": ZV, "rot": ZR, "size": vec(0.01, 0.01, 0.01),
             "color": vec(1, 1, 1), "alpha": 1.0, "tex": (Key(C["TEXTURE_BLANK"]), vec(1, 1, 0), ZV, 0.0), "glow": 0.0,
-            "full": 0}
+            "full": 0, "slice": vec(0, 1, 0)}
 
 
 class Obj:
@@ -587,6 +587,7 @@ class Obj:
             elif r == C["PRIM_COLOR"]: out += [p["color"], p["alpha"]]; i += 1
             elif r == C["PRIM_TEXTURE"]: out += list(p["tex"]); i += 1
             elif r == C["PRIM_GLOW"]: out += [p["glow"]]; i += 1
+            elif r == C["PRIM_SLICE"]: out += [p["slice"]]
             i += 1
         return out
     def llSetPrimitiveParams(s, sc, rules): s._apply(1, rules)
@@ -620,6 +621,7 @@ class Obj:
                 elif r == C["PRIM_TEXTURE"]: p["tex"] = (a[1], a[2], a[3], a[4])
                 elif r == C["PRIM_GLOW"]: p["glow"] = a[1]
                 elif r == C["PRIM_FULLBRIGHT"]: p["full"] = a[1]
+                elif r == C["PRIM_SLICE"]: p["slice"] = a[0]
             i += 1 + n
     # the builder: rezzing and linking
     def llRezObject(s, sc, name, pos, vel, rot, param):
@@ -754,7 +756,7 @@ def static(path):
 # how many values each PRIM_* rule takes (enough to walk the lists the scripts build)
 _NARGS = {C["PRIM_POS_LOCAL"]: 1, C["PRIM_POSITION"]: 1, C["PRIM_ROT_LOCAL"]: 1, C["PRIM_ROTATION"]: 1, C["PRIM_SIZE"]: 1,
           C["PRIM_COLOR"]: 3, C["PRIM_TEXTURE"]: 5, C["PRIM_FULLBRIGHT"]: 2, C["PRIM_GLOW"]: 2, C["PRIM_NAME"]: 1,
-          C["PRIM_DESC"]: 1, C["PRIM_TEXT"]: 3}
+          C["PRIM_DESC"]: 1, C["PRIM_TEXT"]: 3, C["PRIM_SLICE"]: 1}
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 NAMES = ("core", "ui", "text", "screen", "strip", "bars", "tracking", "portrait", "fixed", "scenic", "sync", "carry")

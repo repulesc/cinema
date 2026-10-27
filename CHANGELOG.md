@@ -1,5 +1,35 @@
 # Changelog
 
+## 8.0.4 (the first real session: readable words, the strip at the top, Portrait among bushes)
+From the first in-world session of 8.0.3 (Tracking: "smooth, looks awesome"), with screenshots:
+- **Fixed: the lit words were unreadable.**
+  - The lit shot was ink on a white box. In-world it read as a black smudge. Now it is full white with a line under
+    it, like a lit option.
+  - A lit option showed a grey block over the lower half of its word. That was the underline part: 0.01 m (about 11 px,
+    Second Life's smallest part), textured from a cell of the marks sheet. Every line (underlines and the eye line) is
+    now a plain white face cut down to about 2 px with `PRIM_SLICE`.
+  - No glow on the strip; it blurred the words.
+  - No new texture upload is needed.
+- **The strip sits at the very top, on a solid black band.**
+  - Top had a 24 px gap above the strip; it is now flush with the top of the world view (Top lower: 52 px).
+  - The band is solid black from the screen edge across the strip. Before, it faded and was see-through wherever a
+    shape's bar is thinner than the strip (Portrait and Fixed's 1.85), unlike Tracking's 2.39.
+- **Fixed: Portrait stood 1 m from you among bushes.**
+  - It tried only the two soft 3/4 views; when something blocked both, the camera moved in to 1 m (Wide showed your
+    torso, the head cut).
+  - Now it also tries 60° either side and square-on, and takes the first with room for the whole shot.
+  - The head is never cut.
+  - `/12 debug on` now also shows each Portrait picture's numbers, including what blocked a view, in case a place still
+    frames badly.
+- **Fixed: "Camera control currently only supported for attachments and objects on which you are sitting."**
+  - Walking into the next region in Tracking, the camera was cleared mid-move. Tracking's camera now follows you
+    across by itself.
+  - A teleport lets the old frame go a second later.
+  - No camera call is ever made by a copy that is not worn.
+- **After the setup the strip stays open**, so the controls are in view. The last tour page says a double-tap hides it.
+- `tools/sim/inworld_emu.py` replays these too: on 8.0.3 it fails 12 checks, on 8.0.4 it passes.
+- Version 8.0.4 in all twelve scripts (the free build: nine).
+
 ## 8.0.3 (the [12] answers every tap; the camera is never left locked)
 From the first in-world use of 8.0.2:
 - **Fixed: taps on the [12] were lost, so it took several tries (and up to half a minute) to get the dialog.**

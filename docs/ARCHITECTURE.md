@@ -15,13 +15,13 @@ Every part is found by its name (any link order):
 | `Take 12` (root) | the [12]: a dark disc (`take12_marks`), always visible |
 | `t12 ring` | over the disc: the thin ring while filming, the hold fill (8 steps), amber for a problem |
 | `t12 dot` | on the disc's rim: white while connected; a soft white glow while someone watches your film |
-| `t12 band` | the strip's dark band, solid at the screen edge and fading inward |
+| `t12 band` | the strip's band: solid black, from the screen edge across the strip (8.0.4) |
 | `t12 s0` … `t12 s3` | the shot words TRACKING · PORTRAIT · FIXED · SCENIC |
-| `t12 box` | the white box behind the lit shot (ink letters on it) |
+| `t12 box` | the lit shot's underline (8.0.4; before, a white box with ink letters, unreadable in-world) |
 | `t12 halo` | an outline: the Fixed hint (with a glow) or an accent word (KEEP NEW, UNDO) |
 | `t12 o0` … `t12 o5` | the running shot's option words |
 | `t12 sep` | the thin divider between two option groups |
-| `t12 u0` … `t12 u2` | underlines under lit options (and under THEIR FILM) |
+| `t12 u0` … `t12 u2` | underlines under lit options (and under THEIR FILM); `u2` is also the eye line. Every line is a blank face cut to ~2 px with `PRIM_SLICE` (a 0.01 m part is the smallest Second Life allows) |
 | `t12 shape` | `▭ 2.39` / `▭ FULL` / a dim ▭ (the bars key) |
 | `t12 link` | the linked rings and one word: the count, SHARING, THEIR FILM (the Connect key) |
 | `t12 note` | carries the 3 s notes (llSetText), just under the strip (above it at the bottom) |
@@ -31,8 +31,8 @@ Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD
 in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
 - `take12_words` (1024²): every word in small caps, white on transparent, one cell 512 × 48 each (2 columns × 21 rows).
   The script tints a word per state. The cell tables (column, row, width in px) are generated into `strip.lsl` (WORDS, the strip's marks) and `screen.lsl` (the [12]'s marks).
-- `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the box, the halo, the band fade, and the shape and
-  link cells (256 × 48).
+- `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the halo, and the shape and link cells (256 × 48).
+  The box, underline and band-fade cells are still on the sheet but drawn by nothing since 8.0.4 (no new upload).
 
 ## 2. Screen geometry (`screen.lsl`: the [12]; `strip.lsl`: the strip)
 - **HUD space:** 1.0 tall (the window's height) and `llGetCameraAspect()` wide; +Y to the left, +Z up, +X into the
@@ -40,15 +40,18 @@ in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking t
   **HUD Top Center** (any point works).
 - **Size:** Look › Size S · M · L = 0.8 · 1.0 · 1.25. At M: the strip is 48 px of a 1080 px window (0.0444), words 0.0222
   tall (11.5 px), the [12] 0.0407.
-- **Places** (`cin.place`): `top` (under a 24 px menu bar), `topl` (lower, under 76 px of viewer bars), `bot` (above a
-  46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
+- **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
+  `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
 - **Width:** the words stay inside a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the full width.
   Shots start `inset` from the left of that area, options end `inset` from its right; `inset` = 180 px (0.1667),
   shrunk when the window is too narrow so nothing overlaps (never below 0.02).
 - **Middle:** the [12] at x = 0; the shape cell ends 40 px left of it, the link cell starts 40 px right of it.
-- **Depth:** dot and ring in front of the disc (−X), words at +0.001, box and halo at +0.002, band at +0.004, bars at
+- **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at
   +0.006 (crop's DEPTH rule: behind the button so it stays clickable).
-- **Closed:** every strip part is shrunk to 0.01, alpha 0, at the root (invisible prims still catch clicks). Opening
+- **Lit:** a lit word is full white with a line under it (shots and options alike); the rest are quieter (55 % or
+  75 %, Look › Keys). No glow on the strip: it blurs small text.
+- **Closed:** every strip part is shrunk to 0.01, alpha 0, parked behind the root (`ui` counts a tap on any of them,
+  or on the ring or dot, as a tap on the [12]: 8.0.3). Opening
   fades in over 0.2 s (alpha in 3 steps).
 - **Touch:** `strip` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
   option word → OPT `<shot>|<word>`, the shape → CMD `bars`, the link → CMD `connect`. `ui` reads the root (gestures).

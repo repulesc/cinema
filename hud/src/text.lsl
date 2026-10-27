@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.3";
+string VERSION = "8.0.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -213,7 +213,7 @@ string body(string page, list a)
     if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
     if (page == "tour1") return "The strip\nDouble-tap the [12]: the four shots and their options. Tap a shot to start it.";
     if (page == "tour2") return "Connect\nThe linked rings share films with people near you.";
-    if (page == "tour3") return "Off\nHold the [12]: everything off. Hold again: back as it was.";
+    if (page == "tour3") return "Off\nHold the [12]: everything off. Hold again: back as it was.\nDouble-tap the [12] to hide the strip.";
     return page;
 }
 

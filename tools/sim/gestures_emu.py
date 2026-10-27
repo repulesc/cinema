@@ -48,7 +48,7 @@ for p in ("tour1", "tour2"):
 dialog_ok(ana, "tour3")
 ana.click("Done"); w.run(0.5)
 check(lsd(h, "firstrun") == "done", "the first run is done")
-check(var(h, "screen", "gOpen") == 0, "the tour closes the strip")
+check(var(h, "screen", "gOpen") == 1, "the setup leaves the strip open (8.0.4)")
 no_errors(w, "first run")
 
 # ---- the gestures ----------------------------------------------------------------------------------------------------
@@ -95,7 +95,9 @@ check("Double-tap" in ana.dialog[1], "help card: %r" % ana.dialog[1])
 ana.click("‹ Back"); w.run(0.5)
 ana.click("Close"); w.run(0.5)
 check(ana.dialog is None, "Close")
-# double-tap: the strip, no dialog
+# double-tap: the strip, no dialog (the setup left it open: closes, then opens)
+ana.double_tap(); w.run(1.0)
+check(var(h, "screen", "gOpen") == 0 and ana.dialog is None, "double-tap closes the strip, no dialog")
 ana.double_tap(); w.run(1.0)
 check(var(h, "screen", "gOpen") == 1 and ana.dialog is None, "double-tap opens the strip, no dialog")
 ana.touch("t12 s1"); w.run(4)
