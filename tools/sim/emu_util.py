@@ -125,3 +125,15 @@ def dialog_ok(av, where):
     for x in b: check(0 < len(x.encode()) <= 24, "%s: button %r is %d bytes" % (where, x, len(x.encode())))
     check(len(av.dialog[1].encode()) <= 512, "%s: the text is %d bytes" % (where, len(av.dialog[1].encode())))
     return True
+
+
+def opt_part(h, word):
+    """the strip part that shows an option word (to touch it)"""
+    v = var(h, "screen", "gOptVis")
+    if word not in v: raise AssertionError("%r is not on the strip: %r" % (word, v))
+    return "t12 o%d" % v.index(word)
+
+
+def V(v):
+    """a vector as LSL writes it in a string"""
+    return "<%f, %f, %f>" % (v[0], v[1], v[2])

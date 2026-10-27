@@ -409,7 +409,7 @@ layout()
                 P += at(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0)) + uvMark("halo") + [PRIM_COLOR, ALL_SIDES, WHITE, 0.86 * f, PRIM_GLOW, ALL_SIDES, 0.0];
                 halo = TRUE;
             }
-            gOptVis = [w] + gOptVis;
+            gOptVis += [w];                                  // the word on part k (right to left)
             part++;
             x -= wd + gap;
         }

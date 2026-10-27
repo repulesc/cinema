@@ -200,6 +200,12 @@ list frame()
     if (D < 0.0) return [];
     float yaw = llAtan2(F.y, F.x);
     vector E = <P.x, P.y, ez>;
+    // lead room: you on a third, off the picture's axis by this angle; the camera stands back by 1 / cos of it so
+    // your depth along the axis is still D (the size table holds)
+    float x = 0.333;
+    if (gSize == 2) x = 0.25;
+    float th = llAtan2(x * gT * gAsp, 1.0);
+    D = D / llCos(th);
     // a soft 3/4 (30°) on your side; the other side if a wall stands right there; then in as far as it must
     list tries = [gSide, -gSide];
     integer i;
@@ -216,19 +222,17 @@ list frame()
         }
     }
     float Dc = D;
-    if (best < D)
+    if (best < D - 0.05)
     {
         Dc = best;                                      // a wall: in as far as it must (the size word stays)
         if (Dc < DMIN) Dc = DMIN;
-        gPhi = tiltFor(ez, THIRD, ez, Dc, gT);
+        gPhi = tiltFor(ez, THIRD, ez, Dc * llCos(th), gT);
     }
     vector cam = E + dirOf(az) * Dc;
     vector V = ZERO_VECTOR - dirOf(az);
-    // lead room: you on the third that leaves the space in front of your face
-    float x = 0.333;
-    if (gSize == 2) x = 0.25;
-    if (F * <V.y, -V.x, 0.0> > 0.0) x = -x;
-    V = V * llEuler2Rot(<0.0, 0.0, llAtan2(x * gT * gAsp, 1.0)>);
+    // the open space in front of your face
+    if (F * <V.y, -V.x, 0.0> > 0.0) th = -th;
+    V = V * llEuler2Rot(<0.0, 0.0, th>);
     vector foc = cam + V * Dc;
     foc.z = cam.z - Dc * llTan(gPhi);
     return [cam, foc];
@@ -278,7 +282,9 @@ list two(vector P, vector F)
     }
     if (yOf(top, eyes, D, gT) > 0.92) gPhi = tiltFor(top, 0.92, eyes, D, gT);   // the taller head never cut
     vector M = (P + Q) * 0.5;
-    float az = llAtan2(N.y, N.x) + gSide * gCross * 0.349;   // 20° toward your side
+    float tw = 0.349;                                    // 20° toward your side (a swap: toward your friend's)
+    if (dirOf(llAtan2(N.y, N.x) + tw) * L > 0.0) tw = -tw;
+    float az = llAtan2(N.y, N.x) + gSide * tw;
     vector E = <M.x, M.y, eyes>;
     float r = room(E, E + dirOf(az) * D);
     float Dc = D;
@@ -404,7 +410,7 @@ save()
 }
 
 // who is with you, now (Us)
-people(integer now)
+people(float now)
 {
     if (!gUs) return;
     list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
@@ -422,7 +428,7 @@ people(integer now)
         {
             integer j = llListFindList(gSeen, [k]);
             if (j < 0) gSeen += [k, now];
-            else if (now - llList2Integer(gSeen, j + 1) >= 2) change = TRUE;
+            else if (now - llList2Float(gSeen, j + 1) >= 2.0) change = TRUE;
         }
     }
     // someone gone for 3 s: out
@@ -433,7 +439,7 @@ people(integer now)
         {
             integer j = llListFindList(gGone, [k]);
             if (j < 0) gGone += [k, now];
-            else if (now - llList2Integer(gGone, j + 1) >= 3) change = TRUE;
+            else if (now - llList2Float(gGone, j + 1) >= 3.0) change = TRUE;
         }
         else
         {
@@ -454,6 +460,8 @@ start(string why)
 {
     gHold = FALSE;
     gWith = [];
+    gSide = 1.0;
+    gCross = 1.0;
     if (gUs)
     {
         list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
@@ -614,6 +622,6 @@ default
             else if (t - gAwayT > 2.0) shoot("auto");
         }
         else gAwayT = 0.0;
-        people(llGetUnixTime());
+        people(llGetTime());
     }
 }
