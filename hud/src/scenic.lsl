@@ -11,9 +11,10 @@
 //  Indoors (a build floor with a roof over you, or a skybox) every band stays in the room: Far is dim, Near and Drift
 //  stay inside. Outdoors Room is dim. Always within 60 m of you, inside your region, above the ground and the water.
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
+//  In a photo frame (3:2 · 4:3 · 1:1 · 4:5, under 1.6 wide: bars' CROP) Drift holds still views too (8.0.9).
 // ============================================================================
 
-string VERSION = "8.0.8";
+string VERSION = "8.0.9";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -25,6 +26,7 @@ integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;
 integer FOLLOW     = 7314;
+integer CROP       = 7390;
 integer ACK        = 7313;
 integer OPTS       = 7340;
 integer OPT        = 7341;
@@ -43,6 +45,7 @@ key     gOwner;
 integer gOn;
 integer gPaused;
 integer gBand;
+integer gStill;                    // a photo frame: Drift holds still views
 integer gErr;
 integer gRayErr;
 list    gRay = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
@@ -564,11 +567,17 @@ step()
     dolly(llList2Float(D, gStage));
 }
 
+// Drift moves; in a photo frame it is a still view like the others
+integer drifting()
+{
+    return gBand == 0 && !gStill;
+}
+
 begin()
 {
     gNextT = 0.0;
     llSensorRepeat("", NULL_KEY, AGENT, 10.0, PI, 5.0);   // anyone within 10 m keeps Drift near (16 at most, not the region)
-    if (gBand == 0) drift();
+    if (drifting()) drift();
     else still();
     llSetTimerEvent(0.5);
 }
@@ -614,6 +623,14 @@ default
             opts();
             begin();
         }
+        else if (num == CROP)
+        {
+            float r = (float)str;                           // "<ratio>|<window>"
+            integer st = (r > 0.0 && r < 1.6);
+            if (st == gStill) return;
+            gStill = st;
+            if (gOn && gBand == 0 && !gPaused) begin();     // a new frame: Drift moves, or holds still
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/scenic] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(BANDS, gBand)
@@ -634,7 +651,7 @@ default
         }
         else if (num == NEXT)
         {
-            if (gBand == 0) drift();                        // the lit tap: the next view now (Drift starts close again)
+            if (drifting()) drift();                        // the lit tap: the next view now (Drift starts close again)
             else still();
         }
         else if (num == OPT)
@@ -661,7 +678,7 @@ default
     timer()
     {
         if (gPaused) return;
-        if (gBand == 0) step();
+        if (drifting()) step();
         else if (llGetTime() >= gNextT) still();
     }
 }

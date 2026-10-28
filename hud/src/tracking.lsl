@@ -13,7 +13,7 @@
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
 // ============================================================================
 
-string VERSION = "8.0.8";
+string VERSION = "8.0.9";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

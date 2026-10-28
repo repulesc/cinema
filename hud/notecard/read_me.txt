@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.0.8)
+TAKE 12  -  READ ME  (8.0.9)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -33,8 +33,9 @@ The [12] tells you, quietly:
 
 A thin line of words at the top of your screen (Settings > Look > Place moves it lower, or to the bottom):
   TRACKING  PORTRAIT  FIXED  SCENIC    ▭ 2.39   [12]   ⇄ 2    the running shot's options
-The shot that films is ink on a white box; its options are on the right, the ones in use underlined.
-The bars key (▭) turns the letterbox on and off. The Connect key (two rings) shows who you are with.
+The shot that films is underlined; its options are on the right, the ones in use underlined.
+The frame key (▭) shows the running shot's frame; tap it to choose another, with its snapshot size.
+The Connect key (two rings) shows who you are with.
 Tap the lit shot again and it does its one job (below).
 
 
@@ -68,6 +69,15 @@ SCENIC    views of the place. It also starts by itself when you are idle.
   Indoors every band stays in the room. The lit tap: the next view now.
 
 
+=== FRAMES ==============================================
+
+Every frame is a picture. Tap the ▭ on the strip for the running shot's frames:
+  2.39 · 2.00 · 1.85 · 1.66   the cinema frames, bars above and below
+  3:2 · 4:3 · 1:1 · 4:5       the photo frames (Portrait, Fixed, Scenic), bars at the sides
+  Full                         no bars
+The dialog gives the snapshot size for the frame (Snapshot > Custom size). In a photo frame Drift holds still views.
+
+
 === WHAT HAPPENS BY ITSELF ==============================
 
 SITTING        the shot holds its frame and FIXED glows once (a seat view is there). Standing up, it carries on.
@@ -94,8 +104,8 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 
 === SETTINGS ============================================
 
-LENS · EYE LINE · SHAPES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
- SHAPES & BARS   each shot's shape (1.66 · 1.85 · 2.00 · 2.39 · Full) and the bars, Black or Dimmed
+LENS · EYE LINE · TRACKING · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
+ FRAMES & BARS   each shot's frame (as the ▭ on the strip) and the bars, Black or Dimmed
  LOOK            where the strip sits and its size
  RESET           Tips again · Seats & views · Everything
 
@@ -109,7 +119,7 @@ Type these in chat, or put them in a gesture on a key:
 
 === GOOD TO KNOW ========================================
 
-- The bars are on your screen, not in snapshots: set the snapshot size to your shape.
+- The bars are on your screen, not in snapshots. Tap the ▭: its dialog gives the snapshot size for the frame.
 - If the strip looks too big or cut off, reset your viewer's HUD zoom (most viewers have it in the View menu).
 - The Second Life mobile app shows no HUDs.
 - An older Take 12 worn at the same time: take it off. A newer copy worn with this one copies your setup over by itself.

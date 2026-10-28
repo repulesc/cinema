@@ -33,6 +33,7 @@ WORDS = ["TRACKING", "PORTRAIT", "FIXED", "SCENIC",
          "VIEW A", "VIEW B", "KEEP NEW", "FORGET SEAT", "UNDO", "LET GO", "TAKE BACK",
          "DRIFT", "NEAR", "ROOM", "FAR"]
 SHAPES = ["1.66", "1.85", "2.00", "2.39", "FULL", "DIM"]
+PHOTO = {"3:2": 1.5, "4:3": 4 / 3.0, "1:1": 1.0, "4:5": 0.8}   # the photo frames (8.0.9): pillarbox icons
 LINKS = ["ALONE"] + [str(i) for i in range(1, 10)] + ["SHARING", "THEIR FILM"]
 
 GLASS = (17, 18, 22)
@@ -150,14 +151,18 @@ def cells(kind):
     """the shape or link cells (256 x 48): [(name, image, content width)]"""
     f = font("Inter-SemiBold.otf", SIZE * 4)
     out = []
-    names = SHAPES if kind == "shape" else LINKS
+    names = {"shape": SHAPES, "photo": list(PHOTO), "link": LINKS}[kind]
     for n in names:
         im, k = ss(256, CELL_H)
         d = ImageDraw.Draw(im)
-        if kind == "shape":
+        if kind != "link":
             x0, y0, x1, y1 = PAD, 15, PAD + 32, 33
             d.rounded_rectangle([x0 * k, y0 * k, x1 * k, y1 * k], radius=3 * k, outline=WHITE + (255,), width=int(2.4 * k))
-            if n not in ("FULL", "DIM"):
+            if n in PHOTO:                  # the screen with bars at its sides, as wide as the frame leaves them
+                sw = max(5.0, (32 - 18 * PHOTO[n]) / 2)
+                d.rounded_rectangle([x0 * k, y0 * k, (x0 + sw) * k, y1 * k], radius=2 * k, fill=WHITE + (255,))
+                d.rounded_rectangle([(x1 - sw) * k, y0 * k, x1 * k, y1 * k], radius=2 * k, fill=WHITE + (255,))
+            elif n not in ("FULL", "DIM"):
                 d.rounded_rectangle([x0 * k, y0 * k, x1 * k, (y0 + 5) * k], radius=2 * k, fill=WHITE + (255,))
                 d.rounded_rectangle([x0 * k, (y1 - 5) * k, x1 * k, y1 * k], radius=2 * k, fill=WHITE + (255,))
             end = x1 + 2
@@ -195,6 +200,8 @@ def marks():
         put("shape" + n, im, (i % 4) * 256, 512 + (i // 4) * CELL_H, cw)
     for i, (n, im, cw) in enumerate(cells("link")):
         put("link" + n, im, (i % 4) * 256, 512 + 2 * CELL_H + (i // 4) * CELL_H, cw)
+    for i, (n, im, cw) in enumerate(cells("photo")):                  # after the links: the cells before stay put
+        put("shape" + n, im, (i % 4) * 256, 512 + 5 * CELL_H + (i // 4) * CELL_H, cw)
     return sheet, table
 
 

@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.8";
+string VERSION = "8.0.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -187,7 +187,7 @@ open(string p)
 {
     if (p == "settings")
     {
-        list b = ["Lens", "Eye line", "Tracking", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        list b = ["Lens", "Eye line", "Tracking", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
         if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
         page(p, "", b);
     }
@@ -214,6 +214,21 @@ open(string p)
         string bs = cfg("bstyle");
         page(p, llDumpList2String(S, "~") + "~" + llList2String(["black", "dimmed"], bs == "dim"),
             ["Tracking", "Portrait", "Fixed", "Scenic", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
+    }
+    else if (llGetSubString(p, 0, 5) == "frame:")
+    {
+        // the frame dialog: this shot's frames from the widest to the tallest, the photo frames for every shot but
+        // Tracking (a walking camera wants a cinema frame), the current one marked; the strip's ▭ opens it (8.0.9)
+        string s = llGetSubString(p, 6, -1);
+        string now = cfg("shape." + s);
+        if (now == "") now = llList2String(["2.39", "1.85", "1.85", "2.39"], llListFindList(["tracking", "portrait", "fixed", "scenic"], [s]));
+        list F = ["2.39", "2.00", "1.85", "1.66", "3:2", "4:3", "1:1", "4:5", "Full"];
+        if (s == "tracking") F = llDeleteSubList(F, 4, 7);
+        list b = [];
+        integer i;
+        for (i = 0; i < llGetListLength(F); i++) b += mark(llList2String(F, i), llToLower(llList2String(F, i)) == now);
+        page("frame", s + "~" + now, b + ["‹ Back", "Done"]);
+        gPage = p;
     }
     else if (p == "idle")
     {
@@ -271,7 +286,7 @@ open(string p)
 string up(string p)
 {
     if (llListFindList(["lens", "feel", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
-    if (p == "shape") return "shapes";
+    if (llGetSubString(p, 0, 5) == "frame:") return "shapes";
     if (p == "place") return "look";
     if (p == "everything") return "reset";
     return "main";
@@ -293,7 +308,7 @@ choose(string m)
     {
         if (b == "Eye line") { closeMenu(); eyeStart(); }
         else open(llList2String(["lens", "feel", "shapes", "vehicles", "idle", "friends", "look", "reset"],
-            llListFindList(["Lens", "Tracking", "Shapes & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
+            llListFindList(["Lens", "Tracking", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
     }
     else if (gPage == "lens")
     {
@@ -309,18 +324,13 @@ choose(string m)
             open("shapes");
             return;
         }
-        string s = llToLower(b);
-        string now = cfg("shape." + s);
-        if (now == "") now = llList2String(["2.39", "1.85", "1.85", "2.39"], llListFindList(["tracking", "portrait", "fixed", "scenic"], [s]));
-        closeMenu();
-        gPage = "shape";
-        page("shape", b + "~" + now, [mark("1.66", now == "1.66"), mark("1.85", now == "1.85"), mark("2.00", now == "2.00"), mark("2.39", now == "2.39"), mark("Full", now == "full"), "‹ Back"]);
-        gPage = "shape:" + s;
+        open("frame:" + llToLower(b));
     }
-    else if (llGetSubString(gPage, 0, 5) == "shape:")
+    else if (llGetSubString(gPage, 0, 5) == "frame:")
     {
         set("shape." + llGetSubString(gPage, 6, -1), llToLower(b));
-        open("shapes");
+        if (b != "Full" && cfg("bars") == "0") set("bars", "1");   // a frame picked is a frame shown
+        open(gPage);                                    // the page stays: its snapshot size for the new frame
     }
     else if (gPage == "idle")
     {
@@ -675,6 +685,7 @@ default
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
         else if (num == CMD && str == "eyequit" && gEye) eyeEnd(FALSE);   // you walked off: skipped, the old line kept
         else if (num == CMD && str == "menu|settings") open("settings");   // back from sync's Friends page
+        else if (num == CMD && str == "frames" && gShot != "" && gState != "wait" && gState != "off") open("frame:" + gShot);
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
         else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
         else if (num == MSG_VER && str != "?")

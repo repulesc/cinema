@@ -22,7 +22,7 @@ Every part is found by its name (any link order):
 | `t12 o0` … `t12 o5` | the running shot's option words |
 | `t12 sep` | the thin divider between two option groups |
 | `t12 u0` … `t12 u2` | underlines under lit options (and under THEIR FILM); `u2` is also the eye line. Every line is a blank face cut to ~2 px with `PRIM_SLICE` (a 0.01 m part is the smallest Second Life allows) |
-| `t12 shape` | `▭ 2.39` / `▭ FULL` / a dim ▭ (the bars key) |
+| `t12 shape` | `▭ 2.39` / `▭ 4:5` / `▭ FULL` / a dim ▭ (the frame key) |
 | `t12 link` | the linked rings and one word: the count, SHARING, THEIR FILM (the Connect key) |
 | `t12 note` | carries the 3 s notes (llSetText), just under the strip (above it at the bottom) |
 | `t12 bar0` … `t12 bar3` | the letterbox (or pillarbox) bars |
@@ -31,7 +31,7 @@ Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD
 in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
 - `take12_words` (1024²): every word in small caps, white on transparent, one cell 512 × 48 each (2 columns × 21 rows).
   The script tints a word per state. The cell tables (column, row, width in px) are generated into `strip.lsl` (WORDS, the strip's marks) and `screen.lsl` (the [12]'s marks).
-- `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the halo, and the shape and link cells (256 × 48).
+- `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the halo, and the shape and link cells (256 × 48; the photo frames' cells after the links, 8.0.9).
   The box, underline and band-fade cells are still on the sheet but drawn by nothing since 8.0.4 (no new upload).
 
 ## 2. Screen geometry (`screen.lsl`: the [12]; `strip.lsl`: the strip)
@@ -54,7 +54,7 @@ in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking t
   or on the ring or dot, as a tap on the [12]: 8.0.3). Opening
   fades in over 0.2 s (alpha in 3 steps).
 - **Touch:** `strip` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
-  option word → OPT `<shot>|<word>`, the shape → CMD `bars`, the link → CMD `connect`. `ui` reads the root (gestures).
+  option word → OPT `<shot>|<word>`, the shape → CMD `frames` (ui's frame dialog), the link → CMD `connect`. `ui` reads the root (gestures).
 
 ## 3. Scripts
 All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (the check fails below).
@@ -142,7 +142,7 @@ CMD strings: `shot|<name>` (a shot word: start it, or its lit-tap job), `off` / 
 | `place`, `size`, `keys`, `flip` | the strip: top / topl / bot / both; s / m / l; soft / clear; a mirrored HUD axis |
 | `aspect` | your window, last measured (bars) |
 | `trk`, `por`, `scn` | `<look 0–2>\|<side 0 L / 1 R>`; `<size 0–2>\|<who 0 Me / 1 Us>`; `<band 0 drift … 3 far>` |
-| `shape.<shot>`, `bars`, `bstyle` | each shot's shape (1.66 … 2.39, full); 1 / 0; black / dim |
+| `shape.<shot>`, `bars`, `bstyle` | each shot's frame (1.66 … 2.39, 3:2 · 4:3 · 1:1 · 4:5, full); 1 / 0; black / dim |
 | `idle`, `blend` | off / away / 5; 1: every cut a 1.5 s glide (`/12 blend on`) |
 | `view.<region>.<parcel>` | Fixed: `<A>~<B>~<ground spots…>`, each `<cam>\|<focus>\|<where you were>\|<facing°>\|<lens>` |
 | `places` | those places, least used first (20 kept) |

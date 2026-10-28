@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.8";
+string VERSION = "8.0.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -79,10 +79,10 @@ list TIPS = [
     "hintfixed", "Sitting: Fixed has a view for this seat. Tap it.",
     "seated", "FORGET SEAT: frame this seat again. LET GO: your viewer's camera whenever you sit here (boats, cars).",
     "flying", "Flying: your own camera until you land.",
-    "snapshot", "The bars are on your screen, not in snapshots: set the snapshot size to your shape.",
+    "snapshot", "The bars are on your screen, not in snapshots. Tap the frame by the [12] for its snapshot size.",
     "LET GO", "Your viewer's camera every time you sit here. TAKE BACK undoes it.",
     "DRIFT", "How far the views go.",
-    "shape", "The bars on or off. Each shot's shape: Settings.",
+    "shape", "This shot's frame, and its snapshot size.",
     "link", "Share films with people near you."
 ];
 list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER", "CLASSIC", "SHOULDER", "R", "L",
@@ -92,6 +92,10 @@ list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER",
 list HINTS = ["Double-tap the [12] for the strip.", "Hold the [12]: everything off, hold again: back.",
               "Tap a lit shot again for its other angle.", "Alt-click in Fixed: Take 12 keeps your framing.",
               "Settings › Look › Place moves the strip to the bottom."];
+
+// a frame's snapshot size (Snapshot › Custom; the bars are not in snapshots)
+list SNAP = ["2.39", "1920 × 803", "2.00", "1920 × 960", "1.85", "1920 × 1038", "1.66", "1920 × 1157",
+    "3:2", "1800 × 1200", "4:3", "1600 × 1200", "1:1", "1600 × 1600", "4:5", "1600 × 2000"];
 
 key     gOwner;
 integer gNote;                    // the note part's link (0: none, then the root)
@@ -199,8 +203,17 @@ string body(string page, list a)
     if (page == "feel") return "Tracking\nSmooth: eases into your turns, like a steadicam.\nSnappy: stays right behind you, easy to steer by.\nNow: " + a0;
     if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\n24 wide · 28 · 35 the classic · 40 · 50 normal.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
-    if (page == "shapes") return "Shapes & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3 + " · Bars: " + llList2String(a, 4);
-    if (page == "shape") return a0 + "'s shape\nNow: " + a1;
+    if (page == "shapes") return "Frames & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3 + " · Bars: " + llList2String(a, 4);
+    if (page == "frame")
+    {
+        // the snapshot size for the frame on screen (8.0.9: every frame is a picture)
+        string t = llToUpper(llGetSubString(a0, 0, 0)) + llGetSubString(a0, 1, -1) + "'s frame\n";
+        integer i = llListFindList(SNAP, [a1]);
+        if (i < 0) return t + "Full: no bars. Snapshot at your window's size.";
+        t += "Snapshot " + llList2String(SNAP, i + 1) + " for " + a1 + ".";
+        if (a0 != "scenic") return t;
+        return t + "\nIn 3:2 · 4:3 · 1:1 · 4:5, Drift holds still views.";
+    }
     if (page == "vehicles")
     {
         if (a0 == "") return "Vehicles\nNone marked. On a vehicle's seat, LET GO marks it.";
