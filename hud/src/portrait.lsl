@@ -10,7 +10,7 @@
 //  more open); with more, everyone in the size you chose, from the open side of the group, the upper third between
 //  the eye lines; a seated friend gets the room of one size wider. More than 6 people within 10 m: a crowd, no people
 //  cuts (the frame holds). Someone joins (2 s within 3 m) or leaves (3 s gone): one cut.
-//  It follows you, then settles: walking, the camera glides along with you; a second after you stop, the same framing
+//  It follows you, then settles: walking, the viewer's follow camera comes along (smooth, 8.4.3); a second after you stop, the same framing
 //  again where you are. Turned away for 2 s: the same framing from your new front. A wall: the camera moves in (the
 //  size word stays: never a cut to another angle). Your zoom: the same framing (a glide, never a cut).
 //  The lit tap: Me the other 3/4 side; the two-shot swaps sides inside the 180° line (a second tap crosses it).
@@ -28,6 +28,7 @@ integer RESUME     = 7305;
 integer MOVING     = 7306;
 integer SHOT       = 7310;
 integer GLIDE      = 7312;
+integer FOLLOW     = 7314;
 integer ACK        = 7313;
 integer FOVMSG     = 7318;
 integer CFG_CHANGED= 7330;
@@ -395,6 +396,20 @@ list group(vector P, vector F)
     return [cam, foc];
 }
 
+// walking: the viewer's own follow camera from where the shot stands, at its distance and height, on its side (180:
+// it keeps whatever side it is on), eased by the viewer every frame. 8.4.3: the shot stepped a locked camera along
+// with you a few times a second, and Second Life does not ease a locked camera: walking was choppy
+trail(vector P)
+{
+    vector d = gCam - <P.x, P.y, gFoc.z>;
+    float h = llVecMag(<d.x, d.y, 0.0>);
+    float D = llVecMag(d);
+    if (D < 0.6) D = 0.6;
+    if (D > 10.0) D = 10.0;
+    llMessageLinked(LINK_SET, FOLLOW, (string)D + "|" + (string)(llAtan2(d.z, h) * RAD_TO_DEG) + "|<0.0, 0.0, "
+        + (string)(gFoc.z - P.z) + ">|0.0|0.6|0.3|180", "");
+}
+
 // a new picture: kind cut (you asked) or auto (it decided: the jump-cut rule applies)
 shoot(string kind)
 {
@@ -620,10 +635,11 @@ default
         if (llGetListLength(d) < 3) return;
         vector P = llList2Vector(d, 0);
         vector v = llList2Vector(d, 2);
-        // walking: the camera comes along; a second after you stop, the same framing where you are
+        // walking: the camera comes along (the follow camera, smooth); a second after you stop, the same framing where you are
         vector m = P - gAt;
         if (llVecMag(<v.x, v.y, 0.0>) > 0.25 || gKeys)
         {
+            if (!gWalk) trail(P);
             gWalk = TRUE;
             gStillT = 0.0;
         }
@@ -634,7 +650,6 @@ default
                 gCam += m;
                 gFoc += m;
                 gAt = P;
-                llMessageLinked(LINK_SET, GLIDE, (string)gCam + "|" + (string)gFoc + "|0.4", "");
             }
             if (llVecMag(<v.x, v.y, 0.0>) < 0.2 && !gKeys)
             {

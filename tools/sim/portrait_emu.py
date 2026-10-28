@@ -83,9 +83,15 @@ ana.fov = LENS; w.run(2.5)
 no_errors(w, "zoom")
 
 # ---- walking: the camera comes along, then the same framing where you stop ----------------------------------------------
+d0 = B.llVecDist(h.cam["pos"], ana.pos)
 ana.walk((128, 133, 21), speed=1.5); w.run(1.5)
-check(abs(h.cam.get("plag", 0) - 0.4) < 1e-4, "walking: the camera glides along (%r, %r, %r)" % (h.cam.get("plag"), state(h), h.cam["log"][-2:]))
-w.run(5)
+# 8.4.3: the viewer's follow camera, eased every frame (a locked camera stepped along with you was choppy in-world)
+check("distance" in h.cam and not h.cam.get("plock") and h.cam.get("bangle") == 180, "walking: the follow camera, keeping its side (%r)" % {k: h.cam.get(k) for k in ("distance", "plock", "bangle")})
+check(abs(h.cam.get("distance", 0) - d0) < 0.6, "... at the shot's distance (%.2f vs %.2f)" % (h.cam.get("distance", 0), d0))
+g = len(h.cam["log"])
+w.run(1)
+check(len(h.cam["log"]) == g, "... and no camera steps while you walk (%d calls in 1 s)" % (len(h.cam["log"]) - g))
+w.run(4)
 check(abs(pic(ana, h, eyes(ana))[1] - 0.333) < 0.03 and B.llVecDist(h.cam["pos"], ana.pos) < 4, "stopped: the same framing where you are")
 no_errors(w, "walking")
 

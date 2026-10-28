@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.4.3 (Connect never stays dead)
+## 8.4.3 (Connect never stays dead; walking in Portrait and Fixed is smooth)
 - **sync stopped in-world with "Stack-Heap Collision"** after a few minutes beside a friend. A stopped script never
   starts again by itself, so Connect stayed dead until a new copy: and a friend whose sync had stopped never answers,
   which is the likely "Nobody near you wears Take 12." with them beside you.
@@ -9,8 +9,12 @@
 - **More room for sync:** Connect's dialogs and Settings › Friends moved to carry (CONN 7349), which has room to spare.
 - **Meeting:** a `here` from someone new is answered at once, so both HUDs know each other within a second; Connect
   lists from fresh answers only, and who has not said `here` for a minute is forgotten.
+- **Walking in Portrait or Fixed is smooth.** The shot stepped a locked camera along with you four times a second,
+  and Second Life does not ease a locked camera, so walking was choppy. Now, as you start walking, the shot hands over
+  to the viewer's own follow camera from where it stands (its distance, height and side), eased every frame like
+  Tracking and Drift; a second after you stop it settles into its framing, as before. portrait and fixed change.
 - The emulator: a script can stop (`crash`), `llGetScriptState`, `llSetScriptState`, `llResetOtherScript`; scripts are
-  in the contents. `tools/sim/watchdog_emu.py` (in CI). Every script is 8.4.3 (sync and carry change).
+  in the contents. `tools/sim/watchdog_emu.py` (in CI). Every script is 8.4.3 (sync, carry, portrait and fixed change).
 
 ## 8.4.2 (the textures stay)
 - **A new take12_marks dropped in lost its Orbit after a reset.** Screen kept the textures' UUIDs only in the [12]'s
