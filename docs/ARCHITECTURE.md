@@ -26,6 +26,7 @@ Every part is found by its name (any link order):
 | `t12 link` | the linked rings and one word: the count, SHARING, THEIR FILM (the Connect key) |
 | `t12 note` | carries the 3 s notes (llSetText), just under the strip (above it at the bottom) |
 | `t12 bar0` … `t12 bar3` | the letterbox (or pillarbox) bars |
+| `t12 shut` | the shutter, at the right end (8.1.0): ready, or lit while the moment is held |
 
 Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD; `screen` adopts them, keeping each UUID
 in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
@@ -54,7 +55,7 @@ in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking t
   or on the ring or dot, as a tap on the [12]: 8.0.3). Opening
   fades in over 0.2 s (alpha in 3 steps).
 - **Touch:** `strip` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
-  option word → OPT `<shot>|<word>`, the shape → CMD `frames` (ui's frame dialog), the link → CMD `connect`. `ui` reads the root (gestures).
+  option word → OPT `<shot>|<word>`, the shape → CMD `frames` (bars' frame dialog), the shutter → CMD `shutter` (core: the "photo" state), the link → CMD `connect`. `ui` reads the root (gestures).
 
 ## 3. Scripts
 All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (the check fails below).

@@ -10,12 +10,12 @@ the top of the screen and the [12].
   - **Portrait:** you standing, composed; Me or Us.
   - **Fixed:** your own framing, kept for every place and every seat.
   - **Scenic:** views of the place, and the idle camera.
-- **Frames:** each shot has its own: the cinema frames (2.39, 1.85 …) and, but for Tracking, the photo frames (3:2, 4:3, 1:1, 4:5); the ▭ on the strip picks one and gives its snapshot size.
+- **Frames and the shutter:** each shot has its cinema frame (2.39, 1.85 …), picked with the ▭; the shutter holds the moment for a photo in your photo frame (3:2, 4:3, 1:1, 4:5), with the snapshot size.
 - **Connect:** two equal cameras; one tap to see your friend's film.
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.0.10** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.1.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,

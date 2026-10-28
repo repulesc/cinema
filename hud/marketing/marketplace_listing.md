@@ -44,8 +44,8 @@ Views of the place, and the camera that starts when you are away.
 CONNECT
 Share films with the people near you: two equal cameras, one tap to see theirs.
 
-FRAMES
-Every frame is a picture. Each shot has its own: the cinema frames 2.39 to 1.66, and the photo frames 3:2, 4:3, 1:1 and 4:5. Tap the frame by the [12]: it gives the snapshot size too.
+FRAMES AND THE SHUTTER
+Every frame is a picture. Each shot has its cinema frame, 2.39 to 1.66. Press the shutter and the moment holds in your photo frame (3:2, 4:3, 1:1 or 4:5), with the snapshot size: take your picture, press it again, and the film goes on.
 
 A one-minute setup sets your lens and your eye line. Feedback goes straight to the maker, from the [12]'s menu.
 

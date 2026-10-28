@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.0.10)
+TAKE 12  -  READ ME  (8.1.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -32,9 +32,10 @@ The [12] tells you, quietly:
 === THE STRIP ===========================================
 
 A thin line of words at the top of your screen (Settings > Look > Place moves it lower, or to the bottom):
-  TRACKING  PORTRAIT  FIXED  SCENIC    ▭ 2.39   [12]   ⇄ 2    the running shot's options
+  TRACKING  PORTRAIT  FIXED  SCENIC    ▭ 2.39   [12]   ⇄ 2    the running shot's options  |  the shutter
 The shot that films is underlined; its options are on the right, the ones in use underlined.
-The frame key (▭) shows the running shot's frame; tap it to choose another, with its snapshot size.
+The frame key (▭) shows the frame on screen; tap it to choose another, with its snapshot size.
+The shutter (a ring with a dot, at the right end) holds the moment for a photo.
 The Connect key (two rings) shows who you are with.
 Tap the lit shot again and it does its one job (below).
 
@@ -65,17 +66,23 @@ FIXED     your own framing, kept.
 
 SCENIC    views of the place. It also starts by itself when you are idle.
   DRIFT · NEAR · ROOM · FAR   a slowly moving camera, views near you, the room you are in, views out to 60 m
-  Still frames change about every 15 seconds; Drift moves slowly and stays near you when people are around.
+  Still frames change about every 15 seconds. Drift is the reveal: close on you, then rising and pulling back to show
+the place, then a new close from another side; it stays near when people are around (Settings > Motion > Breathe:
+in and out instead).
   Indoors every band stays in the room. The lit tap: the next view now.
 
 
 === FRAMES ==============================================
 
-Every frame is a picture. Tap the ▭ on the strip for the running shot's frames:
-  2.39 · 2.00 · 1.85 · 1.66   the cinema frames, bars above and below
-  3:2 · 4:3 · 1:1 · 4:5       the photo frames (Portrait, Fixed, Scenic), bars at the sides
+Every frame is a picture. Each shot has its cinema frame; tap the ▭ to choose it:
+  2.39 · 2.00 · 1.85 · 1.66   bars above and below
   Full                         no bars
-The dialog gives the snapshot size for the frame (Snapshot > Custom size). In a photo frame Drift holds still views.
+
+THE SHUTTER  press it and the moment holds, exactly as you see it, in your photo frame (bars at the sides).
+             Take your snapshot (Ctrl+Shift+S), then press it again: the film goes on.
+             While it is open, the ▭ shows your photo frame: 3:2 · 4:3 · 1:1 · 4:5 (3:2 to begin with, one for every
+             shot). Alt-click still fine-tunes the view.
+The dialogs and the note give the snapshot size for the frame (Snapshot > Custom size).
 
 
 === WHAT HAPPENS BY ITSELF ==============================
@@ -104,8 +111,9 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 
 === SETTINGS ============================================
 
-LENS · EYE LINE · TRACKING · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
- FRAMES & BARS   each shot's frame (as the ▭ on the strip) and the bars, Black or Dimmed
+LENS · EYE LINE · MOTION · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
+ MOTION          Tracking: Smooth or Snappy. Drift: Reveal or Breathe
+ FRAMES & BARS   each shot's frame, your photo frame (the shutter's), and the bars, Black or Dimmed
  LOOK            where the strip sits and its size
  RESET           Tips again · Seats & views · Everything
 

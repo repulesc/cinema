@@ -1,5 +1,27 @@
 # Changelog
 
+## 8.1.0 (the shutter; Drift's reveal; Settings › Motion)
+- **The shutter**, at the strip's right end, where a camera's shutter is.
+  - Press it and the moment holds exactly as you see it (Tracking stops following, Drift stops), in your photo frame.
+  - A note gives the snapshot size and Ctrl+Shift+S. Take your snapshot, then press it again (or tap the lit shot):
+    the film goes on.
+  - Alt-click still fine-tunes the held view.
+- **The ▭ is the frame on screen.**
+  - Filming, it shows the shot's cinema frame and its dialog lists only the cinema frames.
+  - With the shutter open, it shows your photo frame (one for every shot, 3:2 to begin with) and lists only the photo
+    frames: 3:2 · 4:3 · 1:1 · 4:5.
+  - A photo frame chosen per shot in 8.0.9 becomes your photo frame; that shot goes back to its cinema frame.
+- **Drift is the reveal:** close on you and held, then rising and pulling back over about 20 s to show the place,
+  held wide, then a clean cut to a new close angle from another side. It stays near when people are around or indoors.
+- **Settings › Motion** (it was Settings › Tracking):
+  - Tracking: Smooth · Snappy.
+  - Drift: Reveal · Breathe. Breathe is 8.0.6's in and out.
+- **The frame dialog now lives in bars**, which frees room in ui. Settings › Frames & bars also opens your photo frame.
+- The notes table is leaner (each note's kind is folded into its words), which keeps text's memory peak low.
+- **One new part, `t12 shut`.** The builder adds it to an existing HUD: rez the HUD, drop the builder and a blank
+  "t12 part" in, and touch it. The marks texture has two new cells: **upload it once more.**
+- Version 8.1.0 in all twelve scripts (the free build: nine, with the shutter for Scenic).
+
 ## 8.0.10 (feedback by email; a clean copy for every new owner; the new boards)
 - **Feedback, straight to the maker.** The [12]'s menu has Feedback while Take 12 is in beta (and `/12 feedback`):
   a text box, one line, Submit. It goes by email to the maker with one plain line about the copy (name, version,

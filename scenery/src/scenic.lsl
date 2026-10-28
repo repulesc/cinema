@@ -12,10 +12,12 @@
 //  Indoors (a build floor with a roof over you, or a skybox) every band stays in the room: Far is dim, Near and Drift
 //  stay inside. Outdoors Room is dim. Always within 60 m of you, inside your region, above the ground and the water.
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
-//  In a photo frame (3:2 · 4:3 · 1:1 · 4:5, under 1.6 wide: bars' CROP) Drift holds still views too (8.0.9).
+//  Drift (8.1.0) is the reveal by default, a film's ending shot every leg: close on you and held, then rising and pulling
+//  back to show the place, held wide, then a clean cut to a new close angle. Settings › Motion › Breathe (cin.drift
+//  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
 // ============================================================================
 
-string VERSION = "8.0.10";
+string VERSION = "8.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -27,7 +29,6 @@ integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;
 integer FOLLOW     = 7314;
-integer CROP       = 7390;
 integer ACK        = 7313;
 integer OPTS       = 7340;
 integer OPT        = 7341;
@@ -36,7 +37,10 @@ integer STATUS     = 7370;
 
 list    BANDS      = ["DRIFT", "NEAR", "ROOM", "FAR"];
 float   HOLD       = 15.0;          // s  a still frame, about
-float   LEG        = 15.0;          // s  a Drift leg
+float   LEG        = 15.0;          // s  a Drift leg (Breathe)
+float   REV_HOLD   = 6.0;           // s  the reveal: held close, rising and pulling back, held wide
+float   REV_RISE   = 20.0;
+float   REV_WIDE   = 10.0;
 list    DRIFT_D    = [5.0, 9.0, 16.0, 26.0, 16.0, 9.0];    // m  Drift alone, outdoors: out and back
 list    NEAR_D     = [4.5, 6.0, 5.0, 7.0];                  // m  Drift near people, or indoors
 list    FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0];
@@ -46,7 +50,6 @@ key     gOwner;
 integer gOn;
 integer gPaused;
 integer gBand;
-integer gStill;                    // a photo frame: Drift holds still views
 integer gErr;
 integer gRayErr;
 list    gRay = [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1];
@@ -535,7 +538,7 @@ drift()
 
 // a Drift leg: out to (or in to) this distance, on the side the camera is on, short of any wall. The viewer eases it
 // every frame (a 2.5 s lag) and brings it along when you walk; behindness 180: it never swings round behind you
-dolly(float d)
+dolly(float d, float rise)
 {
     vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
     vector v = dirOf(gAz);
@@ -546,18 +549,48 @@ dolly(float d)
     list r = ray(E, E + v * (d + 0.5));
     if (llList2Integer(r, 0) == 1) d = llList2Float(r, 1) - 0.5;
     if (d < 1.8) d = 1.8;
-    float p = llAtan2(0.3 + 0.12 * d, d) * RAD_TO_DEG;
+    float p = llAtan2(0.3 + 0.12 * d + 0.35 * rise * d, d) * RAD_TO_DEG;     // rise: the reveal's crane up
     llMessageLinked(LINK_SET, FOLLOW, (string)d + "|" + (string)p + "|<0.0, 0.0, 0.2>|0.0|2.5|1.0|180", "");
+}
+
+// the reveal: held close 6 s, rising and pulling back to wide over 20 s (a little more every half second: the viewer
+// eases between, its lag stops at 3 s), held wide 10 s, then a cut to a new close angle from another side
+reveal()
+{
+    float t = llGetTime() - gLegT;
+    float d0 = llVecDist(gB, <gOP.x, gOP.y, gFloorZ + 1.6>);
+    if (gFolT > 0.0 && llGetTime() >= gFolT)
+    {
+        gFolT = 0.0;                                        // the follow camera takes the close view, still
+        dolly(d0, 0.0);
+        return;
+    }
+    if (t < REV_HOLD || !here()) return;
+    if (t >= REV_HOLD + REV_RISE + REV_WIDE)
+    {
+        gLastAz = [gAz];                                    // the next close: another side
+        drift();
+        return;
+    }
+    if (t > REV_HOLD + REV_RISE + 1.0) return;              // held wide
+    float k = (t - REV_HOLD) / REV_RISE;
+    if (k > 1.0) k = 1.0;
+    k = k * k * (3.0 - 2.0 * k);                            // eased in and out
+    float d1 = 26.0;                                        // DRIFT_D's farthest; near people or indoors NEAR_D's
+    if (gLocal || gCompany) d1 = 7.0;
+    if (d1 < d0) d1 = d0;
+    dolly(d0 + (d1 - d0) * k, k);
 }
 
 // Drift's clock: the follow camera a second after the first cut, then a new distance every leg
 step()
 {
+    if (cfg("drift") != "breathe") { reveal(); return; }
     float t = llGetTime();
     if (gFolT > 0.0 && t >= gFolT)
     {
         gFolT = 0.0;
-        dolly(llVecDist(gB, <gOP.x, gOP.y, gFloorZ + 1.6>));
+        dolly(llVecDist(gB, <gOP.x, gOP.y, gFloorZ + 1.6>), 0.0);
         return;
     }
     if (gFolT > 0.0 || t - gLegT < LEG || !here()) return;
@@ -565,20 +598,14 @@ step()
     list D = DRIFT_D;
     if (gLocal || gCompany) D = NEAR_D;
     gStage = (gStage + 1) % llGetListLength(D);
-    dolly(llList2Float(D, gStage));
-}
-
-// Drift moves; in a photo frame it is a still view like the others
-integer drifting()
-{
-    return gBand == 0 && !gStill;
+    dolly(llList2Float(D, gStage), 0.0);
 }
 
 begin()
 {
     gNextT = 0.0;
     llSensorRepeat("", NULL_KEY, AGENT, 10.0, PI, 5.0);   // anyone within 10 m keeps Drift near (16 at most, not the region)
-    if (drifting()) drift();
+    if (gBand == 0) drift();
     else still();
     llSetTimerEvent(0.5);
 }
@@ -624,14 +651,6 @@ default
             opts();
             begin();
         }
-        else if (num == CROP)
-        {
-            float r = (float)str;                           // "<ratio>|<window>"
-            integer st = (r > 0.0 && r < 1.6);
-            if (st == gStill) return;
-            gStill = st;
-            if (gOn && gBand == 0 && !gPaused) begin();     // a new frame: Drift moves, or holds still
-        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/scenic] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(BANDS, gBand)
@@ -652,7 +671,7 @@ default
         }
         else if (num == NEXT)
         {
-            if (drifting()) drift();                        // the lit tap: the next view now (Drift starts close again)
+            if (gBand == 0) drift();                        // the lit tap: the next view now (Drift starts close again)
             else still();
         }
         else if (num == OPT)
@@ -679,7 +698,7 @@ default
     timer()
     {
         if (gPaused) return;
-        if (drifting()) step();
+        if (gBand == 0) step();
         else if (llGetTime() >= gNextT) still();
     }
 }

@@ -39,7 +39,8 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - [ ] Fixed: frame it, hold still: kept. KEEP NEW over a kept view; View A / B per place; seat views per spot (a sofa's two ends); FORGET SEAT and UNDO; LET GO on a boat or car, then sitting on it again; TAKE BACK; standing up returns to the previous shot.
 - [ ] Scenic: Drift, Near, Room (indoors), Far; never under ground, under water or outside the region; idle start after 5 min and on Away; a key brings back your shot.
 - [ ] Sitting holds the frame and FIXED glows; Alt-click holds (the lit word dims) and a key gives it back; flying, mouselook; a teleport and a region crossing.
-- [ ] Frames per shot (the ▭ dialog: the photo frames but in Tracking, the snapshot size), Black and Dimmed; a 4:5 snapshot at 1600 × 2000 matches the pillarbox; Drift holds still in a photo frame.
+- [ ] Frames per shot (the ▭: cinema frames while filming, the snapshot size), Black and Dimmed. The shutter: the view holds in 3:2 while walking with Tracking; the ▭ then lists the photo frames; a 1800 × 1200 snapshot matches the pillarbox; pressed again, the film goes on.
+- [ ] Drift: the reveal (rising, pulling back, a cut to a new close); Settings › Motion › Breathe gives the in and out.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).

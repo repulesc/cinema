@@ -175,6 +175,18 @@ def cells(kind):
     return out
 
 
+def shutter(lit):
+    """the shutter (8.1.0): a hairline divider, then the release button, a ring and its dot (bigger when open)"""
+    im, k = ss(64, CELL_H)
+    d = ImageDraw.Draw(im)
+    d.rectangle([5 * k, 16 * k, 6 * k, 32 * k], fill=(255, 255, 255, 110))
+    c, r = (40 * k, 24 * k), 12.5 * k
+    d.ellipse([c[0] - r, c[1] - r, c[0] + r, c[1] + r], outline=WHITE + (255,), width=int(2.4 * k))
+    rr = (8.0 if lit else 5.5) * k
+    d.ellipse([c[0] - rr, c[1] - rr, c[0] + rr, c[1] + rr], fill=WHITE + (255,))
+    return down(im, 64, CELL_H)
+
+
 def marks():
     sheet = Image.new("RGBA", (W, W), (255, 255, 255, 0))
     table = []
@@ -202,6 +214,8 @@ def marks():
         put("link" + n, im, (i % 4) * 256, 512 + 2 * CELL_H + (i // 4) * CELL_H, cw)
     for i, (n, im, cw) in enumerate(cells("photo")):                  # after the links: the cells before stay put
         put("shape" + n, im, (i % 4) * 256, 512 + 5 * CELL_H + (i // 4) * CELL_H, cw)
+    put("shut", shutter(False), 0, 512 + 6 * CELL_H)
+    put("shutON", shutter(True), 64, 512 + 6 * CELL_H)
     return sheet, table
 
 
