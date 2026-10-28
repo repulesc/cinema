@@ -1,5 +1,31 @@
 # Changelog
 
+## 8.2.0 (Connect reworked; the viewer's lens stops; About; the box)
+- **Connect:**
+  - **Who is near is known.** Every Take 12 says "here" when worn and every 10 s, so Menu › Connect lists the people
+    near you at once; no 1.5–3 s wait, and never a false "Nobody near you".
+  - **Settings › Friends › Add** lists people who are connected already. In 8.1 it said "Nobody near you wears Take
+    12" with the friend right there.
+  - **Two friends connect by themselves** when near (each in the other's Friends list); quietly, with the chime.
+    Someone who has you as a friend, but not the other way round, never makes a question pop up.
+  - **One list, where everyone is:** `Ana · filming`, `Ben · watching your film`, `Cy · away`. Tap a name: Watch,
+    Show my film (a friend watches at once, anyone else is asked), or My film.
+  - **The shared view is smooth.** It stepped 4 times a second: a locked camera, which Second Life does not ease.
+    Now the director's camera goes out about 7 times a second with their position, and the watcher's core moves the
+    camera 20 times a second, eased between updates and carried with them. The watching camera moved from sync to
+    core, which owns the camera.
+  - **Mended:** presence no longer keeps a dropped link alive. A heartbeat from someone who thinks you are connected,
+    when you are not, is answered with "bye".
+  - **While you are alone,** the rings count the Take 12s near you, quietly.
+- **The lens is one of the viewer's own zoom stops:** 21 · 26 · 32 · **38** · 47 · 56 mm (Ctrl+0 / Ctrl+8 / Ctrl+9).
+  The classic 24 · 28 · 35 · 40 · 50 could not be reached with the keys. An earlier choice moves to the nearest stop.
+  "Is your lens on" now matches within 5 %.
+- **Help › About:** what 12 means. Also in the guide (ABOUT), the README and the listing's last line.
+- **The box** (`hud/box/`): one black box that makes itself from three textures (`tools/art/make_box.py`). A touch
+  hands its owner one folder: the HUD, the Read Me, and a Take 12 Scenery to give a friend. No menu.
+- text: the `/12` commands help moved out of the notes table (its memory peak).
+- Version 8.2.0 in all twelve scripts (the free build: nine).
+
 ## 8.1.0 (the shutter; Drift's reveal; Settings › Motion)
 - **The shutter**, at the strip's right end, where a camera's shutter is.
   - Press it and the moment holds exactly as you see it (Tracking stops following, Drift stops), in your photo frame.

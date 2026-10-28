@@ -13,10 +13,14 @@
 //  comes back by itself; 3 s without a word from the one you watch is "Ben left"; 30 min apart and it ends. Leave
 //  (or a hold: everything off) ends it. A re-worn Take 12 rejoins the ones it was with in the last 30 min.
 //  A 7.x Take 12 shows as "(old)" and never connects. Meeting a newer Take 12: "A newer Take 12 is out." once.
-//  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who: llRegionSay). docs/CONNECT.md.
+//  8.2.0: every Take 12 says "here" when worn and every 10 s, so who is near is known before you ask (no waiting, no
+//  false "nobody"); two friends connect by themselves when near; a name in the list: Watch, or Show my film (a friend
+//  watches at once, anyone else is asked). The film you watch is core's (it hears their camera itself and moves 20
+//  times a second, eased between their updates and carried with them).
+//  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who, here: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "8.1.0";
+string VERSION = "8.2.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build: it can watch, never film for others
 
@@ -46,15 +50,13 @@ list    gPR;                        // ... in reach (1), resting (0)
 list    gPA;                        // ... apart since (unix, 0 near)
 list    gW;                         // who watches your film
 key     gHost = NULL_KEY;           // whose film you watch
-string  gCam;                       // their last camera
 integer gFilm;                      // your film is shareable now (core: CAMSET)
 string  gLast;                      // your last camera, for a new watcher
 string  gShape = "0";               // your shape (bars: CROP)
-string  gFollowed;                  // their shape on your bars
 list    gInv;                       // asked, no answer yet: [key, unix]
 key     gAsk = NULL_KEY;            // asking you
 integer gAskT;
-list    gNear;                      // the scan: [key, "8" / "old", lite]
+list    gNear;                      // who is near, from their "here": [key, "8" / "old", lite, heard at]
 float   gScanT;
 string  gScan;                      // connect / addfriend
 integer gChan;
@@ -64,7 +66,7 @@ string  gPage;
 list    gBtn;
 list    gBtnK;
 string  gSent;
-integer gBeat;
+integer gBeat;                      // your last "here"
 integer gSaveT;
 integer gDebug;
 string  gWd;                        // core told: who watches you
@@ -154,7 +156,14 @@ refresh()
     }
     integer n = reach();
     string s = "on|" + (string)n + "|";
-    if (gP == []) s = "alone|0|";
+    if (gP == [])
+    {
+        integer m;                                          // alone: how many near you wear Take 12, quietly (8.2.0)
+        integer j;
+        for (j = 0; j < llGetListLength(gNear); j += 4)
+            m += (llList2String(gNear, j + 1) == "8" && llGetTime() - llList2Float(gNear, j + 3) < 25.0);
+        s = "alone|" + (string)m + "|";
+    }
     else if (gHost != NULL_KEY) s = "theirs|" + (string)n + "|" + sn(gHost);
     else if (gW != []) s = "shared|" + (string)n + "|";
     else if (n == 0 || (one() >= 0 && !(llList2Integer(gPF, one()) & 1))) s = "dim|" + (string)n + "|";
@@ -250,7 +259,6 @@ watch(key k)
 {
     if (gHost != NULL_KEY && gHost != k) say(gHost, "unwatch");
     gHost = k;
-    gCam = "";
     say(k, "watch");
     integer i;
     for (i = 0; i < llGetListLength(gW); i++) say(llList2Key(gW, i), "pause");   // one director per pair
@@ -266,46 +274,10 @@ mine(integer clear, integer tellCore)
     if (gHost == NULL_KEY) return;
     if (llListFindList(gP, [gHost]) >= 0) say(gHost, "unwatch");
     gHost = NULL_KEY;
-    gCam = "";
     if (clear && (llGetPermissions() & PERMISSION_CONTROL_CAMERA) && llGetAttached()) llClearCameraParams();
-    if (gFollowed != "") llMessageLinked(LINK_SET, CMD, "bars|follow", "");
-    gFollowed = "";
+    llMessageLinked(LINK_SET, CMD, "bars|follow", "");     // (core set their shape while you watched)
     if (tellCore) llMessageLinked(LINK_SET, CMD, "unwatch", "");
     refresh();
-}
-
-// their camera through YOUR lens: the same line to the same focus at the distance that keeps the picture size
-place()
-{
-    list L = llParseStringKeepNulls(gCam, ["|"], []);
-    vector p = (vector)llList2String(L, 0);
-    vector f = (vector)llList2String(L, 1);
-    float lag = llFabs((float)llList2String(L, 2));       // negative: their own camera, not a shot
-    float df = (float)llList2String(L, 3);
-    float my = llGetCameraFOV();
-    if (df > 0.05 && my > 0.05)
-    {
-        float k = llTan(df * 0.5) / llTan(my * 0.5);
-        if (k < 0.2) k = 0.2;
-        if (k > 5.0) k = 5.0;
-        vector q = f + (p - f) * k;
-        list r = llCastRay(f, q, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
-        if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
-        p = q;
-    }
-    if (lag > 0.0 && lag < 0.3) lag = 0.3;                  // between their updates the camera eases; a cut stays a cut
-    if (lag > 3.0) lag = 3.0;
-    if ((llGetPermissions() & PERMISSION_CONTROL_CAMERA) && llGetAttached())   // worn only (8.0.4)
-        llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
-            CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag, CAMERA_POSITION_THRESHOLD, 0.0,
-            CAMERA_FOCUS_THRESHOLD, 0.0]);
-    string s = llGetSubString(llList2String(L, 4), 0, 3);   // "2.39", or 0: no bars
-    if ((float)s == 0.0) s = "full";
-    if (s != gFollowed)
-    {
-        gFollowed = s;
-        llMessageLinked(LINK_SET, CMD, "bars|follow " + s, "");
-    }
 }
 
 // ---- dialogs --------------------------------------------------------------------------
@@ -341,13 +313,31 @@ friends(integer rm)
     dialog("friends", fl + "~" + c, ["Add", "Remove", llList2String(["Chime", "● Chime"], c == "on"), "‹ Back"], []);
 }
 
-// the people near you who wear Take 12: asked, then listed
+// someone near said "here" (or answered "who"): kept 25 s. A friend not connected yet: asked quietly ("auto"), and
+// they join you if you are their friend too
+hear(key who, string kind, integer lite)
+{
+    if (!near(who)) return;
+    integer i = llListFindList(gNear, [who]);
+    if (i >= 0 && i % 4 == 0) gNear = llDeleteSubList(gNear, i, i + 3);
+    gNear += [who, kind, lite, llGetTime()];
+    refresh();
+    if (kind == "8" && !LITE && friend(who) && llListFindList(gP, [who]) < 0 && llListFindList(gInv, [who]) < 0)
+    {
+        say(who, "ask|" + VERSION + "|auto");
+        gInv += [who, -llGetUnixTime()];                    // (negative: an auto ask, never "didn't answer")
+    }
+}
+
+// the people near you who wear Take 12: listed at once when known (8.2.0), else asked and listed when they answer
 scan(string why)
 {
     gScan = why;
-    gNear = [];
     gScan2 = FALSE;
     gScanT = llGetTime();
+    integer i;
+    for (i = 0; i < llGetListLength(gNear); i += 4)
+        if (llGetTime() - llList2Float(gNear, i + 3) < 25.0) { listNear(); return; }
     llRegionSay(SYNC_CH, "T12|8|who|" + VERSION + "|" + (string)LITE);
     llRegionSay(SYNC_CH, "T12|who|" + llKey2Name(gOwner));   // a 7.x Take 12 answers this: "(old)"
 }
@@ -358,13 +348,17 @@ listNear()
     list b = [];
     list k = [];
     integer i;
-    for (i = 0; i < llGetListLength(gNear) && llGetListLength(b) < 9; i += 3)
+    integer seen;
+    for (i = 0; i < llGetListLength(gNear) && llGetListLength(b) < 9; i += 4)
     {
         key p = llList2Key(gNear, i);
         string n = llGetSubString(sn(p), 0, 17);
         if (llList2String(gNear, i + 1) == "old") n += " (old)";
         else if (friend(p)) n = "★ " + n;
-        if (llListFindList(gP, [p]) < 0 && llListFindList(b, [n]) < 0)
+        integer fresh = (llGetTime() - llList2Float(gNear, i + 3) < 25.0 && near(p));
+        seen += fresh;
+        // Connect leaves out who is connected already; Add a friend lists them too (8.2.0: it said "Nobody near you")
+        if (fresh && (gScan != "connect" || llListFindList(gP, [p]) < 0) && llListFindList(b, [n]) < 0)
         {
             b += [n];
             k += [p];
@@ -372,7 +366,7 @@ listNear()
     }
     if (b == [])
     {
-        llMessageLinked(LINK_SET, NOTE, "nobody", "");
+        llMessageLinked(LINK_SET, NOTE, llList2String(["nobody", "allhere"], seen > 0), "");
         return;
     }
     dialog(gScan, llDumpList2String(b, ", "), b + ["Close"], k);
@@ -388,19 +382,37 @@ connected()
     {
         key p = llList2Key(gP, i);
         string n = llGetSubString(sn(p), 0, 17);
-        string s = n;
-        if (!llList2Integer(gPR, i)) s += " (away)";
-        else if (p == gHost) s += " (watching)";
-        else if (!(llList2Integer(gPF, i) & 1)) s += " (not filming)";
-        names += [s];
-        if (llList2Integer(gPR, i) && p != gHost && (llList2Integer(gPF, i) & 1) && llGetListLength(b) < 8)
+        names += [n + " · " + stateOf(i)];
+        if (llList2Integer(gPR, i) && llGetListLength(b) < 8)
         {
             b += [n];
             k += [p];
         }
     }
-    if (gHost != NULL_KEY) { b += ["My film"]; k += [NULL_KEY]; }
-    dialog("connected", llDumpList2String(names, ", "), b + ["Invite", "Leave", "Close"], k);
+    dialog("connected", llDumpList2String(names, "\n"), b + ["Invite", "Leave", "Close"], k);
+}
+
+// one word for where someone is with you
+string stateOf(integer i)
+{
+    key p = llList2Key(gP, i);
+    if (!llList2Integer(gPR, i)) return "away";
+    if (p == gHost) return "you watch their film";
+    if (llListFindList(gW, [p]) >= 0) return "watching your film";
+    if (llList2Integer(gPF, i) & 1) return "filming";
+    return "connected";
+}
+
+// a name tapped: watch their film, show them yours, or back to yours
+person(key p)
+{
+    integer i = llListFindList(gP, [p]);
+    list b = [];
+    list k = [];
+    if (p == gHost) { b += ["My film"]; k += [NULL_KEY]; }
+    else if (llList2Integer(gPF, i) & 1) { b += ["Watch"]; k += [p]; }
+    if (gFilm && !LITE && llListFindList(gW, [p]) < 0) { b += ["Show my film"]; k += [p]; }
+    dialog("person", sn(p) + "~" + stateOf(i), b + ["‹ Back"], k);
 }
 
 // the strip's Connect key: alone, find people; with one, flip between your film and theirs; with more, their names
@@ -483,9 +495,16 @@ choose(string b)
     {
         if (b == "Leave") leave();
         else if (b == "Invite") scan("connect");
-        else if (b == "My film") { mine(TRUE, TRUE); llMessageLinked(LINK_SET, NOTE, "mine", ""); }
-        else if (k != NULL_KEY) watch(k);
+        else if (k != NULL_KEY) person(k);
     }
+    else if (p == "person")
+    {
+        if (b == "‹ Back") connected();
+        else if (b == "My film") { mine(TRUE, TRUE); llMessageLinked(LINK_SET, NOTE, "mine", ""); }
+        else if (b == "Watch") watch(k);
+        else if (b == "Show my film") { say(k, "show"); note("shown", k); }
+    }
+    else if (p == "show" && b == "Watch" && k != NULL_KEY && llListFindList(gP, [k]) >= 0) watch(k);
 }
 
 // ---- the tick ---------------------------------------------------------------------------------
@@ -495,6 +514,11 @@ tick()
     integer now = llGetUnixTime();
     // listed after 1.5 s if anyone answered; else asked again and listed after 3 s (8.0.6: "Nobody near you" with a
     // friend 2 m away; 8.0.7: without waiting when someone has answered)
+    if (now - gBeat >= 10 && llGetAttached())
+    {
+        gBeat = now;                                        // here: who is near knows you are, before anyone asks
+        llRegionSay(SYNC_CH, "T12|8|here|" + VERSION + "|" + (string)LITE);
+    }
     if (gScanT > 0.0 && ((t - gScanT > 1.4 && gNear != []) || t - gScanT > 3.0)) listNear();
     else if (gScanT > 0.0 && !gScan2 && t - gScanT > 1.4)
     {
@@ -510,12 +534,12 @@ tick()
     }
     integer i;
     for (i = llGetListLength(gInv) - 2; i >= 0; i -= 2)
-        if (now - llList2Integer(gInv, i + 1) > WAIT)
+        if (now - llAbs(llList2Integer(gInv, i + 1)) > WAIT)
         {
-            note("noanswer", llList2Key(gInv, i));
+            if (llList2Integer(gInv, i + 1) > 0) note("noanswer", llList2Key(gInv, i));
             gInv = llDeleteSubList(gInv, i, i + 1);
         }
-    if (gP == []) return;
+    if (gP == []) { refresh(); return; }                    // (the count of who is near ages out)
     // a word to everyone connected every second: whether you film, and whether you watch someone
     // (and 8: "I watch you", so a lost watch, unwatch or pause is mended within a second)
     for (i = llGetListLength(gP) - 1; i >= 0; i--)
@@ -599,7 +623,7 @@ default
             gFilm = (str != "-" && !LITE && gHost == NULL_KEY);
             if (gFilm)
             {
-                gLast = str + "|" + gShape;
+                gLast = str + "|" + gShape + "|" + (string)llGetPos();
                 integer i;
                 for (i = 0; i < llGetListLength(gW); i++) say(llList2Key(gW, i), "cam|" + gLast);
             }
@@ -658,28 +682,39 @@ default
         {
             // a 7.x Take 12: listed as "(old)", never connected
             string w7 = llList2String(L, 1);
-            if (w7 == "here" && gScanT > 0.0 && near(who) && llListFindList(gNear, [who]) < 0) gNear += [who, "old", 0];
+            if (w7 == "here") hear(who, "old", 0);
             else if (w7 == "invite") llRegionSayTo(who, SYNC_CH, "T12|busy|on a newer Take 12");
             return;
         }
         string w = llList2String(L, 2);
         string a = llList2String(L, 3);
         integer pi = llListFindList(gP, [who]);
-        if (pi >= 0) gPT = llListReplaceList(gPT, [llGetTime()], pi, pi);
+        if (pi >= 0 && w != "here" && w != "who") gPT = llListReplaceList(gPT, [llGetTime()], pi, pi);   // (presence is not a word to you)
         if (w != "hb" && w != "cam") dbg("← " + sn(who) + ": " + llGetSubString(msg, 6, 60));
         if (w == "who" || w == "here" || w == "ask" || w == "yes" || w == "back" || w == "hi") newer(a);
         if (w == "who")
         {
             if (near(who)) say(who, "here|" + VERSION + "|" + (string)LITE);
+            hear(who, "8", (integer)llList2String(L, 4));
         }
-        else if (w == "here")
+        else if (w == "here") hear(who, "8", (integer)llList2String(L, 4));
+        else if (w == "join")
         {
-            if (gScanT > 0.0 && near(who) && llListFindList(gNear, [who]) < 0) gNear += [who, "8", (integer)llList2String(L, 4)];
+            if (pi < 0 && friend(who)) { add(who); chime(); note("with", who); }   // two friends near: connected
         }
         else if (w == "ask")
         {
             if (pi >= 0) { say(who, "yes|" + VERSION); return; }
             if (!near(who)) return;
+            if (llList2String(L, 4) == "auto")
+            {
+                if (!friend(who)) return;                   // a friend's quiet ask: only if they are yours too
+                say(who, "join|" + VERSION);
+                add(who);
+                chime();
+                note("with", who);
+                return;
+            }
             if (friend(who))
             {
                 say(who, "yes|" + VERSION);                 // your Friends join without being asked
@@ -727,7 +762,11 @@ default
         {
             if (pi < 0 && recent(who)) { add(who); note("back", who); }
         }
-        else if (pi < 0) return;
+        else if (pi < 0)
+        {
+            if (w == "hb" && !recent(who)) say(who, "bye");   // they think you are connected, you are not: mended (8.2.0)
+            return;
+        }
         // from someone connected
         else if (w == "hb")
         {
@@ -773,19 +812,19 @@ default
             if (i >= 0) gW = llDeleteSubList(gW, i, i);
             refresh();
         }
+        else if (w == "show")
+        {
+            if (gHost == who) return;                       // they show you their film: a friend's at once, else asked
+            if (friend(who) && (llList2Integer(gPF, pi) & 1)) watch(who);
+            else dialog("show", sn(who), ["Watch", "No"], [who, NULL_KEY]);
+        }
         else if (w == "bye")
         {
             if (who == gHost) note("left", who);
             drop(who);
         }
         else if (who != gHost) return;
-        // from the one you watch
-        else if (w == "cam")
-        {
-            if (who != gHost) return;                       // only the one you watch (a late one after you stopped)
-            gCam = llDumpList2String(llList2List(L, 3, -1), "|");
-            place();
-        }
+        // from the one you watch (their camera: core hears it itself while you watch, 8.2.0)
         else if (w == "pause")
         {
             gPF = llListReplaceList(gPF, [0], pi, pi);

@@ -84,6 +84,7 @@ class World:
         s.refuse = 0.0                                 # chance that a ray is refused (a busy region)
         s.errors = []                                  # script errors (Math Error, a bad cast, a missing stub)
         s.emails = []                                  # llEmail: (time, script, to, subject, body)
+        s.given = []                                   # llGiveInventoryList: (to, folder, items)
         s.chatlog = []                                 # (t, from, to, message) on the Connect channel
         s.base_unix = 1_800_000_000
 
@@ -530,6 +531,8 @@ class Obj:
         s.w.emails.append((round(s.w.t, 2), sc.name, to, subject, body))   # (the script's 20 s pause is not emulated)
     def llLoadURL(s, sc, av, msg, url): s.owner.chat.append((round(s.w.t, 2), sc.name, "[url] " + url))
     def llGiveInventory(s, sc, k, name): pass
+    def llGiveInventoryList(s, sc, k, folder, items):
+        s.w.given.append((str(k), folder, list(items)))                    # (to, folder, the items)
     def llPlaySound(s, sc, snd, vol): s.owner.sounds.append((round(s.w.t, 2), snd))
     # permissions, controls, the camera
     def llRequestPermissions(s, sc, k, perms):
@@ -624,7 +627,7 @@ class Obj:
             if r == C["PRIM_LINK_TARGET"]:
                 cur = rules[i + 1]; i += 2; continue
             targets = [cur]
-            if cur == C["LINK_ROOT"]: targets = [1]
+            if cur in (C["LINK_ROOT"], C["LINK_THIS"]): targets = [1]          # (scripts sit in the root here)
             elif cur == C["LINK_SET"]: targets = list(range(1, len(s.prims) + 1))
             elif cur == C["LINK_ALL_CHILDREN"]: targets = list(range(2, len(s.prims) + 1))
             if r == C["PRIM_TYPE"]:

@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.1.0";
+string VERSION = "8.2.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -48,6 +48,8 @@ list NOTES = [
     "noanswer", "0% didn't answer.",
     "old", "0%'s Take 12 is older. A new copy fixes it.",
     "nobody", "0Nobody near you wears Take 12.",
+    "allhere", "0Everyone near you is connected already.",
+    "shown", "0% is shown your film.",
     "friend", "0% joins you without being asked now.",
     "newer", "1A newer Take 12 is out. Ask the store for a new copy.",
     "moved", "1Moved. You can take off the old one.",
@@ -61,7 +63,6 @@ list NOTES = [
     "eyeline", "3PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
     "texture", "1% is kept and taken out of the contents: the HUD can be given away.",
     "mixed", "1% is another version. All Take 12 scripts must come from one copy.",
-    "commands", "2/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
     "plain", "0%"
 ];
 
@@ -154,6 +155,7 @@ show(string s, integer stay)
 note(string id, string arg)
 {
     if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
+    if (id == "commands") { llOwnerSay("[Take 12] /12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip"); return; }   // (kept out of NOTES: its peak)
     integer i = llListFindList(SNAP, [arg]);
     if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
     i = llListFindList(NOTES, [id]);
@@ -209,7 +211,7 @@ string body(string page, list a)
     if (page == "settings") return "Settings";
     if (page == "feel") return "Motion\nTracking: " + a0 + ". Smooth eases into your turns; Snappy stays right behind you.\nDrift: "
         + a1 + ". Reveal rises from you to the place; Breathe moves in and out.";
-    if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\n24 wide · 28 · 35 the classic · 40 · 50 normal.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
+    if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\nThe viewer's own stops: 21 (its wide view) · 26 · 32 · 38 · 47 · 56.\nCtrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21.";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
     if (page == "shapes") return "Frames & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3
         + "\nPhoto " + llList2String(a, 5) + " (the shutter) · Bars: " + llList2String(a, 4);
@@ -234,13 +236,17 @@ string body(string page, list a)
     if (page == "place") return "Place\nWhere the strip sits. Lower and higher clear taller viewer bars.\nNow: " + a0;
     if (page == "reset") return "Reset\nTips again: every first-time tip.\nSeats & views: every kept framing.\nEverything: like new.";
     if (page == "everything") return "Reset everything?\nSettings, seats, views and friends are wiped, and the first run starts again.";
+    if (page == "about") return "About Take 12\n12 is a number, not a name. It points outward: there is something out there.\n"
+        + "Two digits, because movement needs two poles. Twelve, because it is how we keep time.\nMade in Second Life by 12.";
     if (page == "help") return "Help\nTracking follows you. Portrait frames you standing.\nFixed keeps your own framing. Scenic shows the place.\nTap: this menu. Double-tap: the strip. Hold: all off.";
     if (page == "connect")
     {
         if (a0 == "") return "Connect\nNobody near you wears Take 12.";
         return "Connect\nTap a name to share films. They'll be asked.";
     }
-    if (page == "connected") return "Connected\n" + a0 + "\nTap a name to watch their film.";
+    if (page == "connected") return "Connected\n" + llDumpList2String(a, "\n") + "\nTap a name: watch their film, or show them yours.";
+    if (page == "person") return a0 + "\n" + a1;
+    if (page == "show") return a0 + " shows you their film.";
     if (page == "ask") return a0 + " wants to share films.";
     if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
     if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Look › Place later.";

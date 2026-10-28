@@ -70,7 +70,7 @@ def scenarios():
     t = w.t
     link(w, ben)
     check(host(ben) is ana and var(ben.hud, "core", "gState") == "watch", "Ben taps Connect: he watches Ana's film")
-    check(B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.05 and ben.hud.cam.get("by") == "sync", "Ben sees Ana's camera")
+    check(B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.05 and ben.hud.cam.get("by") == "core", "Ben sees Ana's camera")
     check(linkst(ana) == "shared" and linkst(ben) == "theirs", "SHARING / THEIR FILM (%s, %s)" % (linkst(ana), linkst(ben)))
     check(var(ben.hud, "bars", "gFollow") == "1.85", "Ben's bars show Ana's shape (%r)" % var(ben.hud, "bars", "gFollow"))
     check("You're watching Ana's film." in notes(ben, t) and "Ben is watching your film." in notes(ana, t), "the notes")
@@ -138,7 +138,9 @@ def scenarios():
     shot(w, ben, "portrait"); shot(w, cy, "scenic"); w.run(2)
     link(w, ana)
     check(ana.dialog and set(["Ben", "Cy", "Leave"]) <= set(ana.labels()), "three: the Connect key opens the names (%r)" % ana.labels())
-    ana.click("Cy"); w.run(2)
+    ana.click("Cy"); w.run(1)
+    check(ana.dialog and "Watch" in ana.labels() and "Show my film" in ana.labels(), "a name: Watch, or Show my film (%r)" % ana.labels())
+    ana.click("Watch"); w.run(2)
     check(host(ana) is cy, "Ana watches Cy")
     no_errors(w, "three")
 
@@ -231,7 +233,9 @@ def fuzz(runs, seed, names, drop=0.0):
                 if b.hud and b.hud.worn: shot(w, b, rng.choice(["tracking", "portrait", "scenic"]))
                 a.dialog = None
                 link(w, a)
-                if a.dialog and b.name in a.labels(): a.click(b.name)
+                if a.dialog and b.name in a.labels():
+                    a.click(b.name); w.run(1)                          # 8.2.0: a name, then Watch
+                    if a.dialog and "Watch" in a.labels(): a.click("Watch")
             elif act == "alt": a.alt_orbit()
             elif act == "esc": a.esc(); a.keys(C["CONTROL_FWD"], hold=0.2)
             elif act == "walk": a.walk((128 + rng.uniform(-30, 30), 128 + rng.uniform(-30, 30), 21), speed=4)
@@ -270,18 +274,71 @@ def streaming():
         far = max(far, B.llVecDist(ben.camera()[0], ana.camera()[0]))
     check(far < 1.0, "Ana walks in Tracking: Ben's view keeps up within a step (%.2f m)" % far)
     n = len([1 for c in w.chatlog if c[1] == "Ana" and "|cam|" in c[3] and c[0] > w.t - 4])
-    check(12 <= n <= 20, "her camera goes out about 4 times a second (%d in 4 s)" % n)
+    check(20 <= n <= 36, "her camera goes out about 7 times a second (%d in 4 s)" % n)
     link(w, ben); w.run(0.5)
     mine = ben.camera()[0]
     w.chat(ana.hud, CH, "T12|8|cam|<1,1,30>|<2,2,30>|0|1.0|0", to=ben.key); w.run(0.5)
     check(B.llVecDist(ben.camera()[0], mine) < 0.5, "a late update after he stopped watching is ignored")
     no_errors(w, "streaming")
 
+# ---- 8.2.0: who is near is known; friends connect by themselves; show my film; a smooth view ------------------------------
+def rework():
+    w, (ana, ben) = setup()
+    w.run(12)                                                          # their "here" every 10 s
+    ana.dialog = None
+    ana.say(12, "connect"); w.run(0.4)
+    check(any(x.startswith("Ben") for x in ana.labels()), "the nearby list at once, no waiting (%r)" % ana.labels())
+    ana.click(next(x for x in ana.labels() if x.startswith("Ben"))); w.run(1)
+    ben.click("Yes"); w.run(1.5)
+    check(peers(ana) == ["Ben"], "connected")
+    t = w.t
+    ana.dialog = None
+    ana.hud.send(7371, "connect|addfriend"); w.run(0.5)
+    check(any(x.startswith("Ben") for x in ana.labels()) and not any("Nobody" in n for n in notes(ana, t)),
+          "Settings › Friends › Add lists Ben, connected already (8.1: 'Nobody near you') (%r)" % ana.labels())
+    ana.click(next(x for x in ana.labels() if x.startswith("Ben"))); w.run(0.5)
+    shot(w, ana, "tracking"); w.run(2)
+    ana.dialog = None
+    ana.say(12, "connect"); w.run(0.5)                                  # (with one person the rings flip; the dialog lists names)
+    check(ana.dialog and "Ben · " in ana.dialog[1], "the list says where each one is (%r)" % (ana.dialog and ana.dialog[1]))
+    if "Ben" in ana.labels(): ana.click("Ben"); w.run(0.5)
+    check("Show my film" in ana.labels(), "a name: Show my film (%r)" % ana.labels())
+    ana.click("Show my film"); w.run(1)
+    check(ben.dialog and "shows you their film" in ben.dialog[1], "Ben (not Ana's friend in his list) is asked (%r)" % (ben.dialog and ben.dialog[1]))
+    ben.click("Watch"); w.run(1)
+    check(host(ben) is ana, "Ben watches Ana's film")
+    # smooth: Ana walks in Tracking, Ben's view eases 20 times a second, never a big step
+    ana.walk((150, 128, 21), speed=1.5)
+    P = []
+    for i in range(80):
+        w.run(0.05)
+        P.append(ben.camera()[0])
+    jump = max(B.llVecDist(P[i], P[i + 1]) for i in range(len(P) - 1))
+    moved = B.llVecDist(P[0], P[-1])
+    check(moved > 3.0 and jump < 0.2, "Ben's view moves smoothly with Ana (%.1f m in 4 s, biggest step %.2f m)" % (moved, jump))
+    no_errors(w, "rework")
+
+    # two friends near each other connect by themselves
+    w, (ana, ben) = setup()
+    ana.hud.lsd["cin.friends"] = ("%s,Ben Resident" % ben.key, PASS)
+    ben.hud.lsd["cin.friends"] = ("%s,Ana Resident" % ana.key, PASS)
+    t = w.t
+    w.run(25)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "two friends near: connected by themselves (%r %r)" % (peers(ana), peers(ben)))
+    check(any("is with you" in n for n in notes(ana, t)), "... and told so")
+    # only one of them a friend: nothing happens by itself
+    w, (ana, ben) = setup()
+    ana.hud.lsd["cin.friends"] = ("%s,Ben Resident" % ben.key, PASS)
+    w.run(25)
+    check(peers(ana) == [] and peers(ben) == [] and not ben.dialog, "a friend one way only: nothing by itself, no question popping up")
+    no_errors(w, "friends near")
+
 if __name__ == "__main__":
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 20
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
     scenarios()
     streaming()
+    rework()
     n = fuzz(runs, seed, ("Ana", "Ben"))
     n += fuzz(runs // 2, seed + 5000, ("Ana", "Ben", "Cy"))
     n += fuzz(runs // 2, seed + 9000, ("Ana", "Ben"), drop=0.05)
