@@ -4,6 +4,16 @@ The source of truth for what Take 12 is. How it is built: `docs/ARCHITECTURE.md`
 a rebuild from a long design review (about 200 questions with the owner, after 7.2's in-world test); its outcome is
 summarised here. 7.2 and earlier live in git history; v3 is frozen in `legacy/v3/`.
 
+## Scope
+Take 12 is an experience: it inspires, with a few helpful tools. It never outweighs the freedom Second Life already
+gives you; photographers frame with Alt-click, and that stays the heart of it.
+- Your own framing always wins: Alt-click yields at once, and Fixed keeps what you framed.
+- Nothing starts by itself, except Scenic when you are idle.
+- No demos, no gimmicks, nothing that takes the wheel in the first minute.
+- A feature earns its place only if it gives more freedom than it takes.
+
+Considered and set aside (2026-10): end credits, `/12 action · cut · wrap`, golden-hour framing, a first-minute demo.
+
 ## Why 8.0
 7.2 failed where it mattered:
 - the compositions were bad when sitting, lying or cuddling;

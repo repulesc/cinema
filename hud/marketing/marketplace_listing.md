@@ -1,7 +1,10 @@
 # Marketplace listing: copy-paste text
 
 The Marketplace description is plain text. Copy each block below as it is: no bold, no headings, only "-" lists.
-Fields marked (you) need your own details (price, creator, support contact).
+Fields marked (you) need your own details (creator, support contact).
+
+**Price:** L$790. Permissions: copy, no-modify, no-transfer (the Marketplace's gift option for presents). Updates are
+free for life (redelivery). The free Take 12 Scenery stays L$0.
 
 This is the 8.0 text: short, like the product. Older listings are kept in `legacy/`. The free Take 12 Scenery has its
 own listing (`scenery/marketing/marketplace_listing_scenery.md`). `tools/sim/listing_check.py` keeps each Full
