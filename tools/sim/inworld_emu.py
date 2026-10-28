@@ -15,7 +15,9 @@ before you could read it, Room stayed dim after walking into a room, and the str
 And the tests with a friend (8.0.6): Room composes from the room's edge, level; the outline hint explains itself; the
 [12] sits inside the band; Settings › Friends works (now sync's); Settings › Tracking › Snappy; the setup asks whether
 the strip is in view; once asked, the setup never starts again on a re-wear.
-8.0.7: hold the lit shot (0.8 s) and your viewer has the camera; a short tap is still its next view."""
+8.0.7: hold the lit shot (0.8 s) and your viewer has the camera; a short tap is still its next view.
+8.0.9: every frame is a picture: the strip's ▭ opens this shot's frames (the photo frames 3:2 · 4:3 · 1:1 · 4:5 for all
+but Tracking) with the snapshot size; a photo frame is a pillarbox the shots compose in, and Drift holds still in it."""
 from emu_util import *
 
 w = World()
@@ -333,4 +335,60 @@ ana.click("28 mm"); w.run(0.5)
 check(lsd(h, "lens") == "28" and "Done" in ana.labels(), "a lens picked, the page stays to zoom by")
 ana.click("Done"); w.run(1.5)
 check(ana.dialog is None and not var(h, "ui", "gLensL"), "Done: the page goes, the live mm stops")
+
+# ==== 8.0.9: every frame is a picture =================================================================================
+w = World()
+ana, h = hud(w)
+ana.double_tap(); w.run(1)
+ana.touch("t12 s1"); w.run(3)                                          # Portrait
+ana.dialog = None
+ana.touch("t12 shape"); w.run(0.8)
+check(var(h, "ui", "gBtn") == ["2.39", "2.00", "● 1.85", "1.66", "3:2", "4:3", "1:1", "4:5", "Full", "‹ Back", "Done"],
+      "the ▭ in Portrait: its frames, widest to tallest (%r)" % var(h, "ui", "gBtn"))
+check(ana.dialog and "Snapshot 1920 × 1038 for 1.85" in ana.dialog[1], "... with the snapshot size (%r)" % (ana.dialog and ana.dialog[1]))
+ana.click("4:5"); w.run(2)
+check(lsd(h, "shape.portrait") == "4:5" and "● 4:5" in ana.labels(), "4:5 picked, the page stays")
+check("Snapshot 1600 × 2000 for 4:5" in ana.dialog[1], "... with its size (%r)" % ana.dialog[1])
+L, R, T = rect(h, ana, "t12 bar0"), rect(h, ana, "t12 bar1"), rect(h, ana, "t12 bar2")
+pic = ana.aspect - L[2] - R[2]
+check(L[4] > 0.5 and R[4] > 0.5 and T[4] == 0 and abs(pic - 0.8) < 0.01, "4:5: a pillarbox, the picture 0.8 wide (%.3f)" % pic)
+check(abs(var(h, "portrait", "gAsp") - 0.8) < 0.01, "Portrait composes in 4:5 (%.2f)" % var(h, "portrait", "gAsp"))
+check(var(h, "strip", "gShapeL") == "4:5", "the strip reads 4:5 (%r)" % var(h, "strip", "gShapeL"))
+ana.click("Done"); w.run(0.5)
+check(ana.dialog is None, "Done: the dialog goes")
+ana.touch("t12 s0"); w.run(3)                                          # Tracking: the cinema frames only
+ana.dialog = None
+ana.touch("t12 shape"); w.run(0.8)
+check(var(h, "ui", "gBtn") == ["● 2.39", "2.00", "1.85", "1.66", "Full", "‹ Back", "Done"],
+      "the ▭ in Tracking: the cinema frames (%r)" % var(h, "ui", "gBtn"))
+ana.click("Full"); w.run(1)
+check(lsd(h, "shape.tracking") == "full" and rect(h, ana, "t12 bar2")[4] == 0 and rect(h, ana, "t12 bar0")[4] == 0, "Full: no bars")
+check("Full: no bars" in ana.dialog[1], "... and says so (%r)" % ana.dialog[1])
+ana.click("Done"); w.run(0.5)
+h.send(7371, "stop"); w.run(1)
+ana.dialog = None
+ana.touch("t12 shape"); w.run(0.8)
+check(ana.dialog is None, "your own camera: the ▭ is dim, no dialog")
+no_errors(w, "frames")
+
+# ---- Drift holds still in a photo frame; moves again in a cinema frame -------------------------------------------------
+ana.touch("t12 s3"); w.run(2)
+ana.touch(opt_part(h, "DRIFT")); w.run(3)
+check(h.cam.get("bangle") == 180 and not h.cam.get("plock"), "Drift in 2.39: the follow camera")
+ana.touch("t12 shape"); w.run(0.8)
+check("Drift holds still views" in ana.dialog[1], "Scenic's frames say Drift holds still (%r)" % ana.dialog[1])
+ana.click("1:1"); w.run(3); ana.click("Done")
+P = []
+for i in range(30):
+    w.run(1)
+    P.append(ana.camera()[0])
+check(h.cam.get("plock") and max(B.llVecDist(p, P[0]) for p in P[:8]) < 0.01, "Drift in 1:1: a still view, locked off (%r, %r)"
+      % (h.cam.get("plock"), [round(B.llVecDist(p, P[0]), 2) for p in P[:8]]))
+check(var(h, "scenic", "gCuts") >= 2, "... a new still view now and then (%d cuts)" % var(h, "scenic", "gCuts"))
+h.send(7371, "bars|follow 0.80"); w.run(1)
+check(var(h, "strip", "gShapeL") == "4:5", "a friend's 4:5 film reads 4:5 (%r)" % var(h, "strip", "gShapeL"))
+h.send(7371, "bars|follow"); w.run(1)
+ana.touch("t12 shape"); w.run(0.8); ana.click("2.39"); w.run(3); ana.click("Done")
+check(h.cam.get("bangle") == 180 and not h.cam.get("plock"), "back in 2.39: Drift moves again")
+no_errors(w, "drift stills")
 done("inworld_emu")

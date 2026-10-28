@@ -78,12 +78,13 @@ for p in pages:
         check(lsd(h, "place") == "bot", "Place › Bottom")
         ana.click("● Bottom"); w.run(0.3)
         ana.click("‹ Back"); w.run(0.5)
-    if p == "Shapes & bars":
+    if p == "Frames & bars":
         ana.click("Portrait"); w.run(0.5)
-        dialog_ok(ana, "shape")
-        check("● 1.85" in ana.labels(), "Portrait's shape is 1.85: %r" % ana.labels())
+        dialog_ok(ana, "frame")
+        check("● 1.85" in ana.labels(), "Portrait's frame is 1.85: %r" % ana.labels())
         ana.click("2.39"); w.run(0.5)
-        check(lsd(h, "shape.portrait") == "2.39", "Portrait 2.39 kept")
+        check(lsd(h, "shape.portrait") == "2.39" and "● 2.39" in ana.labels(), "Portrait 2.39 kept, the page stays")
+        ana.click("‹ Back"); w.run(0.5)
         ana.click("Dimmed"); w.run(0.5)
         check(lsd(h, "bstyle") == "dim", "Dimmed bars")
     if p == "Idle start":

@@ -1,5 +1,21 @@
 # Changelog
 
+## 8.0.9 (every frame is a picture)
+- **The ▭ on the strip opens this shot's frames**, from the widest to the tallest, the current one marked:
+  2.39 · 2.00 · 1.85 · 1.66 · Full, and for Portrait, Fixed and Scenic the photo frames 3:2 · 4:3 · 1:1 · 4:5.
+  Tracking keeps the cinema frames: a walking camera wants one. The dialog's line gives the snapshot size for the
+  frame (e.g. "Snapshot 1920 × 1038 for 1.85", "1600 × 2000 for 4:5"), and stays open as you try them; Done closes it.
+  It replaces the tap that turned the bars on and off (Full is that now, per shot; `/12 bars` still turns them all
+  on and off).
+- **A photo frame is a pillarbox** (bars at the sides); Portrait already composes in it.
+- **In a photo frame Scenic's Drift holds still views**, ready for a picture; a cinema frame and it moves again.
+- **Fixed: tapping the ▭ started Tracking** (since 8.0.0). The part is named `t12 shape`, and the strip read it as the
+  first shot word `t12 s0`.
+- The strip reads the new frames (`3:2`, `4:5` …): four new cells on `take12_marks`, after the others, which stay
+  where they were. **Upload the new texture once.** A friend's photo-frame film reads by its frame's name too.
+- Settings › Shapes & bars is now **Frames & bars**, opening the same dialog per shot.
+- Version 8.0.9 in all twelve scripts (the free build: nine).
+
 ## 8.0.8 (classic lenses; Snappy by default; the [12] back to its size)
 - **Settings › Lens: the classic primes, 24 · 28 · 35 · 40 · 50 mm, 35 by default** (it was 35 · 38 · 40, default 38),
   with a Done button (the page had no way out but Back or ignoring it).
