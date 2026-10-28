@@ -187,6 +187,22 @@ def shutter(lit):
     return down(im, 64, CELL_H)
 
 
+def orbit(lit):
+    """Auto (8.3.0): the shutter's ring with its dot out on the ring, then a hairline divider; the shutter's mirror at
+    the strip's other end. The shutter holds still (its dot in the middle), Auto moves (the dot riding round you).
+    Lit: the larger dot"""
+    im, k = ss(64, CELL_H)
+    d = ImageDraw.Draw(im)
+    c, r = (24 * k, 24 * k), 12.5 * k
+    d.ellipse([c[0] - r, c[1] - r, c[0] + r, c[1] + r], outline=WHITE + (255,), width=int(2.4 * k))
+    rr = (5.0 if lit else 3.75) * k
+    a = math.radians(135)
+    x, y = c[0] + r * math.cos(a), c[1] - r * math.sin(a)
+    d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=WHITE + (255,))
+    d.rectangle([58 * k, 16 * k, 59 * k, 32 * k], fill=(255, 255, 255, 110))
+    return down(im, 64, CELL_H)
+
+
 def marks():
     sheet = Image.new("RGBA", (W, W), (255, 255, 255, 0))
     table = []
@@ -216,6 +232,8 @@ def marks():
         put("shape" + n, im, (i % 4) * 256, 512 + 5 * CELL_H + (i // 4) * CELL_H, cw)
     put("shut", shutter(False), 0, 512 + 6 * CELL_H)
     put("shutON", shutter(True), 64, 512 + 6 * CELL_H)
+    put("auto", orbit(False), 128, 512 + 6 * CELL_H)
+    put("autoON", orbit(True), 192, 512 + 6 * CELL_H)
     return sheet, table
 
 

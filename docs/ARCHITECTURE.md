@@ -27,6 +27,7 @@ Every part is found by its name (any link order):
 | `t12 note` | carries the 3 s notes (llSetText), just under the strip (above it at the bottom) |
 | `t12 bar0` … `t12 bar3` | the letterbox (or pillarbox) bars |
 | `t12 shut` | the shutter, at the right end (8.1.0): ready, or lit while the moment is held |
+| `t12 auto` | Auto's Orbit, at the left end (8.3.0): lit while Auto directs, quiet in manual; an older HUD without it works, Auto then shows the shots as usual |
 
 Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD; `screen` adopts them, keeping each UUID
 in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
@@ -55,7 +56,7 @@ in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking t
   or on the ring or dot, as a tap on the [12]: 8.0.3). Opening
   fades in over 0.2 s (alpha in 3 steps).
 - **Touch:** `strip` reads touches on the parts (`llDetectedLinkNumber` → name): a shot word → CMD `shot|<name>`, an
-  option word → OPT `<shot>|<word>`, the shape → CMD `frames` (bars' frame dialog), the shutter → CMD `shutter` (core: the "photo" state), the link → CMD `connect`. `ui` reads the root (gestures).
+  option word → OPT `<shot>|<word>`, the shape → CMD `frames` (bars' frame dialog), the shutter → CMD `shutter` (core: the "photo" state), the link → CMD `connect`, the Orbit → CMD `auto|<0/1>` (in Auto a shot word → CMD `auto|0`). `ui` reads the root (gestures).
 
 ## 3. Scripts
 All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (the check fails below).
@@ -68,7 +69,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `screen` | The [12] (section 2): the root's place, its ring and dot, the notes' part, the eye line, texture adoption |
 | `strip` | The strip (section 2): the band, the words and their states, the 16:9 cap, the fade, touches (8.0.2: split from `screen`, which was too big for 64 KB) |
 | `bars` | The letterbox per shot (`cin.shape.<shot>`), Black or Dimmed, on / off; a watched film's shape; tells the shots the picture (CROP) and the strip the readout (SHAPE) |
-| `tracking` | Shoulder · Film · Classic, L · R: the viewer's own follow camera (FOLLOW), walls, small rooms, running |
+| `tracking` | Shoulder · Film · Classic, L · R: the viewer's own follow camera (FOLLOW), walls, small rooms, running. And Auto's director (8.3.0, core has no room): walking, still, sitting → CMD `shot|<shot>|auto` |
 | `portrait` | Me · Us, Close · Medium · Wide: composed shots of you standing (SHOT / GLIDE) |
 | `fixed` | Your own framing: View A / B per place, seat memory per object and spot, Keep new, Forget / Undo, Let go / Take back |
 | `scenic` | Drift · Near · Room · Far: views of the place; the idle camera |
@@ -111,7 +112,9 @@ The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, 
 
 CMD strings: `shot|<name>` (a shot word: start it, or its lit-tap job), `off` / `on` (hold), `bars`, `connect`,
 `watch|<key>` / `unwatch` (sync → core), `letgo|veh` / `takeback` (fixed → core), `hint|<shot>`, `debug|<0/1>`,
-`blend|<0/1>`, `standby` (carry: an older copy steps aside), `status`.
+`blend|<0/1>`, `standby` (carry: an older copy steps aside), `status`. Auto (8.3.0): `shot|<name>|auto` (Auto's pick,
+tracking → core: a tap it makes), `auto|<0/1>` (Auto on or off, to everyone: core, strip, the shots), `auto` (`/12 auto`
+and the setup's end → tracking turns it on). A `shot|<name>` of your own for another shot ends Auto.
 
 ## 5. Behaviour (summary; the details are in each script's header)
 - **The lit tap** (`shot|<lit shot>` → NEXT `tap`): Portrait Me the other 3/4 side; the two-shot swaps sides (inside the
@@ -125,6 +128,12 @@ CMD strings: `shot|<name>` (a shot word: start it, or its lit-tap job), `off` / 
 - **Let go:** flying, mouselook and a marked vehicle release the camera; it comes back as it was.
 - **Teleport / region crossing:** the same shot, a fresh frame after ~2 s.
 - **Idle start** (`cin.idle`: off · away · 5): Scenic starts by itself; a key or typing brings back the shot you had.
+- **Auto** (8.3.0, `tracking.lsl`): on wear (set up) after 3 s, or at the setup's end. Every 0.5 s it reads core's
+  state (UI_STATE): only in `wait` or `film`, not idle, not flying or in mouselook, not during the eye line. Walking
+  (over 0.5 m/s) wants Tracking; still 4 s wants Portrait; seated, Fixed if `cin.seat.<root>` holds a view (or nothing
+  runs), else nothing. A want must last 2 s and the shot on screen 8 s (not for sitting down or standing up); nothing
+  running: at once. The shots take Auto's options while it is on, without keeping them (Portrait Medium · Us, Tracking
+  Film, Scenic Drift). Core, in Auto only: held, the camera back on its spot (Esc) for 1.5 s resumes the shot.
 - **Off** (hold): camera, bars, strip all off; hold again restores exactly.
 - **Portrait's solver** (from 7.x `frame.lsl`): two heights on you must land on two picture heights (Medium: the eyes
   on the upper third, y = +0.333, and the belt line, 52 % of your height, at the bottom, y = −1). With the camera at

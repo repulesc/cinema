@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -51,6 +51,7 @@ string  gHit;                        // what the last ray met
 integer gHold;                       // paused (you hold the camera, sat down, watching)
 integer gSize = 1;
 integer gUs;
+integer gAuto;                         // Auto directs (8.3.0): Medium · Us, not kept
 float   gSide = 1.0;                 // which 3/4 side (Me); the 20° offset's side (two-shot)
 float   gCross = 1.0;                // the two-shot: which side of the 180° line
 integer gTaps;                       // lit taps in a row (the second one crosses the line)
@@ -89,6 +90,7 @@ load()
         gUs = (integer)llList2String(c, 1);
     }
     if (gSize < 0 || gSize > 2) gSize = 1;
+    if (gAuto) { gSize = 1; gUs = 1; }                  // Auto: whoever is within 3 m, else you; waist up
 }
 
 opts()
@@ -533,6 +535,7 @@ default
             gT = llTan(gFov * 0.5) * gTs;
             if (gOn && !gHold) shoot("glide");
         }
+        else if (num == CMD && llGetSubString(str, 0, 4) == "auto|") gAuto = (str == "auto|1");
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "portrait");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/portrait] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(SIZES, gSize)

@@ -10,10 +10,11 @@
 //  Sitting: every shot holds its last frame and FIXED glows once; standing up resumes it (seated in Fixed: the shot you
 //  had before sitting). A marked vehicle (cin.veh, marked by Fixed's LET GO) lets go whenever you sit on it.
 //  The jump-cut rule: an automatic cut less than 30° and one size step from the shot on screen glides instead.
-//  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
+//  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). Auto (8.3.0, tracking.lsl) picks the shot as
+//  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -80,6 +81,7 @@ vector  gCamPos;
 rotation gCamRot;
 integer gBlend;
 integer gFb;
+integer gAuto;                      // Auto directs (tracking.lsl)
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
 integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
 key     gHostA;                     // watching (8.2.0): whose film; their camera is heard here and eased 20 times a second
@@ -285,6 +287,14 @@ engage(string shot, string why)
     llSetTimerEvent(0.25 - 0.1 * gWatched);
 }
 
+// no frame of a shot on screen
+fresh()
+{
+    gFree = FALSE;
+    gFollow = FALSE;
+    gShotPos = ZERO_VECTOR;
+}
+
 // back to your own camera (waiting)
 bail(string why)
 {
@@ -293,9 +303,7 @@ bail(string why)
     gShot = "";
     gWhy = "";
     gState = "wait";
-    gFree = FALSE;
-    gFollow = FALSE;
-    gShotPos = ZERO_VECTOR;
+    fresh();
     gPend = "";
     gSitHold = FALSE;
     gLastAct = llGetUnixTime();
@@ -324,9 +332,7 @@ resume(string why)
 {
     gState = "film";
     gLetWhy = "";
-    gFree = FALSE;
-    gFollow = FALSE;
-    gShotPos = ZERO_VECTOR;
+    fresh();
     gAnswered = FALSE;
     gStartT = llGetTime();
     llMessageLinked(LINK_SET, RESUME, why, "");
@@ -545,7 +551,7 @@ tick()
         gAnswered = TRUE;
         basicShot();
     }
-    if (gState == "film") heldCheck(t);
+    if (gState == "film" || (gState == "held" && gAuto)) heldCheck(t);
 }
 
 // you took the camera (Alt-click, orbit): the shot is held, the lit word dims. Not while you frame in Fixed.
@@ -571,6 +577,7 @@ heldCheck(float t)
         float want = llVecDist(gShotPos, ownerPos());
         off = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want || llRot2Fwd(llGetCameraRot()) * llVecNorm(gShotFoc - gShotPos) < 0.97);
     }
+    if (gState == "held") { if (!off && t - gHeldT > 1.5) resume("held"); return; }   // Auto: Esc, the camera is back
     if (!off) { gHeldT = 0.0; return; }
     if (gHeldT == 0.0) gHeldT = t;
     else if (t - gHeldT > 0.6) held();
@@ -686,9 +693,7 @@ default
             if (gPermOK) llRequestPermissions(gOwner, gNeed);
             gClrT = llGetTime() + 1.0;                      // the old frame goes once the move is over, a fresh one at 2 s
             gState = "film";
-            gFollow = FALSE;
-            gFree = FALSE;
-            gShotPos = ZERO_VECTOR;
+            fresh();
             gTpT = llGetTime() + 2.0;
             llMessageLinked(LINK_SET, PAUSE, "tp", "");
             ui("");
@@ -843,6 +848,7 @@ default
                 else clearCam();
             }
             else if (c == "stop") bail("stop");
+            else if (c == "auto") gAuto = (a == "1");
             else if (c == "shutter") expose();
             else if (c == "next" && gState == "film") llMessageLinked(LINK_SET, NEXT, "tap", "");
             else if (c == "blend")
@@ -861,7 +867,7 @@ default
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/core] v" + VERSION + " " + gState + " " + gShot + " " + gWhy + ", permissions " + (string)gPermOK
-                + ", follow " + (string)gFollow + ", free " + (string)gFree + ", seated hold " + (string)gSitHold
+                + ", follow/free/seat/auto " + (string)gFollow + (string)gFree + (string)gSitHold + (string)gAuto
                 + ", free mem " + (string)llGetFreeMemory());
     }
 }

@@ -10,12 +10,14 @@ the top of the screen and the [12].
   - **Portrait:** you standing, composed; Me or Us.
   - **Fixed:** your own framing, kept for every place and every seat.
   - **Scenic:** views of the place, and the idle camera.
+- **Auto (8.3.0):** the camera directs itself, from what a script truly sees (walking, standing still, sitting, idle);
+  the Orbit at the strip's left end, one tap to direct yourself.
 - **Frames and the shutter:** each shot has its cinema frame (2.39, 1.85 …), picked with the ▭; the shutter holds the moment for a photo in your photo frame (3:2, 4:3, 1:1, 4:5), with the snapshot size.
 - **Connect:** two equal cameras; one tap to see your friend's film.
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.2.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.3.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,
@@ -75,7 +77,7 @@ and a Take 12 Scenery to give a friend.
 - The emulator tests:
   - `tools/sim/layout_emu.py`: every window from 5:4 to 32:9 × 4 places × 3 sizes;
   - `gestures_emu.py`, `shots_emu.py`;
-  - `portrait_emu.py`, `tracking_emu.py`, `fixed_emu.py`, `scenic_emu.py`;
+  - `portrait_emu.py`, `tracking_emu.py`, `fixed_emu.py`, `scenic_emu.py`, `auto_emu.py` (a day in Auto);
   - `connect_emu.py [runs] [seed]`: scenarios and a fuzzer, with invariants;
   - `carry_emu.py`, `builder_emu.py`;
   - `memory_emu.py`: every script's heaviest moments (the strip at every size, a crowd of 90, full seat memory, carry-over, a 7.x migration) must leave 3 KB of its 64 KB, measured on the lists it builds while running.

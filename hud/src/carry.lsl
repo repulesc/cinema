@@ -12,7 +12,7 @@
 //  region, date). One a minute, ten a day. llEmail pauses this script 20 s: here it holds up nothing of the camera.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 

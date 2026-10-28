@@ -16,7 +16,7 @@
 //  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -33,6 +33,7 @@ integer OPTS       = 7340;
 integer OPT        = 7341;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
+integer CMD        = 7371;
 
 list    BANDS      = ["DRIFT", "NEAR", "ROOM", "FAR"];
 float   HOLD       = 15.0;          // s  a still frame, about
@@ -48,6 +49,7 @@ list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>
 key     gOwner;
 integer gOn;
 integer gPaused;
+integer gAuto;                         // Auto directs (8.3.0): Drift
 integer gBand;
 integer gErr;
 integer gRayErr;
@@ -638,7 +640,7 @@ default
             if (!gOn) { llSetTimerEvent(0.0); llSensorRemove(); return; }
             llMessageLinked(LINK_SET, ACK, "scenic", "");
             gBand = (integer)cfg("scn");
-            if (gBand < 0 || gBand > 3) gBand = 0;
+            if (gBand < 0 || gBand > 3 || gAuto) gBand = 0;    // Auto: Drift (8.3.0), not kept
             gPaused = FALSE;
             gCtxOK = FALSE;
             gLocal = FALSE;
@@ -650,6 +652,7 @@ default
             opts();
             begin();
         }
+        else if (num == CMD && llGetSubString(str, 0, 4) == "auto|") gAuto = (str == "auto|1");
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/scenic] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(BANDS, gBand)

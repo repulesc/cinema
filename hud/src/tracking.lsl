@@ -11,9 +11,15 @@
 //  (under about 4 × 4 m, measured with rays) it takes the room's best corner and pans with you (FOLLOW lock); out of the
 //  room, behind you again. Running pulls it back about 30 %. Standing still, it holds; after 5 s the PORTRAIT word glows
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
+//  Auto (8.3.0) lives here too, the walking camera knowing when you walk and stop: the director. On wear (once set
+//  up) it picks the shot from what a script truly sees: walking, Tracking; standing still 6 s, Portrait (Medium · Us:
+//  whoever is within 3 m, else you); sitting, Fixed where this seat has a kept view, else the frame holds; idle,
+//  core's Scenic (Drift's reveal). At least 8 s per shot, and only once the reason has lasted 2 s. It keeps its hands
+//  off while you hold the camera (it comes back as you walk off or press Esc), fly, watch someone or hold a photo.
+//  A shot tapped (the strip, /12 tracking …) or the Orbit tapped: yours, manual, until the Orbit is tapped again.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -23,6 +29,8 @@ integer PAUSE      = 7304;
 integer RESUME     = 7305;
 integer ACK        = 7313;
 integer FOLLOW     = 7314;
+integer UI_STATE   = 7320;
+integer TIP        = 7345;
 integer CFG_CHANGED= 7330;
 integer OPTS       = 7340;
 integer OPT        = 7341;
@@ -48,6 +56,17 @@ vector  gRoomAt;                       // where the small room was measured
 float   gStillT;
 integer gHinted;
 integer gRun;
+integer gAuto;                         // Auto directs (8.3.0)
+float   gWear;                         // ... worn at: it starts 3 s later, once set up
+integer gWearing;                      // ... not started yet on this wear
+string  gCore = "wait";                // core: its state, shot and why (UI_STATE)
+string  gCShot;
+string  gCWhy;
+float   gShotT;                        // ... that shot since
+string  gWant;                         // what Auto would pick now, and since
+float   gWantT;
+float   gStillA;                       // standing still since
+integer gEyeA;                         // the eye-line check is on
 
 string cfg(string k)
 {
@@ -63,6 +82,7 @@ load()
         gRight = (integer)llList2String(c, 1);
     }
     if (gLook < 0 || gLook > 2) gLook = 1;
+    if (gAuto) gLook = 1;                               // Auto films in Film (its side stays yours); not kept
 }
 
 opts()
@@ -194,7 +214,7 @@ check()
     if (sp < 0.2)
     {
         if (gStillT == 0.0) gStillT = llGetTime();
-        else if (!gHinted && llGetTime() - gStillT > 5.0)
+        else if (!gHinted && !gAuto && llGetTime() - gStillT > 5.0)
         {
             gHinted = TRUE;
             llMessageLinked(LINK_SET, CMD, "hint|portrait", "");
@@ -207,6 +227,58 @@ check()
     }
 }
 
+// ---- Auto (8.3.0) -------------------------------------------------------------------------------
+// on or off: everyone hears it (core, the strip, the shots)
+auto(integer on)
+{
+    gAuto = on;
+    gWant = "";
+    llMessageLinked(LINK_SET, CMD, "auto|" + (string)on, "");
+}
+
+// the director: each pick is a tap Auto makes for you (CMD shot|<shot>|auto)
+direct()
+{
+    float t = llGetTime();
+    if (gWearing && t - gWear > 3.0)
+    {
+        gWearing = FALSE;                                   // on wear, if set up (a setup ends with /12 auto, ui)
+        if (cfg("firstrun") == "done") { auto(TRUE); llMessageLinked(LINK_SET, TIP, "auto", ""); }
+    }
+    if (!gAuto || gEyeA || gCWhy == "idle" || (gCore != "wait" && gCore != "film")) return;
+    integer info = llGetAgentInfo(gOwner);
+    if (info & (AGENT_FLYING | AGENT_MOUSELOOK)) return;
+    list d = llGetObjectDetails(gOwner, [OBJECT_VELOCITY, OBJECT_ROOT]);
+    vector v = llList2Vector(d, 0);
+    string want = gCShot;
+    integer sat = (info & AGENT_SITTING) != 0;
+    if (sat)
+    {
+        // this seat's kept view; none: the frame holds (nothing on yet: Fixed, frame it and it is kept)
+        if (gCShot == "" || cfg("seat." + llList2String(d, 1)) != "") want = "fixed";
+        gStillA = 0.0;
+    }
+    else if (llVecMag(<v.x, v.y, 0.0>) > 0.5)
+    {
+        want = "tracking";
+        gStillA = 0.0;
+    }
+    else
+    {
+        if (gStillA == 0.0) gStillA = t;
+        if (t - gStillA > 4.0 || gCShot == "") want = "portrait";   // 4 s + the 2 s below: 6 s still
+    }
+    if (want != gWant) { gWant = want; gWantT = t; }
+    if (want == gCShot || want == "") return;
+    if (gCShot != "")                                       // nothing on yet: at once
+    {
+        if (t - gWantT < 2.0) return;                       // the reason has to last 2 s
+        if (t - gShotT < 8.0 && !sat && gCShot != "fixed") return;   // and a shot 8 s (not sitting down, standing up)
+    }
+    gShotT = t;
+    llMessageLinked(LINK_SET, CMD, "shot|" + want + "|auto", "");
+}
+
 default
 {
     state_entry()
@@ -214,6 +286,17 @@ default
         gOwner = llGetOwner();
         load();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
+        if (llGetAttached()) { gWear = llGetTime(); gWearing = TRUE; llSetTimerEvent(0.5); }
+    }
+
+    attach(key id)
+    {
+        gAuto = FALSE;
+        gCore = "wait";
+        gCShot = "";
+        gWear = llGetTime();
+        gWearing = (id != NULL_KEY);
+        llSetTimerEvent(0.5 * (id != NULL_KEY));
     }
 
     on_rez(integer p)
@@ -231,7 +314,7 @@ default
         if (num == START)
         {
             gOn = (llList2String(llParseString2List(str, ["|"], []), 0) == "tracking");
-            if (!gOn) { llSetTimerEvent(0.0); return; }
+            if (!gOn) return;
             llMessageLinked(LINK_SET, ACK, "tracking", "");
             load();
             opts();
@@ -242,17 +325,35 @@ default
             send(TRUE);
             llSetTimerEvent(0.5);
         }
+        else if (num == UI_STATE)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            gCore = llList2String(L, 0);
+            if (llList2String(L, 1) != gCShot) gShotT = llGetTime();
+            gCShot = llList2String(L, 1);
+            gCWhy = llList2String(L, 3);
+        }
+        else if (num == CMD)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            if (str == "auto" && !gAuto) auto(TRUE);                // /12 auto, the end of the setup
+            else if (llList2String(L, 0) == "shot" && llGetListLength(L) == 2)
+            {
+                gWearing = FALSE;                                   // a shot of your own (a tap, /12 tracking …): manual
+                if (gAuto && llList2String(L, 1) != gCShot) auto(FALSE);
+            }
+            else if (llGetSubString(str, 0, 4) == "auto|") { gAuto = (str == "auto|1"); gWant = ""; gWearing = FALSE; }
+            else if ((str == "stop" || str == "standby") && gAuto) auto(FALSE);   // your viewer's camera; an older copy
+            else if (llGetSubString(str, 0, 6) == "eyecam|") gEyeA = (str != "eyecam|off");
+            else if (str == "eyequit") gEyeA = FALSE;
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tracking] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(LOOKS, gLook)
                 + " · " + llList2String(["L", "R"], gRight) + ", " + llList2String(["behind you", "a room's corner"], gMode == "lock")
-                + ", " + (string)gSent + " m, free mem " + (string)llGetFreeMemory());
+                + ", " + (string)gSent + " m, auto " + (string)gAuto + ", free mem " + (string)llGetFreeMemory());
         else if (!gOn) return;
-        else if (num == STOP)
-        {
-            gOn = FALSE;
-            llSetTimerEvent(0.0);
-        }
+        else if (num == STOP) gOn = FALSE;
         else if (num == PAUSE) gHold = TRUE;
         else if (num == RESUME)
         {
@@ -281,6 +382,7 @@ default
 
     timer()
     {
-        if (!gHold) check();
+        if (gOn && !gHold) check();
+        direct();
     }
 }

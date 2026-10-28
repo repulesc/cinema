@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -292,7 +292,7 @@ string up(string p)
 choose(string m)
 {
     string b = bare(m);
-    if (b == "Close" || b == "Done" || b == " ") { closeMenu(); return; }
+    if (b == "Close" || (b == "Done" && gPage != "tour3") || b == " ") { closeMenu(); return; }   // the tour's Done ends the setup
     if (b == "Skip" && gPage == "lens") { closeMenu(); eyeStart(); return; }
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
@@ -432,6 +432,7 @@ done()
     gFirst = "";
     llLinksetDataWriteProtected("cin.firstrun", "done", PASS);
     if (!gOpen) strip("open");                              // the controls stay in view (8.0.4: they vanished after the setup)
+    llMessageLinked(LINK_SET, CMD, "auto", "");             // and Auto directs (8.3.0)
 }
 
 // ---- the eye line: a line on screen, PgUp / PgDn onto your eyes, tap to keep ----------------------------------------
@@ -545,8 +546,12 @@ command(string m)
     list L = llParseString2List(llToLower(llStringTrim(m, STRING_TRIM)), [" "], []);
     string c = llList2String(L, 0);
     string a = llList2String(L, 1);
-    if (llListFindList(["tracking", "portrait", "fixed", "scenic"], [c]) >= 0) llMessageLinked(LINK_SET, CMD, "shot|" + c, "");
-    else if (c == "bars" || c == "next" || c == "feedback") llMessageLinked(LINK_SET, CMD, c, "");   // feedback: carry's
+    if (llListFindList(["tracking", "portrait", "fixed", "scenic"], [c]) >= 0)
+    {
+        llMessageLinked(LINK_SET, CMD, "auto|0", "");          // a shot of your own: manual first (its own options)
+        llMessageLinked(LINK_SET, CMD, "shot|" + c, "");
+    }
+    else if (c == "bars" || c == "next" || c == "feedback" || c == "auto") llMessageLinked(LINK_SET, CMD, c, "");   // feedback: carry's; auto: tracking's
     else if (c == "off") onLong();
     else if (c == "strip") strip("toggle");
     else if (c == "status") llMessageLinked(LINK_SET, STATUS, "?", "");

@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.2.0)
+TAKE 12  -  READ ME  (8.3.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -11,9 +11,10 @@ A cinematic camera for Second Life. It only moves your view: nothing is recorded
    EYE LINE  a line on the screen: Page Up / Page Down move it onto your eyes, a tap on the [12] keeps it.
    SIZE      is the strip easy to read? Smaller, Good or Larger.
    A TOUR    three short pages.
-3. Double-tap the [12]: the strip. Tap a shot.
+3. Double-tap the [12]: the strip.
 
-When you wear it, Take 12 waits: your own camera, until you pick a shot.
+Once it is set up, Take 12 is in AUTO when you wear it: it picks the shot for you (below). Tap a shot, or the ring
+at the strip's left end, and you direct yourself.
 
 
 === THE [12] ============================================
@@ -32,12 +33,27 @@ The [12] tells you, quietly:
 === THE STRIP ===========================================
 
 A thin line of words at the top of your screen (Settings > Look > Place moves it lower, or to the bottom):
-  TRACKING  PORTRAIT  FIXED  SCENIC    ▭ 2.39   [12]   ⇄ 2    the running shot's options  |  the shutter
+  ◯ | TRACKING  PORTRAIT  FIXED  SCENIC    ▭ 2.39   [12]   ⇄ 2    the running shot's options  |  the shutter
+The ring at the left end is AUTO; lit, the strip shows only the shot it chose, in faint letters.
 The shot that films is underlined; its options are on the right, the ones in use underlined.
 The frame key (▭) shows the frame on screen; tap it to choose another, with its snapshot size.
 The shutter (a ring with a dot, at the right end) holds the moment for a photo.
 The Connect key (two rings) shows who you are with.
 Tap the lit shot again and it does its one job (below).
+
+
+=== AUTO ================================================
+
+AUTO picks the shot from what Take 12 can truly see, calmly (at least 8 seconds a shot, never for a step or two):
+  WALKING          Tracking (Film)
+  STANDING STILL   after 6 seconds, Portrait (Medium; Us when someone is within 3 m)
+  SITTING          the seat's kept view (Fixed), if you framed one; otherwise the picture holds
+  IDLE             Scenic: Drift's reveal
+  FLYING           your own camera until you land
+It never fights you: Alt-click and it waits; press Esc or walk off and it goes on. Its choices are not kept as your
+own: your Portrait size, Tracking look and Scenic band stay as you left them.
+Tap the faint shot (or /12 tracking, /12 portrait ...) and the camera is yours. Tap the ring (or /12 auto) and AUTO
+directs again. Each time you wear Take 12, it starts in AUTO.
 
 
 === THE FOUR SHOTS ======================================
@@ -123,7 +139,7 @@ LENS · EYE LINE · MOTION · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS
 === KEYS AND COMMANDS ===================================
 
 Type these in chat, or put them in a gesture on a key:
-  /12 tracking   /12 portrait   /12 fixed   /12 scenic   /12 bars   /12 next   /12 off   /12 strip
+  /12 auto   /12 tracking   /12 portrait   /12 fixed   /12 scenic   /12 bars   /12 next   /12 off   /12 strip
   /12 connect    /12 feedback   /12 status     /12 place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
 
 
