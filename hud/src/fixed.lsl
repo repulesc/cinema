@@ -15,7 +15,7 @@
 //  A view: "<cam>|<focus>|<where you were>|<your facing°>|<lens>" (a seat's in the furniture's frame).
 // ============================================================================
 
-string VERSION = "8.4.2";
+string VERSION = "8.4.3";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -27,6 +27,7 @@ integer MOVING     = 7306;
 integer SHOT       = 7310;
 integer NO_SHOT    = 7311;
 integer GLIDE      = 7312;
+integer FOLLOW     = 7314;
 integer ACK        = 7313;
 integer FOVMSG     = 7318;
 integer CAMSET     = 7325;
@@ -352,6 +353,20 @@ opts()
     llMessageLinked(LINK_SET, OPTS, "fixed|" + llDumpList2String(w, ",") + "|" + llDumpList2String(s, ","), "");
 }
 
+// walking: the viewer's own follow camera from where the shot stands, at its distance and height, on its side (180:
+// it keeps whatever side it is on), eased by the viewer every frame. 8.4.3: the shot stepped a locked camera along
+// with you a few times a second, and Second Life does not ease a locked camera: walking was choppy
+trail(vector P)
+{
+    vector d = gCam - <P.x, P.y, gFoc.z>;
+    float h = llVecMag(<d.x, d.y, 0.0>);
+    float D = llVecMag(d);
+    if (D < 0.6) D = 0.6;
+    if (D > 10.0) D = 10.0;
+    llMessageLinked(LINK_SET, FOLLOW, (string)D + "|" + (string)(llAtan2(d.z, h) * RAD_TO_DEG) + "|<0.0, 0.0, "
+        + (string)(gFoc.z - P.z) + ">|0.0|0.6|0.3|180", "");
+}
+
 // the view for where you are: a cut to it, or your own camera to frame it
 show(string kind)
 {
@@ -498,14 +513,18 @@ tick()
     if (gCtx != "stand") return;
     // walking off: the shot comes along, and a second after you stop it settles at the same angle on you
     vector m = P - gAt;
-    if (!still) { gWalk = TRUE; gStillT = 0.0; }
+    if (!still)
+    {
+        if (!gWalk) trail(P);                               // the follow camera, smooth (8.4.3)
+        gWalk = TRUE;
+        gStillT = 0.0;
+    }
     if (!gWalk) return;
     if (llVecMag(m) > 0.05)
     {
         gCam += m;
         gFoc += m;
         gAt = P;
-        llMessageLinked(LINK_SET, GLIDE, (string)gCam + "|" + (string)gFoc + "|0.4", "");
     }
     if (still)
     {

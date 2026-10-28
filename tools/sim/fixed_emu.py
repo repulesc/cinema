@@ -66,7 +66,7 @@ no_errors(w, "view b")
 # ---- walking off: it comes along, then the same angle on you -------------------------------------------------------------
 rel = B.sub(h.cam["pos"], ana.pos)
 ana.walk((140, 120, 21), speed=1.5); w.run(2)
-check(abs(h.cam.get("plag", 0) - 0.4) < 1e-4, "walking: the camera comes along")
+check("distance" in h.cam and not h.cam.get("plock") and h.cam.get("bangle") == 180, "walking: the follow camera comes along, smooth (8.4.3)")
 w.run(6)
 r2 = B.sub(h.cam["pos"], ana.pos)
 yaw = math.radians(rot_yaw(ana.rot))
