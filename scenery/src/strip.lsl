@@ -14,7 +14,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.1.0";
+string VERSION = "8.2.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -416,6 +416,7 @@ layout()
     else if (gLinkSt == "shared") { lk = "SHARING"; la = 1.0; }
     else if (gLinkSt == "theirs") { lk = "THEIR FILM"; la = 1.0; }
     else if (gLinkSt == "dim") la = 0.22;
+    else if ((integer)gLinkN > 0) lk = gLinkN;              // alone: the Take 12s near you, quietly (8.2.0)
     if ((integer)lk > 9) lk = "9";
     float lc = llList2Float(mark("link" + lk), 4);
     float lw = lc / 48.0 * hw;

@@ -12,7 +12,7 @@ text = SRC["text"]
 
 # ---- notes -------------------------------------------------------------------------------------------------------------
 notes = text[text.index("list NOTES = ["):text.index("];", text.index("list NOTES = ["))]
-ids = re.findall(r'^\s*"([a-z]+)", "[0123]', notes, re.M) + ["clear"]   # 3: stays; "clear" takes one down (8.0.5)
+ids = re.findall(r'^\s*"([a-z]+)", "[0123]', notes, re.M) + ["clear", "commands"]   # 3: stays; "clear" takes one down (8.0.5); "commands": chat only, outside the table (8.2.0)
 check(len(ids) == len(set(ids)) and len(ids) > 20, "text.lsl: %d note ids, each once" % len(ids))
 used = set()
 for n, s in SRC.items():

@@ -333,8 +333,9 @@ no_errors(w, "release")
 ana.dialog = None
 ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Lens"); w.run(0.5)
 check("Done" in ana.labels() and "‹ Back" in ana.labels(), "Settings › Lens: Done and Back (%r)" % ana.labels())
-ana.click("28 mm"); w.run(0.5)
-check(lsd(h, "lens") == "28" and "Done" in ana.labels(), "a lens picked, the page stays to zoom by")
+ana.click("32 mm"); w.run(0.5)
+check(lsd(h, "lens") == "32" and "Done" in ana.labels(), "a lens picked, the page stays to zoom by")
+check(all(l.lstrip("● ") in ("21 mm", "26 mm", "32 mm", "38 mm", "47 mm", "56 mm", "‹ Back", "Done") for l in ana.labels()), "the viewer's own stops (8.2.0): %r" % ana.labels())
 ana.click("Done"); w.run(1.5)
 check(ana.dialog is None and not var(h, "ui", "gLensL"), "Done: the page goes, the live mm stops")
 

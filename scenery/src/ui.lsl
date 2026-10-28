@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.1.0";
+string VERSION = "8.2.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -170,10 +170,13 @@ integer mm()
     return llRound(12.0 / llTan(llGetCameraFOV() * 0.5));
 }
 
+// your lens: one of the viewer's own zoom stops (8.2.0: the classic 24 · 28 · 35 · 40 · 50 could not be reached with
+// the zoom keys); an earlier choice goes to the nearest stop
 string lensWant()
 {
     string l = cfg("lens");
-    if (l == "") l = "35";
+    integer i = llListFindList(["24", "28", "35", "40", "50", ""], [l]);
+    if (i >= 0) l = llList2String(["26", "26", "38", "38", "47", "38"], i);
     return l;
 }
 
@@ -200,9 +203,9 @@ open(string p)
         string w = lensWant();
         list bk = ["‹ Back", "Done"];                       // Done: the lens is set, the page goes (8.0.8)
         if (gFirst == "lens") bk = ["Skip"];
-        // the classic primes, from wide to normal (8.0.8; 85 mm and longer are portrait lenses, too tight to live in)
-        page(p, (string)mm() + "~" + w, [mark("24 mm", w == "24"), mark("28 mm", w == "28"), mark("35 mm", w == "35"),
-            mark("40 mm", w == "40"), mark("50 mm", w == "50")] + bk);
+        // the viewer's zoom stops, from its own wide view to normal (8.2.0): each one a key press away
+        page(p, (string)mm() + "~" + w, [mark("21 mm", w == "21"), mark("26 mm", w == "26"), mark("32 mm", w == "32"),
+            mark("38 mm", w == "38"), mark("47 mm", w == "47"), mark("56 mm", w == "56")] + bk);
         gLensL = TRUE;
     }
     else if (p == "shapes")
@@ -260,7 +263,8 @@ open(string p)
     }
     else if (p == "reset") page(p, "", ["Tips again", "Seats & views", "Everything", "‹ Back"]);
     else if (p == "everything") page(p, "", ["Yes, reset", "‹ Back"]);
-    else if (p == "help") page(p, "", ["Guide", "Tips again", "‹ Back"]);
+    else if (p == "help") page(p, "", ["Guide", "Tips again", "About", "‹ Back"]);
+    else if (p == "about") page(p, "", ["Guide", "‹ Back", "Close"]);   // what 12 means (8.1.1)
     else if (p == "first") page(p, "", ["Start", "Later"]);
     else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
     else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
@@ -281,6 +285,7 @@ string up(string p)
 {
     if (llListFindList(["lens", "feel", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
     if (p == "place") return "look";
+    if (p == "about") return "help";
     if (p == "everything") return "reset";
     return "main";
 }
@@ -367,10 +372,11 @@ choose(string m)
         gFirst = "start";
         first();
     }
-    else if (gPage == "help")
+    else if (gPage == "help" || gPage == "about")
     {
         if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
         else if (b == "Guide") { closeMenu(); guide(); }
+        else if (b == "About") open("about");
     }
     else if (gPage == "first")
     {
@@ -668,7 +674,7 @@ default
             if (gState == "film" && was != "film" && !gLensTold && llGetPermissions() & PERMISSION_TRACK_CAMERA)
             {
                 gLensTold = TRUE;                           // the first shot after you wear it: is your lens on?
-                if (mm() < (integer)lensWant() * 0.85) note("lens", (string)mm());
+                if (mm() < (integer)lensWant() * 0.95) note("lens", (string)mm());
             }
         }
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);

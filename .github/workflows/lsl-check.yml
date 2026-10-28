@@ -32,6 +32,7 @@ jobs:
           python3 tools/sim/inworld_emu.py
           python3 tools/sim/owner_emu.py
           python3 tools/sim/feedback_emu.py
+          python3 tools/sim/box_emu.py
       - name: Runtime memory on the real scripts - no script runs out of memory at its heaviest (8.0.1)
         run: python3 tools/sim/memory_emu.py
       - name: Connect on the real scripts - scenarios, then a fuzzer on two and three HUDs (and lost messages)

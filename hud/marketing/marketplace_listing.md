@@ -54,6 +54,7 @@ A one-minute setup sets your lens and your eye line. Feedback goes straight to t
 
 In the box: the Take 12 HUD and the Read Me.
 Try Scenic first, free: Take 12 Scenery.
+Made by 12. A number, not a name: it points outward.
 Creator: (you)  ·  Support: (you)
 ```
 

@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.1.0)
+TAKE 12  -  READ ME  (8.2.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -6,8 +6,8 @@ A cinematic camera for Second Life. It only moves your view: nothing is recorded
 
 1. Wear the HUD on HUD Top Center (any HUD point works) and accept the camera permission once.
 2. A short note under the [12] says "Tap the [12] to set up." Tap it: a one-minute setup (each step can be skipped):
-   LENS      your viewer's zoom, set to a classic lens: 24, 28, 35 (the default), 40 or 50 mm. The page shows your
-             lens live while you zoom.
+   LENS      your viewer's zoom, on one of its own stops: 21 (its wide view), 26, 32, 38 (the default), 47 or 56 mm.
+             Ctrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21. The page shows your lens live while you zoom.
    EYE LINE  a line on the screen: Page Up / Page Down move it onto your eyes, a tap on the [12] keeps it.
    SIZE      is the strip easy to read? Smaller, Good or Larger.
    A TOUR    three short pages.
@@ -100,9 +100,11 @@ ZOOM           your lens is your own: zoom and the picture keeps its framing.
 === CONNECT =============================================
 
 Share films with people near you who wear Take 12. Two equal cameras: each of you films your own shot.
-- Tap the Connect key (or Menu > Connect): the people within 20 m. Tap a name and they are asked.
-  Your Friends (Settings > Friends) join without being asked. A soft chime when someone asks or joins.
-- With one other person, the Connect key flips between your film and theirs. With more, it opens their names.
+- Tap the Connect key (or Menu > Connect): the people within 20 m who wear Take 12, at once. Tap a name and they
+  are asked. Two friends (Settings > Friends, each in the other's list) connect by themselves when near.
+  A soft chime when someone asks or joins. While you are alone, the rings count the Take 12s near you.
+- With one other person, the Connect key flips between your film and theirs. Menu > Connect lists everyone and
+  where they are (filming, watching your film, away); tap a name: Watch, or Show my film.
 - The strip says SHARING while someone watches your film, THEIR FILM while you watch theirs.
 - Only Take 12's shots are shared: never your own camera, an Alt-click look or mouselook.
 - More than 20 m apart, it rests; close again, it comes back by itself. Leave (Menu > Connect) or a hold ends it.
@@ -123,6 +125,19 @@ LENS · EYE LINE · MOTION · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS
 Type these in chat, or put them in a gesture on a key:
   /12 tracking   /12 portrait   /12 fixed   /12 scenic   /12 bars   /12 next   /12 off   /12 strip
   /12 connect    /12 feedback   /12 status     /12 place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
+
+
+=== ABOUT ===============================================
+
+Take 12 is made by 12: the maker's name in Second Life, and the name of this camera.
+A name ties a thing to one person. A number is broader and quieter, and it points outward: there is something out
+there.
+
+In a virtual world what we make can outlast us. A number keeps, without the person behind it.
+Two digits, because one stands still and two make movement, in numbers and in living things.
+Twelve, because it is how we keep time: the hours on a clock, the months of a year.
+
+A take is a moment in time. Take 12 keeps them.
 
 
 === GOOD TO KNOW ========================================

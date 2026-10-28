@@ -15,11 +15,20 @@ the top of the screen and the [12].
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.1.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.2.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,
 and the notecard is `Take 12 - Read Me`.
+
+## About
+Take 12 is made by 12: the maker's name in Second Life, and the name of this camera. A name ties a thing to one
+person; a number is broader and quieter, and it points outward: there is something out there. In a virtual world what
+we make can outlast us, and a number keeps without the person behind it. Two digits, because one stands still and two
+make movement. Twelve, because it is how we keep time. A take is a moment in time; Take 12 keeps them.
+
+The box (`hud/box/`) is one black box that makes itself from three textures; a touch hands over the HUD, the Read Me
+and a Take 12 Scenery to give a friend.
 
 ## Repository layout
 | Path | Contents |

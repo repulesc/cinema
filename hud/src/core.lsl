@@ -13,7 +13,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.1.0";
+string VERSION = "8.2.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -82,6 +82,17 @@ integer gBlend;
 integer gFb;
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
 integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
+key     gHostA;                     // watching (8.2.0): whose film; their camera is heard here and eased 20 times a second
+integer gHl;
+vector  gO0;                        // ... their camera and focus, relative to them, eased from 0 to 1
+vector  gF0;
+vector  gO1;
+vector  gF1;
+float   gCT;                        // ... the last update came at
+float   gDur = 0.15;                // ... and eases over
+integer gRel;                       // ... relative to them (a HUD before 8.2.0 sends where, not relative)
+float   gTk;                        // the tick, while the timer runs at 20 Hz
+string  gFol;                       // their shape on your bars
 list    gWatchers;                  // ... who (their avatars: core tells them itself, 8.0.7)
 string  gShape = "0";               // your picture's shape (bars: CROP), for them
 float   gEyeT;                      // ... since
@@ -271,7 +282,7 @@ engage(string shot, string why)
     gLastAct = llGetUnixTime();
     llMessageLinked(LINK_SET, START, shot + "|" + why, "");
     ui("");
-    llSetTimerEvent(0.25);
+    llSetTimerEvent(0.25 - 0.1 * gWatched);
 }
 
 // back to your own camera (waiting)
@@ -290,7 +301,7 @@ bail(string why)
     gLastAct = llGetUnixTime();
     share();
     ui("");
-    llSetTimerEvent(1.0 - 0.75 * gWatched);
+    llSetTimerEvent(1.0 - 0.85 * gWatched);
 }
 
 // your camera for now (flying, mouselook, a marked vehicle); the shot comes back as it was
@@ -321,7 +332,7 @@ resume(string why)
     llMessageLinked(LINK_SET, RESUME, why, "");
     if (gPend != "") { applyShot(gPend); gPend = ""; }
     ui("");
-    llSetTimerEvent(0.25);
+    llSetTimerEvent(0.25 - 0.1 * gWatched);
 }
 
 // the shutter (8.1.0): the moment held exactly where it is, in your photo frame (bars), until it is pressed again,
@@ -344,6 +355,72 @@ held()
     llMessageLinked(LINK_SET, PAUSE, "held", "");
     share();
     ui("");
+}
+
+// ---- watching someone's film (8.2.0: the camera stepped 4 times a second; now it eases between their updates and
+// moves with them) ------------------------------------------------------------------------------------------------------
+// their camera through YOUR lens: the same line to the same focus at the distance that keeps the picture size
+receive(list L)
+{
+    vector p = (vector)llList2String(L, 3);
+    vector f = (vector)llList2String(L, 4);
+    float lag = (float)llList2String(L, 5);               // negative: their own live camera; 0: a cut; more: a glide
+    float df = (float)llList2String(L, 6);
+    vector a = (vector)llList2String(L, 8);               // where they are
+    float my = llGetCameraFOV();
+    if (df > 0.05 && my > 0.05)
+    {
+        float k = llTan(df * 0.5) / llTan(my * 0.5);
+        if (k < 0.2) k = 0.2;
+        if (k > 5.0) k = 5.0;
+        vector q = f + (p - f) * k;
+        list r = llCastRay(f, q, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
+        p = q;
+    }
+    float e = ease();
+    gO0 = gO0 + (gO1 - gO0) * e;                            // from where the camera is now
+    gF0 = gF0 + (gF1 - gF0) * e;
+    gRel = (a != ZERO_VECTOR);
+    gO1 = p - a;
+    gF1 = f - a;
+    gDur = 0.15;
+    if (lag > 0.0) gDur = lag;
+    if (lag == 0.0 || gCT == 0.0) { gO0 = gO1; gF0 = gF1; }   // a cut stays a cut
+    gCT = llGetTime();
+    string s = llGetSubString(llList2String(L, 7), 0, 3);   // "2.39", or 0: no bars
+    if ((float)s == 0.0) s = "full";
+    if (s != gFol)
+    {
+        gFol = s;
+        llMessageLinked(LINK_SET, CMD, "bars|follow " + s, "");
+    }
+    smooth();
+}
+
+float ease()
+{
+    if (gCT == 0.0) return 1.0;
+    float e = (llGetTime() - gCT) / gDur;
+    if (e > 1.0) e = 1.0;
+    return e;
+}
+
+// 20 times a second while you watch: between their last two updates, carried with them
+smooth()
+{
+    if (gCT == 0.0 || !worn()) return;
+    vector b;
+    if (gRel)
+    {
+        list d = llGetObjectDetails(gHostA, [OBJECT_POS]);
+        if (d == []) return;
+        b = llList2Vector(d, 0);
+    }
+    float e = ease();
+    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, b + gO0 + (gO1 - gO0) * e, CAMERA_FOCUS, b + gF0 + (gF1 - gF0) * e,
+        CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, 0.0, CAMERA_FOCUS_LAG, 0.0,
+        CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
 }
 
 // the eye-line check ends without keeping (you walk, teleport, or leave it 2 minutes): your camera again (8.0.3: it
@@ -408,10 +485,10 @@ tick()
         gClrT = 0.0;
         if (gState == "film" && gShotPos == ZERO_VECTOR && !gFollow) clearCam();   // nothing new yet: the old frame goes
     }
-    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out 4 times a second
-    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out 4 times a second,
-    // straight to the watchers (8.0.7: through sync it woke all twelve scripts every time)
-    if (gWatched && t - gCamT > 0.2 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
+    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out about 7 times a
+    // second, straight to the watchers (8.0.7: through sync it woke all twelve scripts every time), with where you
+    // are: their HUD eases between the updates, 20 times a second, relative to you (8.2.0: it stepped 4 times a second)
+    if (gWatched && t - gCamT > 0.12 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
     {
         gCamT = t;
         if (gState == "off" || gState == "watch" || (info & AGENT_MOUSELOOK) || !gPermOK) share();
@@ -419,7 +496,7 @@ tick()
         {
             vector cp = llGetCameraPos();
             string m = "T12|8|cam|" + (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|-0.25|"
-                + (string)llGetCameraFOV() + "|" + gShape;
+                + (string)llGetCameraFOV() + "|" + gShape + "|" + (string)llGetPos();
             integer i;
             for (i = 0; i < llGetListLength(gWatchers); i++) llRegionSayTo(llList2Key(gWatchers, i), SYNC_CH, m);
         }
@@ -634,7 +711,21 @@ default
 
     timer()
     {
+        if (gHl && gState != "watch") { llListenRemove(gHl); gHl = 0; gCT = 0.0; llSetTimerEvent(0.25); }
+        if (gHl)
+        {
+            llSetTimerEvent(0.05);                          // (whatever else set it meanwhile)
+            smooth();                                       // watching: 20 Hz; the tick still 4 times a second
+            if (llGetTime() - gTk < 0.25) return;
+            gTk = llGetTime();
+        }
         tick();
+    }
+
+    listen(integer ch, string name, key id, string m)
+    {
+        if (gState != "watch" || llGetSubString(m, 0, 9) != "T12|8|cam|" || llGetOwnerKey(id) != gHostA) return;
+        receive(llParseStringKeepNulls(m, ["|"], []));
     }
 
     link_message(integer sender, integer num, string str, key id)
@@ -716,6 +807,11 @@ default
                 gState = "watch";
                 gFollow = FALSE;
                 gShotPos = ZERO_VECTOR;
+                gHostA = (key)a;
+                gCT = 0.0;
+                gFol = "";
+                if (!gHl) gHl = llListen(SYNC_CH, "", NULL_KEY, "");
+                llSetTimerEvent(0.05);
                 share();
                 ui("");
             }
@@ -730,7 +826,7 @@ default
             {
                 gWatchers = llParseString2List(a, [","], []);
                 gWatched = (gWatchers != []);
-                if (gWatched) llSetTimerEvent(0.25);
+                if (gWatched) llSetTimerEvent(0.15);
                 share();
             }
             else if (c == "eyecam" && a != "off" && gPermOK)
