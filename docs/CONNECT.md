@@ -45,7 +45,7 @@ Channel `-7712120`, every message `T12|8|<what>|...` (`8` is the protocol genera
 | Message | From → to | Meaning |
 |---|---|---|
 | `who\|<ver>\|<lite>` | anyone → region | who wears Take 12 near me? (also a legacy `T12\|who\|<name>` so 7.x answers); only when nobody is known yet (8.2.0) |
-| `here\|<ver>\|<lite>` | → region, on wear and every 10 s (8.2.0); → asker | I wear Take 12. Kept 25 s by everyone within 20 m: the list opens at once, and the rings count who is near while you are alone. A legacy `T12\|here\|…` marks a 7.x HUD "(old)" |
+| `here\|<ver>\|<lite>` | → region, on wear and every 10 s (8.2.0); → asker; → someone new whose `here` you just heard (8.4.3: both know each other within a second) | I wear Take 12. Kept 25 s by everyone within 20 m: the list opens at once, and the rings count who is near while you are alone. A legacy `T12\|here\|…` marks a 7.x HUD "(old)" |
 | `ask\|<ver>` | → one person | share films? (a friend, or someone already connected, answers `yes` at once) |
 | `ask\|<ver>\|auto` · `join\|<ver>` | → a friend near you, and their answer | 8.2.0: two friends connect by themselves; the asked one joins only if the asker is their friend too, and never shows a question |
 | `show` | → a peer | 8.2.0: "watch my film": a friend watches at once, anyone else is asked (Watch / No) |

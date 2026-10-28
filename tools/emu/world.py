@@ -450,7 +450,7 @@ class Obj:
         s.w.post(dt, s._run, sc, name, args, detected, sc.timer_gen)
 
     def _run(s, sc, name, args, detected, gen):
-        if gen != sc.timer_gen or getattr(sc, "dead", False): return
+        if gen != sc.timer_gen or getattr(sc, "dead", False) or getattr(sc, "stopped", False): return
         if not (s.worn or s.rezzed) and name != "attach": return
         try:
             sc.run(name, args, detected)
@@ -687,11 +687,38 @@ class Obj:
         if name in s.inventory: return C["INVENTORY_" + s.inventory[name][0].upper()]
         if any(x.name == name and not getattr(x, "dead", False) for x in s.scripts): return C["INVENTORY_SCRIPT"]
         return C["INVENTORY_NONE"]
-    def llGetInventoryNumber(s, sc, t):
-        return len([n for n, v in s.inventory.items() if C["INVENTORY_" + v[0].upper()] == t or t == C["INVENTORY_ALL"]])
+    def _names(s, t):
+        L = [n for n, v in s.inventory.items() if C["INVENTORY_" + v[0].upper()] == t or t == C["INVENTORY_ALL"]]
+        if t in (C["INVENTORY_SCRIPT"], C["INVENTORY_ALL"]): L += [x.name for x in s.scripts if not getattr(x, "dead", False)]
+        return sorted(L)
+    def llGetInventoryNumber(s, sc, t): return len(s._names(t))
     def llGetInventoryName(s, sc, t, i):
-        L = sorted(n for n, v in s.inventory.items() if C["INVENTORY_" + v[0].upper()] == t or t == C["INVENTORY_ALL"])
+        L = s._names(t)
         return L[i] if 0 <= i < len(L) else ""
+    # a script's running state (8.5.0, carry's watchdog): a run-time error stops a script, as in-world (crash())
+    def _script(s, name):
+        for x in s.scripts:
+            if x.name == name and not getattr(x, "dead", False): return x
+    def crash(s, name):
+        """the script stops, as after "Stack-Heap Collision": no more events until it is started again"""
+        s._script(name).stopped = True
+    def llGetScriptState(s, sc, name):
+        x = s._script(name)
+        return int(bool(x) and not getattr(x, "stopped", False))
+    def llResetOtherScript(s, sc, name):
+        x = s._script(name)
+        if not x: return
+        if getattr(x, "stopped", False):
+            s._init(x); x.reset_vars(); x.queue = []; x.timer_gen = next(_gens); x.fresh = True   # runs when started
+        else: s.reset(x)
+    def llSetScriptState(s, sc, name, run):
+        x = s._script(name)
+        if not x: return
+        was = getattr(x, "stopped", False)
+        x.stopped = not run
+        if run and was and getattr(x, "fresh", False):
+            x.fresh = False
+            if x.has("state_entry"): s.event(x, "state_entry", ())
     def llGetInventoryKey(s, sc, name):
         v = s.inventory.get(name)
         return v[1] if v and v[2] else Key(NULL)

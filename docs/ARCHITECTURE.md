@@ -77,7 +77,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `fixed` | Your own framing: View A / B per place, seat memory per object and spot, Keep new, Forget / Undo, Let go / Take back |
 | `scenic` | Drift · Near · Room · Far: views of the place; the idle camera |
 | `sync` | Connect: the nearby list, invites, two equal cameras, watching, sharing (`docs/CONNECT.md`) |
-| `carry` | Between two copies worn by the same owner: carry-over of the settings, two worn (the older steps aside); Feedback: the text box and the email to the maker (8.0.10) |
+| `carry` | Between two copies worn by the same owner: carry-over of the settings, two worn (the older steps aside); Feedback: the text box and the email to the maker (8.0.10); Connect's dialogs and Settings › Friends (8.4.3, for sync's memory); the watchdog: every 5 s a stopped script (a run-time error) is reset and started again, and `/12 status` names it (8.4.3) |
 
 The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, text, screen, strip, bars, scenic, sync, carry with
 `LITE = 1` (Tracking / Portrait / Fixed dim; it can watch a friend's film, never film for others).
@@ -108,6 +108,7 @@ The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, 
 | 7345 TIP | strip, ui → text | `<word>` (a key's first three uses) |
 | 7346 TXT / 7347 TXT_ANS | ui ↔ text | `<id>\|<args>` → `<id>\|<text>` |
 | 7348 SHAPE | bars → strip | `<label>\|<on / off / dim>` |
+| 7349 CONN | sync ↔ carry | sync: `<page>\|<args>`, id `label\nkey\n…` (a dialog of Connect); carry: `ans\|<page>\|<button>`, id the button's key (no button: the ask closed unanswered) |
 | 7360 MSG_VER | all | `?` or a version (ui warns on a mismatch) |
 | 7370 STATUS | ui → all | `?`: each script says one line |
 | 7371 CMD | any → any | below |

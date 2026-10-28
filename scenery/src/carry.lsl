@@ -11,9 +11,13 @@
 //  Feedback (8.0.10): the main dialog's Feedback or /12 feedback (CMD "feedback") opens a text box; what you write
 //  goes by email to the maker with one plain line about the copy (your name, version, shot, frame, lens, window,
 //  region, date). One a minute, ten a day. llEmail pauses this script 20 s: here it holds up nothing of the camera.
+//  8.5.0: Connect's dialogs (sync asks CONN "<page>|<args>", the buttons and their keys in id; the answer goes back as
+//  CONN "ans|<page>|<button>" with the key) and Settings › Friends live here, where there is room: sync ran out of
+//  memory in-world. And every 5 s a script that stopped (a run-time error such as "Stack-Heap Collision") is started
+//  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.4.2";
+string VERSION = "8.4.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -24,6 +28,9 @@ integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
 integer UI_STATE   = 7320;
+integer TXT        = 7346;
+integer TXT_ANS    = 7347;
+integer CONN       = 7349;
 
 string  MAKER = "panocarver@gmail.com";   // where feedback goes
 
@@ -45,10 +52,131 @@ integer gFbO;                       // ... opened at
 integer gFbT;                       // the last feedback sent at
 integer gFbN;                       // ... how many today
 string  gFbDay;
+integer gDl;                        // a dialog of Connect: its listener (0: none)
+integer gDch;
+integer gDt;                        // ... opened at
+string  gPage;
+list    gBtn;
+list    gBtnK;
+string  gRe;                        // the scripts started again, for /12 status
 
 string cfg(string k)
 {
     return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+string sn(key k)
+{
+    string n = llKey2Name(k);
+    if (n == "") return "someone";
+    integer j = llSubStringIndex(n, " Resident");
+    if (j > 0) n = llGetSubString(n, 0, j - 1);
+    return n;
+}
+
+// ---- Connect's dialogs ----------------------------------------------------------------------------
+// labels and keys come as "label\nkey\nlabel\nkey…"; the words of the page are text's (TXT, answered to "carry")
+menu(string page, string args, list P)
+{
+    gPage = page;
+    gBtn = [];
+    gBtnK = [];
+    integer i;
+    for (i = 0; i < llGetListLength(P); i += 2)
+    {
+        gBtn += [llList2String(P, i)];
+        gBtnK += [llList2String(P, i + 1)];
+    }
+    llListenRemove(gDl);
+    gDch = -100000 - (integer)llFrand(900000000.0);
+    gDl = llListen(gDch, "", gOwner, "");
+    gDt = llGetUnixTime();
+    llMessageLinked(LINK_SET, TXT, page + "|" + args, "carry");
+    tick();
+}
+
+// Settings › Friends (from sync, 8.5.0): your friends join without being asked. rm: the list to remove one from
+friends(integer rm)
+{
+    list F = llParseString2List(cfg("friends"), [";"], []);
+    list n = [];
+    integer i;
+    for (i = 0; i < llGetListLength(F) && i < 11; i++) n += [llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23), ""];
+    string c = llList2String(["on", "off"], cfg("chime") == "0");
+    if (rm)
+    {
+        menu("friends", "Tap a friend to remove.~" + c, n + ["‹ Back", ""]);
+        gPage = "remove";
+        return;
+    }
+    string fl = "None yet.";
+    if (n != []) fl = llDumpList2String(llList2ListStrided(n, 0, -1, 2), ", ");
+    menu("friends", fl + "~" + c, ["Add", "", "Remove", "", llList2String(["Chime", "● Chime"], c == "on"), "", "‹ Back", ""]);
+}
+
+// a button: Settings › Friends and Add a friend here, the rest to sync
+choose(string b)
+{
+    integer i = llListFindList(gBtn, [b]);
+    string k = llList2String(gBtnK, i);
+    if (k == "") k = NULL_KEY;
+    string p = gPage;
+    llListenRemove(gDl);
+    gDl = 0;
+    if (b == "Close" || i < 0) return;
+    if (p == "friends")
+    {
+        if (b == "Add") llMessageLinked(LINK_SET, CMD, "connect|addfriend", "");
+        else if (b == "Remove") friends(TRUE);
+        else if (b == "‹ Back") llMessageLinked(LINK_SET, CMD, "menu|settings", "");
+        else
+        {
+            llLinksetDataWriteProtected("cin.chime", llList2String(["0", "1"], cfg("chime") == "0"), PASS);
+            friends(FALSE);
+        }
+    }
+    else if (p == "remove")
+    {
+        list F = llParseString2List(cfg("friends"), [";"], []);
+        for (i = llGetListLength(F) - 1; i >= 0; i--)
+            if (llGetSubString(llList2String(llParseString2List(llList2String(F, i), [","], []), 1), 0, 23) == b) F = llDeleteSubList(F, i, i);
+        if (b != "‹ Back") llLinksetDataWriteProtected("cin.friends", llDumpList2String(F, ";"), PASS);
+        friends(FALSE);
+    }
+    else if (p == "addfriend")
+    {
+        if (llSubStringIndex(b, " (old)") >= 0 || k == NULL_KEY) return;
+        string f = cfg("friends");
+        if (llSubStringIndex(f, k) < 0)
+            llLinksetDataWriteProtected("cin.friends", llDumpList2String(llList2List(llParseString2List(f, [";"], []) + [k + "," + llKey2Name((key)k)], -20, -1), ";"), PASS);
+        llMessageLinked(LINK_SET, NOTE, "friend|" + sn((key)k), "");
+    }
+    else llMessageLinked(LINK_SET, CONN, "ans|" + p + "|" + b, k);
+}
+
+// ---- the watchdog -------------------------------------------------------------------------------
+// a script that stopped (a run-time error) starts again, fresh
+watchdog()
+{
+    integer i;
+    for (i = 0; i < llGetInventoryNumber(INVENTORY_SCRIPT); i++)
+    {
+        string n = llGetInventoryName(INVENTORY_SCRIPT, i);
+        if (n != llGetScriptName() && !llGetScriptState(n))
+        {
+            llResetOtherScript(n);
+            llSetScriptState(n, TRUE);
+            gRe += " " + n;
+        }
+    }
+}
+
+// every 5 s while worn (the watchdog, a dialog left open); twice a second while a setup is sent
+tick()
+{
+    float t = 5.0;
+    if (gTo != NULL_KEY) t = 0.5;
+    llSetTimerEvent(t * (llGetAttached() != 0));
 }
 
 // what you wrote, then one plain line about this copy
@@ -141,7 +269,7 @@ send()
     {
         say("done");
         gTo = NULL_KEY;
-        if (!gFbL) llSetTimerEvent(0.0);
+        tick();
     }
 }
 
@@ -152,6 +280,7 @@ default
         gOwner = llGetOwner();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "carry");
         if (llGetAttached()) hello();
+        tick();
     }
 
     on_rez(integer p)
@@ -167,6 +296,7 @@ default
     listen(integer ch, string name, key id, string msg)
     {
         if (ch == gFbCh && gFbL) { if (id == gOwner) feedback(msg); return; }
+        if (ch == gDch && gDl) { choose(msg); return; }
         if (llGetOwnerKey(id) != gOwner || id == llGetKey() || llGetSubString(msg, 0, 4) != "T12C|") return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
@@ -193,7 +323,7 @@ default
                 string k = llList2String(K, i);
                 if (llGetSubString(k, 0, 3) == "cin." && llListFindList(SKIP, [k]) < 0) gKeys += [k];
             }
-            llSetTimerEvent(0.5);
+            tick();
         }
         else if (w == "kv" && gWant)
         {
@@ -223,7 +353,13 @@ default
     {
         if (gTo != NULL_KEY) send();
         if (gFbL && llGetUnixTime() - gFbO > 600) { llListenRemove(gFbL); gFbL = 0; }   // the text box left open
-        if (gTo == NULL_KEY && !gFbL) llSetTimerEvent(0.0);
+        if (gDl && llGetUnixTime() - gDt > 60)
+        {
+            llListenRemove(gDl);                            // a dialog left open; someone's ask unanswered: "no"
+            gDl = 0;
+            if (gPage == "ask") llMessageLinked(LINK_SET, CONN, "ans|ask|", NULL_KEY);
+        }
+        watchdog();
     }
 
     link_message(integer sender, integer num, string str, key id)
@@ -243,10 +379,24 @@ default
             gFbL = llListen(gFbCh, "", gOwner, "");
             gFbO = llGetUnixTime();
             llTextBox(gOwner, "Feedback\nWhat should Take 12 do better? It goes to the maker with your name and Take 12's version.", gFbCh);
-            if (gTo == NULL_KEY) llSetTimerEvent(30.0);
         }
+        else if (num == CONN && llGetSubString(str, 0, 3) != "ans|")
+        {
+            integer i = llSubStringIndex(str, "|");
+            menu(llGetSubString(str, 0, i - 1), llGetSubString(str, i + 1, -1), llParseStringKeepNulls((string)id, ["\n"], []));
+        }
+        else if (num == TXT_ANS && id == "carry" && gDl)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            if (llList2String(L, 0) == gPage || (gPage == "remove" && llList2String(L, 0) == "friends")) llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), gBtn, gDch);
+        }
+        else if (num == CMD && str == "connect|friends") friends(FALSE);
         else if (num == STATUS && str == "?")
+        {
+            string r = gRe;
+            if (r == "") r = " none";
             llOwnerSay("[Take 12/carry] v" + VERSION + llList2String([" in use", " stepped aside (a newer copy is worn)"], gAside)
-                + ", free mem " + (string)llGetFreeMemory());
+                + ", started again:" + r + ", free mem " + (string)llGetFreeMemory());
+        }
     }
 }
