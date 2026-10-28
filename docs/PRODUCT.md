@@ -75,7 +75,7 @@ The camera that directs itself, for the everyday: you need not think about shots
 
 | You | Auto films | After |
 |---|---|---|
-| **Moving** (walking, running: the keys or your speed) | **Tracking** (Film; Smooth or Snappy as set) | 1 s of moving, from any shot, and from an Alt-click's hold (walking off). Never anything else while you move. |
+| **Moving** (walking, running: the keys or your speed) | **Tracking** (your own look and side; Smooth or Snappy as set) | the walking keys at once (held 0.25 s), otherwise 1 s of moving, from any shot, and from an Alt-click's hold (walking off). Never anything else while you move. |
 | **Stopped, alone** | Tracking holds behind you, then **Scenic · Drift**: its reveal (close on you, rising, wide) | 10 s still |
 | **Still a long while, alone**, or Away | **Scenic · Far** outdoors, **Scenic · Room** indoors: the place, wide | 5 min still (Away: as soon as the shot has had its 8 s) |
 | **Stopped with someone** (1–3 people within 3 m: a conversation) | **Portrait · Us**, Medium (a two-shot; a group of 3–4) | 4 s still together; it holds while they stay; 3 s after they leave, the rows above |
