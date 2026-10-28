@@ -64,29 +64,36 @@ Wearing it: your own camera for 3 s, then Auto (once set up; the setup's last st
 - "Easy to read?" (the strip's size);
 - a three-page tour.
 
-## Auto (8.3.0)
+## Auto (8.3.0; the guide, 8.4.0)
 The camera that directs itself, for the everyday: you need not think about shots at all.
 - **The sign:** the Orbit, at the strip's left end: the shutter's ring with its dot out on the ring. The shutter holds
   still (its dot in the middle); Auto moves (the dot riding round you). Lit while Auto directs; quiet when you do.
 - **The strip in Auto:** the Orbit, the shot it chose in faint letters, the ▭, the [12], the rings, the shutter.
   No options: nothing to choose.
-- **Its rules,** only what a script truly sees:
 
-  | You | Auto |
-  |---|---|
-  | walk (2 s) | Tracking, Film |
-  | stand still 6 s | Portrait, Medium · Us (whoever is within 3 m, else you) |
-  | sit | the seat's kept view (Fixed); none: the frame holds |
-  | are idle | Scenic, Drift's reveal (Settings › Idle start) |
-  | fly, mouselook, a marked vehicle | your camera, as in manual |
+**Auto: the guide.** Only what a script truly sees: moving, standing still, sitting, someone within 3 m, Away.
 
-- **Calm:** at least 8 s a shot, and only once the reason has lasted 2 s, so a step or two never cuts.
-- **Its choices are not kept:** your own Portrait size, Tracking look and Scenic band stay as you left them.
-- **It never fights you:** Alt-click and it waits; walk off or press Esc and it goes on. While you watch someone's
+| You | Auto films | After |
+|---|---|---|
+| **Moving** (walking, running: the keys or your speed) | **Tracking** (Film; Smooth or Snappy as set) | 1 s of moving, from any shot, and from an Alt-click's hold (walking off). Never anything else while you move. |
+| **Stopped, alone** | Tracking holds behind you, then **Scenic · Drift**: its reveal (close on you, rising, wide) | 10 s still |
+| **Still a long while, alone**, or Away | **Scenic · Far** outdoors, **Scenic · Room** indoors: the place, wide | 5 min still (Away: as soon as the shot has had its 8 s) |
+| **Stopped with someone** (1–3 people within 3 m: a conversation) | **Portrait · Us**, Medium (a two-shot; a group of 3–4) | 4 s still together; it holds while they stay; 3 s after they leave, the rows above |
+| **A crowd** (more than 3 within 3 m) | Scenic · Drift (it stays near when people are around) | 10 s |
+| **Sitting** | **Fixed** where the seat has a view you kept; otherwise **Scenic · Drift** | 2 s seated (Drift: 10 s) |
+| **Flying, mouselook, a marked vehicle** | your own camera | as in manual |
+
+- **Calm:** a shot stays at least 8 s, except Tracking as you move, which comes at once. A key tapped (under 1 s)
+  is not a walk.
+- **Your Alt-click wins:** Auto waits; Esc or walking off gives Auto the camera back. While you watch someone's
   film it waits too.
+- **Its choices are not kept:** your own Tracking look, Portrait size and Scenic band stay as you left them.
+- **Settings › Idle start** is for manual; Auto has its own resting steps.
 - **Manual:** tap the faint shot, or `/12 tracking` and the like: that shot goes on, the four shots and their options
   come back, and nothing switches by itself. Tap the Orbit (or `/12 auto`) and Auto directs again. Each wear starts
   in Auto.
+- **Why (8.4.0):** 8.3.0 waited 2 s of walking and kept a shot 8 s, so walking a room in short steps left you in
+  Portrait, watching yourself walk. Portrait is now for company only; resting is Scenic's.
 - Not in the free Take 12 Scenery (the Orbit is dim there).
 
 ## The shots

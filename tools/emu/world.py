@@ -318,6 +318,11 @@ class Avatar:
         if moving and not s.sitting:
             f = 0.8 if moving & 1 else (-0.8 if moving & 2 else 0)
             s.pos = B.add(s.pos, _rotv(vec(f, 0.0, 0.0), s.rot))
+            if f:                                      # walking with the keys moves you, as in-world (8.4.0: it had no speed)
+                s.vel = _rotv(vec(f * 5.0, 0.0, 0.0), s.rot)
+                s._kvel = True
+        elif getattr(s, "_kvel", False):
+            s.vel, s._kvel = ZV, False
         if held: s.w.post(0.2, s._repeat, held)
 
     def _repeat(s, held):
@@ -582,6 +587,10 @@ class Obj:
     def llGetOwner(s, sc): return Key(s.owner.key)
     def llGetKey(s, sc): return Key(s.key)
     def llGetAttached(s, sc): return s.point if s.worn else 0
+    def llDetachFromAvatar(s, sc):
+        """back to the inventory (8.4.0, the box you wear): only worn, only with PERMISSION_ATTACH; after this event"""
+        if s.worn and sc.perms & C["PERMISSION_ATTACH"]:
+            s.w.post(0.0, lambda: s.owner.take_off(s))
     def llGetNumberOfPrims(s, sc): return len(s.prims)
     def llGetLinkName(s, sc, link):
         if link == C["LINK_ROOT"]: link = 1

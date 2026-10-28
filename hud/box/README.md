@@ -1,14 +1,18 @@
 # The box
 
-What a buyer receives: one black box. Touch it, and everything in it arrives in one folder, `Take 12 <version>`.
-Touch it again any time for a fresh copy. No menu.
+What a buyer receives: the Take 12 box, worn the classic way. They right-click it in their inventory and choose
+**Add** (or Wear): it shows on the screen as a small card, the Take 12 board, puts everything in it into one folder,
+`Take 12 <version>`, says so, and takes itself off, back to the inventory. Wear it again any time for a fresh copy.
+No menu.
+
+Rezzed in-world it is a black box, 0.45 × 0.25 × 0.45 m, for a store display; its owner's touch unpacks it too.
 
 | File | What |
 |---|---|
-| `unpack.lsl` | Shapes the box (0.45 × 0.25 × 0.45 m, matte), puts the three textures on, names it "Take 12 - Cinematic Camera HUD", and hands everything else to its owner on touch |
-| `take12_box_front.png` (1024²) | The front and back: the cinema-black board |
-| `take12_box_side.png` (512 × 1024) | The two sides: TAKE 12, upright |
-| `take12_box_top.png` (1024 × 512) | The lid: the [12] |
+| `unpack.lsl` | Worn: the card, the folder, then it detaches itself. Rezzed: shapes the box (matte), puts the three textures on, names it "Take 12 - Cinematic Camera HUD", and unpacks on its owner's touch |
+| `take12_box_front.png` (1024²) | The card on the screen; the box's front and back: the cinema-black board |
+| `take12_box_side.png` (512 × 1024) | The box's two sides: TAKE 12, upright |
+| `take12_box_top.png` (1024 × 512) | The box's lid: the [12] |
 
 The textures are made by `python3 tools/art/make_box.py`.
 
@@ -23,7 +27,8 @@ The textures are made by `python3 tools/art/make_box.py`.
 5. Set the box's own permissions:
    - copy, no-modify, no-transfer;
    - set unpack.lsl to no-modify.
+6. Take it into your inventory, then **wear it once on HUD Center** (right-click › Attach to HUD › Center). It unpacks
+   to you and takes itself off; from now on it remembers that HUD point, so a buyer's Add puts it on their screen.
+   That inventory item is the Marketplace item.
 
-   Then take it into your inventory: that is the Marketplace item.
-
-Test it once: rez it, touch it, and check the folder.
+For a store display, rez a copy of it: rezzed, it is the black box again.

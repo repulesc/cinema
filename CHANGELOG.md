@@ -1,5 +1,28 @@
 # Changelog
 
+## 8.4.0 (Auto: the guide; the box you wear)
+- **Auto was stuck in Portrait.** It waited for 2 s of walking and kept a shot 8 s, so walking a room in short steps
+  never got past Portrait, and you watched yourself walk. Reproduced in the emulator (whose keys now give a walking
+  speed, as in-world), then rewritten.
+- **Auto: the guide** (docs/PRODUCT.md, the Read Me):
+  - moving 1 s (the keys or your speed): Tracking, at once, from any shot and from an Alt-click's hold; nothing else
+    while you move;
+  - stopped alone: Tracking holds, then after 10 s Scenic Drift (its reveal);
+  - 5 minutes still, or Away: Scenic wide, Far outdoors, Room indoors;
+  - with 1-3 people within 3 m, still 4 s together: Portrait Us; 3 s after they leave, Drift again; a crowd: Drift;
+  - sitting: Fixed where the seat has a kept view, otherwise Drift after 10 s;
+  - a shot stays 8 s, except Tracking as you move. Auto's bands and options are never kept as yours.
+  - In Auto, Settings › Idle start is off (Auto has its own resting steps).
+  - `/12 debug on` says each pick and why; `/12 status` adds what Auto sees.
+- **The box you wear:** Add it from the inventory and it shows as a card on the screen, hands over the folder
+  `Take 12 8.4.0` and takes itself off. Rezzed, it is still the black box (a store display), touch to unpack. The
+  maker wears it once on HUD Center before it goes on the Marketplace (hud/box/README.md).
+- The tip for the Orbit says the guide in a line.
+- Scripts changed: tracking (the director), scenic (Auto's band), core (no idle start in Auto), text (the tip); the
+  rest only their version. Still twelve.
+- Tests: `auto_emu.py` rewritten as a day by the guide (the stuck case first); `box_emu.py` worn; the emulator's
+  keys walk with a speed; `llDetachFromAvatar`.
+
 ## 8.3.0 (Auto: the camera that directs itself)
 - **Auto.** Wear Take 12 (once set up) and it picks the shot from what a script truly sees:
   - walking 2 s: Tracking (Film);

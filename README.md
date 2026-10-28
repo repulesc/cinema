@@ -17,7 +17,7 @@ the top of the screen and the [12].
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.3.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.4.0** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,
@@ -29,8 +29,8 @@ person; a number is broader and quieter, and it points outward: there is somethi
 we make can outlast us, and a number keeps without the person behind it. Two digits, because one stands still and two
 make movement. Twelve, because it is how we keep time. A take is a moment in time; Take 12 keeps them.
 
-The box (`hud/box/`) is one black box that makes itself from three textures; a touch hands over the HUD, the Read Me
-and a Take 12 Scenery to give a friend.
+The box (`hud/box/`) is worn, the classic way: Add it and it shows on the screen, hands over one folder (the HUD, the
+Read Me and a Take 12 Scenery to give a friend) and takes itself off. Rezzed, it is a black box for a store display.
 
 ## Repository layout
 | Path | Contents |

@@ -30,7 +30,7 @@ A cinematic camera for Second Life.
 Take 12 sits at the top of your screen like a cinema camera's display: one thin line of words, and the [12]. Double-tap it for the strip.
 
 AUTO
-Wear it and it films your life. Walking: Tracking. Standing still: Portrait. Sitting: your seat's view. Away: Scenic. Calm, never for a step or two, and one tap gives you the camera.
+Wear it and it films your life. Moving: Tracking. Resting: Scenic, the place around you. With someone: Portrait, the two of you. Sitting: your seat's view. Calm, and one tap gives you the camera.
 
 TRACKING
 A cinematic follow camera: over your shoulder, a slow film look, or a smooth classic view. Never through a wall; in a small room it takes the corner.

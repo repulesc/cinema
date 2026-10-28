@@ -41,9 +41,11 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - [ ] Sitting holds the frame and FIXED glows; Alt-click holds (the lit word dims) and a key gives it back; flying, mouselook; a teleport and a region crossing.
 - [ ] Frames per shot (the ▭: cinema frames while filming, the snapshot size), Black and Dimmed. The shutter: the view holds in 3:2 while walking with Tracking; the ▭ then lists the photo frames; a 1800 × 1200 snapshot matches the pillarbox; pressed again, the film goes on.
 - [ ] Drift: the reveal (rising, pulling back, a cut to a new close); Settings › Motion › Breathe gives the in and out.
-- [ ] Auto (8.3.0): worn, it starts after 3 s with the Orbit lit and the shot faint; standing, Portrait; walk 2 s,
-  Tracking; stop 6 s, Portrait; a step or two never cuts; sit on a seat you framed, Fixed; elsewhere the frame holds;
-  away, Drift; Alt-click waits, Esc goes on; tap the faint shot: manual, the words come back; tap the Orbit: Auto.
+- [ ] Auto (the guide, 8.4.0): worn, it starts after 3 s with the Orbit lit and the shot faint; walking round a room
+  in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
+  4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
+  goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.4.0", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).
@@ -63,4 +65,5 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - Fixed: the capture time (1 s still), KEEP NEW's 5 s, the spot sizes (0.5 m and 45°; 2 m on the ground).
 - Scenic: the 15 s hold, Drift's legs (15 s; the distances 5–26 m alone, 4.5–7 m near people), Near's 3–8 m.
 - Connect: QUIET 10 s, GONE 3 s, NEAR 20 m.
-- Auto: walking over 0.5 m/s for 2 s, still 6 s, 8 s a shot, the 3 s on wear, Esc's 1.5 s.
+- Auto: moving over 0.5 m/s for 1 s, Drift after 10 s, wide after 5 min, Portrait after 4 s with 1-3 people within
+  3 m (gone 3 s), 8 s a shot, the 3 s on wear, Esc's 1.5 s.

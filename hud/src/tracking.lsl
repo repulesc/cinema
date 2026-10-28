@@ -11,15 +11,20 @@
 //  (under about 4 × 4 m, measured with rays) it takes the room's best corner and pans with you (FOLLOW lock); out of the
 //  room, behind you again. Running pulls it back about 30 %. Standing still, it holds; after 5 s the PORTRAIT word glows
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
-//  Auto (8.3.0) lives here too, the walking camera knowing when you walk and stop: the director. On wear (once set
-//  up) it picks the shot from what a script truly sees: walking, Tracking; standing still 6 s, Portrait (Medium · Us:
-//  whoever is within 3 m, else you); sitting, Fixed where this seat has a kept view, else the frame holds; idle,
-//  core's Scenic (Drift's reveal). At least 8 s per shot, and only once the reason has lasted 2 s. It keeps its hands
-//  off while you hold the camera (it comes back as you walk off or press Esc), fly, watch someone or hold a photo.
-//  A shot tapped (the strip, /12 tracking …) or the Orbit tapped: yours, manual, until the Orbit is tapped again.
+//  Auto (8.3.0; its rhythm 8.4.0) lives here too, the walking camera knowing when you walk and stop: the director.
+//  On wear (once set up) it picks the shot from what a script truly sees (docs/PRODUCT.md, Auto: the guide):
+//    moving 1 s (speed, the movement keys)     Tracking, at once, from any shot, also from an Alt-click's hold
+//    still 10 s, alone (or in a crowd)         Scenic · Drift (its reveal); 5 minutes or Away: Scenic wide (Room
+//                                              indoors, Far outdoors)
+//    still 4 s with 1-3 people within 3 m      Portrait (Medium · Us); 3 s after they leave, the rest again
+//    sitting                                   Fixed where this seat has a kept view (2 s), else Drift (10 s)
+//  A shot stays at least 8 s, except Tracking as you move (8.3.0's 2 s rule kept you in Portrait while you walked a
+//  room in short steps). Hands off while you fly, watch someone, hold a photo or set the eye line; an Alt-click waits
+//  until you walk off (or Esc: core). A shot of your own (the strip, /12 tracking …) or the Orbit: manual, until the
+//  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.3.0";
+string VERSION = "8.4.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -27,6 +32,7 @@ integer STOP       = 7302;
 integer NEXT       = 7303;
 integer PAUSE      = 7304;
 integer RESUME     = 7305;
+integer MOVING     = 7306;
 integer ACK        = 7313;
 integer FOLLOW     = 7314;
 integer UI_STATE   = 7320;
@@ -63,10 +69,16 @@ string  gCore = "wait";                // core: its state, shot and why (UI_STAT
 string  gCShot;
 string  gCWhy;
 float   gShotT;                        // ... that shot since
-string  gWant;                         // what Auto would pick now, and since
-float   gWantT;
-float   gStillA;                       // standing still since
+string  gBandA;                        // Scenic's band Auto asked for (drift, wide)
+float   gMoveT;                        // moving since (0: still)
+float   gStillA;                       // still since (sitting down or standing up starts it again)
+integer gSatA;
+integer gKeysA;                        // the movement keys held (core's MOVING)
+integer gWith;                         // people within 3 m (the sensor), since, gone since
+float   gWithT;
+float   gGoneT;
 integer gEyeA;                         // the eye-line check is on
+integer gDebug;
 
 string cfg(string k)
 {
@@ -228,15 +240,35 @@ check()
 }
 
 // ---- Auto (8.3.0) -------------------------------------------------------------------------------
-// on or off: everyone hears it (core, the strip, the shots)
+// on or off: everyone hears it (core, the strip, the shots); the people within 3 m while it is on
 auto(integer on)
 {
     gAuto = on;
-    gWant = "";
+    gBandA = "";
+    gStillA = 0.0;
     llMessageLinked(LINK_SET, CMD, "auto|" + (string)on, "");
+    if (on) llSensorRepeat("", NULL_KEY, AGENT, 3.0, PI, 1.0);   // 16 at most, never the region's list (8.0.1)
+    else { llSensorRemove(); gWith = 0; }
 }
 
-// the director: each pick is a tap Auto makes for you (CMD shot|<shot>|auto)
+// a pick: a tap Auto makes for you (and Scenic's band, not kept)
+pick(string shot, string band, string why)
+{
+    if ((band == "" || band == gBandA) && shot == gCShot) return;
+    if (band != "")
+    {
+        gBandA = band;
+        llMessageLinked(LINK_SET, CMD, "aband|" + band, "");
+    }
+    if (shot != gCShot)
+    {
+        gShotT = llGetTime();
+        llMessageLinked(LINK_SET, CMD, "shot|" + shot + "|auto", "");
+    }
+    if (gDebug) llOwnerSay("[Take 12] Auto: " + shot + " " + band + " (" + why + ")");
+}
+
+// the director, twice a second
 direct()
 {
     float t = llGetTime();
@@ -245,38 +277,32 @@ direct()
         gWearing = FALSE;                                   // on wear, if set up (a setup ends with /12 auto, ui)
         if (cfg("firstrun") == "done") { auto(TRUE); llMessageLinked(LINK_SET, TIP, "auto", ""); }
     }
-    if (!gAuto || gEyeA || gCWhy == "idle" || (gCore != "wait" && gCore != "film")) return;
+    if (!gAuto || gEyeA || gCWhy == "idle" || (gCore != "wait" && gCore != "film" && gCore != "held")) return;
     integer info = llGetAgentInfo(gOwner);
     if (info & (AGENT_FLYING | AGENT_MOUSELOOK)) return;
     list d = llGetObjectDetails(gOwner, [OBJECT_VELOCITY, OBJECT_ROOT]);
     vector v = llList2Vector(d, 0);
-    string want = gCShot;
+    float sp = llVecMag(<v.x, v.y, 0.0>);
     integer sat = (info & AGENT_SITTING) != 0;
-    if (sat)
+    integer moving = !sat && (sp > 0.5 || gKeysA || (info & AGENT_WALKING));
+    if (sat != gSatA) { gSatA = sat; gStillA = t; }         // sat down, stood up: the still clock starts again
+    if (moving) { if (gMoveT == 0.0) gMoveT = t; gStillA = 0.0; }
+    else { gMoveT = 0.0; if (gStillA == 0.0) gStillA = t; }
+    if (gCore == "held" && !moving) return;                  // your Alt-click: until you walk off (or Esc, core)
+    float still = t - gStillA;
+    integer kept = sat && cfg("seat." + llList2String(d, 1)) != "";
+    integer with = (gWith > 0 && gWith <= 3 && t - gWithT >= 4.0) || (gCShot == "portrait" && t - gGoneT < 3.0);
+    if (moving)
     {
-        // this seat's kept view; none: the frame holds (nothing on yet: Fixed, frame it and it is kept)
-        if (gCShot == "" || cfg("seat." + llList2String(d, 1)) != "") want = "fixed";
-        gStillA = 0.0;
+        if (t - gMoveT >= 1.0 || gCShot == "") pick("tracking", "", "moving " + (string)sp + " m/s");
+        return;                                             // never anything else while you move
     }
-    else if (llVecMag(<v.x, v.y, 0.0>) > 0.5)
-    {
-        want = "tracking";
-        gStillA = 0.0;
-    }
-    else
-    {
-        if (gStillA == 0.0) gStillA = t;
-        if (t - gStillA > 4.0 || gCShot == "") want = "portrait";   // 4 s + the 2 s below: 6 s still
-    }
-    if (want != gWant) { gWant = want; gWantT = t; }
-    if (want == gCShot || want == "") return;
-    if (gCShot != "")                                       // nothing on yet: at once
-    {
-        if (t - gWantT < 2.0) return;                       // the reason has to last 2 s
-        if (t - gShotT < 8.0 && !sat && gCShot != "fixed") return;   // and a shot 8 s (not sitting down, standing up)
-    }
-    gShotT = t;
-    llMessageLinked(LINK_SET, CMD, "shot|" + want + "|auto", "");
+    if (kept && still >= 2.0) { pick("fixed", "", "a kept seat"); return; }
+    if (gCShot == "") { if (sat) pick("scenic", "drift", "seated"); else pick("tracking", "", "worn"); return; }
+    if (t - gShotT < 8.0) return;                           // a shot stays 8 s
+    if (with && !sat && still >= 4.0) pick("portrait", "", (string)gWith + " near");
+    else if (still >= 300.0 || (info & AGENT_AWAY)) pick("scenic", "wide", "a long while");
+    else if (still >= 10.0 && !(kept && gCShot == "fixed")) pick("scenic", "drift", "resting");
 }
 
 default
@@ -291,6 +317,7 @@ default
 
     attach(key id)
     {
+        if (gAuto) auto(FALSE);
         gAuto = FALSE;
         gCore = "wait";
         gCShot = "";
@@ -342,16 +369,23 @@ default
                 gWearing = FALSE;                                   // a shot of your own (a tap, /12 tracking …): manual
                 if (gAuto && llList2String(L, 1) != gCShot) auto(FALSE);
             }
-            else if (llGetSubString(str, 0, 4) == "auto|") { gAuto = (str == "auto|1"); gWant = ""; gWearing = FALSE; }
+            else if (llGetSubString(str, 0, 4) == "auto|")
+            {
+                gWearing = FALSE;
+                if ((str == "auto|1") != gAuto) auto(str == "auto|1");   // (from the strip: the sensor follows)
+            }
+            else if (llGetSubString(str, 0, 5) == "debug|") gDebug = (str == "debug|1");
             else if ((str == "stop" || str == "standby") && gAuto) auto(FALSE);   // your viewer's camera; an older copy
             else if (llGetSubString(str, 0, 6) == "eyecam|") gEyeA = (str != "eyecam|off");
             else if (str == "eyequit") gEyeA = FALSE;
         }
+        else if (num == MOVING) gKeysA = ((integer)str != 0);
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tracking] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(LOOKS, gLook)
                 + " · " + llList2String(["L", "R"], gRight) + ", " + llList2String(["behind you", "a room's corner"], gMode == "lock")
-                + ", " + (string)gSent + " m, auto " + (string)gAuto + ", free mem " + (string)llGetFreeMemory());
+                + ", " + (string)gSent + " m, auto " + (string)gAuto + " (" + gCore + " " + gCShot + " " + gBandA + ", still "
+                + (string)((integer)(llGetTime() - gStillA) * (gStillA > 0.0)) + " s, near " + (string)gWith + "), free mem " + (string)llGetFreeMemory());
         else if (!gOn) return;
         else if (num == STOP) gOn = FALSE;
         else if (num == PAUSE) gHold = TRUE;
@@ -384,5 +418,17 @@ default
     {
         if (gOn && !gHold) check();
         direct();
+    }
+
+    sensor(integer n)
+    {
+        if (!gWith) gWithT = llGetTime();
+        gWith = n;
+    }
+
+    no_sensor()
+    {
+        if (gWith) gGoneT = llGetTime();
+        gWith = 0;
     }
 }
