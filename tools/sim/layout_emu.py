@@ -80,6 +80,7 @@ for a in ASPECTS:
                     check(False, "%s: %s overlaps %s" % (tag, names[i], names[j]))
         check(V["t12 auto"][0] < V[shot[0]][0], "%s: the Orbit left of the shot" % tag)
 h.send(7371, "auto|0"); ana.say(12, "size m"); w.run(2.5)
+ana.touch("t12 s2"); w.run(3)                                          # Fixed again (Auto may have moved on to Drift)
 no_errors(w, "auto")
 # closed: everything but the [12] (and its ring, dot, the bars, the note part) shrinks away
 ana.double_tap(); w.run(1.5)

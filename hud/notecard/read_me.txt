@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.3.0)
+TAKE 12  -  READ ME  (8.4.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -44,14 +44,17 @@ Tap the lit shot again and it does its one job (below).
 
 === AUTO ================================================
 
-AUTO picks the shot from what Take 12 can truly see, calmly (at least 8 seconds a shot, never for a step or two):
-  WALKING          Tracking (Film)
-  STANDING STILL   after 6 seconds, Portrait (Medium; Us when someone is within 3 m)
-  SITTING          the seat's kept view (Fixed), if you framed one; otherwise the picture holds
-  IDLE             Scenic: Drift's reveal
-  FLYING           your own camera until you land
+AUTO picks the shot from what Take 12 can truly see:
+  MOVING                     Tracking, after 1 second of walking or running, from any shot
+  STOPPED, ALONE             Tracking holds behind you; after 10 seconds, Scenic: Drift's reveal
+  STILL 5 MINUTES, OR AWAY   Scenic, wide: Far outdoors, Room indoors
+  WITH SOMEONE (within 3 m)  after 4 seconds still together, Portrait: Us, the two of you (or a small group)
+  A CROWD                    Scenic: Drift, staying near
+  SITTING                    the seat's own view (Fixed), if you framed one; otherwise Drift after 10 seconds
+  FLYING                     your own camera until you land
+It is calm: a shot stays at least 8 seconds, except Tracking when you move. A key tapped is not a walk.
 It never fights you: Alt-click and it waits; press Esc or walk off and it goes on. Its choices are not kept as your
-own: your Portrait size, Tracking look and Scenic band stay as you left them.
+own: your Tracking look, Portrait size and Scenic band stay as you left them.
 Tap the faint shot (or /12 tracking, /12 portrait ...) and the camera is yours. Tap the ring (or /12 auto) and AUTO
 directs again. Each time you wear Take 12, it starts in AUTO.
 

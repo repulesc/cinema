@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.3.0";
+string VERSION = "8.4.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -89,7 +89,7 @@ list TIPS = [
     "shape", "The frame on screen, and its snapshot size.",
     "shutter", "The shutter holds this moment in your photo frame. Take your snapshot, then press it again.",
     "link", "Share films with people near you.",
-    "auto", "Auto picks the shot as you walk, stand still or sit. Tap the ring at the left, or a shot, to direct."
+    "auto", "Auto: Tracking as you move, Scenic when you rest, Portrait when someone is with you. Tap the ring, or a shot, to direct."
 ];
 list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER", "CLASSIC", "SHOULDER", "R", "L",
              "VIEW B", "VIEW A", "NEAR", "DRIFT", "ROOM", "DRIFT", "FAR", "DRIFT"];

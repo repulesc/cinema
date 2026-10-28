@@ -14,7 +14,7 @@
 //  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.3.0";
+string VERSION = "8.4.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -445,7 +445,7 @@ idleCheck(integer now, integer info)
 {
     string mode = cfg("idle");
     if (mode == "") mode = "5";
-    if (mode == "off" || gState == "off" || gState == "watch" || gState == "photo" || gStandby || gWhy == "idle") return;
+    if (mode == "off" || gAuto || gState == "off" || gState == "watch" || gState == "photo" || gStandby || gWhy == "idle") return;
     if (gShot == "scenic" || (info & (AGENT_TYPING | AGENT_MOUSELOOK | AGENT_FLYING))) return;
     if ((info & AGENT_AWAY) || (mode == "5" && now - gLastAct >= 300))
     {

@@ -128,12 +128,15 @@ and the setup's end → tracking turns it on). A `shot|<name>` of your own for a
 - **Let go:** flying, mouselook and a marked vehicle release the camera; it comes back as it was.
 - **Teleport / region crossing:** the same shot, a fresh frame after ~2 s.
 - **Idle start** (`cin.idle`: off · away · 5): Scenic starts by itself; a key or typing brings back the shot you had.
-- **Auto** (8.3.0, `tracking.lsl`): on wear (set up) after 3 s, or at the setup's end. Every 0.5 s it reads core's
-  state (UI_STATE): only in `wait` or `film`, not idle, not flying or in mouselook, not during the eye line. Walking
-  (over 0.5 m/s) wants Tracking; still 4 s wants Portrait; seated, Fixed if `cin.seat.<root>` holds a view (or nothing
-  runs), else nothing. A want must last 2 s and the shot on screen 8 s (not for sitting down or standing up); nothing
-  running: at once. The shots take Auto's options while it is on, without keeping them (Portrait Medium · Us, Tracking
-  Film, Scenic Drift). Core, in Auto only: held, the camera back on its spot (Esc) for 1.5 s resumes the shot.
+- **Auto** (8.3.0, the guide 8.4.0, `tracking.lsl`): on wear (set up) after 3 s, or at the setup's end. Every 0.5 s
+  it reads core's state (UI_STATE): in `wait`, `film`, or `held` (only to walk off), not flying or in mouselook, not
+  during the eye line. Moving = over 0.5 m/s, or the movement keys (core's MOVING), or AGENT_WALKING: 1 s of it →
+  Tracking at once. Still: with 1-3 agents within 3 m (its own `llSensorRepeat`, 1 s) for 4 s → Portrait; 300 s or
+  AGENT_AWAY → Scenic `wide`; 10 s → Scenic `drift`; seated, Fixed if `cin.seat.<root>` holds a view (2 s), else
+  Drift. A shot stays 8 s except Tracking on moving; nothing running: at once. Scenic's band goes as CMD
+  `aband|drift` or `aband|wide` (Room indoors, Far outdoors), never into `cin.scn`; the other shots take Auto's
+  options without keeping them (Portrait Medium · Us, Tracking Film). Core, in Auto: no idle start; held, the camera
+  back on its spot (Esc) for 1.5 s resumes the shot. `/12 debug on`: each pick and why in chat.
 - **Off** (hold): camera, bars, strip all off; hold again restores exactly.
 - **Portrait's solver** (from 7.x `frame.lsl`): two heights on you must land on two picture heights (Medium: the eyes
   on the upper third, y = +0.333, and the belt line, 52 % of your height, at the bottom, y = −1). With the camera at

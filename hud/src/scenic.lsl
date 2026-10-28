@@ -16,7 +16,7 @@
 //  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
 // ============================================================================
 
-string VERSION = "8.3.0";
+string VERSION = "8.4.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -49,7 +49,8 @@ list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>
 key     gOwner;
 integer gOn;
 integer gPaused;
-integer gAuto;                         // Auto directs (8.3.0): Drift
+integer gAuto;                         // Auto directs (8.3.0)
+string  gABand = "drift";              // ... its band (8.4.0): drift, or wide (Room indoors, Far outdoors); not kept
 integer gBand;
 integer gErr;
 integer gRayErr;
@@ -448,6 +449,13 @@ integer band()
     return gBand;
 }
 
+// Auto's band, for where you are
+autoBand()
+{
+    gBand = 0;
+    if (gABand == "wide") gBand = 3 - gLocal;
+}
+
 opts()
 {
     list st = ["", "", "", ""];
@@ -640,7 +648,7 @@ default
             if (!gOn) { llSetTimerEvent(0.0); llSensorRemove(); return; }
             llMessageLinked(LINK_SET, ACK, "scenic", "");
             gBand = (integer)cfg("scn");
-            if (gBand < 0 || gBand > 3 || gAuto) gBand = 0;    // Auto: Drift (8.3.0), not kept
+            if (gBand < 0 || gBand > 3) gBand = 0;
             gPaused = FALSE;
             gCtxOK = FALSE;
             gLocal = FALSE;
@@ -649,10 +657,16 @@ default
             gCuts = 0;
             gRetry = 0;
             here();
+            if (gAuto) autoBand();
             opts();
             begin();
         }
         else if (num == CMD && llGetSubString(str, 0, 4) == "auto|") gAuto = (str == "auto|1");
+        else if (num == CMD && llGetSubString(str, 0, 5) == "aband|")
+        {
+            gABand = llGetSubString(str, 6, -1);
+            if (gOn && gAuto) { autoBand(); opts(); begin(); }
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "scenic");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/scenic] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(BANDS, gBand)
