@@ -66,7 +66,7 @@ Take 12 Scenery is a free camera HUD that shows the place you are in, by itself,
 ---
 
 ## Images
-- **`adboard_square_1024_scenery.png`**: the main Marketplace image: one drone view, the [12], the name and one line.
+- **`adboard_square_1024_scenery.png`**: the main Marketplace image: cinema black, a 2.39 frame drawn as a monitor's frame lines, the [12], the name and one line.
 - **`adboard_portrait_3x4_768x1024_scenery.png`**, **`adboard_landscape_4x3_1024x768_scenery.png`**, **`adboard_wide_1024x512_scenery.png`**: the same in other ratios.
 - **`adboard_vendor_1024_scenery.png`** / **`adboard_vendor_512_scenery.png`**: bigger type, for vendor displays.
 

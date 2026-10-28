@@ -14,7 +14,7 @@
 //  In a photo frame (3:2 · 4:3 · 1:1 · 4:5, under 1.6 wide: bars' CROP) Drift holds still views too (8.0.9).
 // ============================================================================
 
-string VERSION = "8.0.9";
+string VERSION = "8.0.10";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

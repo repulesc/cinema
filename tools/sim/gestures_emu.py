@@ -62,7 +62,7 @@ no_errors(w, "first run")
 ana.chat.clear()
 ana.tap(); w.run(0.6)
 dialog_ok(ana, "main")
-check(ana.labels() == ["Connect", "Settings", "Help", "Close"] or sorted(ana.labels()) == sorted(["Connect", "Settings", "Help", "Close"]), "main: %r" % ana.labels())
+check(var(h, "ui", "gBtn") == ["Connect", "Settings", "Help", "Feedback", "Close"], "main (Feedback in beta, 8.0.10): %r" % var(h, "ui", "gBtn"))
 check("Your own camera" in ana.dialog[1] and "Tip:" in ana.dialog[1], "main: the state and a tip: %r" % ana.dialog[1])
 # every page within SL's limits, and Back always leads up
 ana.click("Settings"); w.run(0.5)

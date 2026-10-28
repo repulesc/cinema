@@ -83,6 +83,7 @@ class World:
         s.drop = 0.0                                   # chance that a region chat message is lost
         s.refuse = 0.0                                 # chance that a ray is refused (a busy region)
         s.errors = []                                  # script errors (Math Error, a bad cast, a missing stub)
+        s.emails = []                                  # llEmail: (time, script, to, subject, body)
         s.chatlog = []                                 # (t, from, to, message) on the Connect channel
         s.base_unix = 1_800_000_000
 
@@ -359,6 +360,13 @@ class Avatar:
     def say(s, channel, msg):
         s.w.chat(s, channel, msg, name=s.name)
 
+    def type(s, text):
+        """write in the text box on screen and press Submit"""
+        if not s.dialog or s.dialog[2] != ["<text>"]: raise AssertionError("%s: no text box open" % s.name)
+        ch = s.dialog[3]
+        s.dialog = None
+        s.say(ch, text)
+
     def labels(s): return [b for b in (s.dialog[2] if s.dialog else []) if b.strip()]
 
     def notes(s, since=0.0):
@@ -464,6 +472,9 @@ class Obj:
     # ---- the built-ins that touch the world (called as world.llName(script, *args)) ----------------------------------
     # time
     def llGetUnixTime(s, sc): return int(s.w.base_unix + s.w.t)
+    def llGetDate(s, sc):
+        import time as _t
+        return _t.strftime("%Y-%m-%d", _t.gmtime(int(s.w.base_unix + s.w.t)))
     def llGetTime(s, sc): return B.F32(s.w.t - sc.t0)
     def llSetTimerEvent(s, sc, t):
         sc.timer = t
@@ -513,6 +524,10 @@ class Obj:
     def llOwnerSay(s, sc, msg): s.owner.chat.append((round(s.w.t, 2), sc.name, msg))
     def llDialog(s, sc, av, text, buttons, ch):
         if av == s.owner.key: s.owner.dialog = (s, text, list(buttons), ch)
+    def llTextBox(s, sc, av, text, ch):
+        if av == s.owner.key: s.owner.dialog = (s, text, ["<text>"], ch)     # Avatar.type() answers it
+    def llEmail(s, sc, to, subject, body):
+        s.w.emails.append((round(s.w.t, 2), sc.name, to, subject, body))   # (the script's 20 s pause is not emulated)
     def llLoadURL(s, sc, av, msg, url): s.owner.chat.append((round(s.w.t, 2), sc.name, "[url] " + url))
     def llGiveInventory(s, sc, k, name): pass
     def llPlaySound(s, sc, snd, vol): s.owner.sounds.append((round(s.w.t, 2), snd))

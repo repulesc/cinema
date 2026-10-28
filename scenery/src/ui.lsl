@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.9";
+string VERSION = "8.0.10";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -99,6 +99,7 @@ wipe(string re)
 checkOwner()
 {
     string v = cfg("ver");
+    integer wiped = (cfg("owner") != (string)gOwner || (v != "" && llGetSubString(v, 0, 0) != "8"));
     if (cfg("owner") != (string)gOwner)
     {
         llLinksetDataReset();
@@ -116,6 +117,9 @@ checkOwner()
     }
     llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
     if (cfg("firstrun") != "done") gFirst = "start";
+    // the scripts start in any order: the ones that read the settings before this wipe read them again (8.0.10:
+    // a new owner saw the seller's strip place and bars)
+    if (wiped) llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
 }
 
 // ---- dialogs ------------------------------------------------------------------------------
@@ -180,7 +184,7 @@ menu()
     else if (gShot != "") st = llToUpper(llGetSubString(gShot, 0, 0)) + llGetSubString(gShot, 1, -1);
     if (gLink == "on" || gLink == "shared") st += " · connected";
     if (gLink == "theirs") st += " · watching";
-    page("main", st, ["Connect", "Settings", "Help", "Close"]);
+    page("main", st, ["Connect", "Settings", "Help", "Feedback", "Close"]);   // Feedback while in beta (8.0.10)
 }
 
 open(string p)
@@ -300,7 +304,7 @@ choose(string m)
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
     {
-        if (b == "Connect") { closeMenu(); llMessageLinked(LINK_SET, CMD, "connect|menu", ""); }
+        if (b == "Connect" || b == "Feedback") { closeMenu(); llMessageLinked(LINK_SET, CMD, llList2String(["connect|menu", "feedback"], b == "Feedback"), ""); }
         else if (b == "Settings") open("settings");
         else if (b == "Help") open("help");
     }
@@ -552,7 +556,7 @@ command(string m)
     string c = llList2String(L, 0);
     string a = llList2String(L, 1);
     if (llListFindList(["tracking", "portrait", "fixed", "scenic"], [c]) >= 0) llMessageLinked(LINK_SET, CMD, "shot|" + c, "");
-    else if (c == "bars" || c == "next") llMessageLinked(LINK_SET, CMD, c, "");
+    else if (c == "bars" || c == "next" || c == "feedback") llMessageLinked(LINK_SET, CMD, c, "");   // feedback: carry's
     else if (c == "off") onLong();
     else if (c == "strip") strip("toggle");
     else if (c == "status") llMessageLinked(LINK_SET, STATUS, "?", "");

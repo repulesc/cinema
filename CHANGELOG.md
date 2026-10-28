@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.0.10 (feedback by email; a clean copy for every new owner; the new boards)
+- **Feedback, straight to the maker.** The [12]'s menu has Feedback while Take 12 is in beta (and `/12 feedback`):
+  a text box, one line, Submit. It goes by email to the maker with one plain line about the copy (name, version,
+  shot, frame, lens, window, region, date). One a minute, ten a day; an empty box sends nothing. The free build has it
+  too. carry sends it (its 20 s email pause holds up nothing of the camera); no new script.
+- **A new owner gets a new Take 12.** A copy given or sold already wiped everything of the last owner's, but the
+  scripts that had read the settings before that wipe kept them: the buyer could see the seller's strip place and
+  bars until they changed something. Every script now reads its settings again after the wipe.
+- **The boards are cinema black:** a 2.39 frame as a monitor draws its frame lines, the [12], the name and one line.
+  No drawn scenes. The listings say what 8.0.9 and 8.0.10 brought (frames, feedback).
+- New tests: `owner_emu.py` (a copy goes from Ana to Ben) and `feedback_emu.py`.
+- Version 8.0.10 in all twelve scripts (the free build: nine).
+
 ## 8.0.9 (every frame is a picture)
 - **The ▭ on the strip opens this shot's frames**, from the widest to the tallest, the current one marked:
   2.39 · 2.00 · 1.85 · 1.66 · Full, and for Portrait, Fixed and Scenic the photo frames 3:2 · 4:3 · 1:1 · 4:5.
