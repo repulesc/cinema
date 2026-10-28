@@ -25,7 +25,7 @@ A cinematic camera for Second Life. Four shots on one quiet strip: it follows yo
 
 ## Full description
 ```
-A cinematic camera for Second Life.
+A cinematic camera for Second Life. Your Second Life, filmed.
 
 Take 12 sits at the top of your screen like a cinema camera's display: one thin line of words, and the [12]. Double-tap it for the strip.
 

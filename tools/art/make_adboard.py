@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Take 12 marketing graphics (8.0.10) for the Second Life Marketplace and in-world vendors: cinema black.
+"""Take 12 marketing graphics (8.4.1) for the Second Life Marketplace and in-world vendors: the mark, quiet.
 
-No scene, no drawing: what a camera maker would print. A black board; a frame drawn the way a cinema monitor draws its
-frame lines (hairline corners, a faint centre mark, the frame and the lens written small at its top edge, the shot at
-its foot); under it the [12] (the HUD's own disc, from tools/art/make_strip.py), the name letter-spaced, one line, and a
-quiet row of what is inside. Inter throughout, white at three strengths, nothing else.
-  Take 12          a 2.39 frame   PORTRAIT · MEDIUM · ME     "A cinematic camera for Second Life."
-  Take 12 Scenery  a 2.39 frame   SCENIC · DRIFT             "Free. The place, while you are away."
+The [12] is the 12 (2026-10, the owner's pick of four directions): the word TAKE and the HUD's own [12] (its disc and
+its filming ring, from tools/art/make_strip.py) make one lockup, so the name is said once (the 8.2 boards set the [12]
+beside TAKE 12: twelve, twice). A black board, the lockup centred, one line under it, nothing else. Inter, white at two
+strengths.
+  Take 12          TAKE (12)            "Your Second Life, filmed."
+  Take 12 Scenery  TAKE (12) SCENERY    "Free. The place, while you are away."
 Formats: square 1:1 (1024), portrait 3:4 (768 x 1024), landscape 4:3 (1024 x 768), wide (1024 x 512), vendor
-(1024 and 512: bigger type, no row, read from across a store).
+(1024 and 512: bigger, read from across a store). tools/art/make_box.py dresses the box with the same lockup.
 
     python3 tools/art/make_adboard.py
 """
@@ -19,76 +19,57 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_strip
 from make_strip import font, spaced, spaced_w
 
-NAME = "TAKE 12"
-TAGLINE = "A cinematic camera for Second Life."
-FREE_NAME, FREE_LINE = "TAKE 12 SCENERY", "Free. The place, while you are away."
+TAGLINE = "Your Second Life, filmed."
+FREE_NAME, FREE_LINE = "SCENERY", "Free. The place, while you are away."
 BLACK = (9, 9, 10)
 WHITE = make_strip.WHITE
-K = 2                                   # drawn at twice the size, then reduced: hairlines stay crisp
-
-
-def the(kind):
-    """each product's name, line, the shot written at the frame's foot, and the row of what is inside"""
-    if kind == "free":
-        return FREE_NAME, FREE_LINE, "SCENIC  ·  DRIFT", "DRIFT  ·  NEAR  ·  ROOM  ·  FAR"
-    return NAME, TAGLINE, "PORTRAIT  ·  MEDIUM  ·  ME", "TRACKING  ·  PORTRAIT  ·  FIXED  ·  SCENIC"
+K = 2                                   # drawn at twice the size, then reduced: edges stay crisp
 
 
 def a(v): return WHITE + (int(255 * v),)
 
 
-def frame_lines(d, x0, y0, x1, y1, u, top_l, top_r, foot):
-    """a monitor's frame lines: corners, a centre mark, small writing at the edges"""
-    c = int(u * 0.045)                               # corner arm
-    t = max(K, int(u * 0.0026))                      # hairline
-    for (x, y, sx, sy) in ((x0, y0, 1, 1), (x1, y0, -1, 1), (x0, y1, 1, -1), (x1, y1, -1, -1)):
-        d.rectangle([min(x, x + sx * c), y - (t if sy < 0 else 0), max(x, x + sx * c), y + (t if sy > 0 else 0)], fill=a(0.85))
-        d.rectangle([x - (t if sx < 0 else 0), min(y, y + sy * c), x + (t if sx > 0 else 0), max(y, y + sy * c)], fill=a(0.85))
-    d.rectangle([x0, y0, x1, y1], outline=a(0.14), width=max(1, t // 2))       # the frame itself, barely there
-    mx, my, m = (x0 + x1) // 2, (y0 + y1) // 2, int(u * 0.012)
-    d.rectangle([mx - m, my - t // 2, mx + m, my + t // 2], fill=a(0.35))
-    d.rectangle([mx - t // 2, my - m, mx + t // 2, my + m], fill=a(0.35))
-    f = font("Inter-Medium.otf", int(u * 0.019))
-    g = int(u * 0.016)
-    spaced(d, x0, y0 - g, top_l, f, a(0.6), 0.16)
-    spaced(d, x1 - spaced_w(top_r, f, 0.16), y0 - g, top_r, f, a(0.6), 0.16)
-    spaced(d, mx - spaced_w(foot, f, 0.16) / 2, y1 - g * 1.6, foot, f, a(0.75), 0.16)
+def mark(px):
+    """the [12] as on the HUD while it films: the disc, and its thin ring round it"""
+    im = Image.new("RGBA", (px, px), (0, 0, 0, 0))
+    d = int(px * 0.88)
+    im.alpha_composite(make_strip.disc(WHITE).resize((d, d), Image.LANCZOS), ((px - d) // 2, (px - d) // 2))
+    ring = make_strip.ring(1.0, track=False, width=5).resize((int(px * 64 / 60), int(px * 64 / 60)), Image.LANCZOS)
+    o = (px - ring.width) // 2
+    im.alpha_composite(ring.crop((-o, -o, -o + px, -o + px)) if o < 0 else ring, (max(o, 0), max(o, 0)))
+    return im
+
+
+def lockup(h):
+    """TAKE, and the [12] as its second word: an image h px tall (the cap height), the mark 1.62 h"""
+    f = font("InterDisplay-Bold.otf", int(h))
+    tw = spaced_w("TAKE", f, 0.06)
+    dp = int(h * 1.62)
+    gap = int(h * 0.22)
+    im = Image.new("RGBA", (int(tw + gap + dp + 4), dp + 4), (0, 0, 0, 0))
+    spaced(ImageDraw.Draw(im), 0, dp / 2 + h * 0.02, "TAKE", f, a(0.97), 0.06)
+    im.alpha_composite(mark(dp), (int(tw + gap), 0))
+    return im
 
 
 def board(W, H, kind, big=1.0):
     w, h = W * K, H * K
     im = Image.new("RGBA", (w, h), BLACK + (255,))
     d = ImageDraw.Draw(im)
-    name, line, foot, row = the(kind)
-    u = (w * h) ** 0.5
-    wide = w / h >= 1.6
-    row_on = big == 1.0 and not wide                 # the row needs the room a wide board has not got
-    ic = int(u * 0.075 * big)
-    fn = font("InterDisplay-SemiBold.otf", int(u * 0.058 * big))
-    fl = font("Inter-Regular.otf", int(u * 0.026 * big))
-    # one block, centred: the 2.39 frame, the [12] with the name, the line (the row keeps to the foot)
-    fw = w * (0.62 if wide else 0.80)
-    fh = fw / 2.39
-    g1, g2 = int(u * 0.11 * big), int(u * 0.045 * big)
-    block = fh + g1 + ic + g2 + fl.size
-    room = h - (int(u * 0.10) if row_on else 0)
-    y0 = int((room - block) / 2 + u * 0.01)
-    x0, x1 = int((w - fw) / 2), int((w + fw) / 2)
-    y1 = int(y0 + fh)
-    frame_lines(d, x0, y0, x1, y1, u, "2.39", "35 MM", foot)
-    nw = spaced_w(name, fn, 0.22)
-    gap = int(u * 0.028)
-    x = (w - (ic + gap + nw)) / 2
-    y = y1 + g1
-    disc = make_strip.disc((255, 255, 255)).resize((ic, ic), Image.LANCZOS)
-    im.alpha_composite(disc, (int(x), int(y)))
-    spaced(d, x + ic + gap, y + ic / 2 + int(u * 0.002), name, fn, a(0.96), 0.22)
-    ly = y + ic + g2
-    d.text((w / 2, ly), line, font=fl, fill=a(0.62), anchor="mm")
-    if row_on:                                       # the row of what is inside: the quietest thing on the board
-        fr = font("Inter-Medium.otf", int(u * 0.017))
-        rw = spaced_w(row, fr, 0.2)
-        spaced(d, (w - rw) / 2, h - int(u * 0.06), row, fr, a(0.38), 0.2)
+    u = min(w, h)
+    L = lockup(u * 0.105 * big)
+    fl = font("Inter-Regular.otf", int(u * 0.03 * big))
+    sub = font("Inter-Medium.otf", int(u * 0.026 * big))
+    line = FREE_LINE if kind == "free" else TAGLINE
+    g1, g2 = int(u * 0.075 * big), int(u * 0.05 * big)
+    block = L.height + g1 + fl.size + ((sub.size + g2) if kind == "free" else 0)
+    y = (h - block) / 2
+    im.alpha_composite(L, (int((w - L.width) / 2), int(y)))
+    y += L.height + g1
+    if kind == "free":                               # the free build: SCENERY under the mark, then its line
+        spaced(d, (w - spaced_w(FREE_NAME, sub, 0.42)) / 2, y + sub.size / 2, FREE_NAME, sub, a(0.85), 0.42)
+        y += sub.size + g2
+    d.text((w / 2, y + fl.size / 2), line, font=fl, fill=a(0.6), anchor="mm")
     return im.resize((W, H), Image.LANCZOS).convert("RGB")
 
 

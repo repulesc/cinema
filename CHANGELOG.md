@@ -1,5 +1,15 @@
 # Changelog
 
+## 8.4.1 (the mark: TAKE (12))
+- **The boards and the box say the name once.** The 8.2 boards set the [12] beside "TAKE 12", which read "12 TAKE 12".
+  Now the [12] is the 12: the word TAKE and the HUD's own [12] (its disc and filming ring) make one lockup, quiet and
+  centred on black, with one line: "Your Second Life, filmed." (the owner's pick of four directions). The Scenery
+  boards: TAKE (12), SCENERY, "Free. The place, while you are away."
+- The box: the lockup on the front (also the card on screen while the worn box unpacks), TAKE (12) up the sides, the
+  [12] alone on the lid. Upload the three box textures again.
+- Gone from the boards: the shot list (TRACKING · PORTRAIT · FIXED · SCENIC), the frame lines and the old 35 mm.
+- No script changes.
+
 ## 8.4.0 (Auto: the guide; the box you wear)
 - **Auto was stuck in Portrait.** It waited for 2 s of walking and kept a shot 8 s, so walking a room in short steps
   never got past Portrait, and you watched yourself walk. Reproduced in the emulator (whose keys now give a walking
