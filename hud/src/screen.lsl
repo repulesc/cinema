@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.4.0";
+string VERSION = "8.4.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -31,6 +31,7 @@ list    MARGIN = [0.0, 52.0, 46.0, 96.0];         // px from the edge of the wor
 vector  WHITE  = <1.0, 1.0, 1.0>;
 
 key     gOwner;
+string  gTW = "";                  // the words texture (strip draws with it; kept here with the marks)
 string  gTM = TEXTURE_BLANK;
 integer gRing;
 integer gDot;
@@ -80,13 +81,48 @@ load()
     gS = llList2Float([0.8, 1.0, 1.25], s);
     gSY = 1;
     if (cfg("flip") == "1") gSY = -1;
-    gTM = TEXTURE_BLANK;
-    list D = llParseString2List(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_DESC]), 0), [";", " "], []);
-    integer i = llListFindList(D, ["take12_marks"]);
-    if (i >= 0) gTM = llList2String(D, i + 1);
+    gTW = tex("take12_words");
+    gTM = tex("take12_marks");
+    if (gTM == "") gTM = TEXTURE_BLANK;
+    keep();
 }
 
-// a texture dropped in (yours, full permissions): its UUID goes on the root, the texture leaves the contents
+// the textures' UUIDs live in Linkset Data (cin.take12_words, cin.take12_marks), which only the scripts change; the
+// root's description keeps a copy for a new owner, whose Linkset Data starts empty (8.4.2: the description alone could
+// be put back by the viewer's Edit window, so after a reset the marks were the old ones and the Orbit was gone)
+string desc()
+{
+    return llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_DESC]), 0);
+}
+
+string tex(string tag)
+{
+    string k = cfg(tag);
+    if (k != "") return k;
+    list D = llParseString2List(desc(), [";", " "], []);
+    integer i = llListFindList(D, [tag]);
+    if (i >= 0) return llList2String(D, i + 1);
+    return "";
+}
+
+// both places hold the same UUIDs: written again after Settings › Reset › Everything or a new owner empties Linkset Data
+keep()
+{
+    string d = "";
+    if (gTW != "")
+    {
+        llLinksetDataWriteProtected("cin.take12_words", gTW, PASS);
+        d = "take12_words " + gTW;
+    }
+    if (gTM != TEXTURE_BLANK)
+    {
+        llLinksetDataWriteProtected("cin.take12_marks", gTM, PASS);
+        d += ";take12_marks " + gTM;
+    }
+    if (d != "" && d != desc()) llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_DESC, d]);   // 99 characters: within 127
+}
+
+// a texture dropped in (yours, full permissions): its UUID is kept, the texture leaves the contents
 adopt()
 {
     integer t;
@@ -101,13 +137,11 @@ adopt()
         if (n != "") k = llGetInventoryKey(n);
         if (k != NULL_KEY)
         {
-            list D = llParseString2List(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_DESC]), 0), [";"], []);
-            for (i = llGetListLength(D) - 1; i >= 0; i--)
-                if (llSubStringIndex(llList2String(D, i), tag + " ") == 0) D = llDeleteSubList(D, i, i);
-            llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_DESC, llDumpList2String(D + [tag + " " + (string)k], ";")]);
+            if (t) gTM = (string)k;
+            else gTW = (string)k;
+            keep();
             llRemoveInventory(n);
             llMessageLinked(LINK_SET, NOTE, "texture|" + tag, "");
-            load();
             layout();
             llMessageLinked(LINK_SET, STRIP, "layout", "");          // strip reads the words texture again
         }
@@ -235,6 +269,11 @@ default
         if (c & CHANGED_OWNER) llResetScript();
         if (c & CHANGED_LINK) { find(); layout(); }
         if (c & CHANGED_INVENTORY) adopt();
+    }
+
+    linkset_data(integer a, string n, string v)
+    {
+        if (a == LINKSETDATA_RESET || (a == LINKSETDATA_DELETE && llSubStringIndex(n, "cin.take12_") == 0)) keep();
     }
 
     link_message(integer sender, integer num, string str, key id)

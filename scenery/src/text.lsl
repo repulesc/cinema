@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.4.0";
+string VERSION = "8.4.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 

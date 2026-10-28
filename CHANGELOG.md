@@ -1,5 +1,15 @@
 # Changelog
 
+## 8.4.2 (the textures stay)
+- **A new take12_marks dropped in lost its Orbit after a reset.** Screen kept the textures' UUIDs only in the [12]'s
+  description, and the viewer's Edit window (open while you drop a texture in) can put the old description back. The
+  scripts went on with the new marks until a reset, then read the old ones, which have no Orbit. Reproduced in the
+  emulator (`tools/sim/textures_emu.py`).
+- Now screen keeps them in Linkset Data, which only the scripts change, with a copy in the description for a new
+  owner. It mends the description on every load, and writes both again after Settings › Reset › Everything or a new
+  owner. The description holds only the two UUIDs, so words of its own can no longer cut one off at 127 characters.
+- screen and strip change (and carry: a newer copy keeps its own textures); every script is 8.4.2. Drop take12_marks in once more after replacing them.
+
 ## 8.4.1 (the mark: TAKE (12))
 - **The boards and the box say the name once.** The 8.2 boards set the [12] beside "TAKE 12", which read "12 TAKE 12".
   Now the [12] is the 12: the word TAKE and the HUD's own [12] (its disc and filming ring) make one lockup, quiet and
