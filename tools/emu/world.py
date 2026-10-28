@@ -587,6 +587,8 @@ class Obj:
     def llGetOwner(s, sc): return Key(s.owner.key)
     def llGetKey(s, sc): return Key(s.key)
     def llGetAttached(s, sc): return s.point if s.worn else 0
+    def llGetObjectDesc(s, sc): return s.prims[0]["desc"]
+    def llSetObjectDesc(s, sc, d): s.prims[0]["desc"] = d[:127]      # (a description holds 127 characters)
     def llDetachFromAvatar(s, sc):
         """back to the inventory (8.4.0, the box you wear): only worn, only with PERMISSION_ATTACH; after this event"""
         if s.worn and sc.perms & C["PERMISSION_ATTACH"]:
