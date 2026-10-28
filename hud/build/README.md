@@ -15,8 +15,8 @@ and name parts by hand. HUD prims have no land impact.
    sync, carry), each as a new script with the file's name. Optionally a sound for the Connect chime (any sound in the
    contents; Settings › Friends › Chime turns it off).
 6. **The textures:** upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png` once (name them
-   `take12_words` and `take12_marks`) and drop both into the HUD. The screen script keeps their UUIDs in the root's
-   description and takes them out of the contents, so the HUD can be given away (full-permission textures are not
+   `take12_words` and `take12_marks`) and drop both into the HUD. The screen script keeps their UUIDs (in its Linkset Data,
+   with a copy in the root's description) and takes them out of the contents, so the HUD can be given away (full-permission textures are not
    needed in the copy you sell).
 7. **Take it and wear it on HUD Top Center.** A note under the [12] says "Tap the [12] to set up."
 

@@ -16,7 +16,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.4.0";
+string VERSION = "8.4.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -128,6 +128,8 @@ find()
 // ---- textures ---------------------------------------------------------------------
 string uuid(string tag)
 {
+    string k = cfg(tag);                                    // kept by screen (8.4.2), else the root's description
+    if (k != "") return k;
     list D = llParseString2List(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_DESC]), 0), [";"], []);
     integer i;
     for (i = 0; i < llGetListLength(D); i++)

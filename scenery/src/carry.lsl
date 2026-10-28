@@ -13,7 +13,7 @@
 //  region, date). One a minute, ten a day. llEmail pauses this script 20 s: here it holds up nothing of the camera.
 // ============================================================================
 
-string VERSION = "8.4.0";
+string VERSION = "8.4.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -27,7 +27,7 @@ integer UI_STATE   = 7320;
 
 string  MAKER = "panocarver@gmail.com";   // where feedback goes
 
-list    SKIP = ["cin.peers", "cin.ver", "cin.cfgv", "cin.owner"];   // the copy's own, not carried
+list    SKIP = ["cin.peers", "cin.ver", "cin.cfgv", "cin.owner", "cin.take12_words", "cin.take12_marks"];   // the copy's own, not carried (its textures too, 8.4.2)
 
 key     gOwner;
 integer gCh;

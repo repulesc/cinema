@@ -30,7 +30,10 @@ Every part is found by its name (any link order):
 | `t12 auto` | Auto's Orbit, at the left end (8.3.0): lit while Auto directs, quiet in manual; an older HUD without it works, Auto then shows the shots as usual |
 
 Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD; `screen` adopts them, keeping each UUID
-in the root's description `take12_words <uuid>;take12_marks <uuid>` and taking the texture out of the contents):
+in Linkset Data (`cin.take12_words`, `cin.take12_marks`, which only the scripts change) with a copy in the root's
+description `take12_words <uuid>;take12_marks <uuid>` for a new owner, and taking the texture out of the contents.
+`screen` writes both again after Linkset Data is emptied (Reset › Everything, a new owner) and mends the description
+on every load (8.4.2: the viewer's Edit window could put the old description back, and the old marks lost the Orbit):
 - `take12_words` (1024²): every word in small caps, white on transparent, one cell 512 × 48 each (2 columns × 21 rows).
   The script tints a word per state. The cell tables (column, row, width in px) are generated into `strip.lsl` (WORDS, the strip's marks) and `screen.lsl` (the [12]'s marks).
 - `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the halo, and the shape and link cells (256 × 48; the photo frames' cells after the links, 8.0.9).

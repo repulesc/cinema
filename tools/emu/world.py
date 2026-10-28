@@ -650,7 +650,7 @@ class Obj:
                 if not 1 <= t <= len(s.prims): continue
                 p = s.prims[t - 1]
                 if r == C["PRIM_NAME"]: p["name"] = a[0]
-                elif r == C["PRIM_DESC"]: p["desc"] = a[0]
+                elif r == C["PRIM_DESC"]: p["desc"] = a[0][:127]          # (127 characters, as llSetObjectDesc)
                 elif r == C["PRIM_TEXT"]: s._text(t, a[0])
                 elif r in (C["PRIM_POS_LOCAL"], C["PRIM_POSITION"]): p["pos"] = a[0]
                 elif r in (C["PRIM_ROT_LOCAL"], C["PRIM_ROTATION"]): p["rot"] = a[0]
@@ -699,11 +699,21 @@ class Obj:
         v = s.lsd.get(k)
         return v[0] if v and v[1] == pw else ""
     def llLinksetDataWriteProtected(s, sc, k, v, pw):
-        if v == "": s.lsd.pop(k, None)
-        else: s.lsd[k] = (v, pw)
+        if v == "": return s.llLinksetDataDeleteProtected(sc, k, pw)
+        if s.lsd.get(k) == (v, pw): return C["LINKSETDATA_NOUPDATE"]
+        s.lsd[k] = (v, pw)
+        s._lsd_event(C["LINKSETDATA_UPDATE"], k, v)
         return 0
-    def llLinksetDataDeleteProtected(s, sc, k, pw): s.lsd.pop(k, None); return 0
-    def llLinksetDataReset(s, sc): s.lsd = {}
+    def llLinksetDataDeleteProtected(s, sc, k, pw):
+        if s.lsd.pop(k, None): s._lsd_event(C["LINKSETDATA_DELETE"], k, "")
+        return 0
+    def llLinksetDataReset(s, sc):
+        s.lsd = {}
+        s._lsd_event(C["LINKSETDATA_RESET"], "", "")
+    def _lsd_event(s, action, k, v):
+        """linkset_data in every script of the object that has it (8.4.2: screen keeps the textures through a reset)"""
+        for x in s.live():
+            if x.has("linkset_data"): s.event(x, "linkset_data", (action, k, v))
     def llLinksetDataListKeys(s, sc, first, count):
         L = sorted(s.lsd)
         return L[first:] if count < 1 else L[first:first + count]
