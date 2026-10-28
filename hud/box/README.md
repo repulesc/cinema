@@ -19,7 +19,10 @@ The textures are made by `python3 tools/art/make_box.py`.
 ## Making it in-world
 1. Upload the three PNGs, keeping their names: `take12_box_front`, `take12_box_side`, `take12_box_top`.
 2. Rez a box (any prim), and drop the three textures into its contents.
-3. Drop `unpack.lsl` in (Build › New Script, paste, save). The box shapes and dresses itself.
+3. Drop `unpack.lsl` in (Build › New Script, paste, save). The box shapes and dresses itself: it keeps the three
+   textures' UUIDs in its description and takes the textures out of its contents (as the HUD does with its own), so
+   what you ship holds only the script and the things it hands over. Upload the textures as full permission, or it
+   cannot read their UUIDs and leaves them in.
 4. Drop in what the buyer gets:
    - the Take 12 HUD (copy, no-modify, no-transfer);
    - the notecard "Take 12 - Read Me";

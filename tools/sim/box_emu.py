@@ -18,13 +18,17 @@ w.objects[box.key] = box
 box.rez(); w.run(1)
 ana.touch(o=box); w.run(1)
 check(w.given == [], "an empty box gives nothing")
+U = {}
 for f in ("take12_box_front", "take12_box_side", "take12_box_top"):
     box.inventory[f] = ("texture", new_key(), True)
+    U[f] = str(box.inventory[f][1])
 for sc in box.live(): box.event(sc, "changed", (C["CHANGED_INVENTORY"],))
 w.run(1)
+check(not any(f in box.inventory for f in U), "the textures are adopted: taken out of the contents (%r)" % sorted(box.inventory))
+check(all(f + " " + u in box.prims[0]["desc"] for f, u in U.items()), "... their UUIDs kept in the description (%r)" % box.prims[0]["desc"])
 check(box.prims[0]["name"] == "Take 12 - Cinematic Camera HUD" and tuple(round(v, 2) for v in box.prims[0]["size"]) == (0.45, 0.25, 0.45),
       "the textures in: the box shapes itself (%r, %r)" % (box.prims[0]["name"], box.prims[0]["size"]))
-check(any(str(x) in ("take12_box_front", "take12_box_side", "take12_box_top") for x in box.prims[0]["tex"]), "... textured (%r)" % (box.prims[0]["tex"],))
+check(str(box.prims[0]["tex"][0]) in U.values(), "... textured by UUID (%r)" % (box.prims[0]["tex"],))
 ana.touch(o=box); w.run(1)
 check(w.given == [], "only its textures: nothing to give")
 for n, t in (("Take 12", "object"), ("Take 12 - Read Me", "notecard"), ("Take 12 Scenery (to give a friend)", "object")):
@@ -52,7 +56,8 @@ def worn_box():
     o.attach()
     return o
 b = worn_box(); w.run(0.01)
-check(tuple(round(v, 2) for v in b.prims[0]["size"]) == (0.02, 0.22, 0.22) and "take12_box_front" in [str(x) for x in b.prims[0]["tex"]],
+check(not any(k.startswith("take12_box") for k in b.inventory), "worn: no textures left in the contents")
+check(tuple(round(v, 2) for v in b.prims[0]["size"]) == (0.02, 0.22, 0.22) and str(b.prims[0]["tex"][0]) in b.prims[0]["desc"],
       "worn: a card on the screen, the board (%r)" % (b.prims[0]["size"],))
 w.run(1)
 check(len(w.given) == 1 and w.given[0][0] == str(cat.key) and w.given[0][1] == "Take 12 " + VER, "worn: one folder to the wearer %r" % w.given)

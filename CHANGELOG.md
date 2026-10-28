@@ -8,7 +8,9 @@
 - The box: the lockup on the front (also the card on screen while the worn box unpacks), TAKE (12) up the sides, the
   [12] alone on the lid. Upload the three box textures again.
 - Gone from the boards: the shot list (TRACKING · PORTRAIT · FIXED · SCENIC), the frame lines and the old 35 mm.
-- No script changes.
+- **The box adopts its textures,** as the HUD does: it keeps their UUIDs in its description and takes the textures out
+  of its contents (before, they stayed in, and were handed over or lost). `hud/box/unpack.lsl` only; no HUD script
+  changes.
 
 ## 8.4.0 (Auto: the guide; the box you wear)
 - **Auto was stuck in Portrait.** It waited for 2 s of walking and kept a shot 8 s, so walking a room in short steps
