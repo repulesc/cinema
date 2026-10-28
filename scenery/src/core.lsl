@@ -14,7 +14,7 @@
 //  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.0.10";
+string VERSION = "8.1.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -325,6 +325,19 @@ resume(string why)
     llSetTimerEvent(0.25);
 }
 
+// the shutter (8.1.0): the moment held exactly where it is, in your photo frame (bars), until it is pressed again,
+// a shot is tapped or everything goes off. You take the snapshot; a script cannot.
+expose()
+{
+    if (gState == "photo") { resume("photo"); return; }
+    if ((gState != "film" && gState != "held") || !gPermOK) return;
+    vector cp = llGetCameraPos();
+    llMessageLinked(LINK_SET, PAUSE, "photo", "");
+    gState = "photo";
+    cut(cp, cp + llRot2Fwd(llGetCameraRot()) * 10.0);
+    ui("");
+}
+
 held()
 {
     gState = "held";
@@ -350,7 +363,7 @@ idleCheck(integer now, integer info)
 {
     string mode = cfg("idle");
     if (mode == "") mode = "5";
-    if (mode == "off" || gState == "off" || gState == "watch" || gStandby || gWhy == "idle") return;
+    if (mode == "off" || gState == "off" || gState == "watch" || gState == "photo" || gStandby || gWhy == "idle") return;
     if (gShot == "scenic" || (info & (AGENT_TYPING | AGENT_MOUSELOOK | AGENT_FLYING))) return;
     if ((info & AGENT_AWAY) || (mode == "5" && now - gLastAct >= 300))
     {
@@ -671,9 +684,9 @@ default
             {
                 gLastAct = llGetUnixTime();
                 if (gState == "off") gState = "wait";
-                if (a == gShot && gWhy != "idle" && (gState == "film" || gState == "held"))
+                if (a == gShot && gWhy != "idle" && (gState == "film" || gState == "held" || gState == "photo"))
                 {
-                    if (gState == "held") resume("held");   // the lit tap gives the shot back
+                    if (gState != "film") resume(gState);   // the lit tap gives the shot back (held, or the shutter open)
                     else if (gSitHold) { gSitHold = FALSE; resume("stand"); }
                     else llMessageLinked(LINK_SET, NEXT, "tap", "");   // its one job (section 5)
                 }
@@ -735,6 +748,7 @@ default
                 else clearCam();
             }
             else if (c == "stop") bail("stop");
+            else if (c == "shutter") expose();
             else if (c == "next" && gState == "film") llMessageLinked(LINK_SET, NEXT, "tap", "");
             else if (c == "blend")
             {

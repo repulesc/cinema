@@ -3,26 +3,31 @@
 //  Take 12  -  bars.lsl  (8.0)  - the letterbox: each shot's own shape
 //  Four parts named "t12 bar0" … "t12 bar3" become the bars round the picture: top and bottom when the frame is wider
 //  than your window, left and right when it is narrower (pillarbox: the photo frames, ultrawide windows). Each shot has
-//  its own frame (the strip's ▭ opens ui's frame dialog, or Settings › Frames & bars; cin.shape.<shot>: 2.39 · 2.00 ·
-//  1.85 · 1.66 · full, and for Portrait, Fixed and Scenic the photo frames 3:2 · 4:3 · 1:1 · 4:5 (8.0.9); the cinema set
-//  by default: Tracking and Scenic 2.39, Portrait and Fixed 1.85). /12 bars turns them on and off for every shot
-//  (cin.bars); Black or Dimmed (cin.bstyle). They show only while a Take 12 shot is on screen (not with your own
-//  camera); watching someone's film, their shape (sync: CMD "bars|follow <shape>", "bars|follow" to end).
+//  its own cinema frame (cin.shape.<shot>: 2.39 · 2.00 · 1.85 · 1.66 · full; Tracking and Scenic 2.39, Portrait and
+//  Fixed 1.85 by default). While the shutter is open (core's "photo" state, 8.1.0) the frame is your photo frame, one
+//  for every shot (cin.photo: 3:2 · 4:3 · 1:1 · 4:5, 3:2 by default). The strip's ▭ shows the frame on screen and opens
+//  its dialog, here: the cinema frames while filming, the photo frames while the shutter is open (Settings › Frames &
+//  bars opens either). /12 bars turns them on and off for every shot (cin.bars); Black or Dimmed (cin.bstyle). They
+//  show only while a Take 12 shot is on screen (not with your own camera); watching someone's film, their shape
+//  (sync: CMD "bars|follow <shape>", "bars|follow" to end).
 //  Tells the shots the picture to compose in (CROP "<ratio>|<window>", 0 = the whole window) and the strip what to
 //  show by the frame key (SHAPE "<label>|<on/off/dim>"). HUD geometry as crop.lsl (7.x): HUD space is 1.0 tall and
 //  llGetCameraAspect() wide, +Y left; the bars sit behind the [12] so it stays clickable.
 // ============================================================================
 
-string VERSION = "8.0.10";
+string VERSION = "8.1.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
 integer CFG_CHANGED = 7330;
 integer TIP         = 7345;
+integer NOTE        = 7344;
 integer SHAPE       = 7348;
 integer MSG_VER     = 7360;
 integer STATUS      = 7370;
 integer CMD         = 7371;
+integer TXT         = 7346;
+integer TXT_ANS     = 7347;
 integer CROP        = 7390;
 
 list    SHOTS   = ["tracking", "portrait", "fixed", "scenic"];
@@ -41,6 +46,11 @@ integer gOn = TRUE;                // /12 bars: on or off for every shot
 float   gDim = 1.0;                // Black 1.0, Dimmed 0.6
 string  gSent;
 vector  gRootAt;                   // where the root was when the bars were cut (screen moves it: place, size)
+integer gChan;                     // the frame dialog (8.1.0: moved here from ui, which had no room)
+integer gLh;
+integer gDlgT;
+string  gPage;                     // its shot, or "photo"
+list    gBtn;
 
 string cfg(string k)
 {
@@ -66,6 +76,57 @@ load()
     if (cfg("bstyle") == "dim") gDim = 0.6;
     gSY = 1;
     if (cfg("flip") == "1") gSY = -1;
+    integer i;                          // 8.0.9 kept photo frames per shot: the first becomes your photo frame (8.1.0)
+    for (i = 0; i < 4; i++)
+    {
+        string s = cfg("shape." + llList2String(SHOTS, i));
+        if (llListFindList(FRAMES, [s]) >= 0)
+        {
+            if (cfg("photo") == "") llLinksetDataWriteProtected("cin.photo", s, PASS);
+            llLinksetDataDeleteProtected("cin.shape." + llList2String(SHOTS, i), PASS);
+        }
+    }
+}
+
+// your photo frame
+string photo()
+{
+    string s = cfg("photo");
+    if (s == "") s = "3:2";
+    return s;
+}
+
+// the frame dialog: a shot's cinema frames (widest first), or "photo": the photo frames, the one in use marked
+frame(string p)
+{
+    string now = photo();
+    list F = ["3:2", "4:3", "1:1", "4:5"];
+    list b = [];
+    if (p != "photo")
+    {
+        now = shapeOf(p);
+        F = ["2.39", "2.00", "1.85", "1.66", "Full"];
+        b = ["‹ Back"];
+    }
+    list m = [];
+    integer i;
+    for (i = 0; i < llGetListLength(F); i++)
+    {
+        string f = llList2String(F, i);
+        if (llToLower(f) == now) f = "● " + f;
+        m += f;
+    }
+    gBtn = m + b + ["Done"];
+    while (llGetListLength(gBtn) % 3) gBtn += " ";
+    list o = [];
+    for (i = llGetListLength(gBtn) - 3; i >= 0; i -= 3) o += llList2List(gBtn, i, i + 2);   // llDialog fills from the bottom row
+    gBtn = o;
+    gPage = p;
+    if (gLh) llListenRemove(gLh);
+    gChan = -200000 - (integer)llFrand(900000000.0);
+    gLh = llListen(gChan, "", gOwner, "");
+    gDlgT = llGetUnixTime();
+    llMessageLinked(LINK_SET, TXT, "frame|" + p + "~" + now, "bars");
 }
 
 // a shot's shape: "2.39", … or "full"
@@ -101,6 +162,7 @@ float ratio()
 {
     if (gFollow != "") return num(gFollow);
     if (!gOn || gShot == "" || gState == "wait" || gState == "off" || gState == "letgo") return 0.0;
+    if (gState == "photo") return num(photo());
     return num(shapeOf(gShot));
 }
 
@@ -159,6 +221,7 @@ tell()
     {
         st = llList2String(["off", "on"], gOn);
         lbl = shapeOf(gShot);
+        if (gState == "photo") lbl = photo();
         if (!gOn || lbl == "full") lbl = "FULL";
     }
     if (gFollow != "")
@@ -230,6 +293,7 @@ default
         if (num == UI_STATE)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
+            if (llList2String(L, 0) == "photo" && gState != "photo") llMessageLinked(LINK_SET, NOTE, "photo|" + photo(), "");   // the shutter open
             gState = llList2String(L, 0);
             gShot = llList2String(L, 1);
             cut();
@@ -241,6 +305,19 @@ default
             llLinksetDataWriteProtected("cin.bars", (string)gOn, PASS);
             cut();
         }
+        else if (num == CMD && llGetSubString(str, 0, 5) == "frames")
+        {
+            string p = llGetSubString(str, 7, -1);          // "frames|<shot>" or "frames|photo" (Settings), "frames" (the ▭)
+            if (str == "frames")
+            {
+                if (gShot == "" || gState == "wait" || gState == "off") return;   // your own camera: the key is dim
+                p = gShot;
+                if (gState == "photo") p = "photo";
+            }
+            frame(p);
+        }
+        else if (num == TXT_ANS && id == "bars" && gLh && llGetSubString(str, 0, 5) == "frame|")
+            llDialog(gOwner, llGetSubString(str, 6, -1), gBtn, gChan);
         else if (num == CMD && llGetSubString(str, 0, 10) == "bars|follow")
         {
             gFollow = "";                                   // "bars|follow": your own again
@@ -259,8 +336,30 @@ default
                 + ", " + (string)llGetListLength(llParseString2List(llDumpList2String(gBars, ","), ["0", ","], [])) + " parts, free mem " + (string)llGetFreeMemory());
     }
 
+    listen(integer ch, string name, key id, string m)
+    {
+        if (ch != gChan) return;
+        if (llGetSubString(m, 0, 1) == "● ") m = llGetSubString(m, 2, -1);
+        if (m == "Done" || m == " " || m == "‹ Back")
+        {
+            llListenRemove(gLh);
+            gLh = 0;
+            if (m == "‹ Back") llMessageLinked(LINK_SET, CMD, "menu|shapes", "");   // Settings › Frames & bars
+            return;
+        }
+        string k = "shape." + gPage;
+        if (gPage == "photo") k = "photo";
+        llLinksetDataWriteProtected("cin." + k, llToLower(m), PASS);
+        if (m != "Full" && !gOn) llLinksetDataWriteProtected("cin.bars", "1", PASS);   // a frame picked is a frame shown
+        load();
+        gSent = "";
+        cut();
+        frame(gPage);                                   // the dialog stays: the snapshot size for the new frame
+    }
+
     timer()
     {
+        if (gLh && llGetUnixTime() - gDlgT > 120) { llListenRemove(gLh); gLh = 0; }
         measure();
         if (llVecDist(llGetLocalPos(), gRootAt) > 0.0005) cut();      // the strip moved the root: the bars stay on the screen
     }

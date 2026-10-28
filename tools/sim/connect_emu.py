@@ -156,8 +156,8 @@ def scenarios():
     nina = w.avatar("Nina", (127, 129, 21))
     o2 = Obj(w, nina, [], children=()); o2.worn = True; w.objects[o2.key] = o2
     t = w.t
-    w.chat(o2, CH, "T12|8|here|8.1.0|0", to=ana.key); w.run(1)
-    w.chat(o2, CH, "T12|8|here|8.1.0|0", to=ana.key); w.run(1)
+    w.chat(o2, CH, "T12|8|here|8.99.0|0", to=ana.key); w.run(1)
+    w.chat(o2, CH, "T12|8|here|8.99.0|0", to=ana.key); w.run(1)
     nn = [n for n in notes(ana, t) if "newer" in n]
     check(len(nn) == 1, "a newer Take 12 met: told once (%r)" % nn)
     no_errors(w, "versions")

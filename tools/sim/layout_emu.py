@@ -32,7 +32,7 @@ for a in ASPECTS:
             tag = "%.3f %s %s" % (a, pl, sz)
             px = lambda v: v * S / 1080.0
             V = visible(h, ana)
-            check(len(V) == 4 + 3 + 2, "%s: 4 shots, 3 option words, shape and link visible (%s)" % (tag, sorted(V)))
+            check(len(V) == 4 + 3 + 2 + 1 and "t12 shut" in V, "%s: 4 shots, 3 option words, shape, link and the shutter visible (%s)" % (tag, sorted(V)))
             names = sorted(V)
             for i in range(len(names)):
                 for j in range(i + 1, len(names)):

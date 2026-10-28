@@ -33,7 +33,7 @@ The facts we design around:
 ## The look: the Monitor
 A cinema camera's on-screen display, as part of the viewer:
 - **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a soft dark band.
-- **The words' places:** the shots sit on the left. The running shot's options sit on the right. In the middle are the frame key `▭ 2.39`, the [12], and Connect (two linked rings with a count, `SHARING` or `THEIR FILM`).
+- **The words' places:** the shots sit on the left. The running shot's options sit on the right. In the middle are the frame key `▭ 2.39`, the [12], and Connect (two linked rings with a count, `SHARING` or `THEIR FILM`). The shutter sits at the right end (8.1.0).
 - **Lit states:** the lit shot is ink on a white box; a lit option is underlined; KEEP NEW and UNDO sit in an outline.
 - **Room for other HUDs:** the words stay in a centred 16:9 area, 180 px in from its corners.
 - **Size:** S, M or L; the strip is 48 px of a 1080 px window at M.
@@ -71,9 +71,21 @@ Each shot remembers its options across logins; a tap on the lit shot does its on
 | **Tracking** | SHOULDER · FILM · CLASSIC, L · R | The viewer's own follow camera (1.6 m over a shoulder, 3.5 m a little low, 3 m from above), a steadicam lag, 30 % further when running. Walls pull it in; a small closed room (under ~4 × 4 m) gives its corner. Standing 5 s, PORTRAIT glows once. | Back into the look |
 | **Portrait** | CLOSE · MEDIUM · WIDE, ME · US | You standing: a soft 3/4 at 30°, eye level, eyes on the upper third, lead room. Close is to the chest, Medium to the waist, Wide is all of you with the feet 5 % up. Us is the nearest 3 within 3 m: with one, a two-shot 20° toward your side; with 3–4, the open side of the group. A crowd (over 6 within 10 m) gets no people cuts. Walking, it follows then settles; turned away 2 s, a cut; a wall moves it in; a zoom keeps the framing. | The other side (a second tap crosses the 180° line) |
 | **Fixed** | VIEW A · VIEW B; seated: FORGET SEAT · LET GO | Your own Alt-click framing: an empty view is kept after 1 s still. A kept one is replaced only by KEEP NEW (5 s), never silently. Views are kept per place (region + parcel) and per seat spot (furniture and position, in its frame), or per place + spot for ground sits; the least used of 48 pieces of furniture is forgotten. Walking off, the same angle on you. A zoom dollies. LET GO marks a vehicle (name + creator) and Take 12 lets go on it; TAKE BACK unmarks. | Back to the kept view |
-| **Scenic** | DRIFT · NEAR · ROOM · FAR | Still frames cut about every 15 s, or Drift (the only moving one: close, out, back). Rays for open sight; within 60 m, inside the region, above ground and water; indoors every band stays in the room. Drift stays near when anyone is within 10 m. It is also the idle camera. | The next view now |
+| **Scenic** | DRIFT · NEAR · ROOM · FAR | Still frames cut about every 15 s, or Drift (the only moving one: the reveal, close on you, rising and pulling back, held wide, a cut to a new close; Settings › Motion › Breathe: in and out). Rays for open sight; within 60 m, inside the region, above ground and water; indoors every band stays in the room. Drift stays near when anyone is within 10 m. It is also the idle camera. | The next view now |
 
-**Frames (8.0.9: every frame is a picture):** each shot has its own: Tracking and Scenic 2.39, Portrait and Fixed 1.85 by default. The frame key `▭` opens the running shot's frames, widest to tallest: 2.39 · 2.00 · 1.85 · 1.66, the photo frames 3:2 · 4:3 · 1:1 · 4:5 (not in Tracking: a walking camera wants a cinema frame), and Full (no bars); the dialog gives the snapshot size for the frame. A photo frame is a pillarbox, and Scenic's Drift holds still views in it. The bars are Black or Dimmed; `/12 bars` turns them off for every shot. The key is dim with your own camera.
+**Frames and the shutter (every frame is a picture, 8.0.9; the shutter, 8.1.0):**
+- **The cinema frame:** each shot has its own. Tracking and Scenic are 2.39, Portrait and Fixed 1.85 by default.
+- **The frame key `▭`** always shows, and edits, the frame on screen.
+  - Filming, its dialog lists the cinema frames, widest first: 2.39 · 2.00 · 1.85 · 1.66, and Full (no bars).
+  - With the shutter open, it lists the photo frames: 3:2 · 4:3 · 1:1 · 4:5.
+  - Each dialog gives the snapshot size.
+- **The shutter**, at the right end, is the photographer's key.
+  - Press it and the moment holds exactly as it is, in your photo frame: one for every shot, 3:2 to begin with, a
+    pillarbox.
+  - A note gives the snapshot size and Ctrl+Shift+S. Pressing it again (or tapping the lit shot) lets the film go on.
+  - A script cannot take the snapshot, so it never pretends to.
+- **The bars** are Black or Dimmed; `/12 bars` turns them off for every shot. The key and the shutter are dim with
+  your own camera.
 
 ## Around the shots
 - **Sitting:** the shot holds its frame and FIXED glows once. Standing up resumes it; from Fixed, standing up goes back to the shot you had before you sat.
@@ -89,6 +101,6 @@ Two equal cameras: each films their own shot, and anyone connected can watch any
 ## Two copies, the free build, settings
 - **A new copy** worn while the old one is on takes the setup over ("Moved. You can take off the old one."). **Two set-up copies:** the older steps aside (amber). A 7.x copy cannot be seen; the guide says to take it off.
 - **Take 12 Scenery (free):** the same strip, Scenic only; Tracking, Portrait and Fixed are dim ("In the full Take 12."). It can watch a friend's film, never film for others.
-- **Settings:** Lens · Eye line · Tracking · Frames & bars · Vehicles · Idle start · Friends · Look (place, size) · Reset (Tips again · Seats & views · Everything).
+- **Settings:** Lens · Eye line · Motion (Tracking Smooth / Snappy, Drift Reveal / Breathe) · Frames & bars · Vehicles · Idle start · Friends · Look (place, size) · Reset (Tips again · Seats & views · Everything).
 - **Commands** (`/12`, for gesture keys): tracking, portrait, fixed, scenic, bars, next, off, strip, connect, status, debug, blend, place, size, idle, flip.
 - **Not in 8.0, kept for later:** a "Take 12 Lens" add-on (an always-on mm and aspect readout), light companions, other languages (every word is in `text.lsl`).

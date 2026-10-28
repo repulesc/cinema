@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.10";
+string VERSION = "8.1.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -191,7 +191,7 @@ open(string p)
 {
     if (p == "settings")
     {
-        list b = ["Lens", "Eye line", "Tracking", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        list b = ["Lens", "Eye line", "Motion", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
         if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
         page(p, "", b);
     }
@@ -216,23 +216,10 @@ open(string p)
             S += s;
         }
         string bs = cfg("bstyle");
-        page(p, llDumpList2String(S, "~") + "~" + llList2String(["black", "dimmed"], bs == "dim"),
-            ["Tracking", "Portrait", "Fixed", "Scenic", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
-    }
-    else if (llGetSubString(p, 0, 5) == "frame:")
-    {
-        // the frame dialog: this shot's frames from the widest to the tallest, the photo frames for every shot but
-        // Tracking (a walking camera wants a cinema frame), the current one marked; the strip's ▭ opens it (8.0.9)
-        string s = llGetSubString(p, 6, -1);
-        string now = cfg("shape." + s);
-        if (now == "") now = llList2String(["2.39", "1.85", "1.85", "2.39"], llListFindList(["tracking", "portrait", "fixed", "scenic"], [s]));
-        list F = ["2.39", "2.00", "1.85", "1.66", "3:2", "4:3", "1:1", "4:5", "Full"];
-        if (s == "tracking") F = llDeleteSubList(F, 4, 7);
-        list b = [];
-        integer i;
-        for (i = 0; i < llGetListLength(F); i++) b += mark(llList2String(F, i), llToLower(llList2String(F, i)) == now);
-        page("frame", s + "~" + now, b + ["‹ Back", "Done"]);
-        gPage = p;
+        string ph = cfg("photo");
+        if (ph == "") ph = "3:2";
+        page(p, llDumpList2String(S, "~") + "~" + llList2String(["black", "dimmed"], bs == "dim") + "~" + ph,
+            ["Tracking", "Portrait", "Fixed", "Scenic", "Photo", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
     }
     else if (p == "idle")
     {
@@ -279,8 +266,11 @@ open(string p)
     else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
     else if (p == "feel")
     {
-        integer sn = (cfg("feel") != "smooth");             // Tracking's feel: snappy to steer by (the default, 8.0.8), or smooth
-        page(p, llList2String(["Smooth", "Snappy"], sn), [mark("Smooth", !sn), mark("Snappy", sn), "‹ Back"]);
+        // Motion: Tracking snappy to steer by (the default, 8.0.8) or smooth; Drift the reveal (8.1.0) or breathing
+        integer sn = (cfg("feel") != "smooth");
+        integer br = (cfg("drift") == "breathe");
+        page(p, llList2String(["Smooth", "Snappy"], sn) + "~" + llList2String(["Reveal", "Breathe"], br),
+            [mark("Smooth", !sn), mark("Snappy", sn), " ", mark("Reveal", !br), mark("Breathe", br), "‹ Back"]);
     }
     else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
     else if (p == "tour3") page(p, "", ["Done"]);
@@ -290,7 +280,6 @@ open(string p)
 string up(string p)
 {
     if (llListFindList(["lens", "feel", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
-    if (llGetSubString(p, 0, 5) == "frame:") return "shapes";
     if (p == "place") return "look";
     if (p == "everything") return "reset";
     return "main";
@@ -312,7 +301,7 @@ choose(string m)
     {
         if (b == "Eye line") { closeMenu(); eyeStart(); }
         else open(llList2String(["lens", "feel", "shapes", "vehicles", "idle", "friends", "look", "reset"],
-            llListFindList(["Lens", "Tracking", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
+            llListFindList(["Lens", "Motion", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
     }
     else if (gPage == "lens")
     {
@@ -328,13 +317,8 @@ choose(string m)
             open("shapes");
             return;
         }
-        open("frame:" + llToLower(b));
-    }
-    else if (llGetSubString(gPage, 0, 5) == "frame:")
-    {
-        set("shape." + llGetSubString(gPage, 6, -1), llToLower(b));
-        if (b != "Full" && cfg("bars") == "0") set("bars", "1");   // a frame picked is a frame shown
-        open(gPage);                                    // the page stays: its snapshot size for the new frame
+        closeMenu();                                    // a shot's frames, or your photo frame: bars' dialog (8.1.0)
+        llMessageLinked(LINK_SET, CMD, "frames|" + llToLower(b), "");
     }
     else if (gPage == "idle")
     {
@@ -406,7 +390,8 @@ choose(string m)
     }
     else if (gPage == "feel")
     {
-        set("feel", llToLower(b));
+        if (b == "Reveal" || b == "Breathe") set("drift", llToLower(b));
+        else set("feel", llToLower(b));
         open("feel");
     }
     else if (gPage == "inview")
@@ -688,8 +673,7 @@ default
         }
         else if (num == LINKST) gLink = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
         else if (num == CMD && str == "eyequit" && gEye) eyeEnd(FALSE);   // you walked off: skipped, the old line kept
-        else if (num == CMD && str == "menu|settings") open("settings");   // back from sync's Friends page
-        else if (num == CMD && str == "frames" && gShot != "" && gState != "wait" && gState != "off") open("frame:" + gShot);
+        else if (num == CMD && llGetSubString(str, 0, 4) == "menu|") open(llGetSubString(str, 5, -1));   // back from sync's Friends, bars' frames
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
         else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
         else if (num == MSG_VER && str != "?")

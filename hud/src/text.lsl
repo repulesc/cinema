@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.10";
+string VERSION = "8.1.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -26,46 +26,47 @@ float   SHOW    = 4.0;            // s  a note stays this long, and 1 s more for
 
 // notes: id, important (1: also in chat; 2: only in chat; 3: stays until the next note or "clear"), the words (%: the argument)
 list NOTES = [
-    "setup", 1, "Tap the [12] to set up.",
-    "released", 0, "Your viewer's camera. Tap a shot to take it back.",
-    "frameit", 0, "Frame it with Alt-click, Take 12 keeps it. Esc gives the camera back.",
-    "kept", 0, "Kept.",
-    "forgot", 0, "Seat forgotten. UNDO brings it back.",
-    "letgo", 0, "Take 12 lets go on this vehicle.",
-    "takeback", 0, "Take 12 films here again.",
-    "with", 0, "% is with you. Tap the rings to watch their film.",
-    "watching", 0, "% is watching your film.",
-    "theirs", 0, "You're watching %'s film.",
-    "mine", 0, "Your own film again.",
-    "notfilming", 0, "% isn't filming.",
-    "left", 0, "% left.",
-    "back", 0, "% is back.",
-    "away", 0, "% is out of reach.",
-    "asked", 0, "% is asked.",
-    "busy", 0, "% is busy.",
-    "noanswer", 0, "% didn't answer.",
-    "old", 0, "%'s Take 12 is older. A new copy fixes it.",
-    "nobody", 0, "Nobody near you wears Take 12.",
-    "friend", 0, "% joins you without being asked now.",
-    "newer", 1, "A newer Take 12 is out. Ask the store for a new copy.",
-    "moved", 1, "Moved. You can take off the old one.",
-    "fbsent", 1, "Thanks. It went to the maker.",
-    "fbwait", 1, "Thanks. One a minute, please.",
-    "older", 1, "An older Take 12 is worn too. Take it off.",
-    "missing", 1, "A Take 12 script is missing: %. A new copy fixes it.",
-    "full", 0, "In the full Take 12.",
-    "lens", 0, "Lens % mm. Ctrl+0 zooms in.",
-    "mm", 0, "% mm",
-    "eyeline", 3, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
-    "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
-    "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
-    "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
-    "plain", 0, "%"
+    "setup", "1Tap the [12] to set up.",
+    "released", "0Your viewer's camera. Tap a shot to take it back.",
+    "photo", "0Photo  ·  %  ·  Ctrl+Shift+S",
+    "frameit", "0Frame it with Alt-click, Take 12 keeps it. Esc gives the camera back.",
+    "kept", "0Kept.",
+    "forgot", "0Seat forgotten. UNDO brings it back.",
+    "letgo", "0Take 12 lets go on this vehicle.",
+    "takeback", "0Take 12 films here again.",
+    "with", "0% is with you. Tap the rings to watch their film.",
+    "watching", "0% is watching your film.",
+    "theirs", "0You're watching %'s film.",
+    "mine", "0Your own film again.",
+    "notfilming", "0% isn't filming.",
+    "left", "0% left.",
+    "back", "0% is back.",
+    "away", "0% is out of reach.",
+    "asked", "0% is asked.",
+    "busy", "0% is busy.",
+    "noanswer", "0% didn't answer.",
+    "old", "0%'s Take 12 is older. A new copy fixes it.",
+    "nobody", "0Nobody near you wears Take 12.",
+    "friend", "0% joins you without being asked now.",
+    "newer", "1A newer Take 12 is out. Ask the store for a new copy.",
+    "moved", "1Moved. You can take off the old one.",
+    "fbsent", "1Thanks. It went to the maker.",
+    "fbwait", "1Thanks. One a minute, please.",
+    "older", "1An older Take 12 is worn too. Take it off.",
+    "missing", "1A Take 12 script is missing: %. A new copy fixes it.",
+    "full", "0In the full Take 12.",
+    "lens", "0Lens % mm. Ctrl+0 zooms in.",
+    "mm", "0% mm",
+    "eyeline", "3PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
+    "texture", "1% is kept and taken out of the contents: the HUD can be given away.",
+    "mixed", "1% is another version. All Take 12 scripts must come from one copy.",
+    "commands", "2/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
+    "plain", "0%"
 ];
 
 // tips: a key's first three uses
 list TIPS = [
-    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera. A smoother, steadicam feel: Settings › Tracking.",
+    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera. A smoother, steadicam feel: Settings › Motion.",
     "PORTRAIT", "Portrait frames you standing. Us adds the people near you. Hold it: your viewer's camera.",
     "FIXED", "Fixed keeps your own framing. Alt-click to frame it. Hold it: your viewer's camera.",
     "SCENIC", "Scenic shows the place. It also starts when you're away. Hold it: your viewer's camera.",
@@ -83,7 +84,8 @@ list TIPS = [
     "snapshot", "The bars are on your screen, not in snapshots. Tap the frame by the [12] for its snapshot size.",
     "LET GO", "Your viewer's camera every time you sit here. TAKE BACK undoes it.",
     "DRIFT", "How far the views go.",
-    "shape", "This shot's frame, and its snapshot size.",
+    "shape", "The frame on screen, and its snapshot size.",
+    "shutter", "The shutter holds this moment in your photo frame. Take your snapshot, then press it again.",
     "link", "Share films with people near you."
 ];
 list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER", "CLASSIC", "SHOULDER", "R", "L",
@@ -151,10 +153,13 @@ show(string s, integer stay)
 note(string id, string arg)
 {
     if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
-    integer i = llListFindList(NOTES, [id]);
-    if (i < 0 || i % 3) return;
-    string s = fill(llList2String(NOTES, i + 2), arg);
-    integer imp = llList2Integer(NOTES, i + 1);
+    integer i = llListFindList(SNAP, [arg]);
+    if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
+    i = llListFindList(NOTES, [id]);
+    if (i < 0 || i % 2) return;
+    string v = llList2String(NOTES, i + 1);                 // its kind (0 a note, 1 also in chat, 2 chat only, 3 stays), then the words
+    string s = fill(llGetSubString(v, 1, -1), arg);
+    integer imp = (integer)llGetSubString(v, 0, 0);
     if (imp != 2) show(s, imp == 3);
     if (imp == 1 || imp == 2) llOwnerSay("[Take 12] " + s);
 }
@@ -201,19 +206,20 @@ string body(string page, list a)
         return t + "\nTip: " + llList2String(HINTS, gHint);
     }
     if (page == "settings") return "Settings";
-    if (page == "feel") return "Tracking\nSmooth: eases into your turns, like a steadicam.\nSnappy: stays right behind you, easy to steer by.\nNow: " + a0;
+    if (page == "feel") return "Motion\nTracking: " + a0 + ". Smooth eases into your turns; Snappy stays right behind you.\nDrift: "
+        + a1 + ". Reveal rises from you to the place; Breathe moves in and out.";
     if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\n24 wide · 28 · 35 the classic · 40 · 50 normal.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
-    if (page == "shapes") return "Frames & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3 + " · Bars: " + llList2String(a, 4);
+    if (page == "shapes") return "Frames & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3
+        + "\nPhoto " + llList2String(a, 5) + " (the shutter) · Bars: " + llList2String(a, 4);
     if (page == "frame")
     {
-        // the snapshot size for the frame on screen (8.0.9: every frame is a picture)
+        // the snapshot size for the frame on screen: a shot's cinema frame, or your photo frame (the shutter, 8.1.0)
         string t = llToUpper(llGetSubString(a0, 0, 0)) + llGetSubString(a0, 1, -1) + "'s frame\n";
+        if (a0 == "photo") t = "Your photo frame  ·  every shot\nThe shutter holds the moment in it.\n";
         integer i = llListFindList(SNAP, [a1]);
         if (i < 0) return t + "Full: no bars. Snapshot at your window's size.";
-        t += "Snapshot " + llList2String(SNAP, i + 1) + " for " + a1 + ".";
-        if (a0 != "scenic") return t;
-        return t + "\nIn 3:2 · 4:3 · 1:1 · 4:5, Drift holds still views.";
+        return t + "Snapshot " + llList2String(SNAP, i + 1) + " for " + a1 + ".";
     }
     if (page == "vehicles")
     {

@@ -16,8 +16,10 @@ And the tests with a friend (8.0.6): Room composes from the room's edge, level; 
 [12] sits inside the band; Settings › Friends works (now sync's); Settings › Tracking › Snappy; the setup asks whether
 the strip is in view; once asked, the setup never starts again on a re-wear.
 8.0.7: hold the lit shot (0.8 s) and your viewer has the camera; a short tap is still its next view.
-8.0.9: every frame is a picture: the strip's ▭ opens this shot's frames (the photo frames 3:2 · 4:3 · 1:1 · 4:5 for all
-but Tracking) with the snapshot size; a photo frame is a pillarbox the shots compose in, and Drift holds still in it."""
+8.0.9: every frame is a picture: the strip's ▭ opens this shot's frames with the snapshot size.
+8.1.0: the shutter holds the moment in your photo frame (one for every shot, 3:2 by default) until it is pressed again;
+the ▭ shows and edits the frame on screen (the cinema frames while filming, the photo frames while the shutter is
+open); Drift is the reveal, or breathes (Settings › Motion)."""
 from emu_util import *
 
 w = World()
@@ -281,11 +283,11 @@ ana.dialog = None
 ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Friends"); w.run(1)
 check(ana.labels()[:2] == ["Add", "Remove"] and "Chime" in " ".join(ana.labels()), "Settings › Friends: %r" % ana.labels())
 ana.click("‹ Back"); w.run(1)
-check("Tracking" in ana.labels(), "Back: Settings again (%r)" % ana.labels())
-ana.click("Tracking"); w.run(0.5)
-check(ana.labels() == ["Smooth", "● Snappy", "‹ Back"], "Settings › Tracking, Snappy by default (8.0.8): %r" % ana.labels())
+check("Motion" in ana.labels(), "Back: Settings again (%r)" % ana.labels())
+ana.click("Motion"); w.run(0.5)
+check(var(h, "ui", "gBtn") == ["Smooth", "● Snappy", " ", "● Reveal", "Breathe", "‹ Back"], "Settings › Motion: Snappy and the reveal by default (8.1.0): %r" % var(h, "ui", "gBtn"))
 check(h.cam.get("plag", 1) <= 0.1 and h.cam.get("blag", 1) <= 0.1, "Snappy: Tracking right behind you (lags %r, %r)" % (h.cam.get("plag"), h.cam.get("blag")))
-check(any("Settings › Tracking" in n for n in ana.notes()), "the Tracking tip names Settings › Tracking")
+check(any("Settings › Motion" in n for n in ana.notes()), "the Tracking tip names Settings › Motion")
 ana.click("Smooth"); w.run(1)
 ana.click("‹ Back"); w.run(0.5); ana.click("‹ Back"); w.run(0.5); ana.click("Close"); w.run(0.5)
 ana.touch("t12 s0"); w.run(1); ana.touch("t12 s0"); w.run(3)
@@ -336,59 +338,80 @@ check(lsd(h, "lens") == "28" and "Done" in ana.labels(), "a lens picked, the pag
 ana.click("Done"); w.run(1.5)
 check(ana.dialog is None and not var(h, "ui", "gLensL"), "Done: the page goes, the live mm stops")
 
-# ==== 8.0.9: every frame is a picture =================================================================================
+# ==== 8.1.0: the ▭ is the frame on screen; the shutter =================================================================
+def frame_btns(): return sorted(b for b in var(h, "bars", "gBtn") if b.strip())
+def pic_w():
+    """the picture's shape between the bars (pillarbox at the sides, letterbox above and below)"""
+    L, R, T, U = (rect(h, ana, "t12 bar%d" % i) for i in range(4))
+    wd = ana.aspect - (L[2] if L[4] > 0.5 else 0) - (R[2] if R[4] > 0.5 else 0)
+    ht = 1.0 - (T[3] if T[4] > 0.5 else 0) - (U[3] if U[4] > 0.5 else 0)
+    return wd / ht
 w = World()
 ana, h = hud(w)
 ana.double_tap(); w.run(1)
 ana.touch("t12 s1"); w.run(3)                                          # Portrait
 ana.dialog = None
 ana.touch("t12 shape"); w.run(0.8)
-check(var(h, "ui", "gBtn") == ["2.39", "2.00", "● 1.85", "1.66", "3:2", "4:3", "1:1", "4:5", "Full", "‹ Back", "Done"],
-      "the ▭ in Portrait: its frames, widest to tallest (%r)" % var(h, "ui", "gBtn"))
+check(frame_btns() == sorted(["2.39", "2.00", "● 1.85", "1.66", "Full", "‹ Back", "Done"]), "filming, the ▭: the cinema frames only (%r)" % frame_btns())
 check(ana.dialog and "Snapshot 1920 × 1038 for 1.85" in ana.dialog[1], "... with the snapshot size (%r)" % (ana.dialog and ana.dialog[1]))
-ana.click("4:5"); w.run(2)
-check(lsd(h, "shape.portrait") == "4:5" and "● 4:5" in ana.labels(), "4:5 picked, the page stays")
-check("Snapshot 1600 × 2000 for 4:5" in ana.dialog[1], "... with its size (%r)" % ana.dialog[1])
-L, R, T = rect(h, ana, "t12 bar0"), rect(h, ana, "t12 bar1"), rect(h, ana, "t12 bar2")
-pic = ana.aspect - L[2] - R[2]
-check(L[4] > 0.5 and R[4] > 0.5 and T[4] == 0 and abs(pic - 0.8) < 0.01, "4:5: a pillarbox, the picture 0.8 wide (%.3f)" % pic)
-check(abs(var(h, "portrait", "gAsp") - 0.8) < 0.01, "Portrait composes in 4:5 (%.2f)" % var(h, "portrait", "gAsp"))
-check(var(h, "strip", "gShapeL") == "4:5", "the strip reads 4:5 (%r)" % var(h, "strip", "gShapeL"))
+ana.click("2.39"); w.run(2)
+check(lsd(h, "shape.portrait") == "2.39" and "● 2.39" in ana.labels(), "2.39 picked, the dialog stays")
 ana.click("Done"); w.run(0.5)
 check(ana.dialog is None, "Done: the dialog goes")
-ana.touch("t12 s0"); w.run(3)                                          # Tracking: the cinema frames only
+t = w.t
+ana.touch("t12 shut"); w.run(1)
+check(var(h, "core", "gState") == "photo" and ana.camera()[2], "the shutter: the moment held (%s)" % var(h, "core", "gState"))
+check(abs(pic_w() - 1.5) < 0.01 and var(h, "strip", "gShapeL") == "3:2", "... in 3:2, the readout 3:2 (%.3f, %r)" % (pic_w(), var(h, "strip", "gShapeL")))
+check(any("Photo  ·  3:2  ·  Snapshot 1800 × 1200  ·  Ctrl+Shift+S" in n for n in ana.notes(t)), "... and the note (%r)" % ana.notes(t)[-2:])
+check(rect(h, ana, "t12 shut")[4] > 0.9, "the shutter lit")
 ana.dialog = None
 ana.touch("t12 shape"); w.run(0.8)
-check(var(h, "ui", "gBtn") == ["● 2.39", "2.00", "1.85", "1.66", "Full", "‹ Back", "Done"],
-      "the ▭ in Tracking: the cinema frames (%r)" % var(h, "ui", "gBtn"))
-ana.click("Full"); w.run(1)
-check(lsd(h, "shape.tracking") == "full" and rect(h, ana, "t12 bar2")[4] == 0 and rect(h, ana, "t12 bar0")[4] == 0, "Full: no bars")
-check("Full: no bars" in ana.dialog[1], "... and says so (%r)" % ana.dialog[1])
+check(frame_btns() == sorted(["● 3:2", "4:3", "1:1", "4:5", "Done"]), "shutter open, the ▭: the photo frames only (%r)" % frame_btns())
+ana.click("4:5"); w.run(1)
+check(lsd(h, "photo") == "4:5" and abs(pic_w() - 0.8) < 0.01, "4:5: your photo frame, a pillarbox (%.3f)" % pic_w())
 ana.click("Done"); w.run(0.5)
+ana.touch("t12 shut"); w.run(3)
+check(var(h, "core", "gState") == "film" and abs(pic_w() - 2.39) < 0.02, "pressed again: filming, Portrait's 2.39 (%.3f)" % pic_w())
+# Tracking, walking: the shutter holds the view exactly while you walk on
+ana.touch("t12 s0"); w.run(3)
+ana.walk((140, 128, 21), speed=1.5); w.run(2)
+ana.touch("t12 shut"); w.run(0.5)
+c0 = ana.camera()[0]
+w.run(3)
+check(var(h, "core", "gState") == "photo" and B.llVecDist(ana.camera()[0], c0) < 0.01, "Tracking, walking: the view holds (%.2f m)" % B.llVecDist(ana.camera()[0], c0))
+ana.touch("t12 s0"); w.run(3)                                          # the lit shot also closes it
+check(var(h, "core", "gState") == "film" and h.cam.get("distance") and abs(pic_w() - 2.39) < 0.02, "the lit shot: Tracking follows again, in 2.39")
 h.send(7371, "stop"); w.run(1)
 ana.dialog = None
-ana.touch("t12 shape"); w.run(0.8)
-check(ana.dialog is None, "your own camera: the ▭ is dim, no dialog")
-no_errors(w, "frames")
-
-# ---- Drift holds still in a photo frame; moves again in a cinema frame -------------------------------------------------
-ana.touch("t12 s3"); w.run(2)
-ana.touch(opt_part(h, "DRIFT")); w.run(3)
-check(h.cam.get("bangle") == 180 and not h.cam.get("plock"), "Drift in 2.39: the follow camera")
-ana.touch("t12 shape"); w.run(0.8)
-check("Drift holds still views" in ana.dialog[1], "Scenic's frames say Drift holds still (%r)" % ana.dialog[1])
-ana.click("1:1"); w.run(3); ana.click("Done")
-P = []
-for i in range(30):
-    w.run(1)
-    P.append(ana.camera()[0])
-check(h.cam.get("plock") and max(B.llVecDist(p, P[0]) for p in P[:8]) < 0.01, "Drift in 1:1: a still view, locked off (%r, %r)"
-      % (h.cam.get("plock"), [round(B.llVecDist(p, P[0]), 2) for p in P[:8]]))
-check(var(h, "scenic", "gCuts") >= 2, "... a new still view now and then (%d cuts)" % var(h, "scenic", "gCuts"))
+ana.touch("t12 shape"); w.run(0.5); ana.touch("t12 shut"); w.run(0.5)
+check(ana.dialog is None and var(h, "core", "gState") == "wait", "your own camera: the ▭ and the shutter do nothing")
+# 8.0.9's photo frame per shot: your photo frame now
+h.lsd.pop("cin.photo", None)
+h.lsd["cin.shape.fixed"] = ("1:1", "cinema-1.0-build1")
+h.send(7330, "all"); w.run(1)
+check(lsd(h, "photo") == "1:1" and lsd(h, "shape.fixed") == "", "8.0.9's 1:1 on Fixed: now your photo frame, Fixed back to 1.85")
 h.send(7371, "bars|follow 0.80"); w.run(1)
 check(var(h, "strip", "gShapeL") == "4:5", "a friend's 4:5 film reads 4:5 (%r)" % var(h, "strip", "gShapeL"))
 h.send(7371, "bars|follow"); w.run(1)
-ana.touch("t12 shape"); w.run(0.8); ana.click("2.39"); w.run(3); ana.click("Done")
-check(h.cam.get("bangle") == 180 and not h.cam.get("plock"), "back in 2.39: Drift moves again")
-no_errors(w, "drift stills")
+no_errors(w, "shutter")
+
+# ---- Drift: the reveal (rising, pulling back, held, a cut to another side), or breathing --------------------------------
+ana.touch("t12 s3"); w.run(0.5)
+ana.touch(opt_part(h, "DRIFT")); w.run(4)
+D = []
+for i in range(36):
+    w.run(1)
+    D.append((h.cam.get("distance") or 0, h.cam.get("pitch") or 0, h.cam.get("plock")))
+d_close, d_mid, d_wide = D[0][0], D[12][0], D[24][0]
+check(d_close < d_mid < d_wide and D[24][1] > D[0][1] + 5, "the reveal: rising and pulling back (%.1f, %.1f, %.1f m; %.0f→%.0f°)" % (d_close, d_mid, d_wide, D[0][1], D[24][1]))
+check(abs(D[28][0] - D[24][0]) < 0.3, "... held wide (%.1f, %.1f)" % (D[24][0], D[28][0]))
+check(any(x[0] < d_wide * 0.6 for x in D[30:]), "... then a cut to a new close (%r)" % [round(x[0], 1) for x in D[28:]])
+h.lsd["cin.drift"] = ("breathe", "cinema-1.0-build1")
+ana.touch(opt_part(h, "DRIFT")); w.run(2)
+E = []
+for i in range(40):
+    w.run(1)
+    E.append(h.cam.get("distance") or 0)
+check(len(set(round(e, 1) for e in E[2:])) >= 2 and max(E) <= 26.5, "Breathe: 8.0.6's legs, in and out (%r)" % sorted(set(round(e, 1) for e in E)))
+no_errors(w, "drift")
 done("inworld_emu")

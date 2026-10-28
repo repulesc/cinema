@@ -1,4 +1,4 @@
-Take 12 Scenery  -  READ ME  (8.0.10)
+Take 12 Scenery  -  READ ME  (8.1.0)
 Free. The Scenic camera of Take 12, on its own. It only moves your view: nothing is recorded.
 
 
@@ -21,9 +21,12 @@ HOLD        everything off; hold again: back as it was
 === SCENIC ==============================================
 
 DRIFT · NEAR · ROOM · FAR   a slowly moving camera, views near you, the room you are in, views out to 60 m
-Still frames change about every 15 seconds; Drift moves slowly and stays near you when people are around.
+Still frames change about every 15 seconds. Drift is the reveal: close on you, then rising and pulling back to show
+the place, then a new close from another side; it stays near when people are around (Settings > Motion > Breathe:
+in and out instead).
 Indoors (a skybox, a club, a house) every band stays in the room. Tap SCENIC again: the next view now.
-The frame key (▭): tap it to choose the frame, with its snapshot size. Settings > Idle start: Off, Away, or 5 minutes.
+The frame key (▭): tap it to choose the frame, with its snapshot size. The shutter (right end) holds the view
+for a photo in your photo frame (3:2 to begin with); press it again after your snapshot. Settings > Idle start: Off, Away, or 5 minutes.
 
 TRACKING, PORTRAIT and FIXED are on the strip too, dim: they are in the full Take 12.
 
