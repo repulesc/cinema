@@ -139,7 +139,7 @@ and the setup's end → tracking turns it on). A `shot|<name>` of your own for a
   AGENT_AWAY → Scenic `wide`; 10 s → Scenic `drift`; seated, Fixed if `cin.seat.<root>` holds a view (2 s), else
   Drift. A shot stays 8 s except Tracking on moving; nothing running: at once. Scenic's band goes as CMD
   `aband|drift` or `aband|wide` (Room indoors, Far outdoors), never into `cin.scn`; the other shots take Auto's
-  options without keeping them (Portrait Medium · Us, Tracking Film). Core, in Auto: no idle start; held, the camera
+  options without keeping them (Portrait Medium · Us); Tracking films in your own look and side (8.4.4). Core, in Auto: no idle start; held, the camera
   back on its spot (Esc) for 1.5 s resumes the shot. `/12 debug on`: each pick and why in chat.
 - **Off** (hold): camera, bars, strip all off; hold again restores exactly.
 - **Portrait's solver** (from 7.x `frame.lsl`): two heights on you must land on two picture heights (Medium: the eyes

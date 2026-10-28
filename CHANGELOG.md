@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.4.4 (Auto: your Tracking look, the keys at once)
+- **Auto films Tracking in your own look** (Shoulder, Film or Classic, and your side), the one you last chose by hand.
+  It always used Film.
+- **The walking keys switch Auto to Tracking at once** (held a quarter of a second, so a nudge is no walk). It waited
+  for a full second of moving, checked twice a second. Moving without the keys (pushed, a slope) still waits 1 s.
+- tracking changes; every script is 8.4.4.
+
 ## 8.4.3 (Connect never stays dead; walking in Portrait and Fixed is smooth)
 - **sync stopped in-world with "Stack-Heap Collision"** after a few minutes beside a friend. A stopped script never
   starts again by itself, so Connect stayed dead until a new copy: and a friend whose sync had stopped never answers,

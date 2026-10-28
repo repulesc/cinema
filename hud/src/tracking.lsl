@@ -24,7 +24,7 @@
 //  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.4.3";
+string VERSION = "8.4.4";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -74,6 +74,7 @@ float   gMoveT;                        // moving since (0: still)
 float   gStillA;                       // still since (sitting down or standing up starts it again)
 integer gSatA;
 integer gKeysA;                        // the movement keys held (core's MOVING)
+float   gKeyT;                          // ... pressed at
 integer gWith;                         // people within 3 m (the sensor), since, gone since
 float   gWithT;
 float   gGoneT;
@@ -93,8 +94,7 @@ load()
         gLook = (integer)llList2String(c, 0);
         gRight = (integer)llList2String(c, 1);
     }
-    if (gLook < 0 || gLook > 2) gLook = 1;
-    if (gAuto) gLook = 1;                               // Auto films in Film (its side stays yours); not kept
+    if (gLook < 0 || gLook > 2) gLook = 1;              // (Auto films in your look and side too, 8.4.4)
 }
 
 opts()
@@ -294,7 +294,8 @@ direct()
     integer with = (gWith > 0 && gWith <= 3 && t - gWithT >= 4.0) || (gCShot == "portrait" && t - gGoneT < 3.0);
     if (moving)
     {
-        if (t - gMoveT >= 1.0 || gCShot == "") pick("tracking", "", "moving " + (string)sp + " m/s");
+        // the walking keys: at once (held 0.25 s: a nudge is no walk); moving otherwise (pushed, a slope): 1 s (8.4.4)
+        if (t - gMoveT >= 1.0 || (gKeysA && t - gKeyT >= 0.25) || gCShot == "") pick("tracking", "", "moving " + (string)sp + " m/s");
         return;                                             // never anything else while you move
     }
     if (kept && still >= 2.0) { pick("fixed", "", "a kept seat"); return; }
@@ -379,7 +380,11 @@ default
             else if (llGetSubString(str, 0, 6) == "eyecam|") gEyeA = (str != "eyecam|off");
             else if (str == "eyequit") gEyeA = FALSE;
         }
-        else if (num == MOVING) gKeysA = ((integer)str != 0);
+        else if (num == MOVING)
+        {
+            gKeysA = ((integer)str != 0);
+            if (gKeysA && gAuto) { gKeyT = llGetTime(); llSetTimerEvent(0.3); }   // Auto looks again in 0.3 s
+        }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/tracking] v" + VERSION + " " + llList2String(["off", "on"], gOn) + ", " + llList2String(LOOKS, gLook)
@@ -416,6 +421,7 @@ default
 
     timer()
     {
+        llSetTimerEvent(0.5);
         if (gOn && !gHold) check();
         direct();
     }

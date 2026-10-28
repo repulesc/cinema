@@ -37,7 +37,7 @@ check(state(h) == ("wait", ""), "worn: Take 12 waits a moment %r" % (state(h),))
 w.run(2.5)
 check(var(h, "tracking", "gAuto") == 1 and var(h, "strip", "gAuto") == 1 and var(h, "core", "gAuto") == 1, "on wear, set up: Auto")
 check(state(h) == ("film", "tracking"), "standing on wear: Tracking %r" % (state(h),))
-check(var(h, "tracking", "gLook") == 1 and lsd(h, "trk") == "0|1", "Auto's Tracking: Film, hers kept")
+check(var(h, "tracking", "gLook") == 0 and lsd(h, "trk") == "0|1", "Auto's Tracking: her own look, Shoulder (8.4.4)")
 check(any(n.startswith("Auto: Tracking as you move") for n in ana.notes()), "the tip says what Auto does")
 check(h.part("t12 auto")["alpha"] > 0.9, "the Orbit is lit")
 check(faint(h, ana) == {"t12 s0": 0.36}, "the strip: only the shot Auto chose, faint %r" % faint(h, ana))
@@ -53,15 +53,15 @@ t = until(w, lambda: state(h)[1] == "scenic", 6)
 check(t is not None and var(h, "scenic", "gBand") == 0 and lsd(h, "scn") == "2", "still 10 s: Scenic Drift (hers, Room, kept)")
 check(faint(h, ana) == {"t12 s3": 0.36}, "the strip: SCENIC, faint %r" % faint(h, ana))
 w.run(8)
-# a key tapped is not a walk
+# a key nudged is not a walk
 for i in range(3):
-    ana.keys(C["CONTROL_FWD"], hold=0.4); w.run(3)
-check(state(h)[1] == "scenic", "a step: no cut")
+    ana.keys(C["CONTROL_FWD"], hold=0.15); w.run(3)
+check(state(h)[1] == "scenic", "a nudge: no cut")
 
 # ---- moving: Tracking at once, also walking a room in short bursts (8.3.0 stayed in Portrait) ----------------------------
 ana.keys(C["CONTROL_FWD"], hold=3)
 t = until(w, lambda: state(h)[1] == "tracking", 3)
-check(t is not None and t <= 1.75, "walking with the keys: Tracking within 1.5 s (%s)" % t)
+check(t is not None and t <= 0.5, "walking with the keys: Tracking at once, within 0.5 s (8.4.4: it waited 1 s) (%s)" % t)
 w.run(3)
 for i in range(4):
     ana.keys(C["CONTROL_FWD"], hold=1.6); w.run(2.4); ana.face(90 * (i + 1))
