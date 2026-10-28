@@ -1,5 +1,5 @@
 """The HUD builder (8.0), on the REAL script: a rezzed box with hud/build/builder.lsl and a blank "t12 part" in its
-contents; a touch makes the 27 parts (rezzed, linked, named, laid flat), names the root "Take 12", then takes the part
+contents; a touch makes the 28 parts (rezzed, linked, named, laid flat), names the root "Take 12", then takes the part
 and itself out of the contents; touched again on a HUD that misses parts, it adds only those. The result, worn with
 the twelve scripts, is found by screen and strip and lays out."""
 from emu_util import *
@@ -20,10 +20,10 @@ box.inventory["t12 part"] = ("object", new_key(), True)
 ana.touch(o=box); w.run(40)
 names = [p["name"] for p in box.prims]
 check(names[0] == "Take 12", "the root is Take 12 (%r)" % names[0])
-check(sorted(names[1:]) == sorted(PARTS) and len(names) == 28, "the 27 parts, each named once (%d)" % len(names))
+check(sorted(names[1:]) == sorted(PARTS) and len(names) == len(PARTS) + 1, "the %d parts, each named once (%d)" % (len(PARTS), len(names)))
 check(all(p["size"][1] <= 0.0101 and p["alpha"] == 0.0 for p in box.prims[1:]), "the parts lie flat and hidden inside the root")
 check("t12 part" not in box.inventory and box.scripts[0].dead, "the builder takes the part and itself out")
-check(any("Built: 28 parts" in c[2] for c in ana.chat), "Built.")
+check(any("Built: %d parts" % (len(PARTS) + 1) in c[2] for c in ana.chat), "Built.")
 no_errors(w, "build")
 # a HUD that misses parts: only those are added
 box.prims = [p for p in box.prims if p["name"] not in ("t12 o5", "t12 bar3")]
@@ -38,7 +38,7 @@ no_errors(w, "repair")
 # worn with the scripts: screen finds every part
 order = [p["name"] for p in box.prims[1:]]
 h = ana.wear(HUD_SCRIPTS, parts=order, lsd=ready(ana))
-w.run(5)
+w.run(0.5); manual(h); w.run(4.5)
 check(var(h, "strip", "gFound") == 1, "strip finds the parts")
 ana.double_tap(); w.run(1)
 check(len(visible(h, ana)) >= 6, "the strip opens on the built HUD")

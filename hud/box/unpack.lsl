@@ -8,7 +8,7 @@
 //  HUD). Only its owner can unpack it; the textures and this script stay in the box.
 // ============================================================================
 
-string VERSION = "8.2.0";
+string VERSION = "8.3.0";
 string NAME    = "Take 12 - Cinematic Camera HUD";
 list   FACES   = ["take12_box_front", "take12_box_side", "take12_box_top"];
 

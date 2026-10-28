@@ -32,7 +32,7 @@ for a in ASPECTS:
             tag = "%.3f %s %s" % (a, pl, sz)
             px = lambda v: v * S / 1080.0
             V = visible(h, ana)
-            check(len(V) == 4 + 3 + 2 + 1 and "t12 shut" in V, "%s: 4 shots, 3 option words, shape, link and the shutter visible (%s)" % (tag, sorted(V)))
+            check(len(V) == 4 + 3 + 2 + 1 + 1 and "t12 shut" in V and "t12 auto" in V, "%s: 4 shots, 3 option words, shape, link, the shutter and the Orbit visible (%s)" % (tag, sorted(V)))
             names = sorted(V)
             for i in range(len(names)):
                 for j in range(i + 1, len(names)):
@@ -62,6 +62,25 @@ for a in ASPECTS:
             band = rect(h, ana, "t12 band")
             check(band[2] >= a and band[4] > 0.5, "%s: the band runs the whole width" % tag)
 no_errors(w, "layout")
+# Auto (8.3.0): the Orbit lit, then only the shot it chose, faint; nothing overlaps, at every window and size
+h.send(7371, "auto|1"); w.run(1)
+for a in ASPECTS:
+    ana.aspect = a
+    for sz in SIZES:
+        ana.say(12, "size " + sz); w.run(2.5)
+        V = visible(h, ana)
+        tag = "auto %.3f %s" % (a, sz)
+        shot = [k for k in V if len(k) == 6 and k.startswith("t12 s")]
+        check(len(shot) == 1 and sorted(V) == sorted(["t12 auto", "t12 link", "t12 shape", "t12 shut"] + shot), "%s: the Orbit, one shot, shape, link, shutter (%s)" % (tag, sorted(V)))
+        if len(shot) != 1: continue
+        names = sorted(V)
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                if overlap(V[names[i]], V[names[j]], PADX / 48.0 * 24.0 * SIZES[sz] / 1080.0):
+                    check(False, "%s: %s overlaps %s" % (tag, names[i], names[j]))
+        check(V["t12 auto"][0] < V[shot[0]][0], "%s: the Orbit left of the shot" % tag)
+h.send(7371, "auto|0"); ana.say(12, "size m"); w.run(2.5)
+no_errors(w, "auto")
 # closed: everything but the [12] (and its ring, dot, the bars, the note part) shrinks away
 ana.double_tap(); w.run(1.5)
 keep = ("Take 12", "t12 ring", "t12 dot", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 u2")

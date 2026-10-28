@@ -30,7 +30,9 @@ def setup(names=("Ana", "Ben"), seed=1, free=()):
         av.fov = 0.6125
         av.wear(FREE_SCRIPTS if n in free else HUD_SCRIPTS, lsd=ready(av))
         avs.append(av)
-    w.run(5)
+    w.run(0.5)
+    for av in avs: manual(av.hud)                       # the shots by hand (Auto: auto_emu.py)
+    w.run(4.5)
     for av in avs:
         av.double_tap()
     w.run(1)
@@ -110,7 +112,7 @@ def scenarios():
     ana.take_off(); w.run(8)
     check(host(ben) is None and "Ana left." in notes(ben, t), "Ana's HUD gone: after 6 s Ben's own film, Ana left.")
     ana.wear(HUD_SCRIPTS, lsd=kept)
-    w.run(8)
+    w.run(0.5); manual(ana.hud); w.run(7.5)
     check(peers(ana) == ["Ben"] and "Ana" in peers(ben), "Ana wears it again within 30 min: they rejoin (%r %r)" % (peers(ana), peers(ben)))
     # Leave
     ben.say(12, "connect"); w.run(2)

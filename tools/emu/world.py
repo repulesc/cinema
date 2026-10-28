@@ -42,7 +42,7 @@ def rot_yaw(q):
 # the parts of the 8.0 HUD (hud/build/builder.lsl makes them)
 PARTS = ["t12 ring", "t12 dot", "t12 band", "t12 s0", "t12 s1", "t12 s2", "t12 s3", "t12 box", "t12 halo",
          "t12 o0", "t12 o1", "t12 o2", "t12 o3", "t12 o4", "t12 o5", "t12 sep", "t12 u0", "t12 u1", "t12 u2",
-         "t12 shape", "t12 link", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 shut"]
+         "t12 shape", "t12 link", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 shut", "t12 auto"]
 
 
 # ---- builds the rays see -----------------------------------------------------------------------------------------

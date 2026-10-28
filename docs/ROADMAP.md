@@ -41,6 +41,9 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - [ ] Sitting holds the frame and FIXED glows; Alt-click holds (the lit word dims) and a key gives it back; flying, mouselook; a teleport and a region crossing.
 - [ ] Frames per shot (the ▭: cinema frames while filming, the snapshot size), Black and Dimmed. The shutter: the view holds in 3:2 while walking with Tracking; the ▭ then lists the photo frames; a 1800 × 1200 snapshot matches the pillarbox; pressed again, the film goes on.
 - [ ] Drift: the reveal (rising, pulling back, a cut to a new close); Settings › Motion › Breathe gives the in and out.
+- [ ] Auto (8.3.0): worn, it starts after 3 s with the Orbit lit and the shot faint; standing, Portrait; walk 2 s,
+  Tracking; stop 6 s, Portrait; a step or two never cuts; sit on a seat you framed, Fixed; elsewhere the frame holds;
+  away, Drift; Alt-click waits, Esc goes on; tap the faint shot: manual, the words come back; tap the Orbit: Auto.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).
@@ -60,3 +63,4 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - Fixed: the capture time (1 s still), KEEP NEW's 5 s, the spot sizes (0.5 m and 45°; 2 m on the ground).
 - Scenic: the 15 s hold, Drift's legs (15 s; the distances 5–26 m alone, 4.5–7 m near people), Near's 3–8 m.
 - Connect: QUIET 10 s, GONE 3 s, NEAR 20 m.
+- Auto: walking over 0.5 m/s for 2 s, still 6 s, 8 s a shot, the 3 s on wear, Esc's 1.5 s.

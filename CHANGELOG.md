@@ -1,5 +1,31 @@
 # Changelog
 
+## 8.3.0 (Auto: the camera that directs itself)
+- **Auto.** Wear Take 12 (once set up) and it picks the shot from what a script truly sees:
+  - walking 2 s: Tracking (Film);
+  - standing still 6 s: Portrait (Medium · Us: whoever is within 3 m, else you);
+  - sitting: the seat's kept view (Fixed); a seat with none, the frame holds;
+  - idle: Scenic, Drift's reveal (Settings › Idle start, as before);
+  - flying, mouselook, a marked vehicle: your camera, as before.
+  It is calm: at least 8 s a shot, and only once the reason has lasted 2 s, so a step or two never cuts. Its choices
+  are not kept: your own Portrait size, Tracking look and Scenic band stay as you left them.
+- **It never fights you.** Alt-click and it waits; walk off or press Esc and it goes on (Esc gives the shot back in
+  Auto only). While you watch someone's film it waits too; your watchers see what it films.
+- **The Orbit** at the strip's left end, the shutter's mirror: the shutter's ring with its dot out on the ring. Lit,
+  the strip reads only the Orbit, the shot Auto chose in faint letters, the ▭, the [12], the rings and the shutter.
+  Tap the faint shot (or `/12 tracking` and the like) and you direct: the shots and options come back. Tap the Orbit
+  (or `/12 auto`) and Auto directs again. Every wear starts in Auto; the setup's last step starts it too.
+- **A new part, `t12 auto`,** and two new cells on the marks texture (`auto`, `autoON`): upload
+  `take12_marks_1024.png` again. Touch the builder in your HUD to add the part. A HUD without it still runs Auto,
+  with the shot words shown.
+- The director lives in `tracking.lsl` (core has no room); core only learns Auto's state and Esc. Still twelve
+  scripts.
+- **Mended:** the tour's Done now finishes the setup (it closed the dialog only, so the setup's end never ran).
+- Tests: `auto_emu.py`, a day in Auto (walk, stop, steps, Us, a seat with and without a view, Alt-click and Esc, idle,
+  flying, manual and back, an early pick on wear, Auto with Connect, a HUD without the part); the layout test in Auto
+  at every window; the tests that direct by hand start manual.
+- Version 8.3.0 in all twelve scripts (the free build: nine; the Orbit is dim there).
+
 ## 8.2.0 (Connect reworked; the viewer's lens stops; About; the box)
 - **Connect:**
   - **Who is near is known.** Every Take 12 says "here" when worn and every 10 s, so Menu › Connect lists the people

@@ -76,6 +76,9 @@ ana.click("Good"); w.run(0.5)
 ana.click("Yes"); w.run(0.5)
 for p in ("Next ›", "Next ›", "Done"): ana.click(p); w.run(0.5)
 check(lsd(h, "firstrun") == "done", "the setup is done")
+w.run(1)
+check(var(h, "tracking", "gAuto") == 1, "the setup done: Auto (8.3.0)")
+h.send(7371, "stop"); w.run(0.5)                                       # your own camera for the eye-line checks
 
 # ---- turning (the arrow keys) ends it too; a teleport; 2 minutes --------------------------------------------------------
 eye_line()
@@ -199,7 +202,7 @@ L = ready(ana)
 L["cin.eye"] = ("1.12", PASS)                                       # a mesh body / hover height: the eyes above 1.0
 h = ana.wear(HUD_SCRIPTS, lsd=L)
 ana.fov = 2 * math.atan(12.0 / 38.0)                                 # the user's 38 mm lens
-w.run(5)
+w.run(0.5); manual(h); w.run(4.5)
 ana.face(90)
 ana.double_tap(); w.run(1)
 ana.touch("t12 s1"); w.run(3)

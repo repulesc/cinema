@@ -8,7 +8,7 @@ summarised here. 7.2 and earlier live in git history; v3 is frozen in `legacy/v3
 Take 12 is an experience: it inspires, with a few helpful tools. It never outweighs the freedom Second Life already
 gives you; photographers frame with Alt-click, and that stays the heart of it.
 - Your own framing always wins: Alt-click yields at once, and Fixed keeps what you framed.
-- Nothing starts by itself, except Scenic when you are idle.
+- Nothing starts by itself, except Auto (8.3.0), which you can hand back with one tap, and Scenic when you are idle.
 - No demos, no gimmicks, nothing that takes the wheel in the first minute.
 - A feature earns its place only if it gives more freedom than it takes.
 
@@ -26,14 +26,15 @@ The facts we design around:
 - A script cannot see a pose (animations play in each viewer).
 - A script can see the avatar's position and size, a seat, walls (rays), the camera, and the lens.
 - **Intelligence is kept only where a script truly sees:** standing (Portrait), walking (Tracking, with rays) and places (Scenic). Poses get your own framing (Fixed).
-- Directing is manual: nothing switches shot by itself, except Scenic as the idle camera.
+- Directing: Auto (8.3.0) picks the shot from what a script truly sees; one tap and it is manual. In manual nothing
+  switches shot by itself, except Scenic as the idle camera.
 
 **The promise:** "I'm in a film." Everyday residents first, couples and friends next. Never a gimmick: a one-time setup is fine, rituals are not.
 
 ## The look: the Monitor
 A cinema camera's on-screen display, as part of the viewer:
 - **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a soft dark band.
-- **The words' places:** the shots sit on the left. The running shot's options sit on the right. In the middle are the frame key `▭ 2.39`, the [12], and Connect (two linked rings with a count, `SHARING` or `THEIR FILM`). The shutter sits at the right end (8.1.0).
+- **The words' places:** the shots sit on the left. The running shot's options sit on the right. In the middle are the frame key `▭ 2.39`, the [12], and Connect (two linked rings with a count, `SHARING` or `THEIR FILM`). The shutter sits at the right end (8.1.0), and Auto's Orbit at the left end (8.3.0), its mirror.
 - **Lit states:** the lit shot is ink on a white box; a lit option is underlined; KEEP NEW and UNDO sit in an outline.
 - **Room for other HUDs:** the words stay in a centred 16:9 area, 180 px in from its corners.
 - **Size:** S, M or L; the strip is 48 px of a 1080 px window at M.
@@ -57,11 +58,36 @@ A cinema camera's on-screen display, as part of the viewer:
 | Double-tap | The strip opens or closes |
 | Hold 0.8 s | Everything off (camera, bars, strip, Connect); hold again: back exactly as it was |
 
-Wearing it: your own camera, Take 12 waits. First wear: a note "Tap the [12] to set up", and the first tap starts a one-minute setup, every step skippable:
+Wearing it: your own camera for 3 s, then Auto (once set up; the setup's last step starts it too). First wear: a note "Tap the [12] to set up", and the first tap starts a one-minute setup, every step skippable:
 - the lens: one of the viewer's own zoom stops, 21 · 26 · 32 · 38 (default) · 47 · 56 mm, with a live mm reading (8.2.0: the classic 24 · 28 · 35 · 40 · 50 could not be reached with the zoom keys);
 - the eye line: a line on screen that Page Up / Page Down move onto your eyes, and a tap keeps it;
 - "Easy to read?" (the strip's size);
 - a three-page tour.
+
+## Auto (8.3.0)
+The camera that directs itself, for the everyday: you need not think about shots at all.
+- **The sign:** the Orbit, at the strip's left end: the shutter's ring with its dot out on the ring. The shutter holds
+  still (its dot in the middle); Auto moves (the dot riding round you). Lit while Auto directs; quiet when you do.
+- **The strip in Auto:** the Orbit, the shot it chose in faint letters, the ▭, the [12], the rings, the shutter.
+  No options: nothing to choose.
+- **Its rules,** only what a script truly sees:
+
+  | You | Auto |
+  |---|---|
+  | walk (2 s) | Tracking, Film |
+  | stand still 6 s | Portrait, Medium · Us (whoever is within 3 m, else you) |
+  | sit | the seat's kept view (Fixed); none: the frame holds |
+  | are idle | Scenic, Drift's reveal (Settings › Idle start) |
+  | fly, mouselook, a marked vehicle | your camera, as in manual |
+
+- **Calm:** at least 8 s a shot, and only once the reason has lasted 2 s, so a step or two never cuts.
+- **Its choices are not kept:** your own Portrait size, Tracking look and Scenic band stay as you left them.
+- **It never fights you:** Alt-click and it waits; walk off or press Esc and it goes on. While you watch someone's
+  film it waits too.
+- **Manual:** tap the faint shot, or `/12 tracking` and the like: that shot goes on, the four shots and their options
+  come back, and nothing switches by itself. Tap the Orbit (or `/12 auto`) and Auto directs again. Each wear starts
+  in Auto.
+- Not in the free Take 12 Scenery (the Orbit is dim there).
 
 ## The shots
 Each shot remembers its options across logins; a tap on the lit shot does its one job.
@@ -102,5 +128,5 @@ Two equal cameras: each films their own shot, and anyone connected can watch any
 - **A new copy** worn while the old one is on takes the setup over ("Moved. You can take off the old one."). **Two set-up copies:** the older steps aside (amber). A 7.x copy cannot be seen; the guide says to take it off.
 - **Take 12 Scenery (free):** the same strip, Scenic only; Tracking, Portrait and Fixed are dim ("In the full Take 12."). It can watch a friend's film, never film for others.
 - **Settings:** Lens · Eye line · Motion (Tracking Smooth / Snappy, Drift Reveal / Breathe) · Frames & bars · Vehicles · Idle start · Friends · Look (place, size) · Reset (Tips again · Seats & views · Everything).
-- **Commands** (`/12`, for gesture keys): tracking, portrait, fixed, scenic, bars, next, off, strip, connect, status, debug, blend, place, size, idle, flip.
+- **Commands** (`/12`, for gesture keys): auto, tracking, portrait, fixed, scenic, bars, next, off, strip, connect, status, debug, blend, place, size, idle, flip.
 - **Not in 8.0, kept for later:** a "Take 12 Lens" add-on (an always-on mm and aspect readout), light companions, other languages (every word is in `text.lsl`).

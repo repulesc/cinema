@@ -50,7 +50,7 @@ def rect(h, av, name):
     return (-(P[1] - c[1]), P[2] - c[2], sz[1], sz[2], h.prims[i]["alpha"])
 
 
-def visible(h, av, prefix=("t12 s", "t12 o", "t12 shape", "t12 link")):
+def visible(h, av, prefix=("t12 s", "t12 o", "t12 shape", "t12 link", "t12 auto")):
     out = {}
     for p in h.prims[1:]:
         if p["name"].startswith(prefix) and p["alpha"] > 0.02 and p["size"][1] > 0.0101:
@@ -94,11 +94,21 @@ def feet(av):
     return vec(av.pos[0], av.pos[1], av.pos[2] - 0.5 * av.size[2])
 
 
-def hud(w, name="Ana", pos=(128, 128, 21), scripts=None, **kw):
+def hud(w, name="Ana", pos=(128, 128, 21), scripts=None, auto=False, **kw):
+    """a worn, set-up HUD; manual (you direct) unless auto: Auto (8.3.0) starts 3 s after wear, and the tests of the
+    shots direct by hand, as after a tap of the Orbit"""
     av = w.avatar(name, pos)
     h = av.wear(scripts or HUD_SCRIPTS, lsd=ready(av), **kw)
-    w.run(5)
+    w.run(0.5)
+    if not auto: manual(h)                  # (after the attach event)
+    w.run(4.5)
     return av, h
+
+
+def manual(h):
+    """no Auto on this wear (the tests that direct by hand)"""
+    for sc in h.scripts:
+        if sc.name == "tracking": sc.g["gWearing"] = 0
 
 
 def textures(h):
