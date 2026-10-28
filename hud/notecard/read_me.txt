@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.0.9)
+TAKE 12  -  READ ME  (8.0.10)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -114,11 +114,13 @@ LENS · EYE LINE · TRACKING · FRAMES & BARS · VEHICLES · IDLE START · FRIEN
 
 Type these in chat, or put them in a gesture on a key:
   /12 tracking   /12 portrait   /12 fixed   /12 scenic   /12 bars   /12 next   /12 off   /12 strip
-  /12 connect    /12 status     /12 place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
+  /12 connect    /12 feedback   /12 status     /12 place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
 
 
 === GOOD TO KNOW ========================================
 
+- Feedback: tap the [12], then Feedback (or type /12 feedback). Write a line; it goes straight to the maker by email,
+  with your name and Take 12's version.
 - The bars are on your screen, not in snapshots. Tap the ▭: its dialog gives the snapshot size for the frame.
 - If the strip looks too big or cut off, reset your viewer's HUD zoom (most viewers have it in the View menu).
 - The Second Life mobile app shows no HUDs.

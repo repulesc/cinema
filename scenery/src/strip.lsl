@@ -14,7 +14,7 @@
 //  docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.9";
+string VERSION = "8.0.10";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 

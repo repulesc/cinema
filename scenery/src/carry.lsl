@@ -8,9 +8,12 @@
 //  Carry-over: a new copy that has not been set up yet (no first run done) asks the older one, which sends every
 //  setting, seat and view (cin.*, in parts, a few at a time so no message is lost); then "Moved. You can take off the
 //  old one.". A 7.x Take 12 cannot be seen this way (it speaks no carry) and is named in the guide.
+//  Feedback (8.0.10): the main dialog's Feedback or /12 feedback (CMD "feedback") opens a text box; what you write
+//  goes by email to the maker with one plain line about the copy (your name, version, shot, frame, lens, window,
+//  region, date). One a minute, ten a day. llEmail pauses this script 20 s: here it holds up nothing of the camera.
 // ============================================================================
 
-string VERSION = "8.0.9";
+string VERSION = "8.0.10";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -20,6 +23,9 @@ integer NOTE       = 7344;
 integer MSG_VER    = 7360;
 integer STATUS     = 7370;
 integer CMD        = 7371;
+integer UI_STATE   = 7320;
+
+string  MAKER = "panocarver@gmail.com";   // where feedback goes
 
 list    SKIP = ["cin.peers", "cin.ver", "cin.cfgv", "cin.owner"];   // the copy's own, not carried
 
@@ -32,6 +38,44 @@ key     gTo = NULL_KEY;             // sending the setup to this copy
 list    gKeys;                      // ... what is left to send
 string  gPart;                      // receiving: the value being put together
 string  gPartK;
+string  gShot;                      // for the feedback line
+integer gFbL;                       // the text box's listener (0: none)
+integer gFbCh;
+integer gFbO;                       // ... opened at
+integer gFbT;                       // the last feedback sent at
+integer gFbN;                       // ... how many today
+string  gFbDay;
+
+string cfg(string k)
+{
+    return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+// what you wrote, then one plain line about this copy
+feedback(string m)
+{
+    llListenRemove(gFbL);
+    gFbL = 0;
+    m = llStringTrim(m, STRING_TRIM);
+    if (m == "") return;
+    if (llGetDate() != gFbDay) { gFbDay = llGetDate(); gFbN = 0; }
+    gFbT = llGetUnixTime();
+    gFbN++;
+    string prod = llList2String(["Take 12", "Take 12 Scenery"], LITE);
+    string fr = cfg("shape." + gShot);
+    integer i = llListFindList(["tracking", "portrait", "fixed", "scenic"], [gShot]);
+    if (fr == "" && i >= 0) fr = llList2String(["2.39", "1.85", "1.85", "2.39"], i);
+    string sh = "own camera";
+    if (i >= 0) sh = llToUpper(llGetSubString(gShot, 0, 0)) + llGetSubString(gShot, 1, -1) + " · frame " + fr;
+    string win = cfg("aspect");
+    if (win != "") win = " · window " + llGetSubString(win, 0, 3);
+    string ln = cfg("lens");
+    if (ln == "") ln = "35";
+    llMessageLinked(LINK_SET, NOTE, "fbsent", "");
+    llEmail(MAKER, prod + " feedback · " + llKey2Name(gOwner) + " · " + VERSION, llGetSubString(m, 0, 3000) + "\n\n"
+        + llKey2Name(gOwner) + " (" + llGetUsername(gOwner) + ") · " + prod + " " + VERSION + " · " + sh
+        + " · lens " + ln + " mm" + win + " · " + llGetRegionName() + " · " + llGetDate());
+}
 
 integer vnum(string v)
 {
@@ -97,7 +141,7 @@ send()
     {
         say("done");
         gTo = NULL_KEY;
-        llSetTimerEvent(0.0);
+        if (!gFbL) llSetTimerEvent(0.0);
     }
 }
 
@@ -122,6 +166,7 @@ default
 
     listen(integer ch, string name, key id, string msg)
     {
+        if (ch == gFbCh && gFbL) { if (id == gOwner) feedback(msg); return; }
         if (llGetOwnerKey(id) != gOwner || id == llGetKey() || llGetSubString(msg, 0, 4) != "T12C|") return;
         list L = llParseStringKeepNulls(msg, ["|"], []);
         string w = llList2String(L, 1);
@@ -177,12 +222,29 @@ default
     timer()
     {
         if (gTo != NULL_KEY) send();
-        else llSetTimerEvent(0.0);
+        if (gFbL && llGetUnixTime() - gFbO > 600) { llListenRemove(gFbL); gFbL = 0; }   // the text box left open
+        if (gTo == NULL_KEY && !gFbL) llSetTimerEvent(0.0);
     }
 
     link_message(integer sender, integer num, string str, key id)
     {
         if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "carry");
+        else if (num == UI_STATE)
+        {
+            gShot = llList2String(llParseStringKeepNulls(str, ["|"], []), 1);
+            if (llList2String(llParseStringKeepNulls(str, ["|"], []), 0) == "wait") gShot = "";
+        }
+        else if (num == CMD && str == "feedback")
+        {
+            if (llGetDate() != gFbDay) { gFbDay = llGetDate(); gFbN = 0; }
+            if (gFbN >= 10 || (gFbT && llGetUnixTime() - gFbT < 60)) { llMessageLinked(LINK_SET, NOTE, "fbwait", ""); return; }
+            llListenRemove(gFbL);
+            gFbCh = -3000000 - (integer)llFrand(1000000000.0);
+            gFbL = llListen(gFbCh, "", gOwner, "");
+            gFbO = llGetUnixTime();
+            llTextBox(gOwner, "Feedback\nWhat should Take 12 do better? It goes to the maker with your name and Take 12's version.", gFbCh);
+            if (gTo == NULL_KEY) llSetTimerEvent(30.0);
+        }
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/carry] v" + VERSION + llList2String([" in use", " stepped aside (a newer copy is worn)"], gAside)
                 + ", free mem " + (string)llGetFreeMemory());

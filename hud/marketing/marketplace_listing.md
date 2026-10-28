@@ -41,7 +41,10 @@ Views of the place, and the camera that starts when you are away.
 CONNECT
 Share films with the people near you: two equal cameras, one tap to see theirs.
 
-Each shot has its own cinema shape: 2.39, 1.85 and more. A one-minute setup sets your lens and your eye line.
+FRAMES
+Every frame is a picture. Each shot has its own: the cinema frames 2.39 to 1.66, and the photo frames 3:2, 4:3, 1:1 and 4:5. Tap the frame by the [12]: it gives the snapshot size too.
+
+A one-minute setup sets your lens and your eye line. Feedback goes straight to the maker, from the [12]'s menu.
 
 - It only moves your view, inside your region. Nothing is recorded.
 - Tap: setup. Double-tap: the strip. Hold: everything off, hold again: back.
@@ -62,7 +65,7 @@ Connect: share films with the people near you, one tap to see theirs
 
 ## Keywords
 ```
-take 12, take12, camera, camera hud, cinematic camera, cinema, film, follow camera, tracking, portrait, photography, snapshot, letterbox, 2.39, composition, framing, seat camera, scenery, skybox, afk, connect, share view, lens, zoom, hud
+take 12, take12, camera, camera hud, cinematic camera, cinema, film, follow camera, tracking, portrait, photography, snapshot, photo frame, 4:5, letterbox, 2.39, composition, framing, seat camera, scenery, skybox, afk, connect, share view, lens, zoom, hud
 ```
 
 ## Short promo lines (group notices, social posts)
@@ -81,17 +84,18 @@ Take 12 is a cinematic camera HUD: it follows you, frames you, keeps your own fr
 ```
 Take 12 8.0: rebuilt from the ground up.
 - A new look: a thin strip at the top of your screen. Double-tap the [12].
-- Four shots: Tracking, Portrait, Fixed, Scenic. Each has its own cinema shape.
+- Four shots: Tracking, Portrait, Fixed, Scenic. Every frame is a picture: cinema and photo frames, with the snapshot size.
 - Fixed keeps your own framing for every place and every seat.
 - Connect: two equal cameras, one tap to see your friend's film.
-Get the new version from your Marketplace purchases (Update). Wear it while the old one is on: your setup moves over by itself.
+- Feedback: tap the [12], Feedback, write a line. It reaches the maker.
+Get the new version from your Marketplace purchases (Update). The old version can be deleted: 8.0 is a new camera, set up in a minute.
 ```
 
 ---
 
 ## Images
-- **`adboard_square_1024.png`**: the main Marketplace image. One quiet frame (a dusk horizon), the [12], the name and one line.
-- **`adboard_portrait_3x4_768x1024.png`**, **`adboard_landscape_4x3_1024x768.png`**, **`adboard_wide_1024x512.png`**: the same frame in other ratios.
+- **`adboard_square_1024.png`**: the main Marketplace image. Cinema black: a 2.39 frame drawn as a monitor's frame lines, the [12], the name and one line, the four shots in a quiet row.
+- **`adboard_portrait_3x4_768x1024.png`**, **`adboard_landscape_4x3_1024x768.png`**, **`adboard_wide_1024x512.png`**: the same board in other ratios.
 - **`adboard_vendor_1024.png`** / **`adboard_vendor_512.png`**: the same, with bigger type for vendor displays.
 
-The boards are drawn pixel art, not screenshots. Add 4 to 6 real snapshots as extra images, one idea each: a Tracking shot in 2.39, a Portrait two-shot, a seat view in Fixed, a Scenic view, and the strip itself at the top of a screen. Hide your UI for the shots (Ctrl+Alt+F1 in Firestorm). The boards' text is in `tools/art/make_adboard.py` (`NAME`, `TAGLINE`); run `python3 tools/art/make_adboard.py` after a change.
+The boards are typographic on purpose: no drawn scenes. Real snapshots can come later as extra images, one idea each (a Tracking shot in 2.39, a Portrait two-shot, a 4:5 portrait, a seat view in Fixed, the strip at the top of a screen). The boards' text is in `tools/art/make_adboard.py` (`NAME`, `TAGLINE`); run `python3 tools/art/make_adboard.py` after a change.

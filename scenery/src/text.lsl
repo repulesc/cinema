@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.9";
+string VERSION = "8.0.10";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -50,6 +50,8 @@ list NOTES = [
     "friend", 0, "% joins you without being asked now.",
     "newer", 1, "A newer Take 12 is out. Ask the store for a new copy.",
     "moved", 1, "Moved. You can take off the old one.",
+    "fbsent", 1, "Thanks. It went to the maker.",
+    "fbwait", 1, "Thanks. One a minute, please.",
     "older", 1, "An older Take 12 is worn too. Take it off.",
     "missing", 1, "A Take 12 script is missing: %. A new copy fixes it.",
     "full", 0, "In the full Take 12.",
@@ -58,7 +60,7 @@ list NOTES = [
     "eyeline", 3, "PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
     "texture", 1, "% is kept and taken out of the contents: the HUD can be given away.",
     "mixed", 1, "% is another version. All Take 12 scripts must come from one copy.",
-    "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
+    "commands", 2, "/12 tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip",
     "plain", 0, "%"
 ];
 
