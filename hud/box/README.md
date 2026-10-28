@@ -9,7 +9,7 @@ Rezzed in-world it is a black box, 0.45 × 0.25 × 0.45 m, for a store display; 
 
 | File | What |
 |---|---|
-| `unpack.lsl` | Worn: the card, the folder, then it detaches itself. Rezzed: shapes the box (matte), puts the three textures on, names it "Take 12 - Cinematic Camera HUD", and unpacks on its owner's touch |
+| `unpack.lsl` | Worn: the card, the folder, then it detaches itself. Rezzed: shapes the box (full bright), puts the three textures on, names it "Take 12 - Cinematic Camera HUD", and unpacks on its owner's touch |
 | `take12_box_front.png` (1024²) | The card on the screen; the box's front and back: the cinema-black board |
 | `take12_box_side.png` (512 × 1024) | The box's two sides: TAKE 12, upright |
 | `take12_box_top.png` (1024 × 512) | The box's lid: the [12] |

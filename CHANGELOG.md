@@ -11,6 +11,9 @@
 - **The box adopts its textures,** as the HUD does: it keeps their UUIDs in its description and takes the textures out
   of its contents (before, they stayed in, and were handed over or lost). `hud/box/unpack.lsl` only; no HUD script
   changes.
+- **Mended:** the kept UUIDs were cut off. A description holds only 127 characters, and three `name uuid` entries come
+  to about 160, so the lid's texture was lost. They are now `f <uuid>;s <uuid>;t <uuid>`. The box is also full bright,
+  worn and rezzed. If your lid is blank, drop the top texture in again.
 
 ## 8.4.0 (Auto: the guide; the box you wear)
 - **Auto was stuck in Portrait.** It waited for 2 s of walking and kept a shot 8 s, so walking a room in short steps

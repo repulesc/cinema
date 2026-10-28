@@ -5,7 +5,7 @@
 //  Read Me, and a Take 12 Scenery to give a friend. Then it takes itself off, back to your inventory; wear it again
 //  any time for a fresh copy (a broken script, a lost HUD). No menu.
 //  Rezzed in-world it is the black box (a store display): the Take 12 board on its front and back, the name on its
-//  sides, the [12] on its lid (tools/art/make_box.py), 0.45 x 0.25 x 0.45 m, matte; its owner's touch unpacks it too.
+//  sides, the [12] on its lid (tools/art/make_box.py), 0.45 x 0.25 x 0.45 m, full bright (worn and rezzed); its owner's touch unpacks it too.
 //  It shapes itself for wherever it is, once the three textures are in it: it keeps their UUIDs in its description and
 //  takes the textures out of its contents (as the HUD does), so only the script stays with what it hands over.
 // ============================================================================
@@ -14,8 +14,14 @@ string VERSION = "8.4.0";
 string NAME    = "Take 12 - Cinematic Camera HUD";
 list   FACES   = ["take12_box_front", "take12_box_side", "take12_box_top"];
 
-// the textures dropped in become UUIDs kept in the description, and leave the contents (like the HUD's own textures),
-// so the box can be given away without them
+// the textures dropped in become UUIDs kept in the description ("f <uuid>;s <uuid>;t <uuid>": a description holds only
+// 127 characters, and three full names with their UUIDs were cut off: the lid went missing), and leave the contents
+// (like the HUD's own textures), so the box can be given away without them
+string tag(string n)
+{
+    return llGetSubString(n, 12, 12);                         // take12_box_front / side / top: f, s, t
+}
+
 adopt()
 {
     integer i;
@@ -29,8 +35,9 @@ adopt()
             list D = llParseString2List(llGetObjectDesc(), [";"], []);
             integer j;
             for (j = llGetListLength(D) - 1; j >= 0; j--)
-                if (llSubStringIndex(llList2String(D, j), n + " ") == 0) D = llDeleteSubList(D, j, j);
-            llSetObjectDesc(llDumpList2String(D + [n + " " + (string)k], ";"));
+                if (llGetSubString(llList2String(D, j), 0, 1) == tag(n) + " " || llSubStringIndex(llList2String(D, j), "take12_box") == 0)
+                    D = llDeleteSubList(D, j, j);            // (the long form of 8.4.0 goes: it was cut at 127 characters)
+            llSetObjectDesc(llDumpList2String(D + [tag(n) + " " + (string)k], ";"));
             llRemoveInventory(n);
         }
     }
@@ -42,7 +49,7 @@ string tex(string n)
     list D = llParseString2List(llGetObjectDesc(), [";"], []);
     integer j;
     for (j = 0; j < llGetListLength(D); j++)
-        if (llSubStringIndex(llList2String(D, j), n + " ") == 0) return llGetSubString(llList2String(D, j), llStringLength(n) + 1, -1);
+        if (llGetSubString(llList2String(D, j), 0, 1) == tag(n) + " ") return llGetSubString(llList2String(D, j), 2, -1);
     if (llGetInventoryType(n) == INVENTORY_TEXTURE) return n;
     return "";
 }
@@ -60,7 +67,7 @@ shape()
             PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_TEXTURE, ALL_SIDES, front, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0]);
         return;
     }
-    P += [PRIM_SIZE, <0.45, 0.25, 0.45>, PRIM_FULLBRIGHT, ALL_SIDES, FALSE,
+    P += [PRIM_SIZE, <0.45, 0.25, 0.45>, PRIM_FULLBRIGHT, ALL_SIDES, TRUE,
         PRIM_TEXTURE, 5, TEXTURE_BLANK, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0, PRIM_COLOR, 5, <0.04, 0.04, 0.04>, 1.0];
     list F = [1, "take12_box_front", 3, "take12_box_front", 2, "take12_box_side", 4, "take12_box_side", 0, "take12_box_top"];
     integer i;
