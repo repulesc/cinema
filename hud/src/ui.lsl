@@ -193,11 +193,11 @@ open(string p)
     else if (p == "lens")
     {
         string w = lensWant();
-        string bk = "‹ Back";
-        if (gFirst == "lens") bk = "Skip";
+        list bk = ["‹ Back", "Done"];                       // Done: the lens is set, the page goes (8.0.8)
+        if (gFirst == "lens") bk = ["Skip"];
         // the classic primes, from wide to normal (8.0.8; 85 mm and longer are portrait lenses, too tight to live in)
         page(p, (string)mm() + "~" + w, [mark("24 mm", w == "24"), mark("28 mm", w == "28"), mark("35 mm", w == "35"),
-            mark("40 mm", w == "40"), mark("50 mm", w == "50"), bk]);
+            mark("40 mm", w == "40"), mark("50 mm", w == "50")] + bk);
         gLensL = TRUE;
     }
     else if (p == "shapes")
@@ -279,7 +279,7 @@ string up(string p)
 choose(string m)
 {
     string b = bare(m);
-    if (b == "Close" || b == " ") { closeMenu(); return; }
+    if (b == "Close" || b == "Done" || b == " ") { closeMenu(); return; }
     if (b == "Skip" && gPage == "lens") { closeMenu(); eyeStart(); return; }
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")

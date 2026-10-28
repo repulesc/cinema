@@ -1,7 +1,8 @@
 # Changelog
 
 ## 8.0.8 (classic lenses; Snappy by default; the [12] back to its size)
-- **Settings › Lens: the classic primes, 24 · 28 · 35 · 40 · 50 mm, 35 by default** (it was 35 · 38 · 40, default 38).
+- **Settings › Lens: the classic primes, 24 · 28 · 35 · 40 · 50 mm, 35 by default** (it was 35 · 38 · 40, default 38),
+  with a Done button (the page had no way out but Back or ignoring it).
   No 85 mm or longer: Take 12 is for living in Second Life on film, and portrait lenses are too tight for that.
 - **Tracking is Snappy by default**, right behind you and easy to steer. The Tracking tip says where the smoother,
   steadicam feel is (Settings › Tracking).

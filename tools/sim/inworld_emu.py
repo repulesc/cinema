@@ -324,4 +324,13 @@ check(var(h, "strip", "gOpen") == 1 and any(n.startswith("Your viewer's camera")
 ana.touch("t12 s0"); w.run(3)
 check(var(h, "core", "gShot") == "tracking" and ana.camera()[2], "tap a shot: Take 12 has it again")
 no_errors(w, "release")
+
+# ---- 8.0.8: Settings › Lens has a Done ----------------------------------------------------------------------------------------------
+ana.dialog = None
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Lens"); w.run(0.5)
+check("Done" in ana.labels() and "‹ Back" in ana.labels(), "Settings › Lens: Done and Back (%r)" % ana.labels())
+ana.click("28 mm"); w.run(0.5)
+check(lsd(h, "lens") == "28" and "Done" in ana.labels(), "a lens picked, the page stays to zoom by")
+ana.click("Done"); w.run(1.5)
+check(ana.dialog is None and not var(h, "ui", "gLensL"), "Done: the page goes, the live mm stops")
 done("inworld_emu")
