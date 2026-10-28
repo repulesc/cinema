@@ -50,8 +50,8 @@ for name, text in LISTINGS:
 const = lambda n: re.search(r"^" + n + r' = "(.*?)"', art, re.M).group(1)
 check(const("TAGLINE") in main, "listing: the boards' line is not in the listing")
 fn_, fl = re.search(r'^FREE_NAME, FREE_LINE = "(.*?)", "(.*?)"', art, re.M).groups()
-check(fl in free and fn_ == "TAKE 12 SCENERY", "the free boards' name and line must be in its listing")
-check("make_strip.disc(" in art and "make_icon" not in art and "WATCH" not in art, "boards: the [12] disc, no clapper, no Watch")
+check(fl in free and fn_ == "SCENERY", "the free boards' name (TAKE (12) SCENERY) and line must be in its listing")
+check("make_strip.disc(" in art and "12 TAKE" not in art and "make_icon" not in art and "WATCH" not in art, "boards: the [12] disc, no clapper, no Watch")
 SIZES = {"adboard_square_1024.png": (1024, 1024), "adboard_wide_1024x512.png": (1024, 512), "adboard_portrait_3x4_768x1024.png": (768, 1024),
          "adboard_landscape_4x3_1024x768.png": (1024, 768), "adboard_vendor_1024.png": (1024, 1024), "adboard_vendor_512.png": (512, 512)}
 n = 0
