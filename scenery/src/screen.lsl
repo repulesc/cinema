@@ -11,7 +11,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.0.7";
+string VERSION = "8.0.8";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -155,19 +155,19 @@ part(integer link, float x, float z, float d, float w, float h, list tex, vector
         + tex + [PRIM_COLOR, ALL_SIDES, col, a, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, glow]);
 }
 
-// the [12], its ring and dot, the notes' part, the eye line: a few small calls, never one big list. The ring (41 px) sits
-// inside the 48 px band (8.0.6: at 50 px it touched the band's edges)
+// the [12], its ring and dot, the notes' part, the eye line: a few small calls, never one big list. The ring (50 px)
+// meets the 48 px band's edges (8.0.8: back from 41 px, which looked smaller and less like a button)
 layout()
 {
     if (!llGetAttached()) return;
     llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_POS_LOCAL, centre() + <0.0, 0.0, midZ()>, PRIM_ROT_LOCAL, ZERO_ROTATION,
-        PRIM_SIZE, <0.01, px(36.0), px(36.0)>, PRIM_COLOR, ALL_SIDES, WHITE, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]
+        PRIM_SIZE, <0.01, px(44.0), px(44.0)>, PRIM_COLOR, ALL_SIDES, WHITE, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE]
         + mark(llList2String(["disc", "discamber"], gProblem)));
     string rk = "ring0";
     if (gHold > 0) rk = "ring" + (string)gHold;
     if (gProblem) rk = "ring9";
-    part(gRing, 0.0, 0.0, -0.001, px(41.0), px(41.0), mark(rk), WHITE, 0.85 * (gProblem || gHold > 0 || gState == "film"), 0.0);
-    part(gDot, px(12.0), px(12.0), -0.002, px(14.0), px(14.0), mark("dot"), WHITE, (gLinkSt != "alone" && gLinkSt != ""), 0.12 * (gLinkSt == "shared"));
+    part(gRing, 0.0, 0.0, -0.001, px(50.0), px(50.0), mark(rk), WHITE, 0.85 * (gProblem || gHold > 0 || gState == "film"), 0.0);
+    part(gDot, px(15.0), px(15.0), -0.002, px(14.0), px(14.0), mark("dot"), WHITE, (gLinkSt != "alone" && gLinkSt != ""), 0.12 * (gLinkSt == "shared"));
     // the notes' part: well under the strip (above it at the bottom), under the [12] when closed; its text is drawn above
     // it, so the part sits low enough for the text to clear the band and the [12] (8.0.5: it nearly touched the [12])
     float z = -px(48.0) * 0.5 - px(60.0);

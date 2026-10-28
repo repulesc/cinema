@@ -7,6 +7,7 @@ from emu_util import *
 
 w = World()
 ana, h = hud(w)
+h.lsd["cin.feel"] = ("smooth", PASS)                                 # the steadicam feel (Snappy is the default, 8.0.8)
 ana.face(0)
 ana.double_tap(); w.run(1)
 ana.touch("t12 s0"); w.run(2)

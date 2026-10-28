@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.0.7";
+string VERSION = "8.0.8";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -63,7 +63,7 @@ list NOTES = [
 
 // tips: a key's first three uses
 list TIPS = [
-    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera.",
+    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera. A smoother, steadicam feel: Settings › Tracking.",
     "PORTRAIT", "Portrait frames you standing. Us adds the people near you. Hold it: your viewer's camera.",
     "FIXED", "Fixed keeps your own framing. Alt-click to frame it. Hold it: your viewer's camera.",
     "SCENIC", "Scenic shows the place. It also starts when you're away. Hold it: your viewer's camera.",
@@ -196,7 +196,7 @@ string body(string page, list a)
     }
     if (page == "settings") return "Settings";
     if (page == "feel") return "Tracking\nSmooth: eases into your turns, like a steadicam.\nSnappy: stays right behind you, easy to steer by.\nNow: " + a0;
-    if (page == "lens") return "Lens\nNow: " + a0 + " mm. Cinema lens: " + a1 + " mm.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
+    if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\n24 wide · 28 · 35 the classic · 40 · 50 normal.\nZoom in with your viewer (Ctrl+0) until it says " + a1 + ".";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
     if (page == "shapes") return "Shapes & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3 + " · Bars: " + llList2String(a, 4);
     if (page == "shape") return a0 + "'s shape\nNow: " + a1;

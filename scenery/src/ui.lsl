@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.0.7";
+string VERSION = "8.0.8";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -169,7 +169,7 @@ integer mm()
 string lensWant()
 {
     string l = cfg("lens");
-    if (l == "") l = "38";
+    if (l == "") l = "35";
     return l;
 }
 
@@ -194,9 +194,11 @@ open(string p)
     else if (p == "lens")
     {
         string w = lensWant();
-        string bk = "‹ Back";
-        if (gFirst == "lens") bk = "Skip";
-        page(p, (string)mm() + "~" + w, [mark("35 mm", w == "35"), mark("38 mm", w == "38"), mark("40 mm", w == "40"), bk]);
+        list bk = ["‹ Back", "Done"];                       // Done: the lens is set, the page goes (8.0.8)
+        if (gFirst == "lens") bk = ["Skip"];
+        // the classic primes, from wide to normal (8.0.8; 85 mm and longer are portrait lenses, too tight to live in)
+        page(p, (string)mm() + "~" + w, [mark("24 mm", w == "24"), mark("28 mm", w == "28"), mark("35 mm", w == "35"),
+            mark("40 mm", w == "40"), mark("50 mm", w == "50")] + bk);
         gLensL = TRUE;
     }
     else if (p == "shapes")
@@ -258,7 +260,7 @@ open(string p)
     else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
     else if (p == "feel")
     {
-        integer sn = (cfg("feel") == "snappy");             // Tracking's feel (8.0.6): smooth, or snappy to steer by
+        integer sn = (cfg("feel") != "smooth");             // Tracking's feel: snappy to steer by (the default, 8.0.8), or smooth
         page(p, llList2String(["Smooth", "Snappy"], sn), [mark("Smooth", !sn), mark("Snappy", sn), "‹ Back"]);
     }
     else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
@@ -278,7 +280,7 @@ string up(string p)
 choose(string m)
 {
     string b = bare(m);
-    if (b == "Close" || b == " ") { closeMenu(); return; }
+    if (b == "Close" || b == "Done" || b == " ") { closeMenu(); return; }
     if (b == "Skip" && gPage == "lens") { closeMenu(); eyeStart(); return; }
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
@@ -666,7 +668,7 @@ default
             gShot = llList2String(L, 1);
             if (gState == "film" && was != "film" && !gLensTold && llGetPermissions() & PERMISSION_TRACK_CAMERA)
             {
-                gLensTold = TRUE;                           // the first shot after you wear it: is the cinema lens on?
+                gLensTold = TRUE;                           // the first shot after you wear it: is your lens on?
                 if (mm() < (integer)lensWant() * 0.85) note("lens", (string)mm());
             }
         }

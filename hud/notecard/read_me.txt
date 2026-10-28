@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.0.7)
+TAKE 12  -  READ ME  (8.0.8)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -6,7 +6,8 @@ A cinematic camera for Second Life. It only moves your view: nothing is recorded
 
 1. Wear the HUD on HUD Top Center (any HUD point works) and accept the camera permission once.
 2. A short note under the [12] says "Tap the [12] to set up." Tap it: a one-minute setup (each step can be skipped):
-   LENS      your viewer's zoom, set to a cinema lens (38 mm). The page shows your lens live while you zoom.
+   LENS      your viewer's zoom, set to a classic lens: 24, 28, 35 (the default), 40 or 50 mm. The page shows your
+             lens live while you zoom.
    EYE LINE  a line on the screen: Page Up / Page Down move it onto your eyes, a tap on the [12] keeps it.
    SIZE      is the strip easy to read? Smaller, Good or Larger.
    A TOUR    three short pages.
