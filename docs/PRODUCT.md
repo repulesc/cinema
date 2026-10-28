@@ -48,7 +48,7 @@ A cinema camera's on-screen display, as part of the viewer:
 | Hold 0.8 s | Everything off (camera, bars, strip, Connect); hold again: back exactly as it was |
 
 Wearing it: your own camera, Take 12 waits. First wear: a note "Tap the [12] to set up", and the first tap starts a one-minute setup, every step skippable:
-- the lens: a cinema lens of 35, 38 or 40 mm, with a live mm reading;
+- the lens: a classic lens of 24, 28, 35 (default), 40 or 50 mm, with a live mm reading;
 - the eye line: a line on screen that Page Up / Page Down move onto your eyes, and a tap keeps it;
 - "Easy to read?" (the strip's size);
 - a three-page tour.

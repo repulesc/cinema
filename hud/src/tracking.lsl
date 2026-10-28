@@ -13,7 +13,7 @@
 //  once (a standing shot is ready). The lit tap: back into the look, behind you. Distances scale with your size.
 // ============================================================================
 
-string VERSION = "8.0.7";
+string VERSION = "8.0.8";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -119,7 +119,7 @@ send(integer force)
     vector off = <0.0, side, (eyeFrac() - 0.5 + llList2Float(HIGH, gLook)) * 1.8 * s>;
     float bl = llList2Float(BLAG, gLook) + 0.3 * gRun;
     string lags = "|0.5|0.25";
-    if (cfg("feel") == "snappy") { bl = 0.0; lags = "|0.05|0.05"; }   // Settings › Tracking: right behind you, easy to steer (8.0.6)
+    if (cfg("feel") != "smooth") { bl = 0.0; lags = "|0.05|0.05"; }   // Snappy (the default, 8.0.8): right behind you, easy to steer
     llMessageLinked(LINK_SET, FOLLOW, (string)D + "|" + (string)llList2Float(PITCH, gLook) + "|" + (string)off + "|"
         + (string)bl + lags, "");
 }

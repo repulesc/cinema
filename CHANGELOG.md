@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.0.8 (classic lenses; Snappy by default; the [12] back to its size)
+- **Settings › Lens: the classic primes, 24 · 28 · 35 · 40 · 50 mm, 35 by default** (it was 35 · 38 · 40, default 38).
+  No 85 mm or longer: Take 12 is for living in Second Life on film, and portrait lenses are too tight for that.
+- **Tracking is Snappy by default**, right behind you and easy to steer. The Tracking tip says where the smoother,
+  steadicam feel is (Settings › Tracking).
+- **The [12] is back to its size** (ring 50 px, meeting the band), which looked more like a button than 8.0.6's
+  smaller one.
+- Version 8.0.8 in all twelve scripts (the free build: nine).
+
 ## 8.0.7 (hold the lit shot: your viewer's camera)
 - **Hold the lit shot word (0.8 s) and your viewer has the camera.** Its underline drains as you hold; the strip, the
   bars and Connect stay on. Tap any shot to take the camera back. A short tap on the lit shot is still its next view.
