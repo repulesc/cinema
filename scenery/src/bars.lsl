@@ -15,7 +15,7 @@
 //  llGetCameraAspect() wide, +Y left; the bars sit behind the [12] so it stays clickable.
 // ============================================================================
 
-string VERSION = "8.5.5";
+string VERSION = "8.5.6";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;

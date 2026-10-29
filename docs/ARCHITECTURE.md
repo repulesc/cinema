@@ -47,15 +47,16 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
-- **Width (8.5.5, the Mac's way):** the [12] (the root) at the left, its centre 38 px from the edge. After it, one gap
-  (28 px) apart, every button in one place whatever the shot: the Orbit, the four shots (Auto hides the others but
-  keeps the chosen one in its own place), the frame (a place as wide as FULL), the shutter, Connect (a place as wide
-  as THEIR FILM), then the running shot's options last, so they never move anything. The right 200 px stay free (the
-  viewer's notices). A narrow window: everything a touch smaller, the same in every shot (the widest row is 1210 px).
-  (8.5.2-8.5.4 centred the [12]; the words moved with every shot.)
+- **Width (8.5.6, 8.4.4's places):** the words in a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the
+  full width. The shots (the Orbit first) from its left, 200 px in; the shutter, then the options before it, ending
+  200 px from its right (clear of the viewer's notices); the frame key left of the [12] (its mark where FULL's
+  starts), Connect right of it, 36 px from its middle. Each half is kept for its widest (FULL and the shots; THEIR
+  FILM, the widest options and the shutter), so a shot change moves nothing but the options; in Auto the chosen shot
+  keeps its place. A narrow window: the insets give way, then everything a touch smaller (the same in every shot).
+  (8.5.0-8.5.5 tried the [12] at the left, mirrored, pinned and Mac-style; each was worse.)
 - **No fade (8.5.3):** the strip shows until a double-tap closes it (8.5.0's fade after 4 s untouched was removed;
   `cin.fade` is no longer read).
-- **Notes (8.5.0):** under the [12], from its left edge, on a dark plate (8.5.4: 7 px higher, the text sat high on it) (`t12 plate`, the marks' `box` cell, black at
+- **Notes (8.5.0):** centred under the [12], on a dark plate (8.5.4: 7 px higher, the text sat high on it) (`t12 plate`, the marks' `box` cell, black at
   80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
   character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
 - **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at
