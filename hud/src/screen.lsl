@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.0";
+string VERSION = "8.5.1";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -41,6 +41,8 @@ integer gPlate;                    // the notes' plate (t12 plate, 8.5.0)
 integer gNoteC;                    // the note shown: its longest line (characters) and its lines, 0: none
 integer gNoteL;
 integer gFaded;                    // the strip has faded: the [12] alone, quieter (8.5.0)
+float   gIdleT;                    // ... timed here (8.5.1: strip ran out of memory with it): your last touch
+integer gFadeOn = TRUE;            // cin.fade (/12 fade on|off)
 float   gA = 1.778;
 integer gSY = 1;
 integer gPlace;
@@ -86,6 +88,7 @@ load()
     gS = llList2Float([0.8, 1.0, 1.25], s);
     gSY = 1;
     if (cfg("flip") == "1") gSY = -1;
+    gFadeOn = (cfg("fade") != "0");
     gTW = tex("take12_words");
     gTM = tex("take12_marks");
     if (gTM == "") gTM = TEXTURE_BLANK;
@@ -193,6 +196,15 @@ part(integer link, float x, float z, float d, float w, float h, list tex, vector
         + tex + [PRIM_COLOR, ALL_SIDES, col, a, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, glow]);
 }
 
+// the strip fades 4 s after your last touch, the [12] stays; a tap on it (ui), opening the strip: back (8.5.0)
+fade(integer n)
+{
+    if (!n) gIdleT = llGetTime();
+    if (n == gFaded) return;
+    gFaded = n;
+    llMessageLinked(LINK_SET, STRIP, "faded|" + (string)n, "");
+}
+
 // the [12] at the strip's left end (8.5.0: it was the middle; the middle of the picture is the film's), 24 px from the
 // edge: its x from the screen's middle (strip.lsl uses the same)
 float rootX()
@@ -249,7 +261,7 @@ default
         if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "screen");
         layout();
-        llSetTimerEvent(2.0);
+        llSetTimerEvent(0.5);
     }
 
     on_rez(integer p)
@@ -265,6 +277,7 @@ default
         gProblem = FALSE;
         gHold = 0;
         gEye = -9.0;
+        gFaded = FALSE;
         llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
     }
 
@@ -311,6 +324,7 @@ default
             if (a == "toggle") gOpen = !gOpen;
             else if (a == "open") gOpen = TRUE;
             else if (a == "close") gOpen = FALSE;
+            if (a == "toggle" || a == "open" || a == "close" || a == "wake") fade(0);
             else if (a == "hold") gHold = (integer)llList2String(L, 1);
             else if (a == "problem") gProblem = (integer)llList2String(L, 1);
             else if (a == "faded") gFaded = (integer)llList2String(L, 1);
@@ -330,9 +344,10 @@ default
             }
             layout();
         }
-        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "all"))
+        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "fade" || str == "all"))
         {
             load();
+            if (!gFadeOn) fade(0);                          // /12 fade off: the strip stays
             layout();
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "screen");
@@ -345,5 +360,11 @@ default
     timer()
     {
         measure();
+        if (gOpen && !gFaded && gFadeOn && gEye <= -9.0 && llGetTime() - gIdleT > 4.0) fade(1);
+    }
+
+    touch_start(integer n)
+    {
+        if (llDetectedKey(0) == gOwner) gIdleT = llGetTime();   // a touch: the strip stays 4 s more
     }
 }
