@@ -15,7 +15,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.3";
+string VERSION = "8.5.4";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -252,7 +252,7 @@ layout()
         return;
     }
     float hw = px(26.0);                                        // a word part's height (the 48 px cell): 12.5 px words
-    float gap = px(22.0);
+    float gap = px(28.0);
     float inner = px(34.0);                                     // from the [12]'s middle to either block
     // (the band: screen's, 8.5.2)
     float aw = 0.0;
@@ -273,32 +273,19 @@ layout()
     float lc = llList2Float(mark("link" + lk), 4);
     float lw = lc / 48.0 * hw;
     float sw = llList2Float(mark("shape" + gShapeL), 4) / 48.0 * hw;
-    // mirrored (8.5.2): the [12] in the middle; left the Orbit and the shots, right the options, the frame, Connect, the
-    // shutter. Both blocks as wide as the wider one, their words evenly spread across it (3 or more), so the two sides
-    // balance whatever the shot's options; fewer (Auto) sit close to the [12]
+    // steady (8.5.4): one gap between every word, in every shot. The [12] in the middle; on its left the Orbit and the
+    // shots, packed against it; on its right the shot's options, packed against it, then the frame, Connect and the
+    // shutter pinned at the right end, where the widest options (Tracking's, a seat's: about 400 px) still fit. Nothing
+    // moves when you change shot but the options. A narrow window: everything a touch smaller, the same in every shot
+    float q = (gA * 0.5 - px(10.0) - inner) / (px(744.0) - inner);
+    if (q > 1.0) q = 1.0;
+    hw *= q; gap *= q; aw *= q; shw *= q; lw *= q; sw *= q;
+    float pin = inner + (px(744.0) - inner) * q;            // the shutter's right edge
     float sL = aw;
     integer nL = (gAutoP != 0);
     for (i = 0; i < 4; i++) if (!auto || llToLower(llList2String(SHOTS, i)) == gShot) { sL += wordW(llList2String(SHOTS, i), hw); nL++; }
-    float sR = sw + lw + shw;
-    integer nR = 2 + (shw > 0.0) + llGetListLength(vis);
-    for (i = 0; i < llGetListLength(vis); i++)
-    {
-        if (llList2String(vis, i) == "/") sR += px(16.0);
-        else sR += wordW(llList2String(vis, i), hw);
-    }
-    // a narrow window (5:4 at L): the edges are the limit, and the words a touch smaller if even close together they
-    // would not fit
-    float room = gA * 0.5 - inner - px(10.0);
-    float q = (room - (nR - 1) * px(3.0)) / sR;
-    if ((room - (nL - 1) * px(3.0)) / sL < q) q = (room - (nL - 1) * px(3.0)) / sL;
-    if (q < 1.0) { hw *= q; aw *= q; shw *= q; lw *= q; sw *= q; sL *= q; sR *= q; }
-    float wb = sL + (nL - 1) * gap;
-    if (sR + (nR - 1) * gap > wb) wb = sR + (nR - 1) * gap;
-    if (wb > room) wb = room;
     float spL = gap;
-    if (nL >= 3) spL = (wb - sL) / (nL - 1);
     float spR = gap;
-    if (nR >= 3) spR = (wb - sR) / (nR - 1);
     // the left, towards the [12]. The running shot bright and underlined (8.0.4: no longer ink on a white box, which read
     // as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
     float x = -inner - (sL + (nL - 1) * spL);
@@ -391,10 +378,17 @@ layout()
             x += wd + spR;
         }
     }
+    // the tools, pinned: the frame's mark where the widest frame (FULL) starts, Connect and the shutter against the right
+    // end (pushed out only by options wider than any shot's)
+    float xl = pin - shw - gap * (shw > 0.0) - lw;
+    float xt = xl - gap - 126.0 / 48.0 * hw;
+    integer pushed = (x > xt);
+    if (!pushed) x = xt;
     float ssa = 0.86;
     if (gShapeL == "DIM") ssa = 0.27;
     show(gShp, x + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
     x += sw + spR;
+    if (!pushed) x = xl;
     show(gLnk, x + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
     x += lw + spR;
     if (shw > 0.0)

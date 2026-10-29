@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.3";
+string VERSION = "8.5.4";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -221,14 +221,15 @@ layout()
     if (gOpen) part(gBand, -rootX(), bz, 0.004, gA + 0.02, px(40.0) + mg, [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK,
         <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0], ZERO_VECTOR, 1.0, 0.0);
     else part(gBand, 0.0, 0.0, 0.02, 0.01, 0.01, [], ZERO_VECTOR, 0.0, 0.0);
-    // a note: centred under the [12], on a dark plate (8.5.0). Second Life draws the text above its part in
-    // the viewer's own font (about 7 px a character, 18 px a line, whatever the window): the plate is sized from that
+    // a note: centred under the [12], on a dark plate (8.5.0; 8.5.4: 7 px higher, the text sat high on it). Second Life
+    // draws the text above its part in the viewer's own font (about 7 px a character, 18 px a line, whatever the
+    // window): the plate is sized from that
     float tw = gNoteC * 7.2 / 1080.0;
     float th = gNoteL * 18.0 / 1080.0;
     float z = -px(20.0) - (16.0 + 8.0) / 1080.0 - th;        // the part; its text from here up
     if (gPlace >= 2) z = px(20.0) + 16.0 / 1080.0;
     part(gNote, 0.0, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
-    if (gNoteC > 0) part(gPlate, 0.0, z + th * 0.5 + 6.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
+    if (gNoteC > 0) part(gPlate, 0.0, z + th * 0.5 + 13.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
         th + 14.0 / 1080.0, mark("box"), <0.04, 0.04, 0.05>, 0.8, 0.0);
     else part(gPlate, 0.0, 0.0, 0.02, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye
