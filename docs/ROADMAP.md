@@ -13,6 +13,25 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 | Later | Portrait Us: an optional shot / reverse shot (cut between two people talking); the script-count review (with the owner's OK); a retro edition (the same engine, the 7.x pixel look, a lower price) | 💤 to discuss |
 | Later | "Take 12 Lens" add-on (mm and aspect, always on); light companions; other languages | 💤 only on request |
 
+## Next (after the in-world test, agreed 2026-10-29)
+1. **The in-world test**: Connect with a friend first (it never had a real test), then the fixes it finds.
+2. **The strip, polished** (mockups first): static at the top, never centred in the bar (a shot change would move
+   it); its own band (a lifted black, a hairline), a smaller [12], a more geometric, unified layout. Mock up the
+   [12] centred and on the left (macOS style). The strip fades a few seconds after your last touch; a tap brings it
+   back. Notes on a dark plate under the strip, readable on any picture.
+3. **A clean screen**: Settings › Look › Screen: Cinema (bars and strip) · Quiet (the strip fades) · Clear (nothing
+   on screen; the [12]'s spot stays tappable). One choice, no format changes or double-taps.
+4. **The free watcher, revamped**: anyone can see your film, not only people who own Take 12. Second Life only
+   lets a script move the camera of someone who wears it and allows it, so a friend still wears something: a tiny,
+   free, copyable "Take 12 Watch" (a small [12] only, no shots, no setup). Your HUD hands it out: Connect lists
+   people near you without Take 12 too ("Give a Watch"), they accept, wear it once, and see your film; nothing to
+   buy, nothing to learn. A new design and minimal features; it replaces the Scenery build as the friends' item
+   (whether Scenery stays as a separate free product is decided then).
+5. **Auto as a director** (later): presets set once in Settings › Auto (a style, how much Scenic, calm or lively
+   cutting; neutral names, never directors' names), shot grammar (wide, medium, closer), the unified film (one
+   height, glides within a scene, one frame). Later still: cuts to who speaks in local chat, only with 2–3 people
+   near, never in a crowd.
+
 ## Build it in-world
 1. `hud/build/README.md`: rez a box, put `builder.lsl` and a blank box named `t12 part` in it, touch it.
 2. Add the twelve scripts of `hud/src/`; upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png`
