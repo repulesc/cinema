@@ -17,7 +17,7 @@ the top of the screen and the [12].
 - **The [12]:** tap for the setup dialog, double-tap for the strip, hold for everything off (hold again: back).
 - **Take 12 Scenery (free):** Scenic on its own, generated from the same scripts (`scenery/`).
 
-> **Status:** **v8.5.1** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
+> **Status:** **v8.5.2** (in `hud/`), emulator-tested; its in-world test is under way (`docs/ROADMAP.md` has the tester
 > checklist). The free Take 12 Scenery is in `scenery/`. The frozen v3.0.0 is in [`legacy/v3/`](legacy/v3/).
 
 **Naming for the box and folder:** both are called **`Take 12 - Cinematic Camera HUD`**. The HUD itself is `Take 12`,

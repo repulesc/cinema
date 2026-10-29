@@ -1,5 +1,17 @@
 # Changelog
 
+## 8.5.2 (the strip, mirrored)
+- **The [12] in the middle of the top, the strip's two blocks either side of it**, as wide as each other, their words
+  evenly spread: left the Orbit and the shots, right the options, the frame, Connect and the shutter. The two sides
+  balance whatever the running shot's options. The words stop short of the corners, so the viewer's notices at the
+  top right no longer cover anything (the black band still runs edge to edge).
+- **Faded,** only the [12] is left, in the middle. **Notes** sit centred under it, on their plate.
+- **A narrow window** (5:4 at size L): the gaps close to 3 px, and if even that does not fit, the words are drawn a
+  touch smaller. Nothing reaches the edge.
+- **strip has more room** (18.0 KB estimated free, from 17.2): screen now tells it the window and draws the band, and
+  what the left layout left behind is gone.
+- Every script is 8.5.2 (strip and screen change). No new part or texture.
+
 ## 8.5.1 (strip: room to breathe; clear of the viewer's notices)
 - **strip ran out of memory in-world** ("Stack-Heap Collision"): 8.5.0 put the fade and a narrow-window fit into it,
   15.4 KB estimated free, the level where sync had run out in 8.4.2. Now the fade is timed by screen (it has room),

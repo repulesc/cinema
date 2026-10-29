@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.1";
+string VERSION = "8.5.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -38,6 +38,7 @@ integer gDot;
 integer gNote;
 integer gEyeL;                     // the eye line's part (t12 u2)
 integer gPlate;                    // the notes' plate (t12 plate, 8.5.0)
+integer gBand;                     // the strip's band (8.5.2: here, strip short of memory)
 integer gNoteC;                    // the note shown: its longest line (characters) and its lines, 0: none
 integer gNoteL;
 integer gFaded;                    // the strip has faded: the [12] alone, quieter (8.5.0)
@@ -66,7 +67,7 @@ float px(float v)
 
 find()
 {
-    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0;
+    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0; gBand = 0;
     integer i;
     for (i = 2; i <= llGetNumberOfPrims(); i++)
     {
@@ -76,6 +77,7 @@ find()
         else if (n == "t12 note") gNote = i;
         else if (n == "t12 u2") gEyeL = i;
         else if (n == "t12 plate") gPlate = i;
+        else if (n == "t12 band") gBand = i;
     }
 }
 
@@ -205,11 +207,11 @@ fade(integer n)
     llMessageLinked(LINK_SET, STRIP, "faded|" + (string)n, "");
 }
 
-// the [12] at the strip's left end (8.5.0: it was the middle; the middle of the picture is the film's), 24 px from the
-// edge: its x from the screen's middle (strip.lsl uses the same)
+// the [12]'s x from the screen's middle (strip.lsl uses the same): the middle, the two blocks mirrored either side of it
+// (8.5.2; 8.5.0 had it at the left end)
 float rootX()
 {
-    return -gA * 0.5 + px(24.0) + px(14.0);
+    return 0.0;
 }
 
 // the [12], its ring and dot, the notes' part and its plate, the eye line: a few small calls, never one big list
@@ -225,14 +227,21 @@ layout()
     if (gProblem) rk = "ring9";
     part(gRing, 0.0, 0.0, -0.001, px(32.0), px(32.0), mark(rk), WHITE, 0.85 * a * (gProblem || gHold > 0 || gState == "film"), 0.0);
     part(gDot, px(10.0), px(10.0), -0.002, px(9.0), px(9.0), mark("dot"), WHITE, a * (gLinkSt != "alone" && gLinkSt != ""), 0.12 * (gLinkSt == "shared"));
-    // a note: under the [12], from its left edge, on a dark plate (8.5.0). Second Life draws the text above its part in
+    // the band: solid black, the whole width, from the screen's edge to the strip's far side, while the strip shows
+    float mg = llList2Float(MARGIN, gPlace) / 1080.0;
+    float bz = mg * 0.5;
+    if (gPlace >= 2) bz = -bz;
+    if (gOpen && !gFaded) part(gBand, -rootX(), bz, 0.004, gA + 0.02, px(40.0) + mg, [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK,
+        <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0], ZERO_VECTOR, 1.0, 0.0);
+    else part(gBand, 0.0, 0.0, 0.02, 0.01, 0.01, [], ZERO_VECTOR, 0.0, 0.0);
+    // a note: centred under the [12], on a dark plate (8.5.0). Second Life draws the text above its part in
     // the viewer's own font (about 7 px a character, 18 px a line, whatever the window): the plate is sized from that
     float tw = gNoteC * 7.2 / 1080.0;
     float th = gNoteL * 18.0 / 1080.0;
     float z = -px(20.0) - (16.0 + 8.0) / 1080.0 - th;        // the part; its text from here up
     if (gPlace >= 2) z = px(20.0) + 16.0 / 1080.0;
-    part(gNote, -px(14.0) + 14.0 / 1080.0 + tw * 0.5, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
-    if (gNoteC > 0) part(gPlate, -px(14.0) + 14.0 / 1080.0 + tw * 0.5, z + th * 0.5 + 6.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
+    part(gNote, 0.0, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
+    if (gNoteC > 0) part(gPlate, 0.0, z + th * 0.5 + 6.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
         th + 14.0 / 1080.0, mark("box"), <0.04, 0.04, 0.05>, 0.8, 0.0);
     else part(gPlate, 0.0, 0.0, 0.02, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye
@@ -247,7 +256,14 @@ measure()
     float a = llGetCameraAspect();
     if (a < 0.3 || llFabs(a - gA) < 0.005) return;
     gA = a;
+    aspect();
     layout();
+}
+
+// strip lays out with the window screen measures (8.5.2: strip short of memory)
+aspect()
+{
+    llMessageLinked(LINK_SET, STRIP, "aspect|" + (string)gA, "");
 }
 
 // ============================================================================
@@ -289,6 +305,7 @@ default
             measure();
             if (gA < 0.3) gA = 1.778;
         }
+        aspect();
         layout();
     }
 
@@ -321,6 +338,7 @@ default
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
             string a = llList2String(L, 0);
+            if (str == "aspect?") aspect();                 // strip, started again
             if (a == "toggle") gOpen = !gOpen;
             else if (a == "open") gOpen = TRUE;
             else if (a == "close") gOpen = FALSE;
