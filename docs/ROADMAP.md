@@ -18,7 +18,7 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 2. **The strip, polished** (mockups first): static at the top, never centred in the bar (a shot change would move
    it); its own band (a lifted black, a hairline), a smaller [12], a more geometric, unified layout. Mock up the
    [12] centred and on the left (macOS style). Notes on a dark plate under the strip, readable on any picture.
-   (Done in 8.5.x: mirrored, the [12] in the middle. The automatic fade was tried in 8.5.0 and taken out in 8.5.3:
+   (Done in 8.5.5: the [12] at the left, every button in one place; centred, 8.5.2-8.5.4, the words moved with every shot. The automatic fade was tried in 8.5.0 and taken out in 8.5.3:
    it hid the strip while you worked. Hiding needs another way, see 3.)
 3. **A clean screen**: Settings › Look › Screen: Cinema (bars and strip) · Clear (nothing
    on screen; the [12]'s spot stays tappable). Never automatic, never on a timer. One choice, no format changes or double-taps.
@@ -65,7 +65,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
   in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.5.4", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.5.5", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).

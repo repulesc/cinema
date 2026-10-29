@@ -1,6 +1,6 @@
 """The strip on every screen (8.0), on the REAL scripts: windows from 5:4 to 32:9, the four places, sizes S / M / L.
-Checked: nothing off the screen, no two words overlap (nor the [12]), the [12] in the middle and the two blocks either
-side of it with one gap between words and the frame, Connect and the shutter pinned at the right end (8.5.4: steady), the words at least 20 px tall on a 1080 px window, closed every strip part shrunk away (nothing left to catch a click),
+Checked: nothing off the screen, no two words overlap (nor the [12]), the [12] at the left and everything
+after it, every button in one place whatever the shot, the right 200 px free (8.5.5: the Mac's way), the words at least 20 px tall on a 1080 px window, closed every strip part shrunk away (nothing left to catch a click),
 the bars cut the shot's shape (letterbox, pillarbox), the note part under the strip (above it at the bottom)."""
 from emu_util import *
 
@@ -47,15 +47,13 @@ for a in ASPECTS:
             # 8.5.0: the [12] at the left, 24 px from the edge; the right group ends 24 px from the other edge
             mid = 0.5 - MARGIN[pl] / 1080.0 - px(40) / 2
             want = mid if pl in ("top", "topl") else -mid
-            check(abs(root[1] - want) < 1e-3 and abs(root[0]) < 1e-4, "%s: the [12] at %.4f, %.4f (want 0, %.4f)" % (tag, root[0], root[1], want))
-            # 8.5.4: steady. One gap between the words on the left; the shutter pinned at the right end (744 px from the
-            # [12]'s middle, or 10 px from a narrow window's edge)
+            check(abs(root[1] - want) < 1e-3 and abs(root[0] - (-a / 2 + px(38))) < 1e-4, "%s: the [12] at %.4f, %.4f (want the left, %.4f)" % (tag, root[0], root[1], want))
+            # 8.5.5: the Mac's way. One gap between the Orbit and the shots; nothing in the right 200 px (the viewer's notices)
             row = sorted((r[0] - r[2] / 2, r[0] + r[2] / 2) for k, r in V.items() if k in ("t12 auto", "t12 s0", "t12 s1", "t12 s2", "t12 s3"))
             gaps = [row[i + 1][0] - row[i][1] for i in range(len(row) - 1)]
-            check(max(gaps) - min(gaps) < 1e-4, "%s: the gaps on the left differ (%s)" % (tag, ["%.0f" % (g * 1080 / S) for g in gaps]))
-            sh = V["t12 shut"]
-            check(abs(sh[0] + sh[2] / 2 - min(px(744), a / 2 - px(10))) < 1e-3,
-                  "%s: the shutter not at its pinned place (%.4f)" % (tag, sh[0] + sh[2] / 2))
+            check(max(gaps) - min(gaps) < 1e-4, "%s: the gaps differ (%s)" % (tag, ["%.0f" % (g * 1080 / S) for g in gaps]))
+            rgt = max(r[0] + r[2] / 2 for r in V.values())
+            check(rgt <= a / 2 - 200 / 1080.0 + 1e-4, "%s: in the notices' corner (%.0f px from the edge)" % (tag, (a / 2 - rgt) * 1080))
             for k, r in V.items():
                 check(abs(r[1] - root[1]) < 1e-3, "%s: %s is off the strip's line" % (tag, k))
             note = rect(h, ana, "t12 note")
@@ -63,8 +61,8 @@ for a in ASPECTS:
             band = rect(h, ana, "t12 band")
             check(band[2] >= a and band[4] > 0.5, "%s: the band runs the whole width" % tag)
 no_errors(w, "layout")
-# steady (8.5.4, the user's in-world report: the words jumped and their gaps changed with every shot): switching shots
-# moves nothing but the options
+# steady (8.5.4/8.5.5, the user's in-world report: the words jumped with every shot): switching shots moves nothing
+# but the options, which come last
 ana.aspect = 1.778; ana.say(12, "place top"); ana.say(12, "size m"); h.send(7342, "alone|0|"); w.run(2.5)
 seen = {}
 for s in ("t12 s0", "t12 s1", "t12 s2", "t12 s3"):
@@ -74,8 +72,8 @@ for s in ("t12 s0", "t12 s1", "t12 s2", "t12 s3"):
         x = round(V[k][0] - V[k][2] / 2 * (k == "t12 shape"), 4) if k in V else None   # the frame: its mark (the number varies)
         check(seen.setdefault(k, x) == x, "%s: %s moved (%r, then %r)" % (s, k, seen[k], x))
     opts = sorted((r[0], r[0] + r[2] / 2) for k, r in V.items() if k.startswith("t12 o"))
-    check(opts and abs(opts[0][0] - V["t12 o0"][0]) < 1e-6 and V["t12 o0"][0] - V["t12 o0"][2] / 2 < 34 * 1.0 / 1080 + 1e-4,
-          "%s: the options start next to the [12]" % s)
+    check(opts and all(V["t12 o0"][0] - V["t12 o0"][2] / 2 > V[k][0] + V[k][2] / 2 for k in ("t12 shut", "t12 link", "t12 shape")),
+          "%s: the options come last" % s)
 no_errors(w, "steady")
 h.send(7342, "theirs|3|Ben"); w.run(1)
 # Auto (8.3.0): the Orbit lit, then only the shot it chose, faint; nothing overlaps, at every window and size

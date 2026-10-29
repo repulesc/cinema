@@ -34,7 +34,7 @@ The facts we design around:
 ## The look: the Monitor
 A cinema camera's on-screen display, as part of the viewer:
 - **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a pure black band, edge to edge.
-- **The words' places (8.5.4, steady):** the [12] in the middle of the top, one even gap between every word. Left of it: the shots and Auto's Orbit, always in the same place. Right of it: the running shot's options, then, always in the same place at the right end, the frame `▭ 2.39`, Connect (two linked rings with a count, `SHARING` or `THEIR FILM`) and the shutter. Changing shot changes only the options. The words stop short of the corners; closed (a double-tap), only the [12] is left.
+- **The words' places (8.5.5, the Mac's way):** the [12] at the left, then every button in one place that never changes: Auto's Orbit, the four shots, the frame `▭ 2.39`, the shutter, Connect (two linked rings with a count, `SHARING` or `THEIR FILM`), and last the running shot's options. Changing shot changes only the options. The right side stays free for the viewer's notices; closed (a double-tap), only the [12] is left.
 - **It stays (8.5.3):** the strip never hides by itself; a double-tap on the [12] hides it and brings it back. (8.5.0's fade after 4 s untouched was taken out: it hid the strip while you worked.)
 - **Notes (8.5.0):** under the [12], on a dark plate, readable on any picture.
 - **Lit states:** the lit shot is ink on a white box; a lit option is underlined; KEEP NEW and UNDO sit in an outline.

@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.4";
+string VERSION = "8.5.5";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -194,11 +194,10 @@ part(integer link, float x, float z, float d, float w, float h, list tex, vector
         + tex + [PRIM_COLOR, ALL_SIDES, col, a, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, glow]);
 }
 
-// the [12]'s x from the screen's middle (strip.lsl uses the same): the middle, the two blocks mirrored either side of it
-// (8.5.2; 8.5.0 had it at the left end)
+// the [12]'s x from the screen's middle: at the left, everything else after it (8.5.5; 8.5.2-8.5.4 had it centred)
 float rootX()
 {
-    return 0.0;
+    return -gA * 0.5 + px(38.0);                            // 8.5.5: at the left, 24 px from the edge (the Mac's way)
 }
 
 // the [12], its ring and dot, the notes' part and its plate, the eye line: a few small calls, never one big list
@@ -228,8 +227,9 @@ layout()
     float th = gNoteL * 18.0 / 1080.0;
     float z = -px(20.0) - (16.0 + 8.0) / 1080.0 - th;        // the part; its text from here up
     if (gPlace >= 2) z = px(20.0) + 16.0 / 1080.0;
-    part(gNote, 0.0, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
-    if (gNoteC > 0) part(gPlate, 0.0, z + th * 0.5 + 13.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
+    float nx = -px(14.0) + tw * 0.5 + 14.0 / 1080.0;        // 8.5.5: from the [12]'s left edge (it sits at the left)
+    part(gNote, nx, z, 0.003, 0.01, 0.01, [], WHITE, 0.0, 0.0);
+    if (gNoteC > 0) part(gPlate, nx, z + th * 0.5 + 13.0 / 1080.0, 0.004, tw + 28.0 / 1080.0,
         th + 14.0 / 1080.0, mark("box"), <0.04, 0.04, 0.05>, 0.8, 0.0);
     else part(gPlate, 0.0, 0.0, 0.02, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye

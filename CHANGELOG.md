@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.5.5 (the Mac's way: every button in one place)
+- **The [12] back at the left, every button after it in one place that never changes:** the Orbit, the four shots,
+  the frame, the shutter, Connect, and last the running shot's options. Changing shot changes only the options; in
+  Auto the chosen shot stays in its own place. 8.5.2-8.5.4 centred the [12] and the words moved with every shot.
+- **The right side is free** (200 px): the viewer's notices no longer cover anything.
+- Notes sit under the [12] from its left edge. strip and screen change; every script is 8.5.5.
+
 ## 8.5.4 (a steady strip)
 - **The words no longer jump when you change shot.** 8.5.2 stretched both halves of the strip to the same width and
   spread their words, so every shot had its own gaps and everything moved. Now there is one gap between every word,
