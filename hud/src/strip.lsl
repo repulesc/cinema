@@ -337,7 +337,7 @@ layout()
     {
         string ac = "auto";
         float aa = alphaOf("");
-        if (gAuto) { ac = "autoON"; aa = 1.0; }
+        if (gAuto) { ac = "autoON"; aa = 1.0 - 0.7 * gDrain * (gHoldL == gAutoP); }   // held down: it fades out
         if (gState == "watch") aa = 0.27;
         if (LITE) aa = 0.22;                                // the free Scenery: in the full Take 12
         show(gAutoP, x + aw * 0.5, 0.0, 0.001, aw, hw, uvMark(ac), WHITE, aa * f, 0.0);
@@ -595,9 +595,11 @@ default
         if (llDetectedKey(0) != gOwner) return;
         integer link = llDetectedLinkNumber(0);
         if (link <= 1 || !gOpen) return;
-        // the lit shot: a tap is its next view, a hold (0.8 s) hands the camera to your viewer (8.0.7)
+        // the lit shot: a tap is its next view, a hold (0.8 s) hands the camera to your viewer (8.0.7); the lit Orbit
+        // too: a hold ends Auto and the camera is your viewer's (8.4.5)
         integer k = llListFindList(gSL, [link]);
-        if (k >= 0 && llToLower(llList2String(SHOTS, k)) == gShot && (gState == "film" || gState == "held" || gState == "photo"))
+        if ((k >= 0 && llToLower(llList2String(SHOTS, k)) == gShot && (gState == "film" || gState == "held" || gState == "photo"))
+            || (link == gAutoP && gAuto && !LITE && gState != "watch" && gState != "off"))
         {
             gHoldL = link;
             gHoldT = llGetTime();
