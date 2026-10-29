@@ -1,52 +1,34 @@
-"""The strip that fades, and notes on a plate (8.5.0), on the REAL scripts. 4 s after your last touch the strip fades
-away and the [12] stays, quieter, on the left; a tap on it brings the strip back (the menu is the next tap); a touch on
-the strip keeps it 4 s more; /12 fade off keeps it. A note sits under the [12] on a dark plate sized to its text."""
+"""The strip stays (8.5.3: the 8.5.0 fade, 4 s after the last touch, is gone: it hid the strip while you worked), on the
+REAL scripts. A double-tap on the [12] hides it, the [12] stays whole; another brings it back; a tap is always the menu.
+A note sits under the [12] on a dark plate sized to its text."""
 from emu_util import *
 
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-L = ready(ana)
-L["cin.fade"] = ("1", PASS)                                          # as sold: the strip fades
-h = ana.wear(HUD_SCRIPTS, lsd=L)
+h = ana.wear(HUD_SCRIPTS, lsd=ready(ana))
 textures(h)
 w.run(0.5); manual(h); w.run(4.5)
 ana.double_tap(); w.run(1)
-check(var(h, "strip", "gOpen") == 1 and var(h, "strip", "gFaded") == 0 and len(visible(h, ana)) >= 8, "the strip open")
+check(var(h, "strip", "gOpen") == 1 and len(visible(h, ana)) >= 8, "the strip open")
 root = h.prims[0]
 
-# ---- 4 s untouched: it fades, the [12] stays at 60 % ---------------------------------------------------------------------
-w.run(3)
-check(var(h, "strip", "gFaded") == 0, "3 s: still there")
-w.run(2.5)
-check(var(h, "strip", "gFaded") == 1 and visible(h, ana) == {}, "4 s untouched: the strip faded away (%r)" % sorted(visible(h, ana)))
-check(abs(root["alpha"] - 0.6) < 0.01 and var(h, "ui", "gFaded") == 1, "... the [12] stays, at 60 %% (%.2f)" % root["alpha"])
-check(var(h, "strip", "gOpen") == 1, "... still open (faded, not closed: it comes back as it was)")
-
-# ---- a tap: back (no menu); the next tap: the menu ------------------------------------------------------------------------
+# ---- untouched, it stays -------------------------------------------------------------------------------------------------
+w.run(30)
+check(var(h, "strip", "gOpen") == 1 and len(visible(h, ana)) >= 8, "30 s untouched: the strip still there (%r)" % sorted(visible(h, ana)))
+check(abs(root["alpha"] - 1.0) < 0.01, "... the [12] whole")
 ana.dialog = None
 ana.tap(); w.run(0.8)
-check(var(h, "strip", "gFaded") == 0 and len(visible(h, ana)) >= 8 and ana.dialog is None, "a tap: the strip back, no menu")
-check(abs(root["alpha"] - 1.0) < 0.01, "... the [12] whole again")
-ana.tap(); w.run(0.8)
-check(ana.dialog is not None, "the next tap: the menu")
+check(ana.dialog is not None, "a tap: the menu, at once")
 ana.click("Close"); w.run(0.5)
 
-# ---- a touch on the strip keeps it 4 s more --------------------------------------------------------------------------------
-w.run(1.5)
-ana.touch("t12 shape", hold=0.1); w.run(0.5)
-if ana.dialog: ana.click("Close") if "Close" in ana.labels() else None
-w.run(2.5)
-check(var(h, "strip", "gFaded") == 0, "touched before its 4 s ran out: still there 3 s later")
-w.run(3)
-check(var(h, "strip", "gFaded") == 1, "... then it fades")
-
-# ---- /12 fade off: it stays -------------------------------------------------------------------------------------------------
-ana.say(12, "fade off"); w.run(1)
-check(var(h, "strip", "gFaded") == 0 and lsd(h, "fade") == "0", "/12 fade off: back, and kept")
-w.run(12)
-check(var(h, "strip", "gFaded") == 0 and len(visible(h, ana)) >= 8, "... it stays")
-ana.say(12, "fade on"); w.run(6)
-check(var(h, "strip", "gFaded") == 1, "/12 fade on: it fades again")
+# ---- a double-tap hides it, another brings it back ------------------------------------------------------------------------
+ana.double_tap(); w.run(1)
+check(var(h, "strip", "gOpen") == 0 and visible(h, ana) == {}, "a double-tap: the strip hidden (%r)" % sorted(visible(h, ana)))
+check(abs(root["alpha"] - 1.0) < 0.01, "... the [12] stays, whole")
+w.run(10)
+check(var(h, "strip", "gOpen") == 0, "... and stays hidden")
+ana.double_tap(); w.run(1)
+check(var(h, "strip", "gOpen") == 1 and len(visible(h, ana)) >= 8, "another double-tap: back")
 
 # ---- a note on its plate, under the [12] ------------------------------------------------------------------------------------
 h.send(7344, "kept|")                                                # "Kept." (Fixed's note)

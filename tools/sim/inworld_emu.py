@@ -24,7 +24,7 @@ from emu_util import *
 
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS), "cin.fade": ("0", PASS)})   # the strip stays (fade_emu.py)
+h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS)})
 w.run(5)
 
 # ---- every tap on the [12] counts ----------------------------------------------------------------------------------
@@ -300,7 +300,7 @@ no_errors(w, "look, hint, friends, snappy")
 # ---- the setup: asked once, never again on a re-wear -----------------------------------------------------------------------
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS), "cin.fade": ("0", PASS)})   # the strip stays (fade_emu.py)
+h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS)})
 w.run(5)
 ana.tap(); w.run(0.6); ana.click("Start"); w.run(0.5)
 ana.dialog = None                                                    # the dialog closed half way (Ignore)

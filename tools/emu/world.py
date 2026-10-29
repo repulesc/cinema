@@ -852,5 +852,4 @@ def ready(av, first_run_done=True):
     d = {"cin.owner": (str(av.key), PASS), "cin.ver": ("8.0.1", PASS)}
     if first_run_done: d["cin.firstrun"] = ("done", PASS)
     d["cin.open"] = ("0", PASS)          # the strip as left closed: the tests open it themselves (8.0.5 restores it on wear)
-    d["cin.fade"] = ("0", PASS)          # the strip stays: the tests tap the [12] for the menu (8.5.0 fades it, fade_emu.py)
     return d

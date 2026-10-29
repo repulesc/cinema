@@ -55,9 +55,8 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   narrow window: the blocks end 10 px from the edges, the gaps give way (to 3 px), and if even that does not fit (5:4
   at L) every word is drawn a touch smaller. screen tells strip the window (STRIP `aspect|<a>`; strip asks with
   `aspect?`).
-- **The fade (8.5.0):** 4 s after the last touch the strip fades out (0.6 s) and only the [12] stays, at 60 %
-  (STRIP `faded|1`); a tap on it brings the strip back (ui: no menu on that tap), a touch on the strip keeps it 4 s
-  more. `cin.fade` (`/12 fade on|off`); faded is still open (`cin.open` unchanged).
+- **No fade (8.5.3):** the strip shows until a double-tap closes it (8.5.0's fade after 4 s untouched was removed;
+  `cin.fade` is no longer read).
 - **Notes (8.5.0; centred in 8.5.2):** under the [12], centred on it, on a dark plate (`t12 plate`, the marks' `box` cell, black at
   80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
   character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
@@ -80,7 +79,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `ui` | The [12]'s gestures (tap 0.35 s → dialog, double-tap → the strip, hold 0.8 s → everything off / back), every dialog (main, Connect lists, Settings and its pages, Help, Reset), the first run, `/12` commands, defaults, the 7.x settings migration, owner change |
 | `text` | Every word the user reads, by id (dialog bodies and labels, notes, tips); the notes on `t12 note` (3 s; important ones also in owner chat); the first-three-uses tip counters |
 | `screen` | The [12] (section 2): the root's place, its ring and dot, the notes' part, the eye line, texture adoption |
-| `strip` | The strip (section 2): the band, the words and their states, the 16:9 cap, the fade, touches (8.0.2: split from `screen`, which was too big for 64 KB) |
+| `strip` | The strip (section 2): the band, the words and their states, the 16:9 cap, the open and close fade, touches (8.0.2: split from `screen`, which was too big for 64 KB) |
 | `bars` | The letterbox per shot (`cin.shape.<shot>`), Black or Dimmed, on / off; a watched film's shape; tells the shots the picture (CROP) and the strip the readout (SHAPE) |
 | `tracking` | Shoulder · Film · Classic, L · R: the viewer's own follow camera (FOLLOW), walls, small rooms, running. And Auto's director (8.3.0, core has no room): walking, still, sitting → CMD `shot|<shot>|auto` |
 | `portrait` | Me · Us, Close · Medium · Wide: composed shots of you standing (SHOT / GLIDE) |
