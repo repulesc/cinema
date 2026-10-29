@@ -1,5 +1,20 @@
 # Changelog
 
+## 8.5.0 (the strip, redesigned: quiet, on the left)
+- **The [12] at the far left; nothing in the middle.** The middle of the picture is the film's. The left: the [12],
+  Auto's Orbit, the shots. The right, from the edge: the shutter, Connect, the frame, the running shot's options. Edge
+  to edge, ultrawide too; on a narrow window the gaps give way.
+- **Quiet:** 4 s after your last touch the strip fades away and only the [12] stays, at 60 %, like a camera's REC light.
+  A tap on it brings the strip back (the menu is the next tap); a touch on the strip keeps it 4 s more. `/12 fade off`
+  keeps it on screen.
+- **Notes on a plate:** under the [12], on a dark plate sized to the text, readable on any picture (a new part,
+  `t12 plate`: touch the builder in the HUD once, it adds only what is missing).
+- **A finer strip:** a pure black band, 40 px; 12.5 px words; a smaller [12] (28 px, its ring 32); the Orbit and the
+  shutter without their dividers (no hairlines anywhere). Upload `take12_marks_1024.png` again (the words are unchanged).
+- **The Orbit held** hands the camera to your viewer and ends Auto, as a lit shot held does.
+- The emulator: `llGetSubString`'s empty-end quirk, met again (a note's plate stayed). `tools/sim/fade_emu.py` (in CI);
+  `layout_emu` checks the new places at every window, place and size.
+
 ## 8.4.4 (Auto: your Tracking look, the keys at once)
 - **Auto films Tracking in your own look** (Shoulder, Film or Classic, and your side), the one you last chose by hand.
   It always used Film.

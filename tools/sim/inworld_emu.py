@@ -24,7 +24,7 @@ from emu_util import *
 
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-h = ana.wear(HUD_SCRIPTS)
+h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS), "cin.fade": ("0", PASS)})   # the strip stays (fade_emu.py)
 w.run(5)
 
 # ---- every tap on the [12] counts ----------------------------------------------------------------------------------
@@ -141,10 +141,11 @@ for p in h.prims:
 # ---- flush at the top, on a solid black band ------------------------------------------------------------------------------
 band = rect(h, ana, "t12 band")
 check(abs(band[1] + band[3] / 2 - 0.5) < 1e-3, "the band reaches the top edge (%.4f)" % (band[1] + band[3] / 2))
-check(abs(band[3] - 48 / 1080.0) < 1e-3, "the band is the strip's height (%.1f px)" % (band[3] * 1080))
+check(abs(band[3] - 40 / 1080.0) < 1e-3, "the band is the strip's height, 40 px (8.5.0) (%.1f px)" % (band[3] * 1080))
 check(P("t12 band")["color"] == vec(0, 0, 0) and band[4] > 0.99 and str(P("t12 band")["tex"][0]) == C["TEXTURE_BLANK"], "the band: solid black")
 root = rect(h, ana, "Take 12")
-check(abs(root[1] - (0.5 - 24 / 1080.0)) < 1e-3, "the [12] in the band's middle, no gap above (%.4f)" % root[1])
+check(abs(root[1] - (0.5 - 20 / 1080.0)) < 1e-3 and abs(root[0] - (-ana.aspect / 2 + 38 / 1080.0)) < 1e-3,
+      "the [12] in the band's middle, on the left (8.5.0) (%.4f, %.4f)" % (root[0], root[1]))
 no_errors(w, "look")
 
 # ---- Portrait among bushes: it looks round for room ------------------------------------------------------------------------
@@ -218,9 +219,9 @@ no_errors(w, "lens and eyes")
 # ---- the notes: lower, longer; the eye line's instruction stays --------------------------------------------------------------
 note = rect(h, ana, "t12 note")
 band = rect(h, ana, "t12 band")
-check(note[1] <= band[1] - band[3] / 2 - 56 / 1080.0, "the notes' part well under the band (%.0f px below)" % ((band[1] - band[3] / 2 - note[1]) * 1080))
+check(note[1] <= band[1] - band[3] / 2 - 20 / 1080.0, "the notes' part under the band, its text clear of it (%.0f px below)" % ((band[1] - band[3] / 2 - note[1]) * 1080))
 ana.double_tap(); w.run(1)
-check(rect(h, ana, "t12 note")[1] <= rect(h, ana, "Take 12")[1] - 80 / 1080.0, "closed: well under the [12]")
+check(rect(h, ana, "t12 note")[1] <= rect(h, ana, "Take 12")[1] - 30 / 1080.0, "closed: under the [12]")
 h.send(7345, "SCENIC"); w.run(3.5)
 check(h.part("t12 note")["text"] != "", "a tip still shows after 3.5 s")
 w.run(8)
@@ -279,7 +280,7 @@ w = World()
 ana, h = hud(w)
 ana.double_tap(); w.run(1)
 ring, band = rect(h, ana, "t12 ring"), rect(h, ana, "t12 band")
-check(abs(ring[3] * 1080 - 50) < 1, "the [12]'s ring at 50 px, meeting the band (8.0.8: %.0f px)" % (ring[3] * 1080))
+check(abs(ring[3] * 1080 - 32) < 1, "the [12]'s ring at 32 px, in the 40 px band (8.5.0: %.0f px)" % (ring[3] * 1080))
 ana.touch("t12 s0"); w.run(9)
 check(any("Portrait is ready" in n for n in ana.notes()), "the outline on PORTRAIT says why: %r" % ana.notes()[-3:])
 ana.dialog = None
@@ -300,7 +301,7 @@ no_errors(w, "look, hint, friends, snappy")
 # ---- the setup: asked once, never again on a re-wear -----------------------------------------------------------------------
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-h = ana.wear(HUD_SCRIPTS)
+h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS), "cin.fade": ("0", PASS)})   # the strip stays (fade_emu.py)
 w.run(5)
 ana.tap(); w.run(0.6); ana.click("Start"); w.run(0.5)
 ana.dialog = None                                                    # the dialog closed half way (Ignore)

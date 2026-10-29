@@ -43,14 +43,20 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
 - **HUD space:** 1.0 tall (the window's height) and `llGetCameraAspect()` wide; +Y to the left, +Z up, +X into the
   screen. The root is placed from the attach point (crop.lsl's `centre()` table, kept in `bars`/`screen`); wear it on
   **HUD Top Center** (any point works).
-- **Size:** Look › Size S · M · L = 0.8 · 1.0 · 1.25. At M: the strip is 48 px of a 1080 px window (0.0444), words 0.0222
-  tall (11.5 px), the [12] 0.0407.
+- **Size:** Look › Size S · M · L = 0.8 · 1.0 · 1.25. At M (8.5.0): the strip is 40 px of a 1080 px window, words
+  12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
-- **Width:** the words stay inside a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the full width.
-  Shots start `inset` from the left of that area, options end `inset` from its right; `inset` = 180 px (0.1667),
-  shrunk when the window is too narrow so nothing overlaps (never below 0.02).
-- **Middle:** the [12] at x = 0; the shape cell ends 40 px left of it, the link cell starts 40 px right of it.
+- **Width (8.5.0):** edge to edge, ultrawide too. The [12] is the root, 24 px from the left edge (its centre at
+  `−aspect/2 + 38 px`); every strip part is placed from it (`gRX`). The left: the [12], the Orbit, the shots. The right,
+  from 24 px off the right edge: the shutter, Connect, the frame (always there), then the running shot's options. On a
+  narrow window the 22 px gaps give way so nothing overlaps (never under 6 px). The middle of the picture is the film's.
+- **The fade (8.5.0):** 4 s after the last touch the strip fades out (0.6 s) and only the [12] stays, at 60 %
+  (STRIP `faded|1`); a tap on it brings the strip back (ui: no menu on that tap), a touch on the strip keeps it 4 s
+  more. `cin.fade` (`/12 fade on|off`); faded is still open (`cin.open` unchanged).
+- **Notes (8.5.0):** under the [12], from its left edge, on a dark plate (`t12 plate`, the marks' `box` cell, black at
+  80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
+  character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
 - **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at
   +0.006 (crop's DEPTH rule: behind the button so it stays clickable).
 - **Lit:** a lit word is full white with a line under it (shots and options alike); the rest are quieter (55 % or

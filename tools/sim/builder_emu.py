@@ -1,5 +1,5 @@
 """The HUD builder (8.0), on the REAL script: a rezzed box with hud/build/builder.lsl and a blank "t12 part" in its
-contents; a touch makes the 28 parts (rezzed, linked, named, laid flat), names the root "Take 12", then takes the part
+contents; a touch makes the 29 parts (rezzed, linked, named, laid flat), names the root "Take 12", then takes the part
 and itself out of the contents; touched again on a HUD that misses parts, it adds only those. The result, worn with
 the twelve scripts, is found by screen and strip and lays out."""
 from emu_util import *

@@ -1,7 +1,7 @@
 """The strip on every screen (8.0), on the REAL scripts: windows from 5:4 to 32:9, the four places, sizes S / M / L.
-Checked: nothing off the screen, no two words overlap, the words stay in a centred 16:9 area and 180 px (scaled) in
-from its corners when there is room (less on a narrow window, never under 0.02), the words at least 19 px tall on a
-1080 px window, the [12] at the strip's middle, closed every strip part shrunk away (nothing left to catch a click),
+Checked: nothing off the screen, no two words overlap (nor the [12]), the [12] on the left 24 px (scaled) from the edge
+and the right group ending 24 px from the other (8.5.0: edge to edge, ultrawide too), the words at least 20 px tall on
+a 1080 px window, closed every strip part shrunk away (nothing left to catch a click),
 the bars cut the shot's shape (letterbox, pillarbox), the note part under the strip (above it at the bottom)."""
 from emu_util import *
 
@@ -33,28 +33,26 @@ for a in ASPECTS:
             px = lambda v: v * S / 1080.0
             V = visible(h, ana)
             check(len(V) == 4 + 3 + 2 + 1 + 1 and "t12 shut" in V and "t12 auto" in V, "%s: 4 shots, 3 option words, shape, link, the shutter and the Orbit visible (%s)" % (tag, sorted(V)))
-            names = sorted(V)
+            root = rect(h, ana, "Take 12")
+            V2 = dict(V, root=root)                         # the [12] too: nothing may cover it
+            names = sorted(V2)
             for i in range(len(names)):
                 for j in range(i + 1, len(names)):
-                    hw = px(24.0)
-                    if overlap(V[names[i]], V[names[j]], PADX / 48.0 * hw):
+                    hw = px(26.0)
+                    if overlap(V2[names[i]], V2[names[j]], PADX / 48.0 * hw):
                         check(False, "%s: %s overlaps %s" % (tag, names[i], names[j]))
-            Wc = min(a, 1.778)
             for k, r in V.items():
-                check(abs(r[0]) + r[2] / 2 <= Wc / 2 + 1e-4, "%s: %s outside the 16:9 area (%.3f)" % (tag, k, r[0]))
+                check(abs(r[0]) + r[2] / 2 <= a / 2 + 1e-4, "%s: %s off the screen (%.3f)" % (tag, k, r[0]))
                 check(abs(r[1]) + r[3] / 2 <= 0.5, "%s: %s off the screen vertically" % (tag, k))
-                check(r[3] * 1080 >= 19.0, "%s: %s only %.1f px tall" % (tag, k, r[3] * 1080))
-            # the corner inset: 180 px when there is room, never under 0.02
-            left = min(r[0] - r[2] / 2 for r in V.values()) + Wc / 2
-            right = Wc / 2 - max(r[0] + r[2] / 2 for r in V.values())
-            check(left >= 0.02 - 1e-4 and right >= 0.02 - 1e-4, "%s: the words reach the edge (%.3f, %.3f)" % (tag, left, right))
-            if a >= 1.6 and S <= 1.0:
-                check(abs(left - px(180)) < 0.002 or left > px(180), "%s: left inset %.3f, not 180 px" % (tag, left))
-            # the strip's line and the [12] in its middle
-            root = rect(h, ana, "Take 12")
-            mid = 0.5 - MARGIN[pl] / 1080.0 - px(48) / 2
+                check(r[3] * 1080 >= 20.0, "%s: %s only %.1f px tall" % (tag, k, r[3] * 1080))
+            # 8.5.0: the [12] at the left, 24 px from the edge; the right group ends 24 px from the other edge
+            mid = 0.5 - MARGIN[pl] / 1080.0 - px(40) / 2
             want = mid if pl in ("top", "topl") else -mid
-            check(abs(root[1] - want) < 1e-3 and abs(root[0]) < 1e-4, "%s: the [12] at %.4f, %.4f (want 0, %.4f)" % (tag, root[0], root[1], want))
+            check(abs(root[1] - want) < 1e-3 and abs(root[0] - (-a / 2 + px(38))) < 1e-4,
+                  "%s: the [12] at %.4f, %.4f (want %.4f, %.4f)" % (tag, root[0], root[1], -a / 2 + px(38), want))
+            right = a / 2 - max(r[0] + r[2] / 2 for r in V.values())
+            check(abs(right - px(24)) < 0.002, "%s: the right edge %.1f px from the screen's (want 24)" % (tag, right * 1080))
+            check(min(r[0] - r[2] / 2 for r in V.values()) > root[0] + root[2] / 2, "%s: something left of the [12]" % tag)
             for k, r in V.items():
                 check(abs(r[1] - root[1]) < 1e-3, "%s: %s is off the strip's line" % (tag, k))
             note = rect(h, ana, "t12 note")
@@ -76,7 +74,7 @@ for a in ASPECTS:
         names = sorted(V)
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
-                if overlap(V[names[i]], V[names[j]], PADX / 48.0 * 24.0 * SIZES[sz] / 1080.0):
+                if overlap(V[names[i]], V[names[j]], PADX / 48.0 * 26.0 * SIZES[sz] / 1080.0):
                     check(False, "%s: %s overlaps %s" % (tag, names[i], names[j]))
         check(V["t12 auto"][0] < V[shot[0]][0], "%s: the Orbit left of the shot" % tag)
 h.send(7371, "auto|0"); ana.say(12, "size m"); w.run(2.5)
@@ -84,7 +82,7 @@ ana.touch("t12 s2"); w.run(3)                                          # Fixed a
 no_errors(w, "auto")
 # closed: everything but the [12] (and its ring, dot, the bars, the note part) shrinks away
 ana.double_tap(); w.run(1.5)
-keep = ("Take 12", "t12 ring", "t12 dot", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 u2")
+keep = ("Take 12", "t12 ring", "t12 dot", "t12 note", "t12 plate", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 u2")
 for p in h.prims[1:]:
     if p["name"] not in keep:
         check(p["alpha"] == 0.0 and p["size"][1] <= 0.0101 and p["size"][2] <= 0.0101, "closed: %s still there (%s, %.2f)" % (p["name"], p["size"], p["alpha"]))

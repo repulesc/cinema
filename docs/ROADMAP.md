@@ -64,7 +64,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
   in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.4.4", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.5.0", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).
