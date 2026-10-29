@@ -1,7 +1,6 @@
 """The strip on every screen (8.0), on the REAL scripts: windows from 5:4 to 32:9, the four places, sizes S / M / L.
-Checked: nothing off the screen, no two words overlap (nor the [12]), the [12] on the left 24 px (scaled) from the edge
-and the right group ending 24 px from the other (8.5.0: edge to edge, ultrawide too), the words at least 20 px tall on
-a 1080 px window, closed every strip part shrunk away (nothing left to catch a click),
+Checked: nothing off the screen, no two words overlap (nor the [12]), the [12] in the middle and the two blocks either
+side of it reaching as far (8.5.2: mirrored), the words at least 20 px tall on a 1080 px window, closed every strip part shrunk away (nothing left to catch a click),
 the bars cut the shot's shape (letterbox, pillarbox), the note part under the strip (above it at the bottom)."""
 from emu_util import *
 
@@ -48,12 +47,11 @@ for a in ASPECTS:
             # 8.5.0: the [12] at the left, 24 px from the edge; the right group ends 24 px from the other edge
             mid = 0.5 - MARGIN[pl] / 1080.0 - px(40) / 2
             want = mid if pl in ("top", "topl") else -mid
-            check(abs(root[1] - want) < 1e-3 and abs(root[0] - (-a / 2 + px(38))) < 1e-4,
-                  "%s: the [12] at %.4f, %.4f (want %.4f, %.4f)" % (tag, root[0], root[1], -a / 2 + px(38), want))
-            right = a / 2 - max(r[0] + r[2] / 2 for r in V.values())
-            want_r = (200 if a >= 1.5 else 60) / 1080.0
-            check(abs(right - want_r) < 0.002, "%s: the right edge %.1f px from the screen's (want %.0f: the viewer's notices, 8.5.1)" % (tag, right * 1080, want_r * 1080))
-            check(min(r[0] - r[2] / 2 for r in V.values()) > root[0] + root[2] / 2, "%s: something left of the [12]" % tag)
+            check(abs(root[1] - want) < 1e-3 and abs(root[0]) < 1e-4, "%s: the [12] at %.4f, %.4f (want 0, %.4f)" % (tag, root[0], root[1], want))
+            # 8.5.2: mirrored, the two blocks reach as far either side of the [12] (unless a narrow window's edges stop them)
+            lft = min(r[0] - r[2] / 2 for r in V.values())
+            rgt = max(r[0] + r[2] / 2 for r in V.values())
+            check(abs(lft + rgt) < 2 / 1080.0 or rgt >= a / 2 - px(24) - 1e-3, "%s: the blocks are not mirrored (%.4f, %.4f)" % (tag, lft, rgt))
             for k, r in V.items():
                 check(abs(r[1] - root[1]) < 1e-3, "%s: %s is off the strip's line" % (tag, k))
             note = rect(h, ana, "t12 note")

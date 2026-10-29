@@ -47,14 +47,18 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
-- **Width (8.5.0):** edge to edge, ultrawide too. The [12] is the root, 24 px from the left edge (its centre at
-  `−aspect/2 + 38 px`); every strip part is placed from it (`gRX`). The left: the [12], the Orbit, the shots. The right,
-  from 24 px off the right edge: the shutter, Connect, the frame (always there), then the running shot's options. On a
-  narrow window the 22 px gaps give way so nothing overlaps (never under 6 px). The middle of the picture is the film's.
+- **Width (8.5.2, mirrored):** the [12] (the root) in the middle of the top; the strip's two blocks either side of it,
+  34 px from its middle. The left, towards the [12]: the Orbit, the shots. The right, from the [12]: the running shot's
+  options, the frame (always there), Connect, the shutter. Both blocks are as wide as the wider one, their words evenly
+  spread across it (3 or more; Auto's two sit close), so the sides balance whatever the shot's options. The band
+  (screen's) runs edge to edge; the words stop short of the corners (the viewer's notices at the top right). A
+  narrow window: the blocks end 10 px from the edges, the gaps give way (to 3 px), and if even that does not fit (5:4
+  at L) every word is drawn a touch smaller. screen tells strip the window (STRIP `aspect|<a>`; strip asks with
+  `aspect?`).
 - **The fade (8.5.0):** 4 s after the last touch the strip fades out (0.6 s) and only the [12] stays, at 60 %
   (STRIP `faded|1`); a tap on it brings the strip back (ui: no menu on that tap), a touch on the strip keeps it 4 s
   more. `cin.fade` (`/12 fade on|off`); faded is still open (`cin.open` unchanged).
-- **Notes (8.5.0):** under the [12], from its left edge, on a dark plate (`t12 plate`, the marks' `box` cell, black at
+- **Notes (8.5.0; centred in 8.5.2):** under the [12], centred on it, on a dark plate (`t12 plate`, the marks' `box` cell, black at
   80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
   character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
 - **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at

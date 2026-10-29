@@ -16,7 +16,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.1";
+string VERSION = "8.5.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -40,8 +40,6 @@ string MARKS = "~halo|576|64|256|64|256~sep|832|32|32|64|32~shape1.66|0|512|256|
 // </CELLS>
 
 list    SHOTS  = ["TRACKING", "PORTRAIT", "FIXED", "SCENIC"];
-list    PLACES = ["top", "topl", "bot", "both"];
-list    MARGIN = [0.0, 52.0, 46.0, 96.0];         // px from the edge of the world view, per place (8.0.4: Top flush)
 list    SIZES  = [0.8, 1.0, 1.25];                  // S, M, L
 vector  WHITE  = <1.0, 1.0, 1.0>;
 float   PADX   = 8.0;                               // px of air in a word cell, each side (make_strip.py PAD)
@@ -49,8 +47,7 @@ float   PADX   = 8.0;                               // px of air in a word cell,
 key     gOwner;
 string  gTW = TEXTURE_BLANK;       // the textures
 string  gTM = TEXTURE_BLANK;
-integer gBand;                     // the parts' links
-integer gBox;
+integer gBox;                      // the parts' links
 integer gHalo;
 integer gShut;                      // the shutter (8.1.0), at the right end
 integer gAutoP;                     // the Orbit (8.3.0), at the left end
@@ -64,9 +61,7 @@ list    gUL;                       // underlines
 integer gFound;
 
 float   gA = 1.778;                // the window
-float   gRX;                       // the [12]'s x from the screen's middle (8.5.0: on the left); parts are placed from it
 integer gSY = 1;                   // HUD +Y is left (/12 flip for a viewer that differs)
-integer gPlace;
 float   gS = 1.0;                  // size
 integer gOpen;
 integer gFade = 3;                 // fade step (3: done)
@@ -105,15 +100,14 @@ find()
     gSL = [0, 0, 0, 0];
     gOL = [0, 0, 0, 0, 0, 0];
     gUL = [0, 0, 0];
-    gBand = 0; gBox = 0; gHalo = 0; gSep = 0; gShp = 0; gLnk = 0; gShut = 0; gAutoP = 0;
+    gBox = 0; gHalo = 0; gSep = 0; gShp = 0; gLnk = 0; gShut = 0; gAutoP = 0;
     integer i;
     for (i = 2; i <= llGetNumberOfPrims(); i++)
     {
         string n = llGetLinkName(i);
         string h = llGetSubString(n, 0, 4);
         integer k = (integer)llGetSubString(n, 5, -1);
-        if (n == "t12 band") gBand = i;
-        else if (n == "t12 box") gBox = i;
+        if (n == "t12 box") gBox = i;
         else if (n == "t12 halo") gHalo = i;
         else if (n == "t12 sep") gSep = i;
         else if (n == "t12 shape") gShp = i;
@@ -124,7 +118,7 @@ find()
         else if (h == "t12 o" && k < 6) gOL = llListReplaceList(gOL, [i], k, k);
         else if (h == "t12 u" && k < 3) gUL = llListReplaceList(gUL, [i], k, k);
     }
-    gFound = (gBand && llList2Integer(gSL, 3));
+    gFound = (gBox && llList2Integer(gSL, 3));
 }
 
 // ---- textures ---------------------------------------------------------------------
@@ -182,34 +176,12 @@ list uvMark(string m)
 }
 
 // ---- placing ---------------------------------------------------------------------------
-// the screen centre, seen from the HUD point the HUD is worn on (crop.lsl's table)
-vector centre()
-{
-    integer p = llListFindList([ATTACH_HUD_TOP_RIGHT, ATTACH_HUD_TOP_CENTER, ATTACH_HUD_TOP_LEFT, ATTACH_HUD_BOTTOM_LEFT,
-        ATTACH_HUD_BOTTOM, ATTACH_HUD_BOTTOM_RIGHT], [llGetAttached()]);
-    if (p < 0) return ZERO_VECTOR;
-    return <0.0, gA * 0.5 * gSY * llList2Float([1.0, 0.0, -1.0, -1.0, 0.0, 1.0], p), 0.5 * llList2Float([-1.0, -1.0, -1.0, 1.0, 1.0, 1.0], p)>;
-}
-
-float stripH()
-{
-    return px(40.0);
-}
-
-// the strip's middle line, from the screen centre
-float midZ()
-{
-    float z = 0.5 - llList2Float(MARGIN, gPlace) / 1080.0 - stripH() * 0.5;     // the viewer's bars do not scale with you
-    if (gPlace >= 2) z = -z;
-    return z;
-}
-
 // a part at screen x, z (from the [12]) with depth d, size w x h, and its look
 list at(integer link, float x, float z, float d, float w, float h)
 {
     if (w < 0.01) w = 0.01;
     if (h < 0.01) h = 0.01;
-    return [PRIM_LINK_TARGET, link, PRIM_POS_LOCAL, <d, -(x - gRX) * gSY, z>, PRIM_ROT_LOCAL, ZERO_ROTATION, PRIM_SIZE, <0.01, w, h>];
+    return [PRIM_LINK_TARGET, link, PRIM_POS_LOCAL, <d, -x * gSY, z>, PRIM_ROT_LOCAL, ZERO_ROTATION, PRIM_SIZE, <0.01, w, h>];
 }
 
 // a thin white line (an underline, under a lit word): a blank face cut down to ~2 px with PRIM_SLICE (a box slices
@@ -275,24 +247,16 @@ layout()
     // closed: the strip shrinks away
     if (f <= 0.0)
     {
-        list L = [gBand, gBox, gHalo, gSep, gShp, gLnk, gShut, gAutoP] + gSL + gOL + llList2List(gUL, 0, 1 + (gEye <= -9.0));
+        list L = [gBox, gHalo, gSep, gShp, gLnk, gShut, gAutoP] + gSL + gOL + llList2List(gUL, 0, 1 + (gEye <= -9.0));
         for (i = 0; i < llGetListLength(L); i++) put(away(llList2Integer(L, i)));
         gOptVis = [];
         go();
         return;
     }
-    float H = stripH();
     float hw = px(26.0);                                        // a word part's height (the 48 px cell): 12.5 px words
     float gap = px(22.0);
-    float Wc = gA;                                              // 8.5.0: edge to edge, ultrawide too (no 16:9 area)
-    gRX = -gA * 0.5 + px(38.0);                                 // the [12] (screen.lsl's rootX): every part from it
-    float inset = px(74.0);                                     // the margin, the [12], a gap
-    // the band: solid black, the whole width, from the screen's edge to the strip's far side (8.0.4: it was a fade,
-    // and see-through wherever a shape's bar is thinner than the strip)
-    float mg = llList2Float(MARGIN, gPlace) / 1080.0;
-    float bz = mg * 0.5;
-    if (gPlace >= 2) bz = -bz;
-    show(gBand, 0.0, bz, 0.004, gA + 0.02, H + mg, [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0], ZERO_VECTOR, f, 0.0);
+    float inner = px(34.0);                                     // from the [12]'s middle to either block
+    // (the band: screen's, 8.5.2)
     float aw = 0.0;
     if (gAutoP) aw = llList2Float(mark("auto"), 4) / 48.0 * hw;
     integer auto = (gAuto && gAutoP);
@@ -300,11 +264,46 @@ layout()
     if (gShut) shw = llList2Float(mark("shut"), 4) / 48.0 * hw;
     list vis = gOpts;
     if (gOptShot != gShot || auto) vis = [];
-    if (gA < 1.5) gap = px(12.0);                              // a narrow window (5:4, 4:3): tighter, nothing overlaps
-    if (gA < 1.3) gap = px(7.0);
-    // the left: the [12] (screen), the Orbit, the shots. The running one bright and underlined (8.0.4: no longer ink on
-    // a white box, which read as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
-    float x = -Wc * 0.5 + inset;
+    string lk = "ALONE";
+    float la = 0.43;
+    if (gLinkSt == "on") { lk = gLinkN; la = 0.92; }
+    else if (gLinkSt == "shared") { lk = "SHARING"; la = 1.0; }
+    else if (gLinkSt == "theirs") { lk = "THEIR FILM"; la = 1.0; }
+    else if (gLinkSt == "dim") la = 0.22;
+    else if ((integer)gLinkN > 0) lk = gLinkN;              // alone: the Take 12s near you, quietly (8.2.0)
+    if ((integer)lk > 9) lk = "9";
+    float lc = llList2Float(mark("link" + lk), 4);
+    float lw = lc / 48.0 * hw;
+    float sw = llList2Float(mark("shape" + gShapeL), 4) / 48.0 * hw;
+    // mirrored (8.5.2): the [12] in the middle; left the Orbit and the shots, right the options, the frame, Connect, the
+    // shutter. Both blocks as wide as the wider one, their words evenly spread across it (3 or more), so the two sides
+    // balance whatever the shot's options; fewer (Auto) sit close to the [12]
+    float sL = aw;
+    integer nL = (gAutoP != 0);
+    for (i = 0; i < 4; i++) if (!auto || llToLower(llList2String(SHOTS, i)) == gShot) { sL += wordW(llList2String(SHOTS, i), hw); nL++; }
+    float sR = sw + lw + shw;
+    integer nR = 2 + (shw > 0.0) + llGetListLength(vis);
+    for (i = 0; i < llGetListLength(vis); i++)
+    {
+        if (llList2String(vis, i) == "/") sR += px(16.0);
+        else sR += wordW(llList2String(vis, i), hw);
+    }
+    // a narrow window (5:4 at L): the edges are the limit, and the words a touch smaller if even close together they
+    // would not fit
+    float room = gA * 0.5 - inner - px(10.0);
+    float q = (room - (nR - 1) * px(3.0)) / sR;
+    if ((room - (nL - 1) * px(3.0)) / sL < q) q = (room - (nL - 1) * px(3.0)) / sL;
+    if (q < 1.0) { hw *= q; aw *= q; shw *= q; lw *= q; sw *= q; sL *= q; sR *= q; }
+    float wb = sL + (nL - 1) * gap;
+    if (sR + (nR - 1) * gap > wb) wb = sR + (nR - 1) * gap;
+    if (wb > room) wb = room;
+    float spL = gap;
+    if (nL >= 3) spL = (wb - sL) / (nL - 1);
+    float spR = gap;
+    if (nR >= 3) spR = (wb - sR) / (nR - 1);
+    // the left, towards the [12]. The running shot bright and underlined (8.0.4: no longer ink on a white box, which read
+    // as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
+    float x = -inner - (sL + (nL - 1) * spL);
     integer litBox;
     integer halo;
     // Auto's Orbit first: lit while Auto directs, quiet when the camera is yours
@@ -316,7 +315,7 @@ layout()
         if (gState == "watch") aa = 0.27;
         if (LITE) aa = 0.22;                                // the free Scenery: in the full Take 12
         show(gAutoP, x + aw * 0.5, 0.0, 0.001, aw, hw, uvMark(ac), WHITE, aa * f, 0.0);
-        x += aw + gap;
+        x += aw + spL;
     }
     for (i = 0; i < 4; i++)
     {
@@ -349,62 +348,32 @@ layout()
             }
             if (gState == "watch" && st != "lit") a = 0.27;
             show(llList2Integer(gSL, i), cx, 0.0, 0.001, wd, hw, uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0), WHITE, a * f, 0.0);
-            x += wd + gap;
+            x += wd + spL;
         }
     }
     if (!litBox) put(away(gBox));
-    // the options, from the right, after the shutter: the right hand's key, as on a camera (8.1.0). Lit while the
-    // shutter is open (the moment held); dim with your own camera (nothing to hold)
-    // the right, from the edge: the shutter, Connect, the frame (always there), then the shot's options (8.5.0: the frame
-    // and Connect sat either side of a centred [12])
-    x = Wc * 0.5 - 200.0 / 1080.0;                             // the viewer's notices sit top right (8.5.1)
-    if (gA < 1.5) x = Wc * 0.5 - 60.0 / 1080.0;                 // ... a narrow window has no room for that
-    if (shw > 0.0)
-    {
-        float sa = 0.8;
-        string sc = "shut";
-        if (gState == "photo") { sc = "shutON"; sa = 1.0; }
-        else if (gState != "film" && gState != "held") sa = 0.22;
-        show(gShut, x - shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
-        x -= shw + gap;
-    }
-    string lk = "ALONE";
-    float la = 0.43;
-    if (gLinkSt == "on") { lk = gLinkN; la = 0.92; }
-    else if (gLinkSt == "shared") { lk = "SHARING"; la = 1.0; }
-    else if (gLinkSt == "theirs") { lk = "THEIR FILM"; la = 1.0; }
-    else if (gLinkSt == "dim") la = 0.22;
-    else if ((integer)gLinkN > 0) lk = gLinkN;              // alone: the Take 12s near you, quietly (8.2.0)
-    if ((integer)lk > 9) lk = "9";
-    float lc = llList2Float(mark("link" + lk), 4);
-    float lw = lc / 48.0 * hw;
-    show(gLnk, x - lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
-    float lx = x - lw;                                          // (THEIR FILM's underline, below)
-    x -= lw + gap;
-    float sw = llList2Float(mark("shape" + gShapeL), 4) / 48.0 * hw;
-    float ssa = 0.86;
-    if (gShapeL == "DIM") ssa = 0.27;
-    show(gShp, x - sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
-    x -= sw + px(32.0);
+    // the right, from the [12]: the shot's options, then the frame, Connect and the shutter (the right hand's key, as on a
+    // camera, 8.1.0). The shutter lit while open (the moment held); dim with your own camera (nothing to hold)
+    x = inner;
     integer part = 0;
     integer u = 0;
     integer sep;
     gOptVis = [];
-    for (i = llGetListLength(vis) - 1; i >= 0; i--)
+    for (i = 0; i < llGetListLength(vis); i++)
     {
         string w = llList2String(vis, i);
         if (w == "/")
         {
-            if (gSep) show(gSep, x - px(8.0), 0.0, 0.001, 0.01, px(16.0), uvMark("sep"), WHITE, 0.4 * f, 0.0);
+            if (gSep) show(gSep, x + px(8.0), 0.0, 0.001, 0.01, px(16.0), uvMark("sep"), WHITE, 0.4 * f, 0.0);
             sep = TRUE;
-            x -= px(16.0) + gap;
+            x += px(16.0) + spR;
         }
         else if (part < 6)
         {
             list c = word(w);
             float wd = llList2Float(c, 2) / 48.0 * hw;
             float tw = (llList2Float(c, 2) - 2.0 * PADX) / 48.0 * hw;
-            float cx = x - wd * 0.5;
+            float cx = x + wd * 0.5;
             string st = llList2String(gOptSt, i);
             float a = alphaOf(st);
             if (gState == "watch") a = 0.27;
@@ -419,40 +388,35 @@ layout()
                 show(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0), uvMark("halo"), WHITE, 0.86 * f, 0.0);
                 halo = TRUE;
             }
-            gOptVis += [w];                                  // the word on part k (right to left)
+            gOptVis += [w];                                  // the word on part k (left to right)
             part++;
-            x -= wd + gap;
+            x += wd + spR;
         }
+    }
+    float ssa = 0.86;
+    if (gShapeL == "DIM") ssa = 0.27;
+    show(gShp, x + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
+    x += sw + spR;
+    show(gLnk, x + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
+    x += lw + spR;
+    if (shw > 0.0)
+    {
+        float sa = 0.8;
+        string sc = "shut";
+        if (gState == "photo") { sc = "shutON"; sa = 1.0; }
+        else if (gState != "film" && gState != "held") sa = 0.22;
+        show(gShut, x + shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
     }
     if (!halo) put(away(gHalo));
     if (!sep) put(away(gSep));
     for (i = part; i < 6; i++) put(away(llList2Integer(gOL, i)));
-    if (gLinkSt == "theirs" && u < 3)
-    {
-        // under the word, past the rings: in the cell the word starts at PADX + 52 px and ends PADX before the edge
-        float tw = (lc - 2.0 * PADX - 52.0) / 48.0 * hw;
-        put(line(llList2Integer(gUL, u), lx + (PADX + 52.0) / 48.0 * hw + tw * 0.5, -px(11.5), tw, 0.94 * f));
-        u++;
-    }
     for (i = u; i < 3; i++) if (!(i == 2 && gEye > -9.0)) put(away(llList2Integer(gUL, i)));
     go();
-}
-
-// ---- the window ---------------------------------------------------------------------------
-measure()
-{
-    if (!(llGetPermissions() & PERMISSION_TRACK_CAMERA)) return;
-    float a = llGetCameraAspect();
-    if (a < 0.3 || llFabs(a - gA) < 0.005) return;
-    gA = a;
-    layout();
 }
 
 load()
 {
     gClear = (cfg("keys") == "clear");
-    gPlace = llListFindList(PLACES, [cfg("place")]);
-    if (gPlace < 0) gPlace = 0;
     integer s = llListFindList(["s", "m", "l"], [cfg("size")]);
     if (s < 0) s = 1;
     gS = llList2Float(SIZES, s);
@@ -525,7 +489,7 @@ default
         gOwner = llGetOwner();
         find();
         load();
-        if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
+        llMessageLinked(LINK_SET, STRIP, "aspect?", "");        // the window: screen measures it (8.5.2)
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "strip");
         layout();
         tick();
@@ -546,17 +510,6 @@ default
         gEye = -9.0;
         gFaded = FALSE;
         gAuto = FALSE;                                      // Auto lights when tracking.lsl starts it
-        llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
-    }
-
-    run_time_permissions(integer p)
-    {
-        if (p & PERMISSION_TRACK_CAMERA)
-        {
-            gA = 0.0;
-            measure();
-            if (gA < 0.3) gA = 1.778;
-        }
         layout();
         tick();
     }
@@ -649,7 +602,8 @@ default
         }
         else if (num == STRIP)
         {
-            if (llGetSubString(str, 0, 4) == "note|") return;   // screen's
+            if (llGetSubString(str, 0, 4) == "note|" || str == "aspect?") return;   // screen's
+            if (llGetSubString(str, 0, 6) == "aspect|") { gA = (float)llGetSubString(str, 7, -1); layout(); return; }
             list L = llParseStringKeepNulls(str, ["|"], []);
             string a = llList2String(L, 0);
             if (a == "toggle" || a == "open" || a == "close")
@@ -726,7 +680,6 @@ default
             load();                                         // the textures, once screen has adopted them
             if (gTW != TEXTURE_BLANK && gTM != TEXTURE_BLANK) layout();
         }
-        measure();
         tick();
     }
 }
