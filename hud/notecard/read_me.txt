@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.5.3)
+TAKE 12  -  READ ME  (8.5.4)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 

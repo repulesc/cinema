@@ -47,17 +47,17 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
-- **Width (8.5.2, mirrored):** the [12] (the root) in the middle of the top; the strip's two blocks either side of it,
-  34 px from its middle. The left, towards the [12]: the Orbit, the shots. The right, from the [12]: the running shot's
-  options, the frame (always there), Connect, the shutter. Both blocks are as wide as the wider one, their words evenly
-  spread across it (3 or more; Auto's two sit close), so the sides balance whatever the shot's options. The band
-  (screen's) runs edge to edge; the words stop short of the corners (the viewer's notices at the top right). A
-  narrow window: the blocks end 10 px from the edges, the gaps give way (to 3 px), and if even that does not fit (5:4
-  at L) every word is drawn a touch smaller. screen tells strip the window (STRIP `aspect|<a>`; strip asks with
-  `aspect?`).
+- **Width (8.5.4, steady):** the [12] (the root) in the middle of the top. One gap (28 px) between every word, in
+  every shot. Left, packed against the [12] (34 px from its middle): the shots, then the Orbit. Right, packed against
+  it: the running shot's options. Then the tools, pinned so they never move when the shot changes: the shutter's
+  right edge 744 px from the [12]'s middle (the widest options, Tracking's or a seat's, about 400 px, still fit); the
+  frame's mark where the widest frame (FULL) starts, Connect against the shutter. A narrow window (the pin past 10 px
+  from its edge): everything a touch smaller, the same in every shot. (8.5.2 spread both blocks to one width; the gaps
+  then changed with every shot and the words jumped.) screen tells strip the window (STRIP `aspect|<a>`; strip asks
+  with `aspect?`).
 - **No fade (8.5.3):** the strip shows until a double-tap closes it (8.5.0's fade after 4 s untouched was removed;
   `cin.fade` is no longer read).
-- **Notes (8.5.0; centred in 8.5.2):** under the [12], centred on it, on a dark plate (`t12 plate`, the marks' `box` cell, black at
+- **Notes (8.5.0; centred in 8.5.2):** under the [12], centred on it, on a dark plate (8.5.4: 7 px higher, the text sat high on it) (`t12 plate`, the marks' `box` cell, black at
   80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
   character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
 - **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at

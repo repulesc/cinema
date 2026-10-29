@@ -1,5 +1,13 @@
 # Changelog
 
+## 8.5.4 (a steady strip)
+- **The words no longer jump when you change shot.** 8.5.2 stretched both halves of the strip to the same width and
+  spread their words, so every shot had its own gaps and everything moved. Now there is one gap between every word,
+  the shots and the Orbit never move, the shot's options sit next to the [12], and the frame, Connect and the shutter
+  are pinned at the right end: changing shot changes only the options.
+- **Tips sit in the middle of their plate** (the text rode high on it).
+- strip and screen change; every script is 8.5.4.
+
 ## 8.5.3 (the strip stays)
 - **The automatic fade is gone.** 8.5.0 hid the strip 4 s after your last touch, which got in the way while you
   worked. The strip now shows until you double-tap the [12] (and a double-tap brings it back), as before 8.5.0. A tap
