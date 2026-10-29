@@ -15,7 +15,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.4";
+string VERSION = "8.5.5";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -273,22 +273,18 @@ layout()
     float lc = llList2Float(mark("link" + lk), 4);
     float lw = lc / 48.0 * hw;
     float sw = llList2Float(mark("shape" + gShapeL), 4) / 48.0 * hw;
-    // steady (8.5.4): one gap between every word, in every shot. The [12] in the middle; on its left the Orbit and the
-    // shots, packed against it; on its right the shot's options, packed against it, then the frame, Connect and the
-    // shutter pinned at the right end, where the widest options (Tracking's, a seat's: about 400 px) still fit. Nothing
-    // moves when you change shot but the options. A narrow window: everything a touch smaller, the same in every shot
-    float q = (gA * 0.5 - px(10.0) - inner) / (px(744.0) - inner);
+    // the Mac's way (8.5.5): the [12] at the left, then every button in its one place, the same in every shot: the
+    // Orbit, the four shots, the frame, the shutter, Connect; the running shot's options last, so they never move
+    // anything. Nothing at the right (the viewer's notices). A narrow window: everything a touch smaller, the same in
+    // every shot (1210 px: the widest row, a seat's options and THEIR FILM)
+    float q = (gA - px(38.0) - 200.0 / 1080.0 - inner) / (px(1210.0) - inner);
     if (q > 1.0) q = 1.0;
     hw *= q; gap *= q; aw *= q; shw *= q; lw *= q; sw *= q;
-    float pin = inner + (px(744.0) - inner) * q;            // the shutter's right edge
-    float sL = aw;
-    integer nL = (gAutoP != 0);
-    for (i = 0; i < 4; i++) if (!auto || llToLower(llList2String(SHOTS, i)) == gShot) { sL += wordW(llList2String(SHOTS, i), hw); nL++; }
     float spL = gap;
     float spR = gap;
-    // the left, towards the [12]. The running shot bright and underlined (8.0.4: no longer ink on a white box, which read
-    // as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
-    float x = -inner - (sL + (nL - 1) * spL);
+    // the running shot bright and underlined (8.0.4: no longer ink on a white box, which read as a black smudge
+    // in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
+    float x = inner;
     integer litBox;
     integer halo;
     // Auto's Orbit first: lit while Auto directs, quiet when the camera is yours
@@ -306,7 +302,11 @@ layout()
     {
         string w = llList2String(SHOTS, i);
         list c = word(w);
-        if (auto && llToLower(w) != gShot) put(away(llList2Integer(gSL, i)));   // Auto: only the shot it chose
+        if (auto && llToLower(w) != gShot)                  // Auto: only the shot it chose, in its own place
+        {
+            put(away(llList2Integer(gSL, i)));
+            x += wordW(w, hw) + spL;
+        }
         else
         {
             float wd = llList2Float(c, 2) / 48.0 * hw;
@@ -337,9 +337,24 @@ layout()
         }
     }
     if (!litBox) put(away(gBox));
-    // the right, from the [12]: the shot's options, then the frame, Connect and the shutter (the right hand's key, as on a
-    // camera, 8.1.0). The shutter lit while open (the moment held); dim with your own camera (nothing to hold)
-    x = inner;
+    // then the tools: the frame (its place as wide as the widest, FULL), the shutter (lit while open: the moment held;
+    // dim with your own camera, nothing to hold), Connect (its place as wide as THEIR FILM)
+    float ssa = 0.86;
+    if (gShapeL == "DIM") ssa = 0.27;
+    show(gShp, x + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
+    x += 126.0 / 48.0 * hw + gap;
+    if (shw > 0.0)
+    {
+        float sa = 0.8;
+        string sc = "shut";
+        if (gState == "photo") { sc = "shutON"; sa = 1.0; }
+        else if (gState != "film" && gState != "held") sa = 0.22;
+        show(gShut, x + shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
+        x += shw + gap;
+    }
+    show(gLnk, x + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
+    x += 228.0 / 48.0 * hw + gap;
+    // last, the running shot's options
     integer part = 0;
     integer u = 0;
     integer sep;
@@ -377,27 +392,6 @@ layout()
             part++;
             x += wd + spR;
         }
-    }
-    // the tools, pinned: the frame's mark where the widest frame (FULL) starts, Connect and the shutter against the right
-    // end (pushed out only by options wider than any shot's)
-    float xl = pin - shw - gap * (shw > 0.0) - lw;
-    float xt = xl - gap - 126.0 / 48.0 * hw;
-    integer pushed = (x > xt);
-    if (!pushed) x = xt;
-    float ssa = 0.86;
-    if (gShapeL == "DIM") ssa = 0.27;
-    show(gShp, x + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
-    x += sw + spR;
-    if (!pushed) x = xl;
-    show(gLnk, x + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
-    x += lw + spR;
-    if (shw > 0.0)
-    {
-        float sa = 0.8;
-        string sc = "shut";
-        if (gState == "photo") { sc = "shutON"; sa = 1.0; }
-        else if (gState != "film" && gState != "held") sa = 0.22;
-        show(gShut, x + shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
     }
     if (!halo) put(away(gHalo));
     if (!sep) put(away(gSep));

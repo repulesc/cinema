@@ -144,7 +144,7 @@ check(abs(band[1] + band[3] / 2 - 0.5) < 1e-3, "the band reaches the top edge (%
 check(abs(band[3] - 40 / 1080.0) < 1e-3, "the band is the strip's height, 40 px (8.5.0) (%.1f px)" % (band[3] * 1080))
 check(P("t12 band")["color"] == vec(0, 0, 0) and band[4] > 0.99 and str(P("t12 band")["tex"][0]) == C["TEXTURE_BLANK"], "the band: solid black")
 root = rect(h, ana, "Take 12")
-check(abs(root[1] - (0.5 - 20 / 1080.0)) < 1e-3 and abs(root[0]) < 1e-3, "the [12] in the band's middle, in the middle (8.5.2) (%.4f, %.4f)" % (root[0], root[1]))
+check(abs(root[1] - (0.5 - 20 / 1080.0)) < 1e-3 and abs(root[0] - (-ana.aspect / 2 + 38 / 1080.0)) < 1e-3, "the [12] in the band's middle, at the left (8.5.5) (%.4f, %.4f)" % (root[0], root[1]))
 no_errors(w, "look")
 
 # ---- Portrait among bushes: it looks round for room ------------------------------------------------------------------------

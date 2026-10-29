@@ -47,17 +47,15 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
-- **Width (8.5.4, steady):** the [12] (the root) in the middle of the top. One gap (28 px) between every word, in
-  every shot. Left, packed against the [12] (34 px from its middle): the shots, then the Orbit. Right, packed against
-  it: the running shot's options. Then the tools, pinned so they never move when the shot changes: the shutter's
-  right edge 744 px from the [12]'s middle (the widest options, Tracking's or a seat's, about 400 px, still fit); the
-  frame's mark where the widest frame (FULL) starts, Connect against the shutter. A narrow window (the pin past 10 px
-  from its edge): everything a touch smaller, the same in every shot. (8.5.2 spread both blocks to one width; the gaps
-  then changed with every shot and the words jumped.) screen tells strip the window (STRIP `aspect|<a>`; strip asks
-  with `aspect?`).
+- **Width (8.5.5, the Mac's way):** the [12] (the root) at the left, its centre 38 px from the edge. After it, one gap
+  (28 px) apart, every button in one place whatever the shot: the Orbit, the four shots (Auto hides the others but
+  keeps the chosen one in its own place), the frame (a place as wide as FULL), the shutter, Connect (a place as wide
+  as THEIR FILM), then the running shot's options last, so they never move anything. The right 200 px stay free (the
+  viewer's notices). A narrow window: everything a touch smaller, the same in every shot (the widest row is 1210 px).
+  (8.5.2-8.5.4 centred the [12]; the words moved with every shot.)
 - **No fade (8.5.3):** the strip shows until a double-tap closes it (8.5.0's fade after 4 s untouched was removed;
   `cin.fade` is no longer read).
-- **Notes (8.5.0; centred in 8.5.2):** under the [12], centred on it, on a dark plate (8.5.4: 7 px higher, the text sat high on it) (`t12 plate`, the marks' `box` cell, black at
+- **Notes (8.5.0):** under the [12], from its left edge, on a dark plate (8.5.4: 7 px higher, the text sat high on it) (`t12 plate`, the marks' `box` cell, black at
   80 %). text sends STRIP `note|<text>`; screen sizes the plate from the longest line and the lines (about 7.2 px a
   character and 18 px a line: Second Life draws the text in the viewer's own font, whatever the window).
 - **Depth:** dot and ring in front of the disc (−X), words and lines at +0.001, halo at +0.002, band at +0.004, bars at
