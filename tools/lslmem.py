@@ -43,5 +43,7 @@ if __name__ == "__main__":
     free = (LIMIT - used) / 1024
     strict = not f.startswith("legacy/")
     low = free < 15.0
-    print(("FAIL  " if low and strict else "OK    ") + f"{f}: {stmts} statements, est. free memory {free:.1f} KB" + ("   <-- under 15 KB" if low else ""))
+    warn = free < 17.0          # in-world, sync (15.2) and strip (15.4) ran out of memory: the model is optimistic there
+    print(("FAIL  " if low and strict else "WARN  " if warn and strict else "OK    ") + f"{f}: {stmts} statements, est. free memory {free:.1f} KB"
+          + ("   <-- under 15 KB" if low else "   <-- under 17 KB: in-world, scripts near 15 KB ran out (8.4.2 sync, 8.5.0 strip)" if warn and strict else ""))
     sys.exit(1 if low and strict else 0)

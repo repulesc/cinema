@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.5.1 (strip: room to breathe; clear of the viewer's notices)
+- **strip ran out of memory in-world** ("Stack-Heap Collision"): 8.5.0 put the fade and a narrow-window fit into it,
+  15.4 KB estimated free, the level where sync had run out in 8.4.2. Now the fade is timed by screen (it has room),
+  the narrow-window rule is two lines, strip no longer searches the contents for textures (screen keeps them), and it
+  sends its parts in smaller batches: 17.2 KB. `tools/lslmem.py` warns under 17 KB (core and ui are near it).
+- **The viewer's notices** (the chiclets at the top right) covered the strip's right end: it now ends 200 px from the
+  edge (60 px on a 5:4 or 4:3 window, where there is no room for more).
+- Every script is 8.5.1 (strip and screen change).
+
 ## 8.5.0 (the strip, redesigned: quiet, on the left)
 - **The [12] at the far left; nothing in the middle.** The middle of the picture is the film's. The left: the [12],
   Auto's Orbit, the shots. The right, from the edge: the shutter, Connect, the frame, the running shot's options. Edge

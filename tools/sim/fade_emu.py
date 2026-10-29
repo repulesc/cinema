@@ -32,11 +32,11 @@ check(ana.dialog is not None, "the next tap: the menu")
 ana.click("Close"); w.run(0.5)
 
 # ---- a touch on the strip keeps it 4 s more --------------------------------------------------------------------------------
-w.run(3)
+w.run(1.5)
 ana.touch("t12 shape", hold=0.1); w.run(0.5)
 if ana.dialog: ana.click("Close") if "Close" in ana.labels() else None
 w.run(2.5)
-check(var(h, "strip", "gFaded") == 0, "touched at 3 s: still there 3 s later")
+check(var(h, "strip", "gFaded") == 0, "touched before its 4 s ran out: still there 3 s later")
 w.run(3)
 check(var(h, "strip", "gFaded") == 1, "... then it fades")
 

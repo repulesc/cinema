@@ -15,7 +15,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.0";
+string VERSION = "8.5.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -69,9 +69,7 @@ integer gPlace;
 float   gS = 1.0;                  // size
 integer gOpen;
 integer gFade = 3;                 // fade step (3: done)
-integer gFaded;                    // 8.5.0: 4 s after your last touch the strip fades away; the [12] stays (a tap: back)
-float   gIdleT;                    // ... your last touch, or the strip opened
-integer gFadeOn = TRUE;            // cin.fade (/12 fade on|off)
+integer gFaded;                    // 8.5.0: faded away, the [12] alone (screen times it: STRIP faded|1, faded|0)
 string  gState = "wait";           // core: wait / film / held / letgo / off / watch
 string  gShot;                     // the running shot ("" waiting)
 string  gHint;                     // a shot glowing once (a hint)
@@ -140,20 +138,7 @@ string uuid(string tag)
         list p = llParseString2List(llList2String(D, i), [" "], []);
         if (llList2String(p, 0) == tag) return llList2String(p, 1);
     }
-    string n = dropped(tag);
-    if (n != "") return n;
-    return TEXTURE_BLANK;
-}
-
-string dropped(string tag)
-{
-    integer i;
-    for (i = llGetInventoryNumber(INVENTORY_TEXTURE) - 1; i >= 0; i--)
-    {
-        string n = llGetInventoryName(INVENTORY_TEXTURE, i);
-        if (llGetSubString(n, 0, llStringLength(tag) - 1) == tag) return n;
-    }
-    return "";
+    return TEXTURE_BLANK;                                   // (screen adopts a dropped texture and keeps its UUID: 8.4.2)
 }
 
 
@@ -258,7 +243,7 @@ float alphaOf(string st)
 put(list L)
 {
     gP += L;
-    if (llGetListLength(gP) > 60) go();
+    if (llGetListLength(gP) > 36) go();
 }
 
 go()
@@ -314,18 +299,8 @@ layout()
     if (gShut) shw = llList2Float(mark("shut"), 4) / 48.0 * hw;
     list vis = gOpts;
     if (gOptShot != gShot || auto) vis = [];
-    // a narrow window (5:4 at size L): the gaps give way, so nothing overlaps (the widest Connect and frame words counted)
-    float need = px(98.0) + aw + shw + px(32.0) + (llList2Float(mark("linkTHEIR FILM"), 4) + llList2Float(mark("shapeFULL"), 4)) / 48.0 * hw;
-    for (i = 0; i < 4; i++) need += wordW(llList2String(SHOTS, i), hw) + gap;
-    for (i = 0; i < llGetListLength(vis); i++)
-    {
-        if (llList2String(vis, i) == "/") need += px(16.0);
-        else need += wordW(llList2String(vis, i), hw);
-        need += gap;
-    }
-    need += 2.0 * gap;
-    if (need > gA) gap -= (need - gA) / (6.0 + llGetListLength(vis));
-    if (gap < px(6.0)) gap = px(6.0);
+    if (gA < 1.5) gap = px(12.0);                              // a narrow window (5:4, 4:3): tighter, nothing overlaps
+    if (gA < 1.3) gap = px(7.0);
     // the left: the [12] (screen), the Orbit, the shots. The running one bright and underlined (8.0.4: no longer ink on
     // a white box, which read as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
     float x = -Wc * 0.5 + inset;
@@ -381,7 +356,8 @@ layout()
     // shutter is open (the moment held); dim with your own camera (nothing to hold)
     // the right, from the edge: the shutter, Connect, the frame (always there), then the shot's options (8.5.0: the frame
     // and Connect sat either side of a centred [12])
-    x = Wc * 0.5 - px(24.0);
+    x = Wc * 0.5 - 200.0 / 1080.0;                             // the viewer's notices sit top right (8.5.1)
+    if (gA < 1.5) x = Wc * 0.5 - 60.0 / 1080.0;                 // ... a narrow window has no room for that
     if (shw > 0.0)
     {
         float sa = 0.8;
@@ -481,7 +457,6 @@ load()
     gS = llList2Float(SIZES, s);
     gSY = 1;
     if (cfg("flip") == "1") gSY = -1;
-    gFadeOn = (cfg("fade") != "0");
     gTW = uuid("take12_words");
     gTM = uuid("take12_marks");
 }
@@ -531,23 +506,12 @@ touched(integer link)
     }
 }
 
-// the strip back in view, for 4 s more (a tap on the faded [12], the strip opened)
-wake()
-{
-    gIdleT = llGetTime();
-    if (!gFaded) return;
-    gFaded = FALSE;
-    gFade = 1;
-    llMessageLinked(LINK_SET, STRIP, "faded|0", "");
-}
-
 tick()
 {
     float t = 2.0;
     if (gFade < 3 && gOpen && !gFaded) t = 0.07;
     else if (gFaded && gFade > 0) t = 0.2;                  // fading out: 0.6 s
     else if (gHoldL > 0) t = 0.1;
-    else if (gOpen && !gFaded && gFadeOn) t = 0.5;          // the 4 s
     else if (gHint != "") t = 1.0;
     llSetTimerEvent(t * (llGetAttached() != 0));
 }
@@ -579,6 +543,7 @@ default
         gShot = "";
         gHint = "";
         gEye = -9.0;
+        gFaded = FALSE;
         gAuto = FALSE;                                      // Auto lights when tracking.lsl starts it
         llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
     }
@@ -610,7 +575,6 @@ default
     {
         if (llDetectedKey(0) != gOwner) return;
         integer link = llDetectedLinkNumber(0);
-        gIdleT = llGetTime();                               // a touch: the strip stays 4 s more
         if (link <= 1 || !gOpen) return;
         // the lit shot: a tap is its next view, a hold (0.8 s) hands the camera to your viewer (8.0.7); the lit Orbit
         // too: a hold ends Auto and the camera is your viewer's (8.4.5)
@@ -684,7 +648,7 @@ default
         }
         else if (num == STRIP)
         {
-            if (llGetSubString(str, 0, 4) == "note|" || llGetSubString(str, 0, 5) == "faded|") return;   // screen's, ui's
+            if (llGetSubString(str, 0, 4) == "note|") return;   // screen's
             list L = llParseStringKeepNulls(str, ["|"], []);
             string a = llList2String(L, 0);
             if (a == "toggle" || a == "open" || a == "close")
@@ -694,7 +658,6 @@ default
                 if (a == "close") o = FALSE;
                 if (o && !gOpen) gFade = 1;
                 gOpen = o;
-                wake();
                 llLinksetDataWriteProtected("cin.open", (string)gOpen, PASS);   // worn again, as you left it (8.0.5)
             }
             else if (a == "eye")
@@ -703,16 +666,19 @@ default
                 if (llList2String(L, 1) != "off") gEye = (float)llList2String(L, 1);
             }
             else if (a == "layout") load();
-            else if (a == "wake") wake();                   // a tap on the faded [12] (ui)
+            else if (a == "faded")                          // screen: 4 s untouched, or back
+            {
+                integer fd = (integer)llList2String(L, 1);
+                if (!fd && gFaded) gFade = 1;
+                gFaded = fd;
+            }
             layout();
             tick();
         }
-        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "keys" || str == "fade" || str == "all"))
+        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "keys" || str == "all"))
         {
             load();
-            if (!gFadeOn) wake();                           // /12 fade off: the strip stays
             layout();
-            tick();
         }
         else if (num == CMD && llGetSubString(str, 0, 4) == "auto|")
         {
@@ -743,11 +709,6 @@ default
         {
             gFade++;
             layout();
-        }
-        if (gOpen && !gFaded && gFadeOn && gFade >= 3 && gEye <= -9.0 && !gHoldL && llGetTime() - gIdleT > 4.0)
-        {
-            gFaded = TRUE;                                  // nothing touched for 4 s: the strip fades, the [12] stays
-            llMessageLinked(LINK_SET, STRIP, "faded|1", "");
         }
         if (gFaded && gFade > 0)
         {

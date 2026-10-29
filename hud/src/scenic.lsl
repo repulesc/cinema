@@ -16,7 +16,7 @@
 //  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
 // ============================================================================
 
-string VERSION = "8.5.0";
+string VERSION = "8.5.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
