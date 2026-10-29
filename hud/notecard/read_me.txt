@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.5.2)
+TAKE 12  -  READ ME  (8.5.3)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -19,8 +19,8 @@ at the strip's left end, and you direct yourself.
 
 === THE [12] ============================================
 
-TAP         the menu: Connect, Settings, Help (setup only); when the strip has faded, the first tap brings it back
-DOUBLE-TAP  the strip opens or closes
+TAP         the menu: Connect, Settings, Help (setup only)
+DOUBLE-TAP  the strip opens or closes (closed, only the [12] stays)
 HOLD        everything off (camera, bars, strip); hold again: back exactly as it was
 
 The [12] tells you, quietly:
@@ -33,9 +33,8 @@ The [12] tells you, quietly:
 === THE STRIP ===========================================
 
 A thin line of words at the top of your screen (Settings > Look > Place moves it lower, or to the bottom):
-  [12]  ◯  TRACKING  PORTRAIT  FIXED  SCENIC          the running shot's options   ▭ 2.39   ⇄ 2   the shutter
-A few seconds after you last touch it, the strip fades away and only the [12] stays; tap it to bring the strip back.
-/12 fade off keeps the strip on screen (/12 fade on: it fades again). Notes show under the [12], on a dark plate.
+  ◯  TRACKING  PORTRAIT  FIXED  SCENIC   [12]   the running shot's options   ▭ 2.39   ⇄ 2   the shutter
+It stays until you double-tap the [12]. Notes show under the [12], on a dark plate.
 The ring at the left end is AUTO; lit, the strip shows only the shot it chose, in faint letters.
 The shot that films is underlined; its options are on the right, the ones in use underlined.
 The frame key (▭) shows the frame on screen; tap it to choose another, with its snapshot size.

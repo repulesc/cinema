@@ -15,7 +15,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.2";
+string VERSION = "8.5.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -64,7 +64,6 @@ integer gSY = 1;                   // HUD +Y is left (/12 flip for a viewer that
 float   gS = 1.0;                  // size
 integer gOpen;
 integer gFade = 3;                 // fade step (3: done)
-integer gFaded;                    // 8.5.0: faded away, the [12] alone (screen times it: STRIP faded|1, faded|0)
 string  gState = "wait";           // core: wait / film / held / letgo / off / watch
 string  gShot;                     // the running shot ("" waiting)
 string  gHint;                     // a shot glowing once (a hint)
@@ -473,8 +472,7 @@ touched(integer link)
 tick()
 {
     float t = 2.0;
-    if (gFade < 3 && gOpen && !gFaded) t = 0.07;
-    else if (gFaded && gFade > 0) t = 0.2;                  // fading out: 0.6 s
+    if (gFade < 3 && gOpen) t = 0.07;
     else if (gHoldL > 0) t = 0.1;
     else if (gHint != "") t = 1.0;
     llSetTimerEvent(t * (llGetAttached() != 0));
@@ -507,7 +505,6 @@ default
         gShot = "";
         gHint = "";
         gEye = -9.0;
-        gFaded = FALSE;
         gAuto = FALSE;                                      // Auto lights when tracking.lsl starts it
         layout();
         tick();
@@ -620,12 +617,6 @@ default
                 if (llList2String(L, 1) != "off") gEye = (float)llList2String(L, 1);
             }
             else if (a == "layout") load();
-            else if (a == "faded")                          // screen: 4 s untouched, or back
-            {
-                integer fd = (integer)llList2String(L, 1);
-                if (!fd && gFaded) gFade = 1;
-                gFaded = fd;
-            }
             layout();
             tick();
         }
@@ -659,14 +650,9 @@ default
             }
             layout();
         }
-        if (gFade < 3 && gOpen && !gFaded)
+        if (gFade < 3 && gOpen)
         {
             gFade++;
-            layout();
-        }
-        if (gFaded && gFade > 0)
-        {
-            gFade--;
             layout();
         }
         if (gHint != "" && llGetTime() - gHintT > 5.0)

@@ -34,8 +34,8 @@ The facts we design around:
 ## The look: the Monitor
 A cinema camera's on-screen display, as part of the viewer:
 - **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a pure black band, edge to edge.
-- **The words' places (8.5.2, mirrored):** the [12] in the middle of the top, two blocks either side of it, as wide as each other. Left: Auto's Orbit and the shots. Right: the running shot's options, the frame `▭ 2.39`, Connect (two linked rings with a count, `SHARING` or `THEIR FILM`), the shutter. The words stop short of the corners, and faded only the [12] is left: a quiet mark at the top, like a camera's REC light.
-- **Quiet (8.5.0):** 4 s after your last touch the strip fades and only the [12] stays, quieter, like a camera's REC light; a tap on it brings the strip back. `/12 fade off` keeps it.
+- **The words' places (8.5.2, mirrored):** the [12] in the middle of the top, two blocks either side of it, as wide as each other. Left: Auto's Orbit and the shots. Right: the running shot's options, the frame `▭ 2.39`, Connect (two linked rings with a count, `SHARING` or `THEIR FILM`), the shutter. The words stop short of the corners; closed (a double-tap), only the [12] is left.
+- **It stays (8.5.3):** the strip never hides by itself; a double-tap on the [12] hides it and brings it back. (8.5.0's fade after 4 s untouched was taken out: it hid the strip while you worked.)
 - **Notes (8.5.0):** under the [12], on a dark plate, readable on any picture.
 - **Lit states:** the lit shot is ink on a white box; a lit option is underlined; KEEP NEW and UNDO sit in an outline.
 - **Size:** S, M or L; the strip is 40 px of a 1080 px window at M, its words 12.5 px.

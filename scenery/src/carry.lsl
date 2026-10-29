@@ -17,7 +17,7 @@
 //  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.5.2";
+string VERSION = "8.5.3";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 

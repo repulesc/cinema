@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.5.3 (the strip stays)
+- **The automatic fade is gone.** 8.5.0 hid the strip 4 s after your last touch, which got in the way while you
+  worked. The strip now shows until you double-tap the [12] (and a double-tap brings it back), as before 8.5.0. A tap
+  is always the menu. `/12 fade` is gone.
+- strip, screen, ui and text get a little more room. Every script is 8.5.3.
+
 ## 8.5.2 (the strip, mirrored)
 - **The [12] in the middle of the top, the strip's two blocks either side of it**, as wide as each other, their words
   evenly spread: left the Orbit and the shots, right the options, the frame, Connect and the shutter. The two sides
