@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.5.6 (the strip as in 8.4.4, with the 8.5 finish)
+- **Back to 8.4.4's places**, which worked: the [12] in the middle with the frame just left of it and Connect just
+  right of it; the shots from the left; the shutter at the right, the shot's options before it. Every button stays in
+  its place; changing shot changes only the options; in Auto the chosen shot keeps its place. 8.5.0-8.5.5 moved the
+  words four times (left, mirrored, pinned, Mac-style) and each was worse.
+- **Kept from 8.5:** the pure black band, the smaller [12], no dividers, notes on a plate, no automatic fade. The right
+  end stays 200 px from the edge (8.4.4: 180), clear of the viewer's notices.
+- strip and screen change; every script is 8.5.6.
+
 ## 8.5.5 (the Mac's way: every button in one place)
 - **The [12] back at the left, every button after it in one place that never changes:** the Orbit, the four shots,
   the frame, the shutter, Connect, and last the running shot's options. Changing shot changes only the options; in

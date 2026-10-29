@@ -15,7 +15,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.5";
+string VERSION = "8.5.6";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -252,8 +252,8 @@ layout()
         return;
     }
     float hw = px(26.0);                                        // a word part's height (the 48 px cell): 12.5 px words
-    float gap = px(28.0);
-    float inner = px(34.0);                                     // from the [12]'s middle to either block
+    float gap = px(22.0);
+    float mid = px(36.0);                                       // from the [12]'s middle to the frame key and to Connect
     // (the band: screen's, 8.5.2)
     float aw = 0.0;
     if (gAutoP) aw = llList2Float(mark("auto"), 4) / 48.0 * hw;
@@ -273,18 +273,28 @@ layout()
     float lc = llList2Float(mark("link" + lk), 4);
     float lw = lc / 48.0 * hw;
     float sw = llList2Float(mark("shape" + gShapeL), 4) / 48.0 * hw;
-    // the Mac's way (8.5.5): the [12] at the left, then every button in its one place, the same in every shot: the
-    // Orbit, the four shots, the frame, the shutter, Connect; the running shot's options last, so they never move
-    // anything. Nothing at the right (the viewer's notices). A narrow window: everything a touch smaller, the same in
-    // every shot (1210 px: the widest row, a seat's options and THEIR FILM)
-    float q = (gA - px(38.0) - 200.0 / 1080.0 - inner) / (px(1210.0) - inner);
+    // 8.4.4's places again (8.5.6; 8.5.0-8.5.5 moved them four times, each worse): the words in a centred 16:9 area;
+    // the shots from its left, 200 px in; the shutter and the options ending 200 px from its right; the frame key left
+    // of the [12], Connect right of it. Each half is kept for its widest (FULL and the shots; THEIR FILM, the widest
+    // options and the shutter), so nothing moves but the options. A narrow window: the insets give way, then
+    // everything a touch smaller, the same in every shot
+    float Wc = gA;
+    if (Wc > 1.778) Wc = 1.778;
+    float FW = llList2Float(mark("shapeFULL"), 4) / 48.0 * hw;
+    float need = FW + aw + gap * (aw > 0.0);
+    for (i = 0; i < 4; i++) need += wordW(llList2String(SHOTS, i), hw) + gap;
+    float optsW = llList2Float(mark("linkTHEIR FILM"), 4) / 48.0 * hw + px(400.0) + shw + gap;
+    if (optsW > need) need = optsW;
+    float inset = 200.0 / 1080.0;                               // clear of the viewer's notices (8.4.4: 180 px)
+    float q = (Wc * 0.5 - mid - 0.02) / (need + gap);           // the words keep their size while they fit at all
     if (q > 1.0) q = 1.0;
-    hw *= q; gap *= q; aw *= q; shw *= q; lw *= q; sw *= q;
+    hw *= q; gap *= q; aw *= q; shw *= q; lw *= q; sw *= q; FW *= q; need *= q;
+    if (Wc * 0.5 - mid - gap - need < inset) inset = Wc * 0.5 - mid - gap - need;
     float spL = gap;
     float spR = gap;
-    // the running shot bright and underlined (8.0.4: no longer ink on a white box, which read as a black smudge
-    // in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
-    float x = inner;
+    // the shots, from the left: the running one bright and underlined (8.0.4: no longer ink on a white box, which read
+    // as a black smudge in-world); the hint: an outline round one (FIXED sat down, PORTRAIT stopped)
+    float x = -Wc * 0.5 + inset;
     integer litBox;
     integer halo;
     // Auto's Orbit first: lit while Auto directs, quiet when the camera is yours
@@ -337,43 +347,42 @@ layout()
         }
     }
     if (!litBox) put(away(gBox));
-    // then the tools: the frame (its place as wide as the widest, FULL), the shutter (lit while open: the moment held;
-    // dim with your own camera, nothing to hold), Connect (its place as wide as THEIR FILM)
+    // the middle: the frame key left of the [12] (its mark where FULL's starts), Connect right of it
     float ssa = 0.86;
     if (gShapeL == "DIM") ssa = 0.27;
-    show(gShp, x + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
-    x += 126.0 / 48.0 * hw + gap;
+    show(gShp, -mid - FW + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
+    show(gLnk, mid + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
+    // from the right: the shutter (the right hand's key, as on a camera, 8.1.0; lit while open, the moment held; dim
+    // with your own camera, nothing to hold), then the options before it
+    x = Wc * 0.5 - inset;
     if (shw > 0.0)
     {
         float sa = 0.8;
         string sc = "shut";
         if (gState == "photo") { sc = "shutON"; sa = 1.0; }
         else if (gState != "film" && gState != "held") sa = 0.22;
-        show(gShut, x + shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
-        x += shw + gap;
+        show(gShut, x - shw * 0.5, 0.0, 0.001, shw, hw, uvMark(sc), WHITE, sa * f, 0.0);
+        x -= shw + gap;
     }
-    show(gLnk, x + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
-    x += 228.0 / 48.0 * hw + gap;
-    // last, the running shot's options
     integer part = 0;
     integer u = 0;
     integer sep;
     gOptVis = [];
-    for (i = 0; i < llGetListLength(vis); i++)
+    for (i = llGetListLength(vis) - 1; i >= 0; i--)
     {
         string w = llList2String(vis, i);
         if (w == "/")
         {
-            if (gSep) show(gSep, x + px(8.0), 0.0, 0.001, 0.01, px(16.0), uvMark("sep"), WHITE, 0.4 * f, 0.0);
+            if (gSep) show(gSep, x - px(8.0), 0.0, 0.001, 0.01, px(16.0), uvMark("sep"), WHITE, 0.4 * f, 0.0);
             sep = TRUE;
-            x += px(16.0) + spR;
+            x -= px(16.0) + spR;
         }
         else if (part < 6)
         {
             list c = word(w);
             float wd = llList2Float(c, 2) / 48.0 * hw;
             float tw = (llList2Float(c, 2) - 2.0 * PADX) / 48.0 * hw;
-            float cx = x + wd * 0.5;
+            float cx = x - wd * 0.5;
             string st = llList2String(gOptSt, i);
             float a = alphaOf(st);
             if (gState == "watch") a = 0.27;
@@ -388,9 +397,9 @@ layout()
                 show(gHalo, cx, 0.0, 0.002, tw + px(16.0), px(22.0), uvMark("halo"), WHITE, 0.86 * f, 0.0);
                 halo = TRUE;
             }
-            gOptVis += [w];                                  // the word on part k (left to right)
+            gOptVis += [w];                                  // the word on part k (right to left)
             part++;
-            x += wd + spR;
+            x -= wd + spR;
         }
     }
     if (!halo) put(away(gHalo));

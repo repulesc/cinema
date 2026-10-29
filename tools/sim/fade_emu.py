@@ -36,7 +36,7 @@ w.run(0.5)
 plate, note, r12 = rect(h, ana, "t12 plate"), rect(h, ana, "t12 note"), rect(h, ana, "Take 12")
 text = h.part("t12 note")["text"]
 check(text != "" and plate[4] > 0.5 and plate[2] > 0.0101, "a note: its plate shows (%r, %r)" % (text, plate))
-check(abs((plate[0] - plate[2] / 2) - (r12[0] - r12[2] / 2)) < 1e-4, "... under the [12], from its left edge (8.5.5)")
+check(abs(plate[0] - r12[0]) < 1e-4, "... centred under the [12]")
 check(plate[1] + plate[3] / 2 < r12[1] - r12[3] / 2, "... under the [12]")
 check(abs(plate[2] - (len(text) * 7.2 + 28) / 1080.0) < 1e-3, "... as wide as its text (%.0f px for %d characters)" % (plate[2] * 1080, len(text)))
 check(abs(note[0] - plate[0]) < 1e-4, "... the text in the plate's middle")
