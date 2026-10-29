@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.4.4";
+string VERSION = "8.5.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -127,6 +127,7 @@ clearAll()
     for (i = 1; i <= n; i++) llSetLinkPrimitiveParamsFast(i, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]);
     gShownT = 0.0;
     gShown = "";
+    plate("");
 }
 
 string fill(string s, string a)
@@ -141,6 +142,12 @@ string fill(string s, string a)
     return s;
 }
 
+// screen sizes the note's dark plate from it (8.5.0); "" takes it away
+plate(string s)
+{
+    llMessageLinked(LINK_SET, STRIP, "note|" + s, "");
+}
+
 show(string s, integer stay)
 {
     gFor = SHOW + llStringLength(s) * 0.05;
@@ -148,6 +155,7 @@ show(string s, integer stay)
     if (stay) gFor = 100000.0;
     if (!gNote) gNote = link();
     llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, s, <1.0, 1.0, 1.0>, 1.0]);
+    plate(s);
     gShown = s;
     gShownT = llGetTime();
     llSetTimerEvent(0.5);
@@ -156,7 +164,7 @@ show(string s, integer stay)
 note(string id, string arg)
 {
     if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
-    if (id == "commands") { llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip"); return; }   // (kept out of NOTES: its peak)
+    if (id == "commands") { llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · fade on|off · flip"); return; }   // (kept out of NOTES: its peak)
     integer i = llListFindList(SNAP, [arg]);
     if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
     i = llListFindList(NOTES, [id]);
@@ -316,7 +324,7 @@ default
         if (gShownT > 0.0 && llGetTime() - gShownT >= gFor)
         {
             list t = llGetLinkPrimitiveParams(gNote, [PRIM_TEXT]);
-            if (llList2String(t, 0) == gShown) llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]);
+            if (llList2String(t, 0) == gShown) { llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]); plate(""); }
             gShownT = 0.0;
         }
         if (gShownT == 0.0) llSetTimerEvent(0.0);

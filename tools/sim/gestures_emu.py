@@ -7,7 +7,7 @@ from emu_util import *
 # ---- the first wear and the first run ---------------------------------------------------------------------------
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
-h = ana.wear(HUD_SCRIPTS)
+h = ana.wear(HUD_SCRIPTS, lsd={"cin.owner": (str(ana.key), PASS), "cin.fade": ("0", PASS)})   # the strip stays (fade_emu.py)
 w.run(5)
 check(ana.notes() == ["Tap the [12] to set up."], "first wear: one note, %r" % ana.notes())
 check(ana.dialog is None, "first wear: nothing pops up")

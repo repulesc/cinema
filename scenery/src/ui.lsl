@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.4.4";
+string VERSION = "8.5.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -43,6 +43,7 @@ string  gShot;
 string  gLink = "alone";
 integer gOpen;                      // the strip is open
 integer gOpenOff;                   // ... it was, when everything went off
+integer gFaded;                     // ... it has faded away (8.5.0): a tap brings it back
 // gestures
 float   gDown;
 float   gTapT;
@@ -507,6 +508,7 @@ onTap()
 {
     if (gEye) { eyeEnd(TRUE); return; }
     if (gFirst == "start" || gFirst == "later") { gFirst = "start"; first(); return; }
+    if (gOpen && gFaded) { strip("wake"); return; }         // the faded strip: back first, the menu on the next tap
     menu();
 }
 
@@ -514,7 +516,8 @@ onDouble()
 {
     if (gEye) return;
     if (gState == "off") return;
-    strip("toggle");
+    if (gOpen && gFaded) strip("wake");
+    else strip("toggle");
 }
 
 onLong()
@@ -562,6 +565,7 @@ command(string m)
     else if (c == "place" && llListFindList(["top", "topl", "bot", "both"], [a]) >= 0) set("place", a);
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);
+    else if (c == "fade" && (a == "on" || a == "off")) set("fade", llList2String(["0", "1"], a == "on"));
     else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect|menu", "");
     else note("commands", "");
 }
@@ -687,6 +691,7 @@ default
         else if (num == CMD && llGetSubString(str, 0, 4) == "menu|") open(llGetSubString(str, 5, -1));   // back from sync's Friends, bars' frames
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
         else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
+        else if (num == STRIP && llGetSubString(str, 0, 5) == "faded|") gFaded = (integer)llGetSubString(str, 6, -1);
         else if (num == MSG_VER && str != "?")
         {
             if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];

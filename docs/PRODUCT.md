@@ -33,11 +33,12 @@ The facts we design around:
 
 ## The look: the Monitor
 A cinema camera's on-screen display, as part of the viewer:
-- **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a soft dark band.
-- **The words' places:** the shots sit on the left. The running shot's options sit on the right. In the middle are the frame key `▭ 2.39`, the [12], and Connect (two linked rings with a count, `SHARING` or `THEIR FILM`). The shutter sits at the right end (8.1.0), and Auto's Orbit at the left end (8.3.0), its mirror.
+- **The strip:** one thin line of small-caps words at the top of the screen (Settings › Look › Place: Top, Top lower, Bottom, Bottom higher), on a pure black band, edge to edge.
+- **The words' places (8.5.0):** the [12] at the far left, then Auto's Orbit and the shots. On the right, from the edge: the shutter, Connect (two linked rings with a count, `SHARING` or `THEIR FILM`), the frame `▭ 2.39`, then the running shot's options. Nothing in the middle: the picture is the film's.
+- **Quiet (8.5.0):** 4 s after your last touch the strip fades and only the [12] stays, quieter, like a camera's REC light; a tap on it brings the strip back. `/12 fade off` keeps it.
+- **Notes (8.5.0):** under the [12], on a dark plate, readable on any picture.
 - **Lit states:** the lit shot is ink on a white box; a lit option is underlined; KEEP NEW and UNDO sit in an outline.
-- **Room for other HUDs:** the words stay in a centred 16:9 area, 180 px in from its corners.
-- **Size:** S, M or L; the strip is 48 px of a 1080 px window at M.
+- **Size:** S, M or L; the strip is 40 px of a 1080 px window at M, its words 12.5 px.
 - **Opening:** the strip opens and closes with a 0.2 s fade. Closed, only the [12] stays.
 - **The [12]:** a round dark disc:
   - a thin ring while filming;

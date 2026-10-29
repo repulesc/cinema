@@ -1,13 +1,13 @@
 # Building the Take 12 HUD (8.0)
 
-The HUD is one linked object of 29 prims (the root and 28 parts). A builder script makes it, so nobody has to link
+The HUD is one linked object of 30 prims (the root and 29 parts). A builder script makes it, so nobody has to link
 and name parts by hand. HUD prims have no land impact.
 
 1. **Rez a box** on land where you may build. It becomes the root, the [12].
 2. **Make the part:** rez a second box, name it `t12 part`, take it into your inventory and drop it into the first
    box's contents.
 3. **Drop `hud/build/builder.lsl`** into the first box (New Script, paste, save).
-4. **Touch the box** and allow it to link. It rezzes the 28 parts one by one (about a second each), links each one,
+4. **Touch the box** and allow it to link. It rezzes the 29 parts one by one (about a second each), links each one,
    names it (`t12 ring`, `t12 s0`, … `t12 bar3`, `t12 shut`, `t12 auto`, docs/ARCHITECTURE.md §1) and lays it flat inside the box. When it is
    done it says so, and takes `t12 part` and itself out of the contents. Touching it again on a HUD that misses parts
    adds only the missing ones.

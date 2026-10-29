@@ -170,6 +170,10 @@ ana.touch("t12 auto"); w.run(0.5)
 check(var(h, "tracking", "gAuto") == 1 and var(h, "strip", "gAuto") == 1, "the Orbit tapped: Auto")
 t = until(w, lambda: state(h)[1] == "tracking", 4)
 check(t is not None, "still walking: Tracking")
+# the Orbit held (8.4.5): Auto ends and the camera is your viewer's, as a lit shot held
+ana.touch("t12 auto", hold=1.2); w.run(1)
+check(var(h, "tracking", "gAuto") == 0 and var(h, "strip", "gAuto") == 0 and state(h)[0] != "film",
+      "the Orbit held: Auto off, your viewer's camera (%r)" % (state(h),))
 # /12 portrait: manual, her own options; /12 auto: Auto
 ana.walk(ana.pos); ana.vel = vec(0, 0, 0)
 ana.say(12, "portrait"); w.run(1)

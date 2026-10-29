@@ -176,11 +176,11 @@ def cells(kind):
 
 
 def shutter(lit):
-    """the shutter (8.1.0): a hairline divider, then the release button, a ring and its dot (bigger when open)"""
+    """the shutter (8.1.0): the release button, a ring and its dot (bigger when open). 8.5.0: no divider (no hairlines
+    anywhere); the mark in the middle of its cell, one family with the Orbit, the frame and Connect's rings"""
     im, k = ss(64, CELL_H)
     d = ImageDraw.Draw(im)
-    d.rectangle([5 * k, 16 * k, 6 * k, 32 * k], fill=(255, 255, 255, 110))
-    c, r = (40 * k, 24 * k), 12.5 * k
+    c, r = (32 * k, 24 * k), 12.5 * k
     d.ellipse([c[0] - r, c[1] - r, c[0] + r, c[1] + r], outline=WHITE + (255,), width=int(2.4 * k))
     rr = (8.0 if lit else 5.5) * k
     d.ellipse([c[0] - rr, c[1] - rr, c[0] + rr, c[1] + rr], fill=WHITE + (255,))
@@ -188,18 +188,17 @@ def shutter(lit):
 
 
 def orbit(lit):
-    """Auto (8.3.0): the shutter's ring with its dot out on the ring, then a hairline divider; the shutter's mirror at
-    the strip's other end. The shutter holds still (its dot in the middle), Auto moves (the dot riding round you).
-    Lit: the larger dot"""
+    """Auto (8.3.0): the shutter's ring with its dot out on the ring; the shutter's mirror at the strip's other end. The
+    shutter holds still (its dot in the middle), Auto moves (the dot riding round you). Lit: the larger dot. 8.5.0: no
+    divider, the mark in the middle of its cell"""
     im, k = ss(64, CELL_H)
     d = ImageDraw.Draw(im)
-    c, r = (24 * k, 24 * k), 12.5 * k
+    c, r = (32 * k, 24 * k), 12.5 * k
     d.ellipse([c[0] - r, c[1] - r, c[0] + r, c[1] + r], outline=WHITE + (255,), width=int(2.4 * k))
     rr = (5.0 if lit else 3.75) * k
     a = math.radians(135)
     x, y = c[0] + r * math.cos(a), c[1] - r * math.sin(a)
     d.ellipse([x - rr, y - rr, x + rr, y + rr], fill=WHITE + (255,))
-    d.rectangle([58 * k, 16 * k, 59 * k, 32 * k], fill=(255, 255, 255, 110))
     return down(im, 64, CELL_H)
 
 
@@ -237,8 +236,9 @@ def marks():
     return sheet, table
 
 
-SCREEN_MARKS = ("disc", "discamber", "dot") + tuple("ring%d" % i for i in range(10))   # the [12] (screen.lsl)
-UNUSED = ("box", "under", "band")   # still on the sheet (no new upload), drawn by no script since 8.0.4: plain lines, a black band
+SCREEN_MARKS = ("disc", "discamber", "dot", "box") + tuple("ring%d" % i for i in range(10))   # the [12] (screen.lsl)
+UNUSED = ("under", "band")   # still on the sheet, drawn by no script since 8.0.4: plain lines, a black band. "box": the
+                             # notes' plate (8.5.0, screen.lsl)
 
 
 def lsl_tables(wt, mt):
