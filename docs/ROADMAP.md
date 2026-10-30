@@ -42,6 +42,7 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 4. The free build: the same with the nine scripts of `scenery/src/` and `scenery/notecard/read_me.txt`.
 
 ## Tester checklist
+- [ ] A viewer with tall bars (Firestorm with its navigation and favourites bars, a small window, a larger UI size): the whole strip in view after setup's "Lower it" or Settings › Look › Place › Move in (8.5.7). Note the viewer, the window size and the UI size.
 Viewers: the official viewer, Firestorm and one more. UI scale 1.0 and 1.25. Windows 16:9, 16:10, 21:9 and 4:3,
 windowed and full screen. `/12 debug on` prints every Connect message.
 
@@ -65,7 +66,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
   in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.5.6", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.5.7", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).
