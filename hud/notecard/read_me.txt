@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.5.6)
+TAKE 12  -  READ ME  (8.5.7)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -32,7 +32,7 @@ The [12] tells you, quietly:
 
 === THE STRIP ===========================================
 
-A thin line of words at the top of your screen (Settings > Look > Place moves it lower, or to the bottom):
+A thin line of words at the top of your screen (Settings > Look > Place moves it to the bottom; Move in, a step at a time, clears a viewer's taller bars):
   ◯  TRACKING  PORTRAIT  FIXED  SCENIC      ▭ 2.39  [12]  ⇄ 2      the running shot's options   the shutter
 It stays until you double-tap the [12]. Notes show under the [12], on a dark plate.
 The ring at the left end is AUTO; lit, the strip shows only the shot it chose, in faint letters.

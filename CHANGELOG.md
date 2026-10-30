@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.5.7 (the strip clears taller viewer bars)
+- **A tester's strip sat partly under the viewer's menu bar.** A HUD cannot measure the viewer's bars or the window's
+  pixel height, and our margins are fractions of the window's height while the bars are fixed pixels: a smaller window
+  or a larger UI size covers more. Setup's "Is the whole strip in view?" had one step ("Lower it": 52 px), and a second
+  press did nothing.
+- **Now every press moves the strip a step (40 px) further from the edge, up to six.** Settings › Look › Place has
+  **Move in** too (up at the bottom); choosing a place starts over. The black band follows the strip down.
+- screen, ui and text change; every script is 8.5.7.
+
 ## 8.5.6 (the strip as in 8.4.4, with the 8.5 finish)
 - **Back to 8.4.4's places**, which worked: the [12] in the middle with the frame just left of it and Connect just
   right of it; the shots from the left; the shutter at the right, the shot's options before it. Every button stays in

@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.5.6";
+string VERSION = "8.5.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -67,6 +67,11 @@ integer gLensTold;
 string cfg(string k)
 {
     return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+moveIn()
+{
+    set("drop", (string)(1 + (integer)cfg("drop") - ((integer)cfg("drop") > 5)));
 }
 
 set(string k, string v)
@@ -258,7 +263,7 @@ open(string p)
         string pl = cfg("place");
         if (pl == "") pl = "top";
         page(p, llList2String(["Top", "Top, lower", "Bottom", "Bottom, higher"], llListFindList(["top", "topl", "bot", "both"], [pl])),
-            [mark("Top", pl == "top"), mark("Top, lower", pl == "topl"), mark("Bottom", pl == "bot"), mark("Bottom, higher", pl == "both"), "‹ Back"]);
+            [mark("Top", pl == "top"), mark("Top, lower", pl == "topl"), mark("Bottom", pl == "bot"), mark("Bottom, higher", pl == "both"), "Move in", "‹ Back"]);
     }
     else if (p == "reset") page(p, "", ["Tips again", "Seats & views", "Everything", "‹ Back"]);
     else if (p == "everything") page(p, "", ["Yes, reset", "‹ Back"]);
@@ -347,7 +352,12 @@ choose(string m)
     }
     else if (gPage == "place")
     {
-        set("place", llList2String(["top", "topl", "bot", "both"], llListFindList(["Top", "Top, lower", "Bottom", "Bottom, higher"], [b])));
+        if (b == "Move in") moveIn();
+        else
+        {
+            set("drop", "0");                               // choosing a place starts over
+            set("place", llList2String(["top", "topl", "bot", "both"], llListFindList(["Top", "Top, lower", "Bottom", "Bottom, higher"], [b])));
+        }
         open("place");
     }
     else if (gPage == "reset")
@@ -401,8 +411,9 @@ choose(string m)
     }
     else if (gPage == "inview")
     {
-        // taller viewer bars (favourites, navigation) can cover the strip: lower it a step (8.0.6)
-        if (b == "Lower it") set("place", llList2String(["topl", "topl", "topl", "both", "both"], llListFindList(["top", "topl", "bot", "both"], [cfg("place")]) + 1));
+        // taller viewer bars (favourites, navigation) can cover the strip: a step further in each press, up to 6 (8.5.7:
+        // 8.0.6 had one step, and a second press did nothing)
+        if (b == "Lower it") moveIn();
         if (b == "Yes") open("tour1");
         else open("inview");
     }

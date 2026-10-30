@@ -24,7 +24,7 @@
 //  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.5.6";
+string VERSION = "8.5.7";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

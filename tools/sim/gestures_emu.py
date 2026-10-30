@@ -44,10 +44,17 @@ check(lsd(h, "size") == "l", "Larger: size L")
 ana.click("Good"); w.run(0.5)
 dialog_ok(ana, "inview")
 check(ana.labels() == ["Yes", "Lower it"], "is the whole strip in view: %r" % ana.labels())
-ana.click("Lower it"); w.run(0.5)
-check(lsd(h, "place") == "topl" and rect(h, ana, "Take 12")[1] < 0.5 - 60 / 1080.0, "Lower it: Top, lower (%r)" % lsd(h, "place"))
-ana.click("Lower it"); w.run(0.5)
-check(lsd(h, "place") == "topl", "it stays lower")
+# 8.5.7: a viewer whose bars are taller than one step (a tester's strip sat partly under them): every press moves the strip a
+# step (40 px) further from the edge, up to 6, and nothing in the setup is a dead end any more
+y0 = rect(h, ana, "Take 12")[1]
+last = y0
+for k in range(1, 9):
+    ana.click("Lower it"); w.run(0.5)
+    want = min(k, 6)
+    y = rect(h, ana, "Take 12")[1]
+    check(lsd(h, "drop") == str(want) and abs((y0 - y) - 40 * want / 1080.0) < 1e-3, "Lower it x%d: %d steps in (%r, %.0f px)" % (k, want, lsd(h, "drop"), (y0 - y) * 1080))
+band = rect(h, ana, "t12 band")
+check(abs(band[3] - (50 + 240) / 1080.0) < 2e-3, "the band is black all the way down to the strip (%.0f px)" % (band[3] * 1080))
 ana.click("Yes"); w.run(0.5)
 for p in ("tour1", "tour2"):
     dialog_ok(ana, p)
@@ -81,6 +88,14 @@ for p in pages:
         dialog_ok(ana, "place")
         ana.click("Bottom"); w.run(0.5)
         check(lsd(h, "place") == "bot", "Place › Bottom")
+        ana.click("Move in"); w.run(0.5)
+        check(lsd(h, "drop") == "1", "Place › Move in: a step (choosing Bottom had started over)")
+        ana.click("Move in"); w.run(0.5)
+        check(lsd(h, "drop") == "2", "Move in again: another")
+        ana.click("● Bottom"); w.run(0.5)
+        check(lsd(h, "drop") == "0", "choosing a place starts over")
+        ana.click("Move in"); w.run(0.5)
+        check(lsd(h, "drop") == "1", "Move in: one step")
         ana.click("● Bottom"); w.run(0.3)
         ana.click("‹ Back"); w.run(0.5)
     if p == "Frames & bars":

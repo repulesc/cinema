@@ -11,7 +11,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.6";
+string VERSION = "8.5.7";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -45,6 +45,7 @@ integer gNoteL;
 float   gA = 1.778;
 integer gSY = 1;
 integer gPlace;
+integer gDrop;                      // 8.5.7: steps (40 px each, up to 6) further from the edge: taller viewer bars
 float   gS = 1.0;
 integer gOpen;
 string  gState = "wait";
@@ -83,6 +84,8 @@ load()
 {
     gPlace = llListFindList(PLACES, [cfg("place")]);
     if (gPlace < 0) gPlace = 0;
+    gDrop = (integer)cfg("drop");
+    if (gDrop < 0 || gDrop > 6) gDrop = 0;
     integer s = llListFindList(["s", "m", "l"], [cfg("size")]);
     if (s < 0) s = 1;
     gS = llList2Float([0.8, 1.0, 1.25], s);
@@ -177,10 +180,16 @@ vector centre()
     return <0.0, gA * 0.5 * gSY * llList2Float([1.0, 0.0, -1.0, -1.0, 0.0, 1.0], p), 0.5 * llList2Float([-1.0, -1.0, -1.0, 1.0, 1.0, 1.0], p)>;
 }
 
+// the margin from the screen's edge: the place's, and the steps you moved it in (a HUD cannot measure the viewer's bars)
+float mgn()
+{
+    return (llList2Float(MARGIN, gPlace) + 40.0 * gDrop) / 1080.0;
+}
+
 // the strip's middle line, from the screen centre (strip.lsl uses the same)
 float midZ()
 {
-    float z = 0.5 - llList2Float(MARGIN, gPlace) / 1080.0 - px(40.0) * 0.5;
+    float z = 0.5 - mgn() - px(40.0) * 0.5;
     if (gPlace >= 2) z = -z;
     return z;
 }
@@ -215,7 +224,7 @@ layout()
     part(gRing, 0.0, 0.0, -0.001, px(32.0), px(32.0), mark(rk), WHITE, 0.85 * a * (gProblem || gHold > 0 || gState == "film"), 0.0);
     part(gDot, px(10.0), px(10.0), -0.002, px(9.0), px(9.0), mark("dot"), WHITE, a * (gLinkSt != "alone" && gLinkSt != ""), 0.12 * (gLinkSt == "shared"));
     // the band: solid black, the whole width, from the screen's edge to the strip's far side, while the strip shows
-    float mg = llList2Float(MARGIN, gPlace) / 1080.0;
+    float mg = mgn();
     float bz = mg * 0.5;
     if (gPlace >= 2) bz = -bz;
     if (gOpen) part(gBand, -rootX(), bz, 0.004, gA + 0.02, px(40.0) + mg, [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK,
@@ -348,7 +357,7 @@ default
             }
             layout();
         }
-        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "all"))
+        else if (num == CFG_CHANGED && (str == "place" || str == "size" || str == "flip" || str == "drop" || str == "all"))
         {
             load();
             layout();

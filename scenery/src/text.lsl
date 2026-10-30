@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.5.6";
+string VERSION = "8.5.7";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -242,7 +242,7 @@ string body(string page, list a)
     if (page == "friends") return "Friends\nYour friends connect without being asked.\n" + a0 + "\nChime: " + a1;
     if (page == "addfriend") return "Add a friend\nPeople near you who wear Take 12.";
     if (page == "look") return "Look\nPlace: " + a0 + " · Size: " + a1 + " · Keys: " + a2;
-    if (page == "place") return "Place\nWhere the strip sits. Lower and higher clear taller viewer bars.\nNow: " + a0;
+    if (page == "place") return "Place\nWhere the strip sits. Move in clears taller viewer bars, a step a press.\nNow: " + a0;
     if (page == "reset") return "Reset\nTips again: every first-time tip.\nSeats & views: every kept framing.\nEverything: like new.";
     if (page == "everything") return "Reset everything?\nSettings, seats, views and friends are wiped, and the first run starts again.";
     if (page == "about") return "About Take 12\n12 is a number, not a name. It points outward: there is something out there.\n"

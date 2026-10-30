@@ -47,6 +47,11 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   12.5 px tall (a 26 px part for the 48 px cell), the [12] 28 px with its 32 px ring.
 - **Places** (`cin.place`): `top` (flush with the top of the world view, which starts under the viewer's own bars),
   `topl` (52 px lower), `bot` (above a 46 px toolbar), `both` (higher, 96 px). The strip's centre line is at `±(0.5 − margin − H/2)`.
+- **Move in** (`cin.drop`, 0-6, 8.5.7): extra steps of 40 px further from the edge, added to the place's margin (up
+  at the bottom). The band stays black from the edge to the strip. Why: a HUD cannot measure the viewer's own bars
+  or the window's pixel height, and the margins are fractions of the window's height while the bars are fixed
+  pixels, so a smaller window or a larger UI scale puts more of the strip under them. Setup's "Lower it" and
+  Settings › Look › Place › Move in add a step each press; choosing a place starts over.
 - **Width (8.5.6, 8.4.4's places):** the words in a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the
   full width. The shots (the Orbit first) from its left, 200 px in; the shutter, then the options before it, ending
   200 px from its right (clear of the viewer's notices); the frame key left of the [12] (its mark where FULL's
