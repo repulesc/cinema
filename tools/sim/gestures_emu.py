@@ -96,6 +96,8 @@ for p in pages:
         check(lsd(h, "drop") == "0", "choosing a place starts over")
         ana.click("Move in"); w.run(0.5)
         check(lsd(h, "drop") == "1", "Move in: one step")
+        ana.say(12, "lower"); w.run(0.5)
+        check(lsd(h, "drop") == "2", "/12 lower: a step (when the bars cover the [12] too)")
         ana.click("● Bottom"); w.run(0.3)
         ana.click("‹ Back"); w.run(0.5)
     if p == "Frames & bars":

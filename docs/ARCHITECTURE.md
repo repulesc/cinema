@@ -51,7 +51,7 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   at the bottom). The band stays black from the edge to the strip. Why: a HUD cannot measure the viewer's own bars
   or the window's pixel height, and the margins are fractions of the window's height while the bars are fixed
   pixels, so a smaller window or a larger UI scale puts more of the strip under them. Setup's "Lower it" and
-  Settings › Look › Place › Move in add a step each press; choosing a place starts over.
+  Settings › Look › Place › Move in and `/12 lower` (it works when the bars cover the [12] too) add a step each press; choosing a place in the dialog starts over.
 - **Width (8.5.6, 8.4.4's places):** the words in a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the
   full width. The shots (the Orbit first) from its left, 200 px in; the shutter, then the options before it, ending
   200 px from its right (clear of the viewer's notices); the frame key left of the [12] (its mark where FULL's

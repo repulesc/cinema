@@ -569,6 +569,7 @@ command(string m)
     else if (c == "debug") llMessageLinked(LINK_SET, CMD, "debug|" + (string)(a == "on"), "");
     else if (c == "blend") llMessageLinked(LINK_SET, CMD, "blend|" + (string)(a == "on"), "");
     else if (c == "flip") set("flip", llList2String(["1", "0"], cfg("flip") == "1"));
+    else if (c == "lower") moveIn();                        // 8.5.7: works when the viewer's bars cover the [12] too
     else if (c == "place" && llListFindList(["top", "topl", "bot", "both"], [a]) >= 0) set("place", a);
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);

@@ -163,7 +163,7 @@ show(string s, integer stay)
 note(string id, string arg)
 {
     if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
-    if (id == "commands") { llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip"); return; }   // (kept out of NOTES: its peak)
+    if (id == "commands") { llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · lower · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip"); return; }   // (kept out of NOTES: its peak)
     integer i = llListFindList(SNAP, [arg]);
     if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
     i = llListFindList(NOTES, [id]);

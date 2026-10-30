@@ -7,6 +7,7 @@
   press did nothing.
 - **Now every press moves the strip a step (40 px) further from the edge, up to six.** Settings › Look › Place has
   **Move in** too (up at the bottom); choosing a place starts over. The black band follows the strip down.
+- **`/12 lower`** does the same from chat, for when the bars cover the [12] itself.
 - screen, ui and text change; every script is 8.5.7.
 
 ## 8.5.6 (the strip as in 8.4.4, with the 8.5 finish)
