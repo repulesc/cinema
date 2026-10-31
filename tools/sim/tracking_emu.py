@@ -3,6 +3,7 @@ Film 3.5 m a little low, Classic 3 m above), L · R the side of the picture you 
 back 30 %, a wall behind you pulls the camera in (never through it), a small closed room gives its corner (panning
 with you) and leaving it gives you the camera behind you again, standing still 5 s lights PORTRAIT once, the lit tap
 goes back into the look, everything scales with your size."""
+import math
 from emu_util import *
 
 w = World()
@@ -68,4 +69,20 @@ check(len(h.cam["log"]) > n and not h.cam.get("plock"), "the lit tap: back into 
 ana.size = vec(0.3, 0.4, 0.9); ana.touch("t12 s0"); w.run(1)
 check(abs(h.cam["distance"] - 3.5 * 0.5) < 0.05, "a 0.9 m avatar: half the distance (%.2f)" % h.cam["distance"])
 no_errors(w, "still")
+
+# ---- a teleport (8.5.10, in-world: the camera drifted in from afar): the first frame there snaps, then eases again ------
+ana.size = vec(0.45, 0.6, 1.9); ana.touch("t12 s0"); w.run(2)
+ana.teleport((60, 60, 21)); w.run(2.2)
+check(h.cam.get("plag") == 0.0 and h.cam.get("distance"), "after the teleport: the follow camera there at once (lag %r)" % h.cam.get("plag"))
+w.run(1)
+check(h.cam.get("plag", 0) > 0.0, "... then its easing again (lag %r)" % h.cam.get("plag"))
+no_errors(w, "teleport")
+
+# ---- your lens, always known (8.5.10): zooming shows it for a moment on the note plate, as a camera shows its focal length
+t = w.t
+ana.fov = 2 * math.atan(12.0 / 26.0); w.run(1.5)                     # Ctrl+8: the 26 mm stop
+check(any(n == "Lens 26 mm" for n in ana.notes(t)), "zooming out: \"Lens 26 mm\" (%r)" % ana.notes(t)[-2:])
+t = w.t
+w.run(5)
+check(not any("Lens" in n for n in ana.notes(t)), "... and nothing while it stays")
 done("tracking_emu")

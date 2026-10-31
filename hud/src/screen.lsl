@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.9";
+string VERSION = "8.5.10";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -330,6 +330,8 @@ default
             gLinkSt = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
             layout();
         }
+        else if (num == NOTE && str == "commands|")       // /12 help: every command (here since 8.5.10: text had no room)
+            llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · lower · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip");
         else if (num == STRIP)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);

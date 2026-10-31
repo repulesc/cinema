@@ -24,7 +24,7 @@
 //  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.5.9";
+string VERSION = "8.5.10";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -57,6 +57,7 @@ integer gHold;
 integer gLook = 1;
 integer gRight = 1;
 float   gSent;                         // the distance last sent
+integer gSnap;                         // after a teleport: the first follow camera without easing (8.5.10: it drifted in from afar)
 string  gMode;                         // "" behind you, or "lock": a corner of a small room
 vector  gRoomAt;                       // where the small room was measured
 float   gStillT;
@@ -152,6 +153,7 @@ send(integer force)
     float bl = llList2Float(BLAG, gLook) + 0.3 * gRun;
     string lags = "|0.5|0.25";
     if (cfg("feel") != "smooth") { bl = 0.0; lags = "|0.05|0.05"; }   // Snappy (the default, 8.0.8): right behind you, easy to steer
+    if (gSnap == 1) { bl = 0.0; lags = "|0.0|0.0"; gSnap = 2; }      // there at once; the next tick eases again
     llMessageLinked(LINK_SET, FOLLOW, (string)D + "|" + (string)llList2Float(PITCH, gLook) + "|" + (string)off + "|"
         + (string)bl + lags, "");
 }
@@ -350,6 +352,7 @@ default
             gMode = "";
             gStillT = 0.0;
             gHinted = FALSE;
+            gSnap = (llList2String(llParseString2List(str, ["|"], []), 1) == "tp");
             send(TRUE);
             llSetTimerEvent(0.5);
         }
@@ -422,6 +425,7 @@ default
     timer()
     {
         llSetTimerEvent(0.5);
+        if (gSnap == 2) { gSnap = 0; if (gOn && gMode == "") send(TRUE); }
         if (gOn && !gHold) check();
         direct();
     }

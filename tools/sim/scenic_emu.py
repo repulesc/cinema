@@ -87,4 +87,33 @@ for band in ("ROOM", "NEAR", "DRIFT", "FAR"):
     C = cams(h2, t0)
     check(C and all(inside(p) for t, p, f in C), "indoors, %s: every camera inside the room (%s)" % (band, [tuple(round(x, 1) for x in p) for t, p, f in C if not inside(p)][:3]))
 no_errors(w2, "room")
+
+# ---- a boat's cabin (8.5.10, in-world): a small closed space, 3 x 2.4 m, its roof 2.4 m over the deck, above the water.
+# Drift pulled back out through the walls (its follow camera keeps 1.8 m at least: more than the cabin has)
+w3 = World()
+w3.boxes += room(150, 150, 30.0, 153, 152.4, 2.4)
+bo, h3 = hud(w3, "Bo", pos=(151.5, 151.2, 30.95))
+bo.double_tap(); w3.run(1)
+bo.touch("t12 s3"); w3.run(3)
+st = dict(zip(var(h3, "scenic", "gLocal") and var(h3, "strip", "gOpts") or [], var(h3, "strip", "gOptSt")))
+check(var(h3, "scenic", "gLocal") == 1 and st.get("ROOM") == "" and st.get("FAR") == "dim", "the cabin is a room: ROOM open, FAR dim (%r)" % st)
+check(var(h3, "scenic", "gTight") == 1, "a small closed space: Drift holds still views (no pulling back into the walls)")
+cabin = lambda p: 150 < p[0] < 153 and 150 < p[1] < 152.4 and 30 < p[2] < 32.4
+for band in ("DRIFT", "ROOM", "NEAR"):
+    bo.touch(opt_part(h3, band)); w3.run(1)
+    t0 = w3.t
+    w3.run(40)
+    C = cams(h3, t0)
+    check(C and all(cabin(p) for t, p, f in C), "the cabin, %s: every camera inside it (%s)" % (band, [tuple(round(x, 1) for x in p) for t, p, f in C if not cabin(p)][:3]))
+no_errors(w3, "cabin")
+
+# ---- a dim option does nothing (8.5.10: ROOM, dim outdoors, still switched the view) -------------------------------------
+w4 = World()
+cy, h4 = hud(w4, "Cy")
+cy.double_tap(); w4.run(1)
+cy.touch("t12 s3"); w4.run(3)
+b0 = var(h4, "scenic", "gBand")
+cy.touch(opt_part(h4, "ROOM")); w4.run(2)
+check(var(h4, "scenic", "gLocal") == 0 and var(h4, "scenic", "gBand") == b0, "outdoors, a tap on the dim ROOM: nothing (band %r, was %r)" % (var(h4, "scenic", "gBand"), b0))
+no_errors(w4, "dim")
 done("scenic_emu")

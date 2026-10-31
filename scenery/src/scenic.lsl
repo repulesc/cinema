@@ -17,7 +17,7 @@
 //  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
 // ============================================================================
 
-string VERSION = "8.5.9";
+string VERSION = "8.5.10";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -70,6 +70,7 @@ integer gRoofs;
 float   gTopZ;
 float   gFloorZ;
 float   gCapZ;
+integer gTight;                    // a small closed space (every wall within 5 m): Drift holds still views (8.5.10)
 float   gDmax;
 list    gWallD;
 list    gFloorD;
@@ -214,11 +215,25 @@ context()
     gErr = FALSE;
     gWater = llWater(ZERO_VECTOR);
     integer raw = (gPrimFloor && (gSky || gRoofs >= 3 || (gRoofs >= 1 && nHit >= 5)));
+    // a small closed space, measured from your head as Tracking does (a boat's cabin: its floor and roof can be
+    // missed from heights that count up from the floor): a ceiling within 4 m and walls within 6 m all round (8.5.10)
+    vector H = gOP + <0.0, 0.0, 0.6>;                  // about your eyes (the avatar's middle + 0.6 m)
+    list hu = ray(H, H + <0.0, 0.0, 4.0>);
+    if (!raw && llList2Integer(hu, 0) == 1)
+    {
+        if (H.z + llList2Float(hu, 1) < ceil) ceil = H.z + llList2Float(hu, 1);
+        gRoofs++;
+        integer w;
+        for (i = 0; i < 8; i++) w += (llList2Integer(ray(H, H + dirOf(i * 0.785398) * 6.0), 0) == 1);
+        raw = (w >= 7);
+    }
     if (!raw && gLocal && (gPrimFloor || gRoofs > 0 || nHit >= 5) && llVecDist(gOP, gLocalAt) < 30.0) raw = TRUE;
     gLocal = raw;
     if (raw) gLocalAt = gOP;
+    gTight = raw;
+    for (i = 0; i < 8; i++) if (llList2Float(gWallD, i) >= 5.0) gTight = FALSE;
     gCapZ = gFloorZ + 3.4;
-    if (gRoofs > 0) gCapZ = clampf(ceil - 0.4, gFloorZ + 1.6, gFloorZ + 6.0);
+    if (gRoofs > 0) gCapZ = clampf(ceil - 0.4, gFloorZ + 1.0, gFloorZ + 6.0);   // a low roof (a cabin): under it (8.5.10)
     integer open = 0;
     for (i = 0; i < 8; i++) if (llList2Float(gWallD, i) >= 25.0) open++;
     gDmax = 12.0;
@@ -321,6 +336,7 @@ list nearShot(float dmin, float dmax)
         {
             float d = dmin + llFrand(dmax - dmin);
             vector c = <gOP.x, gOP.y, gFloorZ + 1.8 + llFrand(0.9)> + dirOf(az) * d;
+            if (c.z > gCapZ) c.z = gCapZ;                   // under a roof, a low one too (8.5.10: a boat's cabin)
             if (outOK(c, E))
             {
                 vector side = dirOf(az + PI_BY_TWO) * (0.22 * d * (2 * (llFrand(1.0) < 0.5) - 1));
@@ -549,6 +565,7 @@ drift()
 // every frame (a 2.5 s lag) and brings it along when you walk; behindness 180: it never swings round behind you
 dolly(float d, float rise)
 {
+    if (gTight) return;                                 // a cabin, a closet: nowhere to pull back to, the view holds
     vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
     vector v = dirOf(gAz);
     if (llGetPermissions() & PERMISSION_TRACK_CAMERA) v = llGetCameraPos() - E;
@@ -693,7 +710,7 @@ default
         else if (num == OPT)
         {
             integer i = llListFindList(BANDS, [llList2String(llParseStringKeepNulls(str, ["|"], []), 1)]);
-            if (i < 0) return;
+            if (i < 0 || i == 2 + gLocal) return;              // the dim one (Room outdoors, Far indoors): nothing (8.5.10)
             gBand = i;
             llLinksetDataWriteProtected("cin.scn", (string)i, PASS);
             opts();

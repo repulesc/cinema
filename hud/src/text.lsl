@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.5.9";
+string VERSION = "8.5.10";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -16,6 +16,8 @@ integer CFG_CHANGED = 7330;
 integer STRIP   = 7343;
 integer NOTE    = 7344;
 integer TIP     = 7345;
+integer FOVMSG = 7318;              // core: your lens changed (8.5.10: shown for a moment, as a camera shows its focal length)
+integer gMm;                        // ... the one shown last
 integer TXT     = 7346;
 integer TXT_ANS = 7347;
 integer MSG_VER = 7360;
@@ -162,7 +164,7 @@ show(string s, integer stay)
 note(string id, string arg)
 {
     if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
-    if (id == "commands") { llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · lower · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip"); return; }   // (kept out of NOTES: its peak)
+    if (id == "commands") return;                       // screen's (8.5.10: this script had no room for it)
     integer i = llListFindList(SNAP, [arg]);
     if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
     i = llListFindList(NOTES, [id]);
@@ -302,6 +304,12 @@ default
             note(llList2String(L, 0), llDumpList2String(llList2List(L, 1, -1), "|"));
         }
         else if (num == TIP) tip(str);
+        else if (num == FOVMSG)
+        {
+            integer m = llRound(12.0 / llTan((float)str * 0.5));
+            if (m != gMm && gFor < 100.0) show("Lens " + (string)m + " mm", FALSE);   // core only tells a change; not over a note that stays
+            gMm = m;
+        }
         else if (num == STRIP && str == "eye|off") note("clear", "");    // the eye line is done: its instruction goes
         else if (num == TXT)
         {
