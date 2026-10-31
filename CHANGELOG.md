@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.5.8 (quality pass: the free build's Settings; tidy)
+- **The free Take 12 Scenery's Settings showed Vehicles (Fixed's) and hid Frames & bars**, from 8.0.6 on: it took out
+  two buttons by position, and a button added in 8.0.6 moved them. It now hides Eye line and Vehicles, as meant.
+- **`tools/sim/free_emu.py`** (in CI): the nine free scripts on their own: their menus checked by name, the three dim
+  shots and the Orbit only say "In the full Take 12.", Scenic films, no script errors.
+- Four declarations nothing used are gone (core, scenic, sync, text). No other change you can see; every script is 8.5.8.
+
 ## 8.5.7 (the strip clears taller viewer bars)
 - **A tester's strip sat partly under the viewer's menu bar.** A HUD cannot measure the viewer's bars or the window's
   pixel height, and our margins are fractions of the window's height while the bars are fixed pixels: a smaller window

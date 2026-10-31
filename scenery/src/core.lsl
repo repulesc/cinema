@@ -15,7 +15,7 @@
 //  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.5.7";
+string VERSION = "8.5.8";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -72,7 +72,6 @@ float   gTpT;                       // a teleport: a fresh frame after this
 float   gClrT;                      // ... and the old frame let go at this (not in the move itself, 8.0.4)
 float   gFovSent;
 integer gLastAct;
-integer gTyping;
 integer gKeys;
 float   gCamT;
 float   gHeldT;                     // the camera off its spot since

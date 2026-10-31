@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.5.7";
+string VERSION = "8.5.8";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -200,7 +200,7 @@ open(string p)
     if (p == "settings")
     {
         list b = ["Lens", "Eye line", "Motion", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
-        if (LITE) b = llDeleteSubList(llDeleteSubList(b, 3, 3), 1, 1);   // the free build: no Portrait, no Fixed
+        if (LITE) b = llDeleteSubList(llDeleteSubList(b, 4, 4), 1, 1);   // the free build: no Eye line (Portrait), no Vehicles (Fixed); free_emu checks it by name
         page(p, "", b);
     }
     else if (p == "lens")

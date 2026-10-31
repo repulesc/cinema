@@ -10,7 +10,7 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.7";
+string VERSION = "8.5.8";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
