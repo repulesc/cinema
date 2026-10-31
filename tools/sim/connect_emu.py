@@ -338,12 +338,30 @@ def rework():
     check(peers(ana) == [] and peers(ben) == [] and not ben.dialog, "a friend one way only: nothing by itself, no question popping up")
     no_errors(w, "friends near")
 
+
+# ---- the lens (8.7.0): a watcher whose zoom differs sees you the same size. Their HUD moves along the view round the
+# director's aim; for Tracking that aim was a point 3 m ahead of the camera, not you, and the size came out 16-25 % off
+def lens_match():
+    import math
+    for look in (None, "SHOULDER", "CLASSIC"):
+        w, (ana, ben) = setup()
+        ana.fov = 0.6125; ben.fov = 1.047                                  # Ana zoomed in (38 mm), Ben the viewer's wide view
+        ask(w, ana, ben); shot(w, ana, "tracking"); w.run(2)
+        if look: ana.touch(opt_part(ana.hud, look)); w.run(2)
+        link(w, ben); w.run(3)
+        head = B.add(ana.pos, vec(0, 0, 0.6))
+        sd, sw = B.llVecDist(head, ana.camera()[0]), B.llVecDist(head, ben.camera()[0])
+        want = sd * math.tan(0.6125 / 2) / math.tan(1.047 / 2)
+        check(abs(sw - want) / want < 0.06, "%s, another lens: Ben sees Ana the same size (%.2f m, %.2f for the same size)" % (look or "FILM", sw, want))
+        no_errors(w, "lens")
+
 if __name__ == "__main__":
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 20
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
     scenarios()
     streaming()
     rework()
+    lens_match()
     n = fuzz(runs, seed, ("Ana", "Ben"))
     n += fuzz(runs // 2, seed + 5000, ("Ana", "Ben", "Cy"))
     n += fuzz(runs // 2, seed + 9000, ("Ana", "Ben"), drop=0.05)

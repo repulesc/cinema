@@ -8,7 +8,12 @@
 - **Drift's glide** (the new default): close on you, then the camera slides slowly round you at eye height (about 40°
   over 24 s, 20 small steps a second, never along a path a wall crosses, still in a cabin), then a cut to a new close.
   Settings › Motion › Reveal keeps 8.1.0's rise and pull-back. Breathe is gone (a Breathe setting plays the glide).
-- tracking, scenic, ui and text change; every script is 8.7.0.
+- **Connect, the lens match:** a friend whose zoom differs from yours saw you 16-25 % too near or too far in Tracking
+  (their HUD moves along the view round your camera's aim, and for the viewer's own camera that aim was a point 3 m
+  ahead, not you). The aim is now you: within 3 %. Measured in `connect_emu` (a 38 mm director, a 21 mm watcher).
+  Connect's traffic checked too: 1 heartbeat a second to the one you are with, a "here" every 10 s, about 7 camera
+  updates a second only while someone watches.
+- tracking, scenic, ui, text and core change; every script is 8.7.0.
 
 ## 8.6.0 (menus that make sense; sitting is Fixed's; Connect and Friends together)
 - **Sitting switches to Fixed by itself** (manual): the seat's kept view, or "Frame it". Standing up gives you back
