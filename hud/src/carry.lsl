@@ -16,7 +16,7 @@
 //  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.5.10";
+string VERSION = "8.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -125,9 +125,9 @@ choose(string b)
     if (b == "Close" || i < 0) return;
     if (p == "friends")
     {
-        if (b == "Add") llMessageLinked(LINK_SET, CMD, "connect|addfriend", "");
+        if (b == "Add") llSensor("", NULL_KEY, AGENT, 20.0, PI);   // anyone near you, Take 12 or not (8.6.0)
         else if (b == "Remove") friends(TRUE);
-        else if (b == "‹ Back") llMessageLinked(LINK_SET, CMD, "menu|settings", "");
+        else if (b == "‹ Back") llMessageLinked(LINK_SET, CMD, "connect|menu", "");   // Friends is Connect's now (8.6.0)
         else
         {
             llLinksetDataWriteProtected("cin.chime", llList2String(["0", "1"], cfg("chime") == "0"), PASS);
@@ -144,6 +144,7 @@ choose(string b)
     }
     else if (p == "addfriend")
     {
+        if (b == "‹ Back") { friends(FALSE); return; }
         if (llSubStringIndex(b, " (old)") >= 0 || k == NULL_KEY) return;
         string f = cfg("friends");
         if (llSubStringIndex(f, k) < 0)
@@ -346,6 +347,21 @@ default
             llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
             llMessageLinked(LINK_SET, NOTE, "moved", "");
         }
+    }
+
+    // Friends › Add: the people within 20 m, nearest first (a friend joins you without being asked, once they wear
+    // Take 12; 8.6.0: it listed only who wore it already)
+    sensor(integer n)
+    {
+        list P = [];
+        integer i;
+        for (i = 0; i < n && i < 10; i++) P += [llGetSubString(sn(llDetectedKey(i)), 0, 23), (string)llDetectedKey(i)];
+        menu("addfriend", "", P + ["‹ Back", ""]);
+    }
+
+    no_sensor()
+    {
+        menu("addfriend", "nobody", ["‹ Back", ""]);
     }
 
     timer()

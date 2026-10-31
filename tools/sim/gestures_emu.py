@@ -174,4 +174,23 @@ w.run(3)
 check(state(h2) == ("film", "tracking") and var(h2, "strip", "gAuto") == 1, "re-wear, set up: Auto directs after 3 s %r" % (state(h2),))
 check(lsd(h2, "lens") == "47" and lsd(h2, "firstrun") == "done", "re-wear: the setup is kept")
 no_errors(w, "re-wear")
+
+# ---- Settings › Screen (8.6.0): place, size and the frames in one page that stays open, so you watch the strip move -----
+ana.dialog = None
+ana.tap(); w.run(0.8); ana.click("Settings"); w.run(0.5)
+check(sorted(b for b in ana.labels() if b.strip()) == sorted(["Camera", "Screen", "Reset", "‹ Back"]), "Settings: Camera, Screen, Reset (%r)" % ana.labels())
+ana.click("Screen"); w.run(0.5)
+y0 = rect(h2, ana, "Take 12")[1]
+check(lsd(h2, "drop") == "6", "the setup's Lower it moved it in 6 steps, the most")
+ana.click("Move in"); w.run(0.5)
+check(lsd(h2, "drop") == "6", "Move in at the most: nothing")
+ana.click("Move out"); w.run(0.5); ana.click("Move out"); w.run(0.5)
+check(lsd(h2, "drop") == "4" and abs((rect(h2, ana, "Take 12")[1] - y0) * 1080 - 80) < 1 and "Move in" in ana.labels(), "Screen › Move out twice: 80 px out, the page stays")
+ana.click("Move in"); w.run(0.5)
+check(lsd(h2, "drop") == "5", "Move in: a step in")
+ana.click("L"); w.run(0.5)
+check(lsd(h2, "size") == "l" and "● L" in ana.labels(), "L: the larger strip, marked")
+ana.click("‹ Back"); w.run(0.5); ana.click("Camera"); w.run(0.5)
+check(sorted(b for b in ana.labels() if b.strip()) == sorted(["Lens", "Eye line", "Motion", "Idle start", "Seats", "‹ Back"]), "Camera: lens, eye line, motion, idle, seats (%r)" % ana.labels())
+no_errors(w, "screen")
 done("gestures_emu")

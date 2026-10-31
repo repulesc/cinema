@@ -1,5 +1,17 @@
 # Changelog
 
+## 8.6.0 (menus that make sense; sitting is Fixed's; Connect and Friends together)
+- **Sitting switches to Fixed by itself** (manual): the seat's kept view, or "Frame it". Standing up gives you back
+  the shot you had. The seat's words, FORGET SEAT and LET GO, are on the strip the moment you sit: LET GO gives a seat
+  or vehicle its own camera every time (all its copies); TAKE BACK undoes it. Auto keeps its own rules.
+- **Settings in two groups:** Camera (Lens · Eye line · Motion · Idle start · Seats) and Screen (Frames & bars · Place
+  · Move in · Move out · S M L · Soft or Clear). The Screen page stays open, so you watch the strip move.
+- **Connect:** alone, the rings open the Connect page (Invite, Friends) instead of searching at once; connected, they
+  still switch between your film and theirs in one tap. Friends moved from Settings to the Connect page, and Add lists
+  anyone within 20 m, not only who wears Take 12.
+- A few notes are shorter (the text script needed the room). core, ui, sync, carry and text change; every script is
+  8.6.0.
+
 ## 8.5.10 (in-world fixes: a dim option, a boat's cabin, after a teleport; your lens always known)
 - **A dim option did something:** tapping Scenic's dim ROOM (outdoors) switched the view. A dim option now does nothing.
 - **Small closed spaces (a boat's cabin):** Scenic now agrees with Tracking's small-room test (a ceiling within 4 m

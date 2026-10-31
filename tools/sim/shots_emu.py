@@ -48,15 +48,13 @@ ana.touch("t12 s3"); w.run(1.5)
 check(B.llVecDist(h.cam["pos"], c0) > 0.3, "Scenic's lit tap: the next view now")
 no_errors(w, "lit taps")
 
-# ---- sitting holds; FIXED glows; standing resumes ------------------------------------------------------------------
+# ---- sitting: Fixed by itself (8.6.0; it held the frame and FIXED glowed); standing up: the shot you had ------------
 ana.touch("t12 s1"); w.run(3)
 log0 = len(h.cam.get("log", []))
 sofa = w.furniture("Sofa", (130, 128, 20.5))
 ana.sit_on(sofa); w.run(2)
-check(var(h, "core", "gSitHold") == 1 and var(h, "strip", "gHint") == "fixed", "sitting in Portrait: it holds, FIXED glows")
-check(len(h.cam.get("log", [])) == log0, "sitting: the frame holds (no new camera)")
-w.run(6)
-check(var(h, "strip", "gHint") == "", "the glow is once (5 s)")
+check(state(h) == ("film", "fixed") and var(h, "core", "gSitFrom") == "portrait", "sitting in Portrait: Fixed by itself (%r)" % (state(h),))
+check("LET GO" in var(h, "strip", "gOpts"), "... the seat's words on the strip at once: LET GO (%r)" % var(h, "strip", "gOpts"))
 ana.stand(); ana.pos = vec(128, 128, 21); w.run(3)
 check(state(h) == ("film", "portrait") and var(h, "core", "gSitHold") == 0 and len(h.cam.get("log", [])) > log0, "standing up: Portrait frames you again")
 no_errors(w, "sitting")

@@ -41,7 +41,7 @@ ben.wear(HUD_SCRIPTS, lsd=ready(ben)); w.run(0.5); manual(ben.hud); w.run(1.5)  
 check(any(S(ana)["gNear"][i] == ben.key for i in range(0, len(S(ana)["gNear"]), 4)), "Ana heard Ben's HUD at once")
 check(any(S(ben)["gNear"][i] == ana.key for i in range(0, len(S(ben)["gNear"]), 4)), "... and Ben knows Ana at once (she answered his \"here\")")
 t = w.t
-ana.say(12, "connect"); w.run(0.5)
+ana.say(12, "connect"); w.run(0.3); ana.click("Invite"); w.run(0.5)      # alone: the Connect page, then Invite (8.6.0)
 check(ana.dialog and any(x.startswith("Ben") for x in ana.labels()), "Connect lists Ben at once (%r, notes %r)" % (ana.dialog and ana.labels(), ana.notes(t)))
 check(not any("Nobody" in n for n in ana.notes(t)), "never \"Nobody near you\" (%r)" % ana.notes(t))
 ana.click([x for x in ana.labels() if x.startswith("Ben")][0]); w.run(1)
@@ -53,7 +53,7 @@ check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "connected (%r, %r)" % (p
 cid = w.avatar("Cid", (129, 130, 21)); cid.fov = 0.6125
 cid.wear(HUD_SCRIPTS, lsd=ready(cid)); w.run(0.5); manual(cid.hud); w.run(3)
 t = w.t
-cid.say(12, "connect"); w.run(1)
+cid.say(12, "connect"); w.run(0.3); cid.click("Invite"); w.run(1)
 cid.click([x for x in cid.labels() if x.startswith("Ana")][0]); w.run(1)
 check(ana.dialog and "Cid wants to share films" in ana.dialog[1], "Ana is asked by Cid")
 w.run(66)

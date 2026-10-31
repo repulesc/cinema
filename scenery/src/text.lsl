@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.5.10";
+string VERSION = "8.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -31,7 +31,7 @@ list NOTES = [
     "setup", "1Tap the [12] to set up.",
     "released", "0Your viewer's camera. Tap a shot to take it back.",
     "photo", "0Photo  ·  %  ·  Ctrl+Shift+S",
-    "frameit", "0Frame it with Alt-click, Take 12 keeps it. Esc gives the camera back.",
+    "frameit", "0Frame it with Alt-click, Take 12 keeps it. Esc: the camera back.",
     "kept", "0Kept.",
     "forgot", "0Seat forgotten. UNDO brings it back.",
     "letgo", "0Take 12 lets go on this vehicle.",
@@ -62,8 +62,8 @@ list NOTES = [
     "lens", "0Lens % mm. Ctrl+0 zooms in.",
     "mm", "0% mm",
     "eyeline", "3PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
-    "texture", "1% is kept and taken out of the contents: the HUD can be given away.",
-    "mixed", "1% is another version. All Take 12 scripts must come from one copy.",
+    "texture", "1% is kept: the HUD can be given away.",
+    "mixed", "1% is another version: use one copy's scripts.",
     "plain", "0%"
 ];
 
@@ -98,7 +98,7 @@ list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER",
 // the main dialog's rotating tip line
 list HINTS = ["Double-tap the [12] for the strip.", "Hold the [12]: everything off, hold again: back.",
               "Tap a lit shot again for its other angle.", "Alt-click in Fixed: Take 12 keeps your framing.",
-              "Settings › Look › Place moves the strip to the bottom."];
+              "Settings › Screen › Place moves the strip to the bottom."];
 
 // a frame's snapshot size (Snapshot › Custom; the bars are not in snapshots)
 list SNAP = ["2.39", "1920 × 803", "2.00", "1920 × 960", "1.85", "1920 × 1038", "1.66", "1920 × 1157",
@@ -235,13 +235,18 @@ string body(string page, list a)
     }
     if (page == "vehicles")
     {
-        if (a0 == "") return "Vehicles\nNone marked. On a vehicle's seat, LET GO marks it.";
-        return "Vehicles\nTake 12 lets go when you sit on these. Tap one to unmark it.";
+        if (a0 == "") return "Seats & vehicles\nNone. On a seat, LET GO: its own camera, every time.";
+        return "Seats & vehicles\nTheir own camera. Tap one: Take 12's again.";
     }
     if (page == "idle") return "Idle start\nScenic starts by itself when you are idle.\nNow: " + a0;
     if (page == "friends") return "Friends\nYour friends connect without being asked.\n" + a0 + "\nChime: " + a1;
-    if (page == "addfriend") return "Add a friend\nPeople near you who wear Take 12.";
-    if (page == "look") return "Look\nPlace: " + a0 + " · Size: " + a1 + " · Keys: " + a2;
+    if (page == "addfriend")
+    {
+        if (a0 == "nobody") return "Add a friend\nNobody within 20 m.";
+        return "Add a friend\nAnyone near you.";
+    }
+    if (page == "look") return "Screen\nPlace: " + a0 + " · Size: " + a1 + " · Keys: " + a2 + "\nMove in, out: clear the viewer's bars.";
+    if (page == "camera") return "Camera";
     if (page == "place") return "Place\nWhere the strip sits. Move in clears taller viewer bars, a step a press.\nNow: " + a0;
     if (page == "reset") return "Reset\nTips again: every first-time tip.\nSeats & views: every kept framing.\nEverything: like new.";
     if (page == "everything") return "Reset everything?\nSettings, seats, views and friends are wiped, and the first run starts again.";
@@ -253,12 +258,16 @@ string body(string page, list a)
         if (a0 == "") return "Connect\nNobody near you wears Take 12.";
         return "Connect\nTap a name to share films. They'll be asked.";
     }
-    if (page == "connected") return "Connected\n" + llDumpList2String(a, "\n") + "\nTap a name: watch their film, or show them yours.";
+    if (page == "connected")
+    {
+        if (a0 == "") return "Connect\nNobody connected.\nInvite: Take 12s near you.";
+        return "Connect\n" + llDumpList2String(a, "\n") + "\nTap a name: watch their film, or show them yours.";
+    }
     if (page == "person") return a0 + "\n" + a1;
     if (page == "show") return a0 + " shows you their film.";
     if (page == "ask") return a0 + " wants to share films.";
     if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
-    if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Look › Place later.";
+    if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Screen later.";
     if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
     if (page == "tour1") return "The strip\nDouble-tap the [12]: the four shots and their options. Tap a shot to start it.";
     if (page == "tour2") return "Connect\nThe linked rings share films with people near you.";

@@ -53,6 +53,7 @@ def eye_line():
         ana.click("Skip"); w.run(0.5)
     else:
         ana.click("Settings"); w.run(0.5)
+        ana.click("Camera"); w.run(0.5)                                # 8.6.0: Settings › Camera › Eye line
         ana.click("Eye line"); w.run(0.5)
     cam, foc, scripted = ana.camera()
     check(scripted and var(h, "core", "gEyeOn"), "the eye line holds the camera in front of you")
@@ -112,7 +113,7 @@ ana.dialog = None
 ana.tap(); w.run(0.6)
 w.run(300)
 ana.click("Settings"); w.run(0.5)
-check("Eye line" in ana.labels(), "a dialog answered after 5 minutes: %r" % ana.labels())
+check("Camera" in ana.labels(), "a dialog answered after 5 minutes: %r" % ana.labels())
 no_errors(w, "late")
 
 # ==== 8.0.4 =========================================================================================================
@@ -225,7 +226,7 @@ h.send(7345, "SCENIC"); w.run(3.5)
 check(h.part("t12 note")["text"] != "", "a tip still shows after 3.5 s")
 w.run(8)
 check(h.part("t12 note")["text"] == "", "... and goes")
-ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Eye line"); w.run(0.5)
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Camera"); w.run(0.5); ana.click("Eye line"); w.run(0.5)
 w.run(30)
 check("PgUp" in h.part("t12 note")["text"], "the eye line's instruction stays while the line is up: %r" % h.part("t12 note")["text"])
 ana.tap(); w.run(0.6)
@@ -283,16 +284,23 @@ check(abs(ring[3] * 1080 - 32) < 1, "the [12]'s ring at 32 px, in the 40 px band
 ana.touch("t12 s0"); w.run(9)
 check(any("Portrait is ready" in n for n in ana.notes()), "the outline on PORTRAIT says why: %r" % ana.notes()[-3:])
 ana.dialog = None
-ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Friends"); w.run(1)
-check(ana.labels()[:2] == ["Add", "Remove"] and "Chime" in " ".join(ana.labels()), "Settings › Friends: %r" % ana.labels())
+ana.tap(); w.run(0.6); ana.click("Connect"); w.run(1)               # 8.6.0: Friends is on the Connect page
+check("Friends" in ana.labels() and "Invite" in ana.labels() and "Leave" not in ana.labels(), "the Connect page, alone: Invite, Friends (%r)" % ana.labels())
+ana.click("Friends"); w.run(1)
+check(ana.labels()[:2] == ["Add", "Remove"] and "Chime" in " ".join(ana.labels()), "Connect › Friends: %r" % ana.labels())
 ana.click("‹ Back"); w.run(1)
-check("Motion" in ana.labels(), "Back: Settings again (%r)" % ana.labels())
+check("Invite" in ana.labels(), "Back: the Connect page again (%r)" % ana.labels())
+ana.dialog = None
+ana.touch("t12 link"); w.run(1)
+check(ana.dialog and "Invite" in ana.labels(), "alone, the rings: the Connect page, no search (8.6.0; %r)" % (ana.dialog and ana.labels()))
+ana.dialog = None
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Camera"); w.run(0.5)
 ana.click("Motion"); w.run(0.5)
 check(var(h, "ui", "gBtn") == ["Smooth", "● Snappy", " ", "● Reveal", "Breathe", "‹ Back"], "Settings › Motion: Snappy and the reveal by default (8.1.0): %r" % var(h, "ui", "gBtn"))
 check(h.cam.get("plag", 1) <= 0.1 and h.cam.get("blag", 1) <= 0.1, "Snappy: Tracking right behind you (lags %r, %r)" % (h.cam.get("plag"), h.cam.get("blag")))
 check(any("Settings › Motion" in n for n in ana.notes()), "the Tracking tip names Settings › Motion")
 ana.click("Smooth"); w.run(1)
-ana.click("‹ Back"); w.run(0.5); ana.click("‹ Back"); w.run(0.5); ana.click("Close"); w.run(0.5)
+ana.click("‹ Back"); w.run(0.5); ana.click("‹ Back"); w.run(0.5); ana.click("‹ Back"); w.run(0.5); ana.click("Close"); w.run(0.5)   # Motion › Camera › Settings › main
 ana.touch("t12 s0"); w.run(1); ana.touch("t12 s0"); w.run(3)
 check(h.cam.get("plag", 0) >= 0.4, "Smooth: the steadicam lag (%r)" % h.cam.get("plag"))
 no_errors(w, "look, hint, friends, snappy")
@@ -334,7 +342,7 @@ no_errors(w, "release")
 
 # ---- 8.0.8: Settings › Lens has a Done ----------------------------------------------------------------------------------------------
 ana.dialog = None
-ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Lens"); w.run(0.5)
+ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Camera"); w.run(0.5); ana.click("Lens"); w.run(0.5)
 check("Done" in ana.labels() and "‹ Back" in ana.labels(), "Settings › Lens: Done and Back (%r)" % ana.labels())
 ana.click("32 mm"); w.run(0.5)
 check(lsd(h, "lens") == "32" and "Done" in ana.labels(), "a lens picked, the page stays to zoom by")

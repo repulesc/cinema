@@ -14,7 +14,7 @@
 //  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.5.10";
+string VERSION = "8.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -592,7 +592,8 @@ sitDown()
         return;
     }
     if (gShot == "fixed") return;                          // Fixed: this seat's own view (fixed.lsl)
-    gSitHold = TRUE;                                       // every other shot holds its last frame
+    if (!gAuto && !LITE) { engage("fixed", "sit"); return; }   // 8.6.0: sitting is Fixed's, standing up gives the shot back
+    gSitHold = TRUE;                                       // Auto (its director decides) and the free build: the frame holds
     llMessageLinked(LINK_SET, PAUSE, "sit", "");
     ui("fixed");                                           // ... and FIXED glows once: a seat view is here
 }
