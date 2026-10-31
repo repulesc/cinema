@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.5.10 (in-world fixes: a dim option, a boat's cabin, after a teleport; your lens always known)
+- **A dim option did something:** tapping Scenic's dim ROOM (outdoors) switched the view. A dim option now does nothing.
+- **Small closed spaces (a boat's cabin):** Scenic now agrees with Tracking's small-room test (a ceiling within 4 m
+  above your head, walls within 6 m all round), so ROOM opens there. In a space with every wall within 5 m, Drift holds
+  still views instead of pulling back into the walls; shots stay under a low roof. (The emulator could not rebuild the
+  in-world boat exactly: tell us if Drift still leaves it.)
+- **After a teleport the camera drifted in from afar:** Tracking's first frame there now snaps into place, then eases
+  again.
+- **Your lens, always known:** zooming shows it for a moment on the note plate ("Lens 26 mm"), as a camera shows its
+  focal length.
+- The /12 help list moved from text to screen (text needed the room). scenic, tracking, text and screen change; every
+  script is 8.5.10.
+
 ## 8.5.9 (one film frame; Auto's shot by the Orbit)
 - **One cinema frame for the whole film** (2.39 by default), the same in every shot: the bars no longer jump when the
   shot changes. The ▭ and Settings › Frames & bars › Film choose it; your photo frame still shows only while the
