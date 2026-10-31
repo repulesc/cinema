@@ -296,7 +296,7 @@ check(ana.dialog and "Invite" in ana.labels(), "alone, the rings: the Connect pa
 ana.dialog = None
 ana.tap(); w.run(0.6); ana.click("Settings"); w.run(0.5); ana.click("Camera"); w.run(0.5)
 ana.click("Motion"); w.run(0.5)
-check(var(h, "ui", "gBtn") == ["Smooth", "● Snappy", " ", "● Reveal", "Breathe", "‹ Back"], "Settings › Motion: Snappy and the reveal by default (8.1.0): %r" % var(h, "ui", "gBtn"))
+check(var(h, "ui", "gBtn") == ["Smooth", "● Snappy", " ", "● Glide", "Reveal", "‹ Back"], "Settings › Motion: Snappy and the glide by default (8.7.0): %r" % var(h, "ui", "gBtn"))
 check(h.cam.get("plag", 1) <= 0.1 and h.cam.get("blag", 1) <= 0.1, "Snappy: Tracking right behind you (lags %r, %r)" % (h.cam.get("plag"), h.cam.get("blag")))
 check(any("Settings › Motion" in n for n in ana.notes()), "the Tracking tip names Settings › Motion")
 ana.click("Smooth"); w.run(1)
@@ -411,7 +411,8 @@ check(var(h, "strip", "gShapeL") == "4:5", "a friend's 4:5 film reads 4:5 (%r)" 
 h.send(7371, "bars|follow"); w.run(1)
 no_errors(w, "shutter")
 
-# ---- Drift: the reveal (rising, pulling back, held, a cut to another side), or breathing --------------------------------
+# ---- Drift: the reveal (Settings › Motion › Reveal: rising, pulling back, held, a cut to another side) ------------------
+h.lsd["cin.drift"] = ("reveal", "cinema-1.0-build1")
 ana.touch("t12 s3"); w.run(0.5)
 ana.touch(opt_part(h, "DRIFT")); w.run(4)
 D = []
@@ -422,12 +423,8 @@ d_close, d_mid, d_wide = D[0][0], D[12][0], D[24][0]
 check(d_close < d_mid < d_wide and D[24][1] > D[0][1] + 5, "the reveal: rising and pulling back (%.1f, %.1f, %.1f m; %.0f→%.0f°)" % (d_close, d_mid, d_wide, D[0][1], D[24][1]))
 check(abs(D[28][0] - D[24][0]) < 0.3, "... held wide (%.1f, %.1f)" % (D[24][0], D[28][0]))
 check(any(x[0] < d_wide * 0.6 for x in D[30:]), "... then a cut to a new close (%r)" % [round(x[0], 1) for x in D[28:]])
-h.lsd["cin.drift"] = ("breathe", "cinema-1.0-build1")
-ana.touch(opt_part(h, "DRIFT")); w.run(2)
-E = []
-for i in range(40):
-    w.run(1)
-    E.append(h.cam.get("distance") or 0)
-check(len(set(round(e, 1) for e in E[2:])) >= 2 and max(E) <= 26.5, "Breathe: 8.0.6's legs, in and out (%r)" % sorted(set(round(e, 1) for e in E)))
+h.lsd["cin.drift"] = ("breathe", "cinema-1.0-build1")                 # 8.0.6's breathing, set before 8.7.0: the glide now
+ana.touch(opt_part(h, "DRIFT")); w.run(8)
+check(h.cam.get("plock") and not h.cam.get("distance"), "an old Breathe: the glide (a moving locked camera, no follow camera)")
 no_errors(w, "drift")
 done("inworld_emu")

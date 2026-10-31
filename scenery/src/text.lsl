@@ -9,7 +9,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.6.0";
+string VERSION = "8.7.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -220,7 +220,7 @@ string body(string page, list a)
     }
     if (page == "settings") return "Settings";
     if (page == "feel") return "Motion\nTracking: " + a0 + ". Smooth eases into your turns; Snappy stays right behind you.\nDrift: "
-        + a1 + ". Reveal rises from you to the place; Breathe moves in and out.";
+        + a1 + ". Glide slides round you; Reveal rises to show the place.";
     if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\nThe viewer's own stops: 21 (its wide view) · 26 · 32 · 38 · 47 · 56.\nCtrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21.";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
     if (page == "shapes") return "Frames & bars\nFilm " + a0 + ", every shot · Photo " + llList2String(a, 2) + " (the shutter)\nBars: " + a1;

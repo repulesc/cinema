@@ -24,7 +24,7 @@
 //  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.6.0";
+string VERSION = "8.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -45,10 +45,13 @@ integer STATUS     = 7370;
 integer CMD        = 7371;
 
 list    LOOKS  = ["SHOULDER", "FILM", "CLASSIC"];
-list    DIST   = [1.6, 3.5, 3.0];      // m for a 1.8 m avatar
-list    PITCH  = [4.0, -3.0, 14.0];    // degrees (down +)
-list    SIDE   = [0.42, 0.55, 0.22];   // m  the focus beside you: you on your third
-list    HIGH   = [0.0, -0.18, 0.05];   // the focus above your eye line, a fraction of your height
+// 8.7.0: higher and further for play as well as film (Film looked up from chest height, "the belly button": too low;
+// Shoulder too close): Film at about head height looking a little down, you on a third; Shoulder over the shoulder with
+// room; Classic the game view, centred, high, seeing far ahead
+list    DIST   = [2.2, 3.6, 4.2];      // m for a 1.8 m avatar
+list    PITCH  = [8.0, 6.0, 16.0];     // degrees (down +)
+list    SIDE   = [0.45, 0.5, 0.0];     // m  the focus beside you: you on your third (Classic centred)
+list    HIGH   = [0.03, 0.0, 0.06];    // the focus above your eye line, a fraction of your height
 list    BLAG   = [0.5, 1.0, 0.6];      // s  the swing round behind you
 
 key     gOwner;
@@ -63,6 +66,7 @@ vector  gRoomAt;                       // where the small room was measured
 float   gStillT;
 integer gHinted;
 integer gRun;
+float   gLead;                         // ... walking: the frame leaves room ahead of you (8.7.0), eased in and out
 integer gAuto;                         // Auto directs (8.3.0)
 float   gWear;                         // ... worn at: it starts 3 s later, once set up
 integer gWearing;                      // ... not started yet on this wear
@@ -149,7 +153,7 @@ send(integer force)
     gSent = D;
     gMode = "";
     float side = llList2Float(SIDE, gLook) * s * (2 * gRight - 1);
-    vector off = <0.0, side, (eyeFrac() - 0.5 + llList2Float(HIGH, gLook)) * 1.8 * s>;
+    vector off = <gLead, side, (eyeFrac() - 0.5 + llList2Float(HIGH, gLook)) * 1.8 * s>;   // walking: lead room ahead (8.7.0)
     float bl = llList2Float(BLAG, gLook) + 0.3 * gRun;
     string lags = "|0.5|0.25";
     if (cfg("feel") != "smooth") { bl = 0.0; lags = "|0.05|0.05"; }   // Snappy (the default, 8.0.8): right behind you, easy to steer
@@ -201,9 +205,13 @@ check()
     vector v = llList2Vector(d, 1);
     float sp = llVecMag(<v.x, v.y, 0.0>);
     integer run = (sp > 4.2);
-    if (run != gRun)
+    float lead = 0.5 * scale() * (sp > 0.5);
+    if (run != gRun || lead != gLead)
     {
         gRun = run;
+        if (lead > gLead + 0.13) lead = gLead + 0.125 * scale();   // in steps over 2 s: never a jolt (a friend watching too)
+        else if (lead < gLead - 0.13) lead = gLead - 0.125 * scale();
+        gLead = lead;
         if (gMode == "") send(TRUE);
     }
     // a small room: its corner, panning with you; out of it, behind you again

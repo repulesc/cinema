@@ -11,12 +11,13 @@
 //  Indoors (a build floor with a roof over you, or a skybox) every band stays in the room: Far is dim, Near and Drift
 //  stay inside. Outdoors Room is dim. Always within 60 m of you, inside your region, above the ground and the water.
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
-//  Drift (8.1.0) is the reveal by default, a film's ending shot every leg: close on you and held, then rising and pulling
-//  back to show the place, held wide, then a clean cut to a new close angle. Settings › Motion › Breathe (cin.drift
-//  "breathe") keeps 8.0.6's breathing: in and out, a new distance every leg.
+//  Drift's glide (8.7.0, the default): close on you, then the camera slides slowly round you at eye height, about 40°
+//  over 24 s, and a clean cut to a new close from another side; never along a path a wall crosses, never in a cabin.
+//  Settings › Motion › Reveal (cin.drift "reveal", 8.1.0): rising and pulling back to show the place, held wide.
+//  (8.0.6's breathing in and out is gone: too much of one feeling.)
 // ============================================================================
 
-string VERSION = "8.6.0";
+string VERSION = "8.7.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -25,6 +26,7 @@ integer NEXT       = 7303;
 integer PAUSE      = 7304;
 integer RESUME     = 7305;
 integer SHOT       = 7310;
+integer GLIDE      = 7312;
 integer NO_SHOT    = 7311;
 integer FOLLOW     = 7314;
 integer ACK        = 7313;
@@ -36,12 +38,13 @@ integer CMD        = 7371;
 
 list    BANDS      = ["DRIFT", "NEAR", "ROOM", "FAR"];
 float   HOLD       = 15.0;          // s  a still frame, about
-float   LEG        = 15.0;          // s  a Drift leg (Breathe)
+float   GL_HOLD    = 4.0;           // s  the glide: held close, sliding round you, held at its end
+float   GL_MOVE    = 24.0;
+float   GL_END     = 4.0;
+float   GL_ARC     = 0.7;           // rad  how far round (about 40°)
 float   REV_HOLD   = 6.0;           // s  the reveal: held close, rising and pulling back, held wide
 float   REV_RISE   = 20.0;
 float   REV_WIDE   = 10.0;
-list    DRIFT_D    = [5.0, 9.0, 16.0, 26.0, 16.0, 9.0];    // m  Drift alone, outdoors: out and back
-list    NEAR_D     = [4.5, 6.0, 5.0, 7.0];                  // m  Drift near people, or indoors
 list    FLOOR_STEPS = [1.5, 3.0, 5.0, 8.0, 12.0];
 list    UP_DIRS    = [<0.0, 0.0, 1.0>, <0.423, 0.0, 0.906>, <-0.423, 0.0, 0.906>, <0.0, 0.423, 0.906>, <0.0, -0.423, 0.906>];
 
@@ -77,7 +80,7 @@ float   gNextT;                     // the next cut (still frames)
 integer gRetry;
 integer gCompany;                   // someone within 10 m (the sensor)
 // Drift
-integer gStage;
+integer gDir;                       // the glide's way round: 1, -1; 9 walls both ways; 0 not chosen yet
 vector  gB;                         // the first spot (camera), and the focus beside you (relative)
 vector  gFb;
 float   gLegT;                      // this leg began
@@ -546,7 +549,7 @@ still()
 drift()
 {
     if (!here()) return;
-    gStage = 0;
+    gDir = 0;
     gAz = llFrand(TWO_PI);
     list s;
     if (gLocal) s = roomShot(5.0, TRUE);
@@ -601,29 +604,49 @@ reveal()
     float k = (t - REV_HOLD) / REV_RISE;
     if (k > 1.0) k = 1.0;
     k = k * k * (3.0 - 2.0 * k);                            // eased in and out
-    float d1 = 26.0;                                        // DRIFT_D's farthest; near people or indoors NEAR_D's
+    float d1 = 26.0;                                        // alone outdoors; near people or indoors 7 m
     if (gLocal || gCompany) d1 = 7.0;
     if (d1 < d0) d1 = d0;
     dolly(d0 + (d1 - d0) * k, k);
 }
 
-// Drift's clock: the follow camera a second after the first cut, then a new distance every leg
-step()
+// the glide (8.7.0): held close, then the camera slides round you at the same distance and height, 20 times a second
+// (a locked camera does not ease: small steps make it smooth, as Connect's watching does), held, then a new close
+glide()
 {
-    if (cfg("drift") != "breathe") { reveal(); return; }
-    float t = llGetTime();
-    if (gFolT > 0.0 && t >= gFolT)
+    float t = llGetTime() - gLegT;
+    if (t >= GL_HOLD + GL_MOVE + GL_END)
     {
-        gFolT = 0.0;
-        dolly(llVecDist(gB, <gOP.x, gOP.y, gFloorZ + 1.6>), 0.0);
+        gLastAz = [gAz];                                    // the next close: another side
+        llSetTimerEvent(0.5);
+        drift();
         return;
     }
-    if (gFolT > 0.0 || t - gLegT < LEG || !here()) return;
-    gLegT = t;
-    list D = DRIFT_D;
-    if (gLocal || gCompany) D = NEAR_D;
-    gStage = (gStage + 1) % llGetListLength(D);
-    dolly(llList2Float(D, gStage), 0.0);
+    if (t < GL_HOLD || t > GL_HOLD + GL_MOVE || gTight || !here()) { llSetTimerEvent(0.5); return; }
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    vector h = gB - E;
+    float r = llVecMag(<h.x, h.y, 0.0>);
+    if (gDir == 0)                                          // which way: the side whose path no wall crosses
+    {
+        gDir = 9;
+        integer s;
+        for (s = 1; s >= -1 && gDir == 9; s -= 2)
+            if (llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC * 0.5) * (r + 0.5)), 0) == 0
+                && llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC) * (r + 0.5)), 0) == 0) gDir = s;
+    }
+    if (gDir == 9) return;                                  // walls both ways: the view holds
+    llSetTimerEvent(0.05);
+    float k = (t - GL_HOLD) / GL_MOVE;
+    k = k * k * (3.0 - 2.0 * k);                            // eased in and out
+    vector c = E + dirOf(gAz + gDir * GL_ARC * k) * r + <0.0, 0.0, h.z>;
+    llMessageLinked(LINK_SET, GLIDE, (string)c + "|" + (string)(E + gFb) + "|0.0", "");
+}
+
+// Drift's clock: the glide by default, the reveal by choice
+step()
+{
+    if (cfg("drift") == "reveal") reveal();
+    else glide();
 }
 
 begin()
