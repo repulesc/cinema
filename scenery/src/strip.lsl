@@ -16,7 +16,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.5.8";
+string VERSION = "8.5.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -313,11 +313,7 @@ layout()
     {
         string w = llList2String(SHOTS, i);
         list c = word(w);
-        if (auto && llToLower(w) != gShot)                  // Auto: only the shot it chose, in its own place
-        {
-            put(away(llList2Integer(gSL, i)));
-            x += wordW(w, hw) + spL;
-        }
+        if (auto && llToLower(w) != gShot) put(away(llList2Integer(gSL, i)));   // Auto: only the shot it chose, next to the Orbit (8.5.9)
         else
         {
             float wd = llList2Float(c, 2) / 48.0 * hw;

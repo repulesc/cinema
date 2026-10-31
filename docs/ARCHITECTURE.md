@@ -84,7 +84,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `text` | Every word the user reads, by id (dialog bodies and labels, notes, tips); the notes on `t12 note` (3 s; important ones also in owner chat); the first-three-uses tip counters |
 | `screen` | The [12] (section 2): the root's place, its ring and dot, the notes' part, the eye line, texture adoption |
 | `strip` | The strip (section 2): the band, the words and their states, the 16:9 cap, the open and close fade, touches (8.0.2: split from `screen`, which was too big for 64 KB) |
-| `bars` | The letterbox per shot (`cin.shape.<shot>`), Black or Dimmed, on / off; a watched film's shape; tells the shots the picture (CROP) and the strip the readout (SHAPE) |
+| `bars` | The letterbox: the film's one frame (`cin.shape`, 8.5.9), Black or Dimmed, on / off; a watched film's shape; tells the shots the picture (CROP) and the strip the readout (SHAPE) |
 | `tracking` | Shoulder · Film · Classic, L · R: the viewer's own follow camera (FOLLOW), walls, small rooms, running. And Auto's director (8.3.0, core has no room): walking, still, sitting → CMD `shot|<shot>|auto` |
 | `portrait` | Me · Us, Close · Medium · Wide: composed shots of you standing (SHOT / GLIDE) |
 | `fixed` | Your own framing: View A / B per place, seat memory per object and spot, Keep new, Forget / Undo, Let go / Take back |
@@ -172,7 +172,7 @@ and the setup's end → tracking turns it on). A `shot|<name>` of your own for a
 | `place`, `size`, `keys`, `flip` | the strip: top / topl / bot / both; s / m / l; soft / clear; a mirrored HUD axis |
 | `aspect` | your window, last measured (bars) |
 | `trk`, `por`, `scn` | `<look 0–2>\|<side 0 L / 1 R>`; `<size 0–2>\|<who 0 Me / 1 Us>`; `<band 0 drift … 3 far>` |
-| `shape.<shot>`, `bars`, `bstyle` | each shot's frame (1.66 … 2.39, 3:2 · 4:3 · 1:1 · 4:5, full); 1 / 0; black / dim |
+| `shape`, `photo`, `bars`, `bstyle` | the film's frame, every shot (1.66 … 2.39, full; 2.39); your photo frame (3:2 · 4:3 · 1:1 · 4:5); 1 / 0; black / dim |
 | `idle`, `blend` | off / away / 5; 1: every cut a 1.5 s glide (`/12 blend on`) |
 | `view.<region>.<parcel>` | Fixed: `<A>~<B>~<ground spots…>`, each `<cam>\|<focus>\|<where you were>\|<facing°>\|<lens>` |
 | `places` | those places, least used first (20 kept) |

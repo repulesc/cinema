@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.5.8)
+TAKE 12  -  READ ME  (8.5.9)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -94,7 +94,7 @@ in and out instead).
 
 === FRAMES ==============================================
 
-Every frame is a picture. Each shot has its cinema frame; tap the ▭ to choose it:
+Every frame is a picture. The film has one cinema frame, the same in every shot; tap the ▭ to choose it:
   2.39 · 2.00 · 1.85 · 1.66   bars above and below
   Full                         no bars
 
@@ -135,7 +135,7 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 
 LENS · EYE LINE · MOTION · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
  MOTION          Tracking: Smooth or Snappy. Drift: Reveal or Breathe
- FRAMES & BARS   each shot's frame, your photo frame (the shutter's), and the bars, Black or Dimmed
+ FRAMES & BARS   the film's frame, your photo frame (the shutter's), and the bars, Black or Dimmed
  LOOK            where the strip sits and its size
  RESET           Tips again · Seats & views · Everything
 

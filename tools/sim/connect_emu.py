@@ -66,6 +66,7 @@ def scenarios():
     check(ana.sounds and not ben.sounds, "the chime plays (Ana has a sound in her HUD, Ben has none)")
     check(linkst(ana) == "on" and linkst(ben) == "on", "connected: the key lights, even before a shot (your own camera can be watched too, 8.0.7) (%s %s)" % (linkst(ana), linkst(ben)))
     check(rect(ana.hud, ana, "t12 dot")[4] > 0.5, "the [12]'s dot: white while connected")
+    ana.hud.lsd["cin.shape"] = ("1.85", PASS); ana.hud.send(7330, "shape")   # Ana's film frame, not Ben's 2.39
     shot(w, ana, "portrait")
     w.run(2)
     check(linkst(ben) == "on", "Ana films: Ben's key lights (%s)" % linkst(ben))
