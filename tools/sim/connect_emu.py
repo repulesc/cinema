@@ -126,7 +126,7 @@ def scenarios():
     check(peers(ana) == [] and "Ben didn't answer." in notes(ana, t), "a No: \"didn't answer\", never a rejection")
     ben.hud.lsd["cin.friends"] = (str(ana.key) + ",Ana Resident", PASS)
     t = w.t
-    ana.say(12, "connect"); w.run(4); ana.click("Ben"); w.run(2)
+    ana.say(12, "connect"); w.run(0.5); ana.click("Invite"); w.run(4); ana.click("Ben"); w.run(2)   # alone: the Connect page first (8.6.0)
     check(peers(ben) == ["Ana"] and not (ben.dialog and "share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
     # hold: everything off leaves too
     ana.long_press(); w.run(2)
@@ -151,7 +151,7 @@ def scenarios():
     w, (ana,) = setup(("Ana",))
     olga = w.avatar("Olga", (130, 129, 21))
     o = Obj(w, olga, [], children=()); o.worn = True; w.objects[o.key] = o
-    ana.say(12, "connect"); w.run(0.3)
+    ana.say(12, "connect"); w.run(0.2); ana.click("Invite"); w.run(0.1)
     w.chat(o, CH, "T12|here|T|idle|", to=ana.key)
     w.run(4)
     check("Olga (old)" in ana.labels(), "a 7.x Take 12: listed as (old) (%r)" % ana.labels())
@@ -218,6 +218,8 @@ def fuzz(runs, seed, names, drop=0.0):
                 b = rng.choice([x for x in avs if x is not a])
                 a.dialog = None
                 a.say(12, "connect"); w.run(2.5)
+                if "Invite" in a.labels() and not any(x.lstrip("★ ").startswith(b.name) for x in a.labels()):
+                    a.click("Invite"); w.run(2.5)
                 nm = [x for x in a.labels() if x.lstrip("★ ").startswith(b.name)]
                 if nm:
                     a.click(nm[0]); w.run(1)
@@ -289,16 +291,16 @@ def rework():
     w, (ana, ben) = setup()
     w.run(12)                                                          # their "here" every 10 s
     ana.dialog = None
-    ana.say(12, "connect"); w.run(0.4)
+    ana.say(12, "connect"); w.run(0.2); ana.click("Invite"); w.run(0.4)
     check(any(x.startswith("Ben") for x in ana.labels()), "the nearby list at once, no waiting (%r)" % ana.labels())
     ana.click(next(x for x in ana.labels() if x.startswith("Ben"))); w.run(1)
     ben.click("Yes"); w.run(1.5)
     check(peers(ana) == ["Ben"], "connected")
     t = w.t
     ana.dialog = None
-    ana.hud.send(7371, "connect|addfriend"); w.run(0.5)
+    ana.hud.send(7371, "connect|friends"); w.run(0.5); ana.click("Add"); w.run(0.5)
     check(any(x.startswith("Ben") for x in ana.labels()) and not any("Nobody" in n for n in notes(ana, t)),
-          "Settings › Friends › Add lists Ben, connected already (8.1: 'Nobody near you') (%r)" % ana.labels())
+          "Connect › Friends › Add lists Ben, connected already (8.1: 'Nobody near you'; 8.6.0: anyone near) (%r)" % ana.labels())
     ana.click(next(x for x in ana.labels() if x.startswith("Ben"))); w.run(0.5)
     shot(w, ana, "tracking"); w.run(2)
     ana.dialog = None

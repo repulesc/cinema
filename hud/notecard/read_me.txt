@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.5.10)
+TAKE 12  -  READ ME  (8.6.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -32,7 +32,7 @@ The [12] tells you, quietly:
 
 === THE STRIP ===========================================
 
-A thin line of words at the top of your screen (Settings > Look > Place moves it to the bottom; Move in, a step at a time, clears a viewer's taller bars; if they cover the [12] too, type /12 lower):
+A thin line of words at the top of your screen (Settings > Screen > Place moves it to the bottom; Move in, a step at a time, clears a viewer's taller bars; if they cover the [12] too, type /12 lower):
   ◯  TRACKING  PORTRAIT  FIXED  SCENIC      ▭ 2.39  [12]  ⇄ 2      the running shot's options   the shutter
 It stays until you double-tap the [12]. Notes show under the [12], on a dark plate.
 The ring at the left end is AUTO; lit, the strip shows only the shot it chose, in faint letters.
@@ -80,7 +80,8 @@ FIXED     your own framing, kept.
   Standing:  VIEW A · VIEW B, two views for each place. Walk off and the camera comes along, the same angle on you.
   Seated:    each seat keeps its own view, for each spot on it (a sofa's left and right are two views).
              FORGET SEAT forgets this one (UNDO for 3 seconds).
-             LET GO marks a vehicle: Take 12 lets go every time you sit on it. TAKE BACK unmarks it.
+             LET GO: this seat or vehicle's own camera, every time you sit on it (all its copies). TAKE BACK undoes it.
+             Sitting down switches to Fixed by itself; standing up gives you back the shot you had.
   A kept view is never replaced by accident: frame a new one and KEEP NEW lights for 5 seconds; tap it to keep.
   The lit tap: back to the kept view.
 
@@ -107,7 +108,7 @@ The dialogs and the note give the snapshot size for the frame (Snapshot > Custom
 
 === WHAT HAPPENS BY ITSELF ==============================
 
-SITTING        the shot holds its frame and FIXED glows once (a seat view is there). Standing up, it carries on.
+SITTING        Fixed by itself: the seat's kept view, or frame it. Standing up, the shot you had. (Auto: its own rules.)
 ALT-CLICK      your camera, for a look round: the lit shot dims and nothing is shared. A movement key or the lit
                tap gives the shot back.
 FLYING, MOUSELOOK   your own camera until you land (or leave mouselook), then the shot comes back.
@@ -120,8 +121,9 @@ ZOOM           your lens is your own: zoom and the picture keeps its framing.
 === CONNECT =============================================
 
 Share films with people near you who wear Take 12. Two equal cameras: each of you films your own shot.
-- Tap the Connect key (or Menu > Connect): the people within 20 m who wear Take 12, at once. Tap a name and they
-  are asked. Two friends (Settings > Friends, each in the other's list) connect by themselves when near.
+- Tap the Connect key (or Menu > Connect): the Connect page. Invite lists the people within 20 m who wear Take 12;
+  tap a name and they are asked. Friends (on the same page): add anyone near you; two friends, each in the other's
+  list, connect by themselves when near.
   A soft chime when someone asks or joins. While you are alone, the rings count the Take 12s near you.
 - With one other person, the Connect key flips between your film and theirs. Menu > Connect lists everyone and
   where they are (filming, watching your film, away); tap a name: Watch, or Show my film.
@@ -133,11 +135,13 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 
 === SETTINGS ============================================
 
-LENS · EYE LINE · MOTION · FRAMES & BARS · VEHICLES · IDLE START · FRIENDS · LOOK · RESET
+CAMERA   Lens · Eye line · Motion · Idle start · Seats
  MOTION          Tracking: Smooth or Snappy. Drift: Reveal or Breathe
+ SEATS           the seats and vehicles with their own camera (LET GO); tap one to give it back
+SCREEN   Frames & bars · Place · Move in · Move out · S M L · Soft or Clear keys (the page stays: watch the strip)
  FRAMES & BARS   the film's frame, your photo frame (the shutter's), and the bars, Black or Dimmed
- LOOK            where the strip sits and its size
- RESET           Tips again · Seats & views · Everything
+RESET    Tips again · Seats & views · Everything
+(Friends are on the Connect page.)
 
 
 === KEYS AND COMMANDS ===================================

@@ -51,7 +51,7 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   at the bottom). The band stays black from the edge to the strip. Why: a HUD cannot measure the viewer's own bars
   or the window's pixel height, and the margins are fractions of the window's height while the bars are fixed
   pixels, so a smaller window or a larger UI scale puts more of the strip under them. Setup's "Lower it" and
-  Settings › Look › Place › Move in and `/12 lower` (it works when the bars cover the [12] too) add a step each press; choosing a place in the dialog starts over.
+  Settings › Screen › Move in (and Place › Move in) and `/12 lower` (it works when the bars cover the [12] too) add a step each press; choosing a place in the dialog starts over.
 - **Width (8.5.6, 8.4.4's places):** the words in a centred 16:9 area (`W = min(aspect, 1.778)`); the band runs the
   full width. The shots (the Orbit first) from its left, 200 px in; the shutter, then the options before it, ending
   200 px from its right (clear of the viewer's notices); the frame key left of the [12] (its mark where FULL's
@@ -90,7 +90,7 @@ All in the root; each compiles in `tools/lslcheck.sh` with **≥ 15 KB free** (t
 | `fixed` | Your own framing: View A / B per place, seat memory per object and spot, Keep new, Forget / Undo, Let go / Take back |
 | `scenic` | Drift · Near · Room · Far: views of the place; the idle camera |
 | `sync` | Connect: the nearby list, invites, two equal cameras, watching, sharing (`docs/CONNECT.md`) |
-| `carry` | Between two copies worn by the same owner: carry-over of the settings, two worn (the older steps aside); Feedback: the text box and the email to the maker (8.0.10); Connect's dialogs and Settings › Friends (8.4.3, for sync's memory); the watchdog: every 5 s a stopped script (a run-time error) is reset and started again, and `/12 status` names it (8.4.3) |
+| `carry` | Between two copies worn by the same owner: carry-over of the settings, two worn (the older steps aside); Feedback: the text box and the email to the maker (8.0.10); Connect's dialogs and Friends (8.4.3, for sync's memory; on the Connect page since 8.6.0, Add by a sensor: anyone within 20 m); the watchdog: every 5 s a stopped script (a run-time error) is reset and started again, and `/12 status` names it (8.4.3) |
 
 The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, text, screen, strip, bars, scenic, sync, carry with
 `LITE = 1` (Tracking / Portrait / Fixed dim; it can watch a friend's film, never film for others).

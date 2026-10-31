@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.5.10";
+string VERSION = "8.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -70,9 +70,11 @@ string cfg(string k)
     return llLinksetDataReadProtected("cin." + k, PASS);
 }
 
-moveIn()
+// the strip a step further in from the edge (d 1) or back out (d -1), 0 to 6 steps
+move(integer d)
 {
-    set("drop", (string)(1 + (integer)cfg("drop") - ((integer)cfg("drop") > 5)));
+    integer v = (integer)cfg("drop") + d;
+    if (v >= 0 && v <= 6) set("drop", (string)v);
 }
 
 set(string k, string v)
@@ -197,9 +199,10 @@ menu()
 
 open(string p)
 {
-    if (p == "settings")
+    if (p == "settings") page(p, "", ["Camera", "Screen", "Reset", "‹ Back"]);   // 8.6.0: two groups (Friends is Connect's now)
+    else if (p == "camera")
     {
-        list b = ["Lens", "Eye line", "Motion", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset", "‹ Back"];
+        list b = ["Lens", "Eye line", "Motion", "Idle start", "Seats", "‹ Back"];
         if (LITE) b = llDeleteSubList(llDeleteSubList(b, 4, 4), 1, 1);   // the free build: no Eye line (Portrait), no Vehicles (Fixed); free_emu checks it by name
         page(p, "", b);
     }
@@ -238,11 +241,6 @@ open(string p)
         for (i = 0; i < llGetListLength(V) && i < 9; i++) b += llGetSubString(llList2String(llParseString2List(llList2String(V, i), ["|"], []), 0), 0, 23);
         page(p, llDumpList2String(V, "~"), b + ["‹ Back"]);
     }
-    else if (p == "friends")
-    {
-        closeMenu();                                        // Settings › Friends is sync's (8.0.6: room in this script)
-        llMessageLinked(LINK_SET, CMD, "connect|friends", "");
-    }
     else if (p == "look")
     {
         string pl = cfg("place");
@@ -251,7 +249,8 @@ open(string p)
         string ks = cfg("keys");
         page(p, llList2String(["Top", "Top, lower", "Bottom", "Bottom, higher"], llListFindList(["top", "topl", "bot", "both"], [pl]) * (pl != "")) + "~"
             + llToUpper(sz) + "~" + llList2String(["Soft", "Clear"], ks == "clear"),
-            ["Place", mark("S", sz == "s"), mark("M", sz == "m"), mark("L", sz == "l"), mark("Soft", ks != "clear"), mark("Clear", ks == "clear"), "‹ Back"]);
+            ["Frames & bars", "Place", "Move in", "Move out", mark("S", sz == "s"), mark("M", sz == "m"), mark("L", sz == "l"),
+             mark("Soft", ks != "clear"), mark("Clear", ks == "clear"), "‹ Back"]);   // Screen (8.6.0): it stays open, so you see the strip move
     }
     else if (p == "place")
     {
@@ -282,8 +281,9 @@ open(string p)
 
 string up(string p)
 {
-    if (llListFindList(["lens", "feel", "shapes", "idle", "vehicles", "friends", "look", "reset"], [p]) >= 0) return "settings";
-    if (p == "place") return "look";
+    if (llListFindList(["lens", "feel", "idle", "vehicles"], [p]) >= 0) return "camera";
+    if (llListFindList(["camera", "look", "reset"], [p]) >= 0) return "settings";
+    if (p == "place" || p == "shapes") return "look";
     if (p == "about") return "help";
     if (p == "everything") return "reset";
     return "main";
@@ -301,11 +301,11 @@ choose(string m)
         else if (b == "Settings") open("settings");
         else if (b == "Help") open("help");
     }
-    else if (gPage == "settings")
+    else if (gPage == "settings") open(llList2String(["camera", "look", "reset"], llListFindList(["Camera", "Screen", "Reset"], [b])));
+    else if (gPage == "camera")
     {
         if (b == "Eye line") { closeMenu(); eyeStart(); }
-        else open(llList2String(["lens", "feel", "shapes", "vehicles", "idle", "friends", "look", "reset"],
-            llListFindList(["Lens", "Motion", "Frames & bars", "Vehicles", "Idle start", "Friends", "Look", "Reset"], [b])));
+        else open(llList2String(["lens", "feel", "vehicles", "idle"], llListFindList(["Lens", "Motion", "Seats", "Idle start"], [b])));
     }
     else if (gPage == "lens")
     {
@@ -340,14 +340,15 @@ choose(string m)
     }
     else if (gPage == "look")
     {
-        if (b == "Place") { open("place"); return; }
-        if (b == "S" || b == "M" || b == "L") set("size", llToLower(b));
+        if (b == "Place" || b == "Frames & bars") { open(llList2String(["place", "shapes"], b != "Place")); return; }
+        if (b == "Move in" || b == "Move out") move(1 - 2 * (b == "Move out"));
+        else if (b == "S" || b == "M" || b == "L") set("size", llToLower(b));
         else set("keys", llToLower(b));
         open("look");
     }
     else if (gPage == "place")
     {
-        if (b == "Move in") moveIn();
+        if (b == "Move in") move(1);
         else
         {
             set("drop", "0");                               // choosing a place starts over
@@ -408,7 +409,7 @@ choose(string m)
     {
         // taller viewer bars (favourites, navigation) can cover the strip: a step further in each press, up to 6 (8.5.7:
         // 8.0.6 had one step, and a second press did nothing)
-        if (b == "Lower it") moveIn();
+        if (b == "Lower it") move(1);
         if (b == "Yes") open("tour1");
         else open("inview");
     }
@@ -564,7 +565,7 @@ command(string m)
     else if (c == "debug") llMessageLinked(LINK_SET, CMD, "debug|" + (string)(a == "on"), "");
     else if (c == "blend") llMessageLinked(LINK_SET, CMD, "blend|" + (string)(a == "on"), "");
     else if (c == "flip") set("flip", llList2String(["1", "0"], cfg("flip") == "1"));
-    else if (c == "lower") moveIn();                        // 8.5.7: works when the viewer's bars cover the [12] too
+    else if (c == "lower") move(1);                        // 8.5.7: works when the viewer's bars cover the [12] too
     else if (c == "place" && llListFindList(["top", "topl", "bot", "both"], [a]) >= 0) set("place", a);
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);

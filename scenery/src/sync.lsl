@@ -20,7 +20,7 @@
 //  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who, here: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "8.5.10";
+string VERSION = "8.6.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build: it can watch, never film for others
 
@@ -374,7 +374,9 @@ connected()
             k += [p];
         }
     }
-    dialog("connected", llDumpList2String(names, "\n"), b + ["Invite", "Leave", "Close"], k);
+    list t = ["Invite", "Friends", "Close"];               // 8.6.0: one page for Connect, alone or not; Friends here
+    if (gP != []) t = ["Invite", "Friends", "Leave", "Close"];
+    dialog("connected", llDumpList2String(names, "\n"), b + t, k);
 }
 
 // one word for where someone is with you
@@ -400,10 +402,10 @@ person(key p)
     dialog("person", sn(p) + "~" + stateOf(i), b + ["‹ Back"], k);
 }
 
-// the strip's Connect key: alone, find people; with one, flip between your film and theirs; with more, their names
+// the strip's Connect key: alone, the Connect page (8.6.0: it searched at once); with one, flip between your film and theirs; with more, their names
 tapKey()
 {
-    if (gP == []) { scan("connect"); return; }
+    if (gP == []) { connected(); return; }
     if (gHost != NULL_KEY && reach() <= 1)
     {
         mine(TRUE, TRUE);
@@ -444,6 +446,7 @@ answer(string p, string b, key k)
     {
         if (b == "Leave") leave();
         else if (b == "Invite") scan("connect");
+        else if (b == "Friends") llMessageLinked(LINK_SET, CMD, "connect|friends", "");
         else if (k != NULL_KEY) person(k);
     }
     else if (p == "person")
@@ -596,12 +599,7 @@ default
         else if (num == CMD)
         {
             if (str == "connect") tapKey();
-            else if (str == "connect|menu")
-            {
-                if (gP == []) scan("connect");
-                else connected();
-            }
-            else if (str == "connect|addfriend") scan("addfriend");
+            else if (str == "connect|menu") connected();   // the menu (and Friends' Back): the Connect page (8.6.0)
             else if (str == "off" || str == "standby") leave();   // everything off (or an older copy stepping aside) ends it
             else if (str == "mine") mine(FALSE, FALSE);     // core starts a shot of yours: it sets the camera
             else if (llGetSubString(str, 0, 5) == "debug|") gDebug = (integer)llGetSubString(str, 6, -1);
