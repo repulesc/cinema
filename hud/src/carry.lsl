@@ -16,7 +16,7 @@
 //  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.5.8";
+string VERSION = "8.5.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -189,9 +189,9 @@ feedback(string m)
     gFbT = llGetUnixTime();
     gFbN++;
     string prod = llList2String(["Take 12", "Take 12 Scenery"], LITE);
-    string fr = cfg("shape." + gShot);
+    string fr = cfg("shape");
+    if (fr == "") fr = "2.39";
     integer i = llListFindList(["tracking", "portrait", "fixed", "scenic"], [gShot]);
-    if (fr == "" && i >= 0) fr = llList2String(["2.39", "1.85", "1.85", "2.39"], i);
     string sh = "own camera";
     if (i >= 0) sh = llToUpper(llGetSubString(gShot, 0, 0)) + llGetSubString(gShot, 1, -1) + " · frame " + fr;
     string win = cfg("aspect");

@@ -1,5 +1,13 @@
 # Changelog
 
+## 8.5.9 (one film frame; Auto's shot by the Orbit)
+- **One cinema frame for the whole film** (2.39 by default), the same in every shot: the bars no longer jump when the
+  shot changes. The ▭ and Settings › Frames & bars › Film choose it; your photo frame still shows only while the
+  shutter is open. Each shot's old frame is forgotten (a photo frame kept on a shot still becomes your photo frame).
+- **Auto: the shot it chose sits next to the Orbit**, the other shots hidden (an exception to "every word in its
+  place": in Auto the strip shows one word, so it reads as one).
+- bars, ui, text, carry (the feedback line) and strip change; every script is 8.5.9.
+
 ## 8.5.8 (quality pass: the free build's Settings; tidy)
 - **The free Take 12 Scenery's Settings showed Vehicles (Fixed's) and hid Frames & bars**, from 8.0.6 on: it took out
   two buttons by position, and a button added in 8.0.6 moved them. It now hides Eye line and Vehicles, as meant.

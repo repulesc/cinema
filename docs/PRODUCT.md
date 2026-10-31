@@ -108,7 +108,8 @@ Each shot remembers its options across logins; a tap on the lit shot does its on
 | **Scenic** | DRIFT · NEAR · ROOM · FAR | Still frames cut about every 15 s, or Drift (the only moving one: the reveal, close on you, rising and pulling back, held wide, a cut to a new close; Settings › Motion › Breathe: in and out). Rays for open sight; within 60 m, inside the region, above ground and water; indoors every band stays in the room. Drift stays near when anyone is within 10 m. It is also the idle camera. | The next view now |
 
 **Frames and the shutter (every frame is a picture, 8.0.9; the shutter, 8.1.0):**
-- **The cinema frame:** each shot has its own. Tracking and Scenic are 2.39, Portrait and Fixed 1.85 by default.
+- **The cinema frame:** one for the whole film, every shot (2.39 by default), so the bars never jump when the shot changes (8.5.9). The photo frame shows only while the shutter is open.
+- **Auto:** the shot it chose sits next to the Orbit, the other shots hidden.
 - **The frame key `▭`** always shows, and edits, the frame on screen.
   - Filming, its dialog lists the cinema frames, widest first: 2.39 · 2.00 · 1.85 · 1.66, and Full (no bars).
   - With the shutter open, it lists the photo frames: 3:2 · 4:3 · 1:1 · 4:5.

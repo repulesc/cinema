@@ -94,7 +94,9 @@ for a in ASPECTS:
             for j in range(i + 1, len(names)):
                 if overlap(V[names[i]], V[names[j]], PADX / 48.0 * 26.0 * SIZES[sz] / 1080.0):
                     check(False, "%s: %s overlaps %s" % (tag, names[i], names[j]))
-        check(V["t12 auto"][0] < V[shot[0]][0], "%s: the Orbit left of the shot" % tag)
+        o, sh = V["t12 auto"], V[shot[0]]
+        gap = (sh[0] - sh[2] / 2) - (o[0] + o[2] / 2)
+        check(0 < gap < 30 * SIZES[sz] / 1080.0, "%s: the shot Auto chose next to the Orbit (8.5.9; %.0f px)" % (tag, gap * 1080))
 h.send(7371, "auto|0"); ana.say(12, "size m"); w.run(2.5)
 ana.touch("t12 s2"); w.run(3)                                          # Fixed again (Auto may have moved on to Drift)
 no_errors(w, "auto")
@@ -104,7 +106,8 @@ keep = ("Take 12", "t12 ring", "t12 dot", "t12 note", "t12 plate", "t12 bar0", "
 for p in h.prims[1:]:
     if p["name"] not in keep:
         check(p["alpha"] == 0.0 and p["size"][1] <= 0.0101 and p["size"][2] <= 0.0101, "closed: %s still there (%s, %.2f)" % (p["name"], p["size"], p["alpha"]))
-# the bars cut the shape: Fixed is 1.85 by default
+# the bars cut the shape: the film's frame, 1.85 here (8.5.9: one for every shot, 2.39 unless chosen)
+h.lsd["cin.shape"] = ("1.85", PASS); h.send(7330, "shape")
 for a in (1.25, 1.778, 3.556):
     ana.aspect = a
     w.run(2.5)

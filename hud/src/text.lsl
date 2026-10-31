@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.5.8";
+string VERSION = "8.5.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -220,12 +220,11 @@ string body(string page, list a)
         + a1 + ". Reveal rises from you to the place; Breathe moves in and out.";
     if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\nThe viewer's own stops: 21 (its wide view) · 26 · 32 · 38 · 47 · 56.\nCtrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21.";
     if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
-    if (page == "shapes") return "Frames & bars\nTracking " + a0 + " · Portrait " + a1 + "\nFixed " + a2 + " · Scenic " + a3
-        + "\nPhoto " + llList2String(a, 5) + " (the shutter) · Bars: " + llList2String(a, 4);
+    if (page == "shapes") return "Frames & bars\nFilm " + a0 + ", every shot · Photo " + llList2String(a, 2) + " (the shutter)\nBars: " + a1;
     if (page == "frame")
     {
         // the snapshot size for the frame on screen: a shot's cinema frame, or your photo frame (the shutter, 8.1.0)
-        string t = llToUpper(llGetSubString(a0, 0, 0)) + llGetSubString(a0, 1, -1) + "'s frame\n";
+        string t = "The film's frame  ·  every shot\n";
         if (a0 == "photo") t = "Your photo frame  ·  every shot\nThe shutter holds the moment in it.\n";
         integer i = llListFindList(SNAP, [a1]);
         if (i < 0) return t + "Full: no bars. Snapshot at your window's size.";

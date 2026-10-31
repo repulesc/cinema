@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.5.8";
+string VERSION = "8.5.9";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -215,19 +215,13 @@ open(string p)
     }
     else if (p == "shapes")
     {
-        list S = [];
-        integer i;
-        for (i = 0; i < 4; i++)
-        {
-            string s = cfg("shape." + llList2String(["tracking", "portrait", "fixed", "scenic"], i));
-            if (s == "") s = llList2String(["2.39", "1.85", "1.85", "2.39"], i);
-            S += s;
-        }
+        string s = cfg("shape");
+        if (s == "") s = "2.39";
         string bs = cfg("bstyle");
         string ph = cfg("photo");
         if (ph == "") ph = "3:2";
-        page(p, llDumpList2String(S, "~") + "~" + llList2String(["black", "dimmed"], bs == "dim") + "~" + ph,
-            ["Tracking", "Portrait", "Fixed", "Scenic", "Photo", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
+        page(p, s + "~" + llList2String(["black", "dimmed"], bs == "dim") + "~" + ph,
+            ["Film", "Photo", mark("Black", bs != "dim"), mark("Dimmed", bs == "dim"), "‹ Back"]);
     }
     else if (p == "idle")
     {

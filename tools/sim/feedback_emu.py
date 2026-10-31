@@ -21,7 +21,7 @@ check(to == "panocarver@gmail.com" and sc == "carry", "to the maker, from carry 
 check(subj == "Take 12 feedback · Ana Resident · " + VER, "the subject: %r" % subj)
 check(body.startswith("Portrait cut my head in the club.\n\n"), "their words first")
 line = body.split("\n\n", 1)[1]
-for part in ("Ana Resident", VER, "Portrait · frame 1.85", "lens 35 mm"):
+for part in ("Ana Resident", VER, "Portrait · frame 2.39", "lens 35 mm"):
     check(part in line, "the line has %r: %r" % (part, line))
 check(any(n.startswith("Thanks. It went to the maker") for n in ana.notes(t)), "a note thanks them")
 check(state(h) == ("film", "portrait"), "Portrait still filming (%r)" % (state(h),))

@@ -15,7 +15,7 @@ L = ana.labels()
 check("Frames & bars" in L and "Eye line" not in L and "Vehicles" not in L, "Settings: Frames & bars, no Eye line, no Vehicles (%r)" % L)
 check(all(b in L for b in ("Lens", "Motion", "Idle start", "Friends", "Look", "Reset", "‹ Back")), "... and the rest (%r)" % L)
 ana.click("Frames & bars"); w.run(1)
-check(ana.dialog is not None and "Scenic" in ana.labels(), "Frames & bars opens (%r)" % ana.labels())
+check(ana.dialog is not None and "Film" in ana.labels(), "Frames & bars opens (%r)" % ana.labels())
 ana.dialog = None
 
 # ---- the strip: the four shots, three dim; a dim one only says where it is -----------------------------------------------
