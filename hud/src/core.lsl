@@ -74,13 +74,13 @@ integer gLastAct;
 integer gKeys;
 float   gCamT;
 string  gCamM;                      // ... what went out last (8.9.0: the same again only after 1 s)
+integer gSaid;                      // a moving camera told to sync since the last "-" (8.9.1)
 float   gHeldT;                     // the camera off its spot since
 vector  gShotPos;
 vector  gShotFoc;
 vector  gCamPos;
 rotation gCamRot;
 integer gBlend;
-integer gFb;
 integer gAuto;                      // Auto directs (tracking.lsl)
 integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
 integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
@@ -136,11 +136,19 @@ vector aim(vector cp)
 share()
 {
     if (gState == "off" || gState == "watch" || (llGetAgentInfo(gOwner) & AGENT_MOUSELOOK))
+    {
         llMessageLinked(LINK_SET, CAMSET, "-", "");
+        gSaid = FALSE;
+    }
     else if (gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR)
         llMessageLinked(LINK_SET, CAMSET, (string)gShotPos + "|" + (string)gShotFoc + "|0|" + (string)llGetCameraFOV(), "");
-    else if (gPermOK)                                   // (a negative lag: a camera that is not a shot; fixed keeps only shots)
+    else if (gPermOK && (gWatched || !gSaid))           // (a negative lag: a camera that is not a shot; fixed keeps only shots)
+    {
+        // a camera that moves by itself (yours, Tracking, Drift) goes to sync only when someone watches it, or once after
+        // a "-" (sync then knows you film). 8.9.1: Drift's every step woke all twelve scripts for it, 1.7 times a second
+        gSaid = TRUE;
         llMessageLinked(LINK_SET, CAMSET, (string)llGetCameraPos() + "|" + (string)aim(llGetCameraPos()) + "|-0.25|" + (string)llGetCameraFOV(), "");
+    }
 }
 
 // ---- the camera ----------------------------------------------------------------------
@@ -221,28 +229,6 @@ follow(string s)
     gApplyT = llGetTime();
     gSettle = GRACE + 1.0;
     share();                                            // filming: friends can watch (the camera goes out once watched)
-}
-
-// a basic shot when the shot's script is silent: a level portrait of you, at eye height
-basicShot()
-{
-    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
-    if (llGetListLength(d) < 2) return;
-    vector P = llList2Vector(d, 0);
-    vector F = llRot2Fwd(llList2Rot(d, 1));
-    F.z = 0.0;
-    if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
-    F = llVecNorm(F);
-    vector sz = llGetAgentSize(gOwner);
-    vector E = <P.x, P.y, P.z + 0.37 * sz.z>;
-    vector dir = F * llEuler2Rot(<0.0, 0.0, llList2Float([30.0, -30.0, 150.0, -150.0], gFb % 4) * DEG_TO_RAD>);
-    gFb++;
-    float dist = 3.0;
-    list r = llCastRay(E, E + dir * dist, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
-    if (llList2Integer(r, -1) == 1) dist = llVecDist(E, llList2Vector(r, 1)) - 0.4;
-    if (dist < 1.2) dist = 1.2;
-    vector cam = E + dir * dist;
-    setCam(cam, <E.x, E.y, cam.z>);
 }
 
 // an automatic cut that is hardly a new picture (under 30° and one size step) glides instead (no jump cut)
@@ -560,7 +546,7 @@ tick()
     if (gState == "film" && !gAnswered && !gSitHold && gShot != "fixed" && t - gStartT > FIRST_WAIT)
     {
         gAnswered = TRUE;
-        basicShot();
+        llMessageLinked(LINK_SET, CMD, "basic", "");        // bars makes it (8.9.1: room for core)
     }
     if (gState == "film" || (gState == "held" && gAuto)) heldCheck(t);
 }
@@ -779,7 +765,7 @@ default
                 clearCam();
                 share();
             }
-            else basicShot();
+            else llMessageLinked(LINK_SET, CMD, "basic", "");
         }
         else if (num == ACK) gAnswered = TRUE;
         else if (num == CMD)
@@ -837,7 +823,11 @@ default
                 else bail("watch");
             }
             else if (c == "hint") ui(a);
-            else if (c == "camq") share();                  // sync: someone connected, what is your film now
+            else if (c == "camq")                           // sync: someone connected (or started again), what is your film now
+            {
+                gSaid = FALSE;
+                share();
+            }
             else if (c == "watched")
             {
                 gWatchers = llParseString2List(a, [","], []);

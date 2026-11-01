@@ -1,5 +1,21 @@
 # Changelog
 
+## 8.9.0, lighter (replace core, bars, fixed, tracking and ui)
+A profile of the real scripts through a session (waiting, Tracking, Portrait, Scenic, Auto) counted every event, link
+message and prim or camera update. Every link message wakes all twelve scripts, so the messages sent often are what
+the sim pays for.
+- **Drift woke all twelve scripts 1.7 times a second for nothing:** at each of its steps core sent its camera (CAMSET),
+  which only sync needs, and only while someone watches you. A camera that moves by itself now goes only then (or
+  once, so sync knows you film). Scenic: 53 events a second down to 31; Auto standing: 45 down to 30; waiting: 7 down
+  to 5; Tracking walking: 21 down to 16.
+- **tracking rests** when it has nothing to do (another shot, Auto off): it ticked twice a second regardless.
+- **LSL tests every part of an `&&`:** ui read a setting at every message it got, and fixed parsed every message while
+  it ran. Both only do it for their own message now.
+- **core has room again** (15.1 KB to 15.9 KB): the basic shot (a level portrait when a shot's script is silent or
+  Scenic finds no view) moved to bars, which has plenty, in the free build too.
+- New `load_emu` (in CI): ceilings for events and messages in each kind of shot (it fails on the earlier 8.9.0), and
+  the basic shot from bars. The version stays 8.9.0, so only these five scripts change.
+
 ## 8.9.0, ui updated (the setup and the guide card; replace ui only)
 - **A tap closing the guide card was taken for a tap on the [12]** (in-world): ui looked at the touched part again when
   the touch ended, after the card had gone. In the setup's eye-line step it kept the line wherever it was; two such

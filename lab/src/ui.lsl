@@ -716,7 +716,10 @@ default
         else if (num == CMD && str == "eyequit" && gEye) eyeEnd(FALSE);   // you walked off: skipped, the old line kept
         else if (num == CMD && llGetSubString(str, 0, 4) == "menu|") open(llGetSubString(str, 5, -1));   // back from sync's Friends, bars' frames
         else if (num == CMD && str == "firstrun") { gFirst = "start"; first(); }
-        else if (num == CFG_CHANGED && str == "all" && cfg("firstrun") == "done") gFirst = "";   // carried over: set up
+        else if (num == CFG_CHANGED && str == "all")      // carried over: set up (LSL tests every part of an &&: the
+        {                                                   // setting was read at every message, 8.9.1)
+            if (cfg("firstrun") == "done") gFirst = "";
+        }
         else if (num == MSG_VER && str != "?")
         {
             if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];
