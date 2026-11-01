@@ -48,7 +48,7 @@ def ask(w, a, b, yes=True):
     check(nm, "%s's nearby list has %s: %r" % (a.name, b.name, a.labels()))
     if not nm: return
     a.click(nm[0]); w.run(1)
-    if b.dialog and "share films" in b.dialog[1]:
+    if b.dialog and "wants to share films" in b.dialog[1]:
         b.click("Yes" if yes else "No"); w.run(1.5)
 
 def shot(w, a, n):
@@ -131,7 +131,7 @@ def scenarios():
     ben.hud.lsd["cin.friends"] = (str(ana.key) + ",Ana Resident", PASS)
     t = w.t
     ana.say(12, "connect"); w.run(0.5); ana.click("Invite"); w.run(4); ana.click("Ben"); w.run(2)   # alone: the Connect page first (8.6.0)
-    check(peers(ben) == ["Ana"] and not (ben.dialog and "share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
+    check(peers(ben) == ["Ana"] and not (ben.dialog and "wants to share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
     # hold: everything off leaves too
     ana.long_press(); w.run(2)
     check(peers(ana) == [] and peers(ben) == [], "Ana holds: everything off, the connection ends")
@@ -228,7 +228,7 @@ def fuzz(runs, seed, names, drop=0.0, mates=False):
                 nm = [x for x in a.labels() if x.lstrip("★ ").startswith(b.name)]
                 if nm:
                     a.click(nm[0]); w.run(1)
-                    if b.dialog and "share films" in b.dialog[1]: b.click(rng.choice(["Yes", "Yes", "No"]))
+                    if b.dialog and "wants to share films" in b.dialog[1]: b.click(rng.choice(["Yes", "Yes", "No"]))
             elif act == "link":
                 if not peers(a): continue
                 a.dialog = None
