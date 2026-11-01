@@ -16,14 +16,14 @@ import hashlib, os, sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SRC, OUT = os.path.join(ROOT, "hud", "src"), os.path.join(ROOT, "lab", "src")
-OWN = {"strip.lsl": "79c5fc54672b7b5f9186dc1d257a94668ba7f8a8",       # the lab's own, forked from these (sha1)
-       "screen.lsl": "d389c33a9468a76d7e1ee3fa7cf175a98955e21b",
-       "ui.lsl": "658bc26dbc7e3f1fecf590fa5eabd2b3f0e33d34",           # lab 2: the setup's alignment and the guide first
-       "text.lsl": "ec86078e6198d9021c7cfd8c0a28517ad217671b"}
+OWN = {"strip.lsl": "5f11492f3c91e4f59762fcec93bc3169279a023f",       # the lab's own, forked from these (sha1)
+       "screen.lsl": "8ae3d785eb416ec955d240481c832c8920003026",
+       "ui.lsl": "d0f2a29fd0ac610f37a359b97297a9fe14e5c52e",           # lab 2: the setup's alignment and the guide first
+       "text.lsl": "3f5e96361a7b3e3f1f96e08cee7db8af309f371d"}
 COPIED = ["core.lsl", "bars.lsl", "tracking.lsl", "portrait.lsl", "fixed.lsl", "scenic.lsl",
           "sync.lsl", "carry.lsl"]
 HEADER = "// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***\n"
-PARTS = ('"t12 plate", "t12 guide"]', '"t12 plate", "t12 guide", "t12 tab", "t12 fold", "t12 tab2"]')
+PARTS = ('"t12 plate", "t12 guide"]', '"t12 plate", "t12 guide", "t12 tab", "t12 fold", "t12 tab2", "t12 free"]')
 BHEAD = "// *** TAKE 12 LAB: the product's builder with the lab's parts, made by tools/build_lab.py: do not edit here ***\n"
 
 

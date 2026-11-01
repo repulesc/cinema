@@ -3,7 +3,8 @@ contents; a touch makes the 29 parts (rezzed, linked, named, laid flat), names t
 and itself out of the contents; touched again on a HUD that misses parts, it adds only those. The result, worn with
 the twelve scripts, is found by screen and strip and lays out."""
 from emu_util import *
-from world import Obj, new_key, PARTS
+from world import Obj, new_key, PARTS, LAB_PARTS, LAB_SCRIPTS
+import os
 
 w = World()
 ana = w.avatar("Ana", (128, 128, 21))
@@ -43,4 +44,23 @@ check(var(h, "strip", "gFound") == 1, "strip finds the parts")
 ana.double_tap(); w.run(1)
 check(len(visible(h, ana)) >= 6, "the strip opens on the built HUD")
 no_errors(w, "worn")
+
+# the lab's builder (8.10.0) on a lab HUD built before the x: it adds t12 free, and nothing else; worn, the x is there
+LAB_BUILDER = os.path.join(os.path.dirname(BUILDER), "..", "..", "lab", "build", "builder.lsl")
+w = World()
+bo = w.avatar("Bo", (128, 128, 21))
+old = Obj(w, bo, [LAB_BUILDER], children=(), rezzed=True)
+old.prims = [old.prims[0]] + [dict(old.prims[0], name=n, key=new_key()) for n in LAB_PARTS if n != "t12 free"]
+old.prims[0]["name"] = "Take 12"
+old.inventory["t12 part"] = ("object", new_key(), True)
+w.objects[old.key] = old
+old.rez(); w.run(1)
+bo.touch(o=old); w.run(10)
+names = [p["name"] for p in old.prims[1:]]
+check(sorted(names) == sorted(LAB_PARTS) and names.count("t12 free") == 1, "the lab's builder on a lab HUD before 8.10.0: it adds the x, nothing doubled")
+h = bo.wear(LAB_SCRIPTS, parts=names, lsd=ready(bo))
+w.run(0.5); manual(h); w.run(4.5)
+bo.double_tap(); w.run(1); bo.say(12, "tracking"); w.run(3)
+check(rect(h, bo, "t12 free")[4] > 0.3, "... worn: the x on the island")
+no_errors(w, "lab repair")
 done("builder_emu")

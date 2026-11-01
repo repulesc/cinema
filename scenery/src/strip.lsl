@@ -16,7 +16,7 @@
 //  four shots are back; a tap gives the camera to Auto again. docs/ARCHITECTURE.md §1–2.
 // ============================================================================
 
-string VERSION = "8.9.2";
+string VERSION = "8.10.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 

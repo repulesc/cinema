@@ -52,9 +52,7 @@ def ask(w, a, b, yes=True):
         b.click("Yes" if yes else "No"); w.run(1.5)
 
 def shot(w, a, n):
-    g = next(x for x in a.hud.scripts if x.name == "strip").g
-    if g.get("gQuiet"): a.touch("t12 fold"); w.run(0.5)              # the new design's Quiet page: Direct first, as you would
-    a.touch("t12 s%d" % ["tracking", "portrait", "fixed", "scenic"].index(n)); w.run(3)
+    a.touch("t12 s%d" % ["tracking", "portrait", "fixed", "scenic"].index(n)); w.run(3)   # (the lab's Quiet island holds the four too)
 
 def link(w, a):
     a.touch("t12 link"); w.run(2)
@@ -530,6 +528,19 @@ def review(scripts=HUD_SCRIPTS, parts=PARTS):
     ana.dialog = None; ana.say(12, "connect"); w.run(1); ana.click("Leave"); w.run(3)
     check(peers(ana) == [] and peers(ben) == [], "... and a Leave still ends it")
     no_errors(w, "review: rejoin")
+
+    # 15. the lab's x (8.10.0) while watching a friend's film: your own viewer's camera, and Ana knows nobody watches
+    if parts is LAB_PARTS:
+        w, (ana, ben) = setup()
+        ask(w, ana, ben); shot(w, ana, "tracking"); shot(w, ben, "portrait"); w.run(2)
+        link(w, ben); w.run(2)
+        check(host(ben) is ana and var(ben.hud, "core", "gState") == "watch", "(Ben watches Ana)")
+        ben.touch("t12 free"); w.run(3)
+        check(host(ben) is None and var(ben.hud, "core", "gState") == "wait", "Ben's x while he watches: his viewer's camera (%r)" % var(ben.hud, "core", "gState"))
+        check(var(ana.hud, "core", "gWatchers") == [] and linkst(ana) == "on", "... and Ana's rings: connected, nobody watching (%r)" % linkst(ana))
+        ben.touch("t12 free"); w.run(3)
+        check(state(ben.hud) == ("film", "portrait") and host(ben) is None and peers(ben) == ["Ana"], "his x again: his own Portrait, still connected (%r)" % (state(ben.hud),))
+        no_errors(w, "review: the x while watching")
 
 # ---- 8.9.0: an Alt-click close-up of a thing, watched through another lens. The watcher moved along the view round you,
 # not round what the picture looks at, and could end up past it (in-world: "a wall camera" while a friend framed a toy)

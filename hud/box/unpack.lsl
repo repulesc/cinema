@@ -10,7 +10,7 @@
 //  takes the textures out of its contents (as the HUD does), so only the script stays with what it hands over.
 // ============================================================================
 
-string VERSION = "8.9.2";
+string VERSION = "8.10.0";
 string NAME    = "Take 12 - Cinematic Camera HUD";
 list   FACES   = ["take12_box_front", "take12_box_side", "take12_box_top"];
 
