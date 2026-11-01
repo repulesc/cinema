@@ -1,4 +1,3 @@
-// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***
 // ============================================================================
 //  Take 12  -  ui.lsl  (8.0)  - the [12]'s gestures, the dialogs, the first run, /12 commands
 //  Tap the [12]: the dialog (setup only: Connect · Settings · Help). Double-tap: the strip opens or closes. Hold 0.8 s
@@ -70,11 +69,11 @@ string cfg(string k)
     return llLinksetDataReadProtected("cin." + k, PASS);
 }
 
-// the strip a step further in from the edge (d 1) or back out (d -1), 0 to 6 steps
+// the strip a step further in from the edge (d 1) or back out (d -1): TAKE 12 LAB (lab 2), 10 px a step, 0 to 24
 move(integer d)
 {
     integer v = (integer)cfg("drop") + d;
-    if (v >= 0 && v <= 6) set("drop", (string)v);
+    if (v >= 0 && v <= 24) set("drop", (string)v);
 }
 
 set(string k, string v)
@@ -265,7 +264,7 @@ open(string p)
     else if (p == "about") page(p, "", ["Read Me", "‹ Back", "Close"]);   // what 12 means (8.1.1); the notecard (8.8.0: Guide is the card)
     else if (p == "first") page(p, "", ["Start", "Later"]);
     else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
-    else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
+    else if (p == "inview") page(p, "", ["Up", "Down", "Done"]);   // the lab: align it, both ways, 10 px a step
     else if (p == "feel")
     {
         // Motion: Tracking snappy to steer by (the default, 8.0.8) or smooth; Drift the reveal (8.1.0) or breathing
@@ -375,6 +374,7 @@ choose(string m)
         llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
         llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
         gFirst = "start";
+        llMessageLinked(LINK_SET, STRIP, "guide|1", "");   // the lab: the guide card first (screen shows it if it has it)
         first();
     }
     else if (gPage == "help" || gPage == "about")
@@ -409,11 +409,12 @@ choose(string m)
     {
         // taller viewer bars (favourites, navigation) can cover the strip: a step further in each press, up to 6 (8.5.7:
         // 8.0.6 had one step, and a second press did nothing)
-        if (b == "Lower it") move(1);
-        if (b == "Yes")
+        if (b == "Down") move(1);
+        if (b == "Up") move(-1);
+        if (b == "Done")
         {
             if (cfg("take12_guide") == "") open("tour1");   // without the card's texture, the three pages (as before 8.8.0)
-            else { done(); guide(TRUE); }
+            else done();                                    // the lab: the card came first, at the start
         }
         else open("inview");
     }
@@ -762,7 +763,11 @@ default
             }
             gVerT = 0;
             gVerStep = 0;
-            if (gFirst == "start") note("setup", "");
+            if (gFirst == "start")
+            {
+                note("setup", "");
+                llMessageLinked(LINK_SET, STRIP, "guide|1", "");   // the lab: the guide card on the first wear
+            }
             else if (cfg("open") != "0") strip("open");    // set up: the strip shows as you left it (8.0.5: it started hidden)
         }
         timer0();

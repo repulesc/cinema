@@ -1,4 +1,3 @@
-// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***
 // ============================================================================
 //  Take 12  -  text.lsl  (8.0)  - every word you read
 //  The notes (3 s, in Second Life's own floating text on the part "t12 note", just under the strip): NOTE "<id>|<arg>".
@@ -267,7 +266,7 @@ string body(string page, list a)
     if (page == "show") return a0 + " shows you their film.";
     if (page == "ask") return a0 + " wants to share films.";
     if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
-    if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Screen later.";
+    if (page == "inview") return "Align the strip\nUp, Down: 10 px a step. Just under your viewer's bars is best.";
     if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
     if (page == "tour1") return "The strip\nDouble-tap the [12]: the four shots and their options. Tap a shot to start it.";
     if (page == "tour2") return "Connect\nThe linked rings share films with people near you.";

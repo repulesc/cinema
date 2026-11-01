@@ -838,7 +838,7 @@ NAMES = ("core", "ui", "text", "screen", "strip", "bars", "tracking", "portrait"
 HUD_SCRIPTS = [os.path.join(ROOT, "hud", "src", n + ".lsl") for n in NAMES]
 FREE_SCRIPTS = [os.path.join(ROOT, "scenery", "src", n + ".lsl") for n in ("core", "ui", "text", "screen", "strip", "bars", "scenic", "sync", "carry")]
 LAB_SCRIPTS = [os.path.join(ROOT, "lab", "src", n + ".lsl") for n in NAMES]         # the Take 12 Lab (lab/)
-LAB_PARTS = PARTS + ["t12 tab", "t12 fold"]
+LAB_PARTS = PARTS + ["t12 tab", "t12 fold", "t12 tab2"]
 BUILDER = os.path.join(ROOT, "hud", "build", "builder.lsl")
 PASS = "cinema-1.0-build1"
 

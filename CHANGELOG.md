@@ -1,5 +1,14 @@
 # Changelog
 
+## Take 12 Lab, lab 2 (the floating island; the setup aligns both ways; the product is unchanged)
+- **The island** (from the owner's in-world screenshot: the notch was lopsided, wide on the left for a rare prompt,
+  and an old iPhone's): it floats 8 px in from the edge, centred on the [12], with round ends (a disc at each end of a
+  black middle, round at any width). The Orbit, the shot and `›` are left of the [12]; the frame, Connect and the
+  shutter right of it, so the island is even. With the camera yours, the last shot shows faintly; a tap takes it back.
+- **The setup:** the guide card comes first, on the first wear and after Reset › Everything; the alignment step has
+  Up, Down and Done, 10 px a step (it could only go down, 40 px at a time).
+- The lab now owns ui and text too. One more part (`t12 tab2`); the marks and the guide card change.
+
 ## The lab's guide card: the hood as it is on screen (texture only)
 - The Quiet strip drawn on a slice of the picture: the film's top bar across it (1.85; at 2.39 the bar is taller and
   the notch is lost in it) and the notch hanging from the screen's edge, joined to the bar. Upload `take12_guide_lab`
