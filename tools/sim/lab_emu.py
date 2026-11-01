@@ -167,10 +167,8 @@ h2 = bo.wear(LAB_SCRIPTS, parts=LAB_PARTS, lsd={"cin.owner": (str(bo.key), PASS)
 w2.run(1)
 textures(h2); h2.drop("take12_guide_1024"); w2.run(6)
 card = lambda: rect(h2, bo, "t12 guide")[4] > 0.5 and rect(h2, bo, "t12 guide")[2] > 0.02
-check(not card() and any("Tap the [12] to set up." in n for n in bo.notes()), "the first wear: the setup, not the guide card (8.9.1: the card first got in its way)")
-bo.tap(); w2.run(0.6)
-check(bo.labels() == ["Later", "Up", "Down", "Done"] and var(h2, "screen", "gOpen") == 1,
-      "the setup's very first step: the strip in view, aligned both ways (%r)" % bo.labels())
+check(not card() and bo.labels() == ["Later", "Up", "Down", "Done"] and var(h2, "screen", "gOpen") == 1,
+      "the first wear: alignment opens by itself, the strip in view, no guide card (%r)" % bo.labels())
 z0 = rect(h2, bo, "Take 12")[1]
 for k in range(3): bo.click("Down"); w2.run(0.5)
 check(lsd(h2, "drop") == "3" and abs((z0 - rect(h2, bo, "Take 12")[1]) * 1080 - 30) < 0.5, "Down x3: 30 px further in (%r)" % lsd(h2, "drop"))
@@ -193,11 +191,8 @@ check(not card() and bo.dialog is None, "a tap on it closes it, and opens nothin
 check(var(h2, "screen", "gOpen") == 1 and var(h2, "tracking", "gAuto") == 1, "... the strip open and Auto filming (the setup really finished)")
 bo.tap(); w2.run(0.6); bo.click("Settings"); w2.run(0.5); bo.click("Reset"); w2.run(0.5); bo.click("Everything"); w2.run(0.5)
 bo.click("Yes, reset"); w2.run(2)
-check(not card() and bo.dialog is None and any("Tap the [12] to set up." in n for n in bo.notes(w2.t - 3)),
-      "Reset > Everything: the setup again when you tap the [12] (8.9.1: the card and the setup at once, the card over it)")
+check(not card() and bo.dialog and "Up" in bo.labels(), "Reset > Everything: alignment again at once, no card over it")
 check(var(h2, "bars", "gOn") == 1, "... and the film's bars back, as new (the picture is asked again)")
-bo.tap(); w2.run(0.6)
-check(not card() and bo.dialog and "Up" in bo.labels(), "a tap on the [12]: the setup starts, aligning first (%r)" % bo.labels())
 bo.click("Later"); w2.run(0.5)
 check(bo.dialog is None and lsd(h2, "firstrun") == "done", "Later: the setup another time")
 no_errors(w2, "lab setup")
@@ -210,7 +205,7 @@ cy4 = w4.avatar("Cy", (128, 128, 21))
 h4 = cy4.wear(LAB_SCRIPTS, parts=LAB_PARTS, lsd={"cin.owner": (str(cy4.key), PASS)})
 w4.run(1); textures(h4); h4.drop("take12_guide_1024"); w4.run(6)
 card4 = lambda: rect(h4, cy4, "t12 guide")[4] > 0.5 and rect(h4, cy4, "t12 guide")[2] > 0.02
-cy4.tap(); w4.run(0.6); cy4.click("Done"); w4.run(0.5); cy4.click("Skip"); w4.run(1)
+cy4.click("Done"); w4.run(0.5); cy4.click("Skip"); w4.run(1)
 check(var(h4, "ui", "gEye"), "(the eye-line step)")
 h4.send(7343, "guide|1"); w4.run(0.5)                                     # the card over the eye-line step (/12 guide)
 check(card4(), "(the card shows)")

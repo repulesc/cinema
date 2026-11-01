@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.9.1 (every script; the fixes since 8.9.0 under one number)
+- **Alignment opens by itself** on the first wear and after Reset › Everything: no tap needed, because a viewer's
+  bars can hide the [12] until the strip is aligned.
+- **One version again.** The three updates below kept the number 8.9.0 so that only the changed scripts had to be
+  replaced (the HUD warns when its scripts' versions differ). That made 8.9.0 mean four different things. From now on
+  every change gets its own number and every script carries it: replace all twelve.
+
 ## 8.9.0, ui and text updated (the setup aligns the strip first; replace ui and text)
 - **Alignment is the setup's very first step** (the user's call): a tap on the [12] opens the strip and asks Up, Down,
   Done (or Later), with the welcome in the same page; then the lens, the eye line, the size, the picture, and the

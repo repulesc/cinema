@@ -24,7 +24,7 @@
 //  Channel SYNC_CH, "T12|8|<what>|...", llRegionSayTo (who, here: llRegionSay). docs/CONNECT.md.
 // ============================================================================
 
-string VERSION = "8.9.0";
+string VERSION = "8.9.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build: it can watch, never film for others
 

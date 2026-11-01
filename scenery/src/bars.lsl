@@ -15,7 +15,7 @@
 //  llGetCameraAspect() wide, +Y left; the bars sit behind the [12] so it stays clickable.
 // ============================================================================
 
-string VERSION = "8.9.0";
+string VERSION = "8.9.1";
 string PASS    = "cinema-1.0-build1";
 
 integer SHOT        = 7310;          // the basic shot (core asks: CMD "basic", 8.9.1)

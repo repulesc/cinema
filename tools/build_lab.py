@@ -16,10 +16,10 @@ import hashlib, os, sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SRC, OUT = os.path.join(ROOT, "hud", "src"), os.path.join(ROOT, "lab", "src")
-OWN = {"strip.lsl": "1a50dc6717d5e67cb1024eb317e095ade05c4917",       # the lab's own, forked from these (sha1)
-       "screen.lsl": "1a574faefab3816857f2677418e64171ce8999de",
-       "ui.lsl": "8109659aa9336f7f5e77ff2e117d4f7933c44f10",           # lab 2: the setup's alignment and the guide first
-       "text.lsl": "4c4cb604a2bb30626e51e382535f90a18160179d"}
+OWN = {"strip.lsl": "faa9d255435d44e86426c49bb952f63afe84883c",       # the lab's own, forked from these (sha1)
+       "screen.lsl": "03c06efd67e885bbd50d6461a647cb3b357c409e",
+       "ui.lsl": "d1933f176688b1c12c73968f859f2848e52cf910",           # lab 2: the setup's alignment and the guide first
+       "text.lsl": "12a01811185621ce68975afb4162f442ab565582"}
 COPIED = ["core.lsl", "bars.lsl", "tracking.lsl", "portrait.lsl", "fixed.lsl", "scenic.lsl",
           "sync.lsl", "carry.lsl"]
 HEADER = "// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***\n"
