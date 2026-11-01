@@ -1,5 +1,13 @@
 # Changelog
 
+## 8.8.1 (Drift's glide, smooth)
+- **The glide was choppy in-world:** 8.7.0 moved a locked camera 20 times a second, and Second Life does not ease a
+  locked camera. Now the viewer's own follow camera does it, eased every frame as Tracking is: its behindness angle (how
+  far round from behind you it may be) narrows a little every half second, and the viewer swings the camera in to it.
+  The same glide: close, then about 40° round you at one distance and height, toward your back, never along a path a
+  wall crosses; when the close cut is already behind you, the view holds.
+- scenic changes; every script is 8.8.1. The emulator models the behindness angle; `scenic_emu` measures the swing.
+
 ## Take 12 Lab, lab 2 (the floating island; the setup aligns both ways; the product is unchanged)
 - **The island** (from the owner's in-world screenshot: the notch was lopsided, wide on the left for a rare prompt,
   and an old iPhone's): it floats 8 px in from the edge, centred on the [12], with round ends (a disc at each end of a

@@ -48,20 +48,29 @@ no_errors(w, "near")
 ana.touch(opt_part(h, "DRIFT")); w.run(1.5)
 first = cams(h, w.t - 1.5)[0][1]
 check(B.llVecDist(first, ana.pos) < 7, "Drift starts close (%.1f m)" % B.llVecDist(first, ana.pos))
-# 8.7.0: the glide (the default): held close, then sliding round you at the same distance and height, in small steps
+# 8.7.0: the glide (the default): held close, then round you at the same distance and height. 8.8.1: on the viewer's own
+# follow camera (eased every frame, as Tracking; 8.7.0's 20 locked steps a second were choppy in-world): its behindness
+# angle narrows a little every half second, and the camera swings round you toward your back
 t0 = w.t
-w.run(30)                                                              # the hold (4 s) and the slide (24 s); the cut after is a cut
-G = [(t, p) for t, p, f in cams(h, t0)]
+G = []
+for i in range(60):                                                    # the hold (4 s) and the swing (24 s), sampled
+    w.run(0.5)
+    G.append((w.t, ana.camera()[0]))
 flat = lambda p: vec(p[0] - ana.pos[0], p[1] - ana.pos[1], 0)
-R = [B.llVecMag(flat(p)) for t, p in G]
-check(len(G) > 100, "the glide: the camera moves 20 times a second (%d steps)" % len(G))
-check(max(R) - min(R) < 0.05 and max(p[2] for t, p in G) - min(p[2] for t, p in G) < 0.05, "... at one distance and height (%.2f to %.2f m)" % (min(R), max(R)))
-steps = [B.llVecDist(G[i][1], G[i + 1][1]) for i in range(len(G) - 1)]
-check(max(steps) < 0.12, "... in small steps: smooth (largest %.3f m)" % max(steps))
-a0, a1 = math.atan2(flat(G[0][1])[1], flat(G[0][1])[0]), math.atan2(flat(G[-1][1])[1], flat(G[-1][1])[0])
+S = [(t, p) for t, p in G if t >= t0 + 2.0]                            # once the follow camera has it
+R = [B.llVecMag(flat(p)) for t, p in S]
+check(h.cam.get("distance") and not h.cam.get("plock") and h.cam.get("bangle", 180) < 180, "the glide: the viewer's follow camera, not a locked one")
+check(max(R) - min(R) < 0.05 and max(p[2] for t, p in S) - min(p[2] for t, p in S) < 0.05, "... at one distance and height (%.2f to %.2f m)" % (min(R), max(R)))
+steps = [B.llVecDist(S[i][1], S[i + 1][1]) for i in range(len(S) - 1)]
+check(max(steps) < 0.2, "... a little at a time, the viewer easing between (largest %.3f m a half second)" % max(steps))
+az = lambda p: math.atan2(flat(p)[1], flat(p)[0])
+a0, a1 = az(S[0][1]), az(S[-1][1])
 arc = abs((a1 - a0 + math.pi) % (2 * math.pi) - math.pi)
 check(0.5 < arc < 0.9, "... about 40 degrees round you (%.0f)" % math.degrees(arc))
-for t, p in G[::20]: ok_cam(w, ana, p, "Glide")
+bk = B.llRot2Fwd(ana.rot); ba = math.atan2(-bk[1], -bk[0])
+off = lambda a: abs((a - ba + math.pi) % (2 * math.pi) - math.pi)
+check(off(a1) < off(a0), "... toward your back (%.0f to %.0f degrees from behind you)" % (math.degrees(off(a0)), math.degrees(off(a1))))
+for t, p in S[::6]: ok_cam(w, ana, p, "Glide")
 # Settings › Motion › Reveal (8.1.0): rising and pulling back on the viewer's follow camera, on the side the first cut chose
 h.lsd["cin.drift"] = ("reveal", PASS); h.send(7330, "drift")
 ana.touch(opt_part(h, "DRIFT")); w.run(1.5)

@@ -565,7 +565,13 @@ class Obj:
         if s.cam.get("bangle", 0) >= 90 and not s.cam.get("plock") and "freeaz" not in s.cam:
             d = B.sub(prev, s.owner.pos)                          # behindness 180: it stays on the side it is on
             s.cam["freeaz"] = math.atan2(d[1], d[0])
-        if s.cam.get("bangle", 0) < 90: s.cam.pop("freeaz", None)
+        if s.cam.get("bangle", 0) < 15: s.cam.pop("freeaz", None) # Tracking (10): behind you
+        elif "freeaz" in s.cam and not s.cam.get("plock"):        # within the angle of behind you: a camera further round
+            bk = _rotv(vec(-1.0, 0.0, 0.0), s.owner.rot)          # swings in to its edge, as the viewer does (8.8.1)
+            ba = math.atan2(bk[1], bk[0])
+            df = (s.cam["freeaz"] - ba + math.pi) % (2 * math.pi) - math.pi
+            lim = math.radians(s.cam["bangle"])
+            if abs(df) > lim: s.cam["freeaz"] = ba + math.copysign(lim, df)
         s.cam["by"] = sc.name
         s.cam["t"] = s.w.t
         s.cam.setdefault("log", []).append((round(s.w.t, 2), sc.name, s.cam.get("pos"), s.cam.get("focus")))
@@ -601,6 +607,7 @@ class Obj:
     def llGetNumberOfSides(s, sc): return 6
     def llGetPos(s, sc): return s.owner.pos if s.worn else s.pos
     def llGetRot(s, sc): return s.owner.rot if s.worn else ZR
+    def llGetRootRotation(s, sc): return s.owner.rot if s.worn else ZR   # attached: the avatar's rotation
     def llGetLocalPos(s, sc): return s.prims[0]["pos"]
     def llGetLocalRot(s, sc): return s.prims[0]["rot"]
     def llGetScale(s, sc): return s.prims[0]["size"]
