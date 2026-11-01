@@ -22,7 +22,7 @@ check(opts(h) == ("tracking", [("SHOULDER", ""), ("FILM", "lit"), ("CLASSIC", ""
 check(h.cam.get("distance") and not h.cam.get("plock"), "Tracking is the viewer's follow camera")
 ana.touch(opt_part(h, "SHOULDER")); w.run(1)
 check(lit(h) == ["SHOULDER", "R"] and lsd(h, "trk") == "0|1", "Shoulder picked and kept: %r %r" % (lit(h), lsd(h, "trk")))
-check(abs(h.cam["distance"] - 1.6) < 0.05, "Shoulder is 1.6 m: %r" % h.cam["distance"])
+check(abs(h.cam["distance"] - 2.2) < 0.05, "Shoulder is 2.2 m (8.7.0): %r" % h.cam["distance"])
 ana.touch("t12 s1"); w.run(3)
 check(opts(h)[0] == "portrait" and lit(h) == ["MEDIUM", "ME"], "Portrait: Medium · Me first: %r" % (opts(h),))
 check(h.cam.get("plock") and h.cam.get("flock"), "Portrait is a locked shot")

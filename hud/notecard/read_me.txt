@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.6.0)
+TAKE 12  -  READ ME  (8.7.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -47,7 +47,7 @@ Tap the lit shot again and it does its one job (below).
 
 AUTO picks the shot from what Take 12 can truly see:
   MOVING                     Tracking, after 1 second of walking or running, from any shot
-  STOPPED, ALONE             Tracking holds behind you; after 10 seconds, Scenic: Drift's reveal
+  STOPPED, ALONE             Tracking holds behind you; after 10 seconds, Scenic: Drift
   STILL 5 MINUTES, OR AWAY   Scenic, wide: Far outdoors, Room indoors
   WITH SOMEONE (within 3 m)  after 4 seconds still together, Portrait: Us, the two of you (or a small group)
   A CROWD                    Scenic: Drift, staying near
@@ -63,7 +63,8 @@ directs again. Each time you wear Take 12, it starts in AUTO.
 === THE FOUR SHOTS ======================================
 
 TRACKING  a cinematic follow camera.
-  SHOULDER · FILM · CLASSIC   over your shoulder, a slow cinematic look a little low, or Second Life's own view made smooth
+  SHOULDER · FILM · CLASSIC   over your shoulder; at head height, you on a third (the film); or high and centred (the game)
+                              Walking, the frame leaves room ahead of you.
   L · R                       the side of the picture you walk on
   It eases into turns like a steadicam, pulls back when you run, comes in when a wall is behind you, and in a small
   room it takes the room's corner. The lit tap: back behind you.
@@ -87,9 +88,9 @@ FIXED     your own framing, kept.
 
 SCENIC    views of the place. It also starts by itself when you are idle.
   DRIFT · NEAR · ROOM · FAR   a slowly moving camera, views near you, the room you are in, views out to 60 m
-  Still frames change about every 15 seconds. Drift is the reveal: close on you, then rising and pulling back to show
-the place, then a new close from another side; it stays near when people are around (Settings > Motion > Breathe:
-in and out instead).
+  Still frames change about every 15 seconds. Drift glides: close on you, then the camera slides slowly round
+you at eye height, then a new close from another side; it stays near when people are around, still in a cabin
+(Settings > Motion > Reveal: rising and pulling back to show the place instead).
   Indoors every band stays in the room. The lit tap: the next view now.
 
 
@@ -136,7 +137,7 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 === SETTINGS ============================================
 
 CAMERA   Lens · Eye line · Motion · Idle start · Seats
- MOTION          Tracking: Smooth or Snappy. Drift: Reveal or Breathe
+ MOTION          Tracking: Smooth or Snappy. Drift: Glide or Reveal
  SEATS           the seats and vehicles with their own camera (LET GO); tap one to give it back
 SCREEN   Frames & bars · Place · Move in · Move out · S M L · Soft or Clear keys (the page stays: watch the strip)
  FRAMES & BARS   the film's frame, your photo frame (the shutter's), and the bars, Black or Dimmed

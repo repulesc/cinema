@@ -15,7 +15,7 @@
 //  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
 // ============================================================================
 
-string VERSION = "8.6.0";
+string VERSION = "8.7.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1: Scenic only
 
@@ -118,6 +118,13 @@ vector ownerPos()
 
 // what your watchers see: exactly what you see (8.0.6: only Take 12's own shots went out, so an Alt-click framing, your
 // own camera or a held shot left them on an old frame). Never mouselook, never while you watch someone, never off.
+// the viewer's own camera's aim, sent to a watcher: you, as deep along its view as you are. A watcher with another lens
+// moves along the view round this point so you stay the same size (8.7.0: a point 3 m on left it 16-25 % off)
+vector aim(vector cp)
+{
+    return cp + llRot2Fwd(llGetCameraRot()) * ((llGetPos() - cp) * llRot2Fwd(llGetCameraRot()));
+}
+
 share()
 {
     if (gState == "off" || gState == "watch" || (llGetAgentInfo(gOwner) & AGENT_MOUSELOOK))
@@ -128,7 +135,7 @@ share()
     {
         vector cp = llGetCameraPos();
         // a negative lag marks a camera that is not a shot (fixed keeps only shots); sync sends it on as 0.25 s
-        llMessageLinked(LINK_SET, CAMSET, (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|-0.25|" + (string)llGetCameraFOV(), "");
+        llMessageLinked(LINK_SET, CAMSET, (string)cp + "|" + (string)aim(cp) + "|-0.25|" + (string)llGetCameraFOV(), "");
     }
 }
 
@@ -501,7 +508,7 @@ tick()
         else
         {
             vector cp = llGetCameraPos();
-            string m = "T12|8|cam|" + (string)cp + "|" + (string)(cp + llRot2Fwd(llGetCameraRot()) * 3.0) + "|-0.25|"
+            string m = "T12|8|cam|" + (string)cp + "|" + (string)aim(cp) + "|-0.25|"
                 + (string)llGetCameraFOV() + "|" + gShape + "|" + (string)llGetPos();
             integer i;
             for (i = 0; i < llGetListLength(gWatchers); i++) llRegionSayTo(llList2Key(gWatchers, i), SYNC_CH, m);
@@ -867,8 +874,8 @@ default
         else if (num == CROP) gShape = llList2String(llParseString2List(str, ["|"], []), 0);
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/core] v" + VERSION + " " + gState + " " + gShot + " " + gWhy + ", permissions " + (string)gPermOK
-                + ", follow/free/seat/auto " + (string)gFollow + (string)gFree + (string)gSitHold + (string)gAuto
-                + ", free mem " + (string)llGetFreeMemory());
+            llOwnerSay("[Take 12/core] v" + VERSION + " " + gState + " " + gShot + " " + gWhy + ", perms " + (string)gPermOK
+                + ", ffsa " + (string)gFollow + (string)gFree + (string)gSitHold + (string)gAuto
+                + ", mem " + (string)llGetFreeMemory());
     }
 }

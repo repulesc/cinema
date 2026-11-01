@@ -1,3 +1,4 @@
+import math
 """Scenic (8.0), on the REAL scripts: still frames with a clean cut about every 15 s (Near, Far), Drift moving
 continuously and starting close, every camera within 60 m of you, inside the region, above the ground and the water,
 never inside a build's walls; indoors every band stays in the room (FAR dim, Room views inside the walls), outdoors ROOM
@@ -47,15 +48,31 @@ no_errors(w, "near")
 ana.touch(opt_part(h, "DRIFT")); w.run(1.5)
 first = cams(h, w.t - 1.5)[0][1]
 check(B.llVecDist(first, ana.pos) < 7, "Drift starts close (%.1f m)" % B.llVecDist(first, ana.pos))
-# 8.0.6: the viewer's follow camera does the moving (eased every frame), on the side the first cut chose
+# 8.7.0: the glide (the default): held close, then sliding round you at the same distance and height, in small steps
+t0 = w.t
+w.run(30)                                                              # the hold (4 s) and the slide (24 s); the cut after is a cut
+G = [(t, p) for t, p, f in cams(h, t0)]
+flat = lambda p: vec(p[0] - ana.pos[0], p[1] - ana.pos[1], 0)
+R = [B.llVecMag(flat(p)) for t, p in G]
+check(len(G) > 100, "the glide: the camera moves 20 times a second (%d steps)" % len(G))
+check(max(R) - min(R) < 0.05 and max(p[2] for t, p in G) - min(p[2] for t, p in G) < 0.05, "... at one distance and height (%.2f to %.2f m)" % (min(R), max(R)))
+steps = [B.llVecDist(G[i][1], G[i + 1][1]) for i in range(len(G) - 1)]
+check(max(steps) < 0.12, "... in small steps: smooth (largest %.3f m)" % max(steps))
+a0, a1 = math.atan2(flat(G[0][1])[1], flat(G[0][1])[0]), math.atan2(flat(G[-1][1])[1], flat(G[-1][1])[0])
+arc = abs((a1 - a0 + math.pi) % (2 * math.pi) - math.pi)
+check(0.5 < arc < 0.9, "... about 40 degrees round you (%.0f)" % math.degrees(arc))
+for t, p in G[::20]: ok_cam(w, ana, p, "Glide")
+# Settings › Motion › Reveal (8.1.0): rising and pulling back on the viewer's follow camera, on the side the first cut chose
+h.lsd["cin.drift"] = ("reveal", PASS); h.send(7330, "drift")
+ana.touch(opt_part(h, "DRIFT")); w.run(1.5)
 C = []
 for i in range(90):
     w.run(1)
     C.append(ana.camera()[0])
-check(h.cam.get("distance") and h.cam.get("bangle") == 180 and not h.cam.get("plock"), "Drift: the viewer's follow camera, free to stay on its side")
+check(h.cam.get("distance") and h.cam.get("bangle") == 180 and not h.cam.get("plock"), "Reveal: the viewer's follow camera, free to stay on its side")
 for p in C[::10]: ok_cam(w, ana, p, "Drift")
 far = max(B.llVecDist(p, ana.pos) for p in C)
-check(far > 12, "alone: Drift pulls out (%.1f m)" % far)
+check(far > 12, "alone: the Reveal pulls out (%.1f m)" % far)
 ben = w.avatar("Ben", (132, 130, 21))
 w.run(20)
 t0 = w.t

@@ -107,7 +107,7 @@ ana.away = False
 no_errors(w, "long while")
 
 # ---- Alt-click: Auto waits; walking off or Esc gives it back --------------------------------------------------------------
-ana.keys(C["CONTROL_FWD"], hold=2); w.run(4)                          # Tracking, then still
+ana.keys(C["CONTROL_FWD"], hold=2); w.run(6)                          # Tracking, then still (8.7.0: the lead room eases out over 2 s)
 ana.alt_orbit(to=B.add(ana.pos, vec(9, 9, 4))); w.run(3)
 check(state(h) == ("held", "tracking"), "Alt-click: held %r" % (state(h),))
 w.run(15)

@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.6.0";
+string VERSION = "8.7.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -270,9 +270,9 @@ open(string p)
     {
         // Motion: Tracking snappy to steer by (the default, 8.0.8) or smooth; Drift the reveal (8.1.0) or breathing
         integer sn = (cfg("feel") != "smooth");
-        integer br = (cfg("drift") == "breathe");
-        page(p, llList2String(["Smooth", "Snappy"], sn) + "~" + llList2String(["Reveal", "Breathe"], br),
-            [mark("Smooth", !sn), mark("Snappy", sn), " ", mark("Reveal", !br), mark("Breathe", br), "‹ Back"]);
+        integer rv = (cfg("drift") == "reveal");            // 8.7.0: Glide by default; Breathe is gone
+        page(p, llList2String(["Smooth", "Snappy"], sn) + "~" + llList2String(["Glide", "Reveal"], rv),
+            [mark("Smooth", !sn), mark("Snappy", sn), " ", mark("Glide", !rv), mark("Reveal", rv), "‹ Back"]);
     }
     else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
     else if (p == "tour3") page(p, "", ["Done"]);
@@ -401,7 +401,7 @@ choose(string m)
     }
     else if (gPage == "feel")
     {
-        if (b == "Reveal" || b == "Breathe") set("drift", llToLower(b));
+        if (b == "Glide" || b == "Reveal") set("drift", llToLower(b));
         else set("feel", llToLower(b));
         open("feel");
     }
