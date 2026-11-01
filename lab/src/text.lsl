@@ -1,0 +1,347 @@
+// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***
+// ============================================================================
+//  Take 12  -  text.lsl  (8.0)  - every word you read
+//  The notes (3 s, in Second Life's own floating text on the part "t12 note", just under the strip): NOTE "<id>|<arg>".
+//  Important ones also go once to your chat (a viewer may hide floating text on HUDs). The tips: a key's first three
+//  uses show one line (TIP "<word>"; counted in cin.tips; Settings › Reset › Tips again clears them). The dialog
+//  bodies: ui asks TXT "<page>|<args, ~>" and gets TXT_ANS "<page>|<text>" (ui keeps the button labels, which are its
+//  ids). Every text on every part is cleared at attach: yesterday's words never come back (7.2's login glitch).
+//  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
+// ============================================================================
+
+string VERSION = "8.8.0";
+string PASS    = "cinema-1.0-build1";
+integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
+
+integer CFG_CHANGED = 7330;
+integer STRIP   = 7343;
+integer NOTE    = 7344;
+integer TIP     = 7345;
+integer FOVMSG = 7318;              // core: your lens changed (8.5.10: shown for a moment, as a camera shows its focal length)
+integer gMm;                        // ... the one shown last
+integer TXT     = 7346;
+integer TXT_ANS = 7347;
+integer MSG_VER = 7360;
+integer STATUS  = 7370;
+
+float   SHOW    = 4.0;            // s  a note stays this long, and 1 s more for every 20 characters (at most 10 s; 8.0.5: 3 s was too short to read)
+
+// notes: id, important (1: also in chat; 2: only in chat; 3: stays until the next note or "clear"), the words (%: the argument)
+list NOTES = [
+    "setup", "1Tap the [12] to set up.",
+    "released", "0Your viewer's camera. Tap a shot to take it back.",
+    "photo", "0Photo  ·  %  ·  Ctrl+Shift+S",
+    "frameit", "0Frame it with Alt-click, Take 12 keeps it. Esc: the camera back.",
+    "kept", "0Kept.",
+    "forgot", "0Seat forgotten. UNDO brings it back.",
+    "letgo", "0Take 12 lets go on this vehicle.",
+    "takeback", "0Take 12 films here again.",
+    "with", "0% is with you. Tap the rings to watch their film.",
+    "watching", "0% is watching your film.",
+    "theirs", "0You're watching %'s film.",
+    "mine", "0Your own film again.",
+    "notfilming", "0% isn't filming.",
+    "left", "0% left.",
+    "back", "0% is back.",
+    "away", "0% is out of reach.",
+    "asked", "0% is asked.",
+    "busy", "0% is busy.",
+    "noanswer", "0% didn't answer.",
+    "old", "0%'s Take 12 is older. A new copy fixes it.",
+    "nobody", "0Nobody near you wears Take 12.",
+    "allhere", "0Everyone near you is connected already.",
+    "shown", "0% is shown your film.",
+    "friend", "0% joins you without being asked now.",
+    "newer", "1A newer Take 12 is out. Ask the store for a new copy.",
+    "moved", "1Moved. You can take off the old one.",
+    "fbsent", "1Thanks. It went to the maker.",
+    "fbwait", "1Thanks. One a minute, please.",
+    "older", "1An older Take 12 is worn too. Take it off.",
+    "missing", "1A Take 12 script is missing: %. A new copy fixes it.",
+    "full", "0In the full Take 12.",
+    "lens", "0Lens % mm. Ctrl+0 zooms in.",
+    "mm", "0% mm",
+    "eyeline", "3PgUp / PgDn: the line on your eyes. Tap the [12] to keep it, or walk to skip.",
+    "texture", "1% is kept: the HUD can be given away.",
+    "mixed", "1% is another version: use one copy's scripts.",
+    "plain", "0%"
+];
+
+// tips: a key's first three uses
+list TIPS = [
+    "TRACKING", "Tracking follows you. Tap it again: back behind you. Hold it: your viewer's camera. A smoother, steadicam feel: Settings › Motion.",
+    "PORTRAIT", "Portrait frames you standing. Us adds the people near you. Hold it: your viewer's camera.",
+    "FIXED", "Fixed keeps your own framing. Alt-click to frame it. Hold it: your viewer's camera.",
+    "SCENIC", "Scenic shows the place. It also starts when you're away. Hold it: your viewer's camera.",
+    "CLOSE", "How much of you is in the picture.",
+    "ME", "Us adds the people near you.",
+    "SHOULDER", "Three ways to follow you.",
+    "L", "The side of the picture you walk on.",
+    "VIEW A", "Two kept views for this place. After an Alt-click, Esc gives the camera back to see them.",
+    "FORGET SEAT", "Forget this seat's view: frame it again.",
+    "kept", "Kept. Press Esc to give the camera back to Take 12.",
+    "hintportrait", "Standing still: Portrait is ready. Tap it for a standing shot.",
+    "hintfixed", "Sitting: Fixed has a view for this seat. Tap it.",
+    "seated", "FORGET SEAT: frame this seat again. LET GO: your viewer's camera whenever you sit here (boats, cars).",
+    "flying", "Flying: your own camera until you land.",
+    "snapshot", "The bars are on your screen, not in snapshots. Tap the frame by the [12] for its snapshot size.",
+    "LET GO", "Your viewer's camera every time you sit here. TAKE BACK undoes it.",
+    "DRIFT", "How far the views go.",
+    "shape", "The frame on screen, and its snapshot size.",
+    "shutter", "The shutter holds this moment in your photo frame. Take your snapshot, then press it again.",
+    "link", "Share films with people near you.",
+    "auto", "Auto: Tracking as you move, Scenic when you rest, Portrait when someone is with you. Tap the ring, or a shot, to direct."
+];
+list SAME = ["MEDIUM", "CLOSE", "WIDE", "CLOSE", "US", "ME", "FILM", "SHOULDER", "CLASSIC", "SHOULDER", "R", "L",
+             "VIEW B", "VIEW A", "NEAR", "DRIFT", "ROOM", "DRIFT", "FAR", "DRIFT"];
+
+// the main dialog's rotating tip line
+list HINTS = ["Double-tap the [12] for the strip.", "Hold the [12]: everything off, hold again: back.",
+              "Tap a lit shot again for its other angle.", "Alt-click in Fixed: Take 12 keeps your framing.",
+              "Settings › Screen › Place moves the strip to the bottom."];
+
+// a frame's snapshot size (Snapshot › Custom; the bars are not in snapshots)
+list SNAP = ["2.39", "1920 × 803", "2.00", "1920 × 960", "1.85", "1920 × 1038", "1.66", "1920 × 1157",
+    "3:2", "1800 × 1200", "4:3", "1600 × 1200", "1:1", "1600 × 1600", "4:5", "1600 × 2000"];
+
+key     gOwner;
+integer gNote;                    // the note part's link (0: none, then the root)
+float   gShownT;                  // a note shows since (0: none)
+float   gFor;                     // ... this long
+string  gShown;
+integer gHint;
+
+// ============================================================================
+integer link()
+{
+    integer i;
+    for (i = 2; i <= llGetNumberOfPrims(); i++) if (llGetLinkName(i) == "t12 note") return i;
+    return LINK_ROOT;
+}
+
+// every text on every part: gone (at attach, at a reset)
+clearAll()
+{
+    integer i;
+    integer n = llGetNumberOfPrims();
+    if (n == 1) llSetText("", ZERO_VECTOR, 0.0);
+    for (i = 1; i <= n; i++) llSetLinkPrimitiveParamsFast(i, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]);
+    gShownT = 0.0;
+    gShown = "";
+    plate("");
+}
+
+string fill(string s, string a)
+{
+    integer i = llSubStringIndex(s, "%");
+    while (i >= 0)
+    {
+        s = llInsertString(llDeleteSubString(s, i, i), i, a);
+        i = llSubStringIndex(s, "%");
+        if (a != "" && llSubStringIndex(a, "%") >= 0) i = -1;   // an argument with a % in it: once
+    }
+    return s;
+}
+
+// screen sizes the note's dark plate from it (8.5.0); "" takes it away
+plate(string s)
+{
+    llMessageLinked(LINK_SET, STRIP, "note|" + s, "");
+}
+
+show(string s, integer stay)
+{
+    gFor = SHOW + llStringLength(s) * 0.05;
+    if (gFor > 10.0) gFor = 10.0;
+    if (stay) gFor = 100000.0;
+    if (!gNote) gNote = link();
+    llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, s, <1.0, 1.0, 1.0>, 1.0]);
+    plate(s);
+    gShown = s;
+    gShownT = llGetTime();
+    llSetTimerEvent(0.5);
+}
+
+note(string id, string arg)
+{
+    if (id == "clear") { gShownT = 0.01; gFor = 0.0; llSetTimerEvent(0.1); return; }
+    if (id == "commands") return;                       // screen's (8.5.10: this script had no room for it)
+    integer i = llListFindList(SNAP, [arg]);
+    if (id == "photo" && i >= 0) arg += "  ·  Snapshot " + llList2String(SNAP, i + 1);   // the shutter (8.1.0)
+    i = llListFindList(NOTES, [id]);
+    if (i < 0 || i % 2) return;
+    string v = llList2String(NOTES, i + 1);                 // its kind (0 a note, 1 also in chat, 2 chat only, 3 stays), then the words
+    string s = fill(llGetSubString(v, 1, -1), arg);
+    integer imp = (integer)llGetSubString(v, 0, 0);
+    if (imp != 2) show(s, imp == 3);
+    if (imp == 1 || imp == 2) llOwnerSay("[Take 12] " + s);
+}
+
+// a key's first three uses: its tip (words that share one tip count together)
+tip(string w)
+{
+    integer j = llListFindList(SAME, [w]);
+    if (j >= 0 && j % 2 == 0) w = llList2String(SAME, j + 1);
+    integer i = llListFindList(TIPS, [w]);
+    if (i < 0 || i % 2) return;
+    string c = llLinksetDataReadProtected("cin.tips", PASS);
+    list L = llParseString2List(c, [";"], []);
+    integer k;
+    integer n = 0;
+    for (k = 0; k < llGetListLength(L); k++)
+    {
+        list kv = llParseString2List(llList2String(L, k), [":"], []);
+        if (llList2String(kv, 0) == w)
+        {
+            n = (integer)llList2String(kv, 1);
+            L = llDeleteSubList(L, k, k);
+            k = 99;
+        }
+    }
+    if (n >= 3 || (w == "snapshot" && n >= 1)) return;          // the snapshot tip: once
+    L += [w + ":" + (string)(n + 1)];
+    llLinksetDataWriteProtected("cin.tips", llDumpList2String(L, ";"), PASS);
+    show(llList2String(TIPS, i + 1), FALSE);
+}
+
+// ---- dialog bodies ---------------------------------------------------------------
+string body(string page, list a)
+{
+    string a0 = llList2String(a, 0);
+    string a1 = llList2String(a, 1);
+    string a2 = llList2String(a, 2);
+    string a3 = llList2String(a, 3);
+    if (page == "main")
+    {
+        gHint = (gHint + 1) % llGetListLength(HINTS);
+        string t = "Take 12\n" + a0;
+        if (LITE) t = "Take 12 Scenery\n" + a0;
+        return t + "\nTip: " + llList2String(HINTS, gHint);
+    }
+    if (page == "settings") return "Settings";
+    if (page == "feel") return "Motion\nTracking: " + a0 + ". Smooth eases into your turns; Snappy stays right behind you.\nDrift: "
+        + a1 + ". Glide slides round you; Reveal rises to show the place.";
+    if (page == "lens") return "Lens\nNow: " + a0 + " mm. Your lens: " + a1 + " mm.\nThe viewer's own stops: 21 (its wide view) · 26 · 32 · 38 · 47 · 56.\nCtrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21.";
+    if (page == "eye") return "Eye line\nA line shows on your screen: PgUp / PgDn move it onto your eyes, then tap the [12].\nEsc or a hold keeps the old one.";
+    if (page == "shapes") return "Frames & bars\nFilm " + a0 + ", every shot · Photo " + llList2String(a, 2) + " (the shutter)\nBars: " + a1;
+    if (page == "frame")
+    {
+        // the snapshot size for the frame on screen: a shot's cinema frame, or your photo frame (the shutter, 8.1.0)
+        string t = "The film's frame  ·  every shot\n";
+        if (a0 == "photo") t = "Your photo frame  ·  every shot\nThe shutter holds the moment in it.\n";
+        integer i = llListFindList(SNAP, [a1]);
+        if (i < 0) return t + "Full: no bars. Snapshot at your window's size.";
+        return t + "Snapshot " + llList2String(SNAP, i + 1) + " for " + a1 + ".";
+    }
+    if (page == "vehicles")
+    {
+        if (a0 == "") return "Seats & vehicles\nNone. On a seat, LET GO: its own camera, every time.";
+        return "Seats & vehicles\nTheir own camera. Tap one: Take 12's again.";
+    }
+    if (page == "idle") return "Idle start\nScenic starts by itself when you are idle.\nNow: " + a0;
+    if (page == "friends") return "Friends\nYour friends connect without being asked.\n" + a0 + "\nChime: " + a1;
+    if (page == "addfriend")
+    {
+        if (a0 == "nobody") return "Add a friend\nNobody within 20 m.";
+        return "Add a friend\nAnyone near you.";
+    }
+    if (page == "look") return "Screen\nPlace: " + a0 + " · Size: " + a1 + " · Keys: " + a2 + "\nMove in, out: clear the viewer's bars.";
+    if (page == "camera") return "Camera";
+    if (page == "place") return "Place\nWhere the strip sits. Move in clears taller viewer bars, a step a press.\nNow: " + a0;
+    if (page == "reset") return "Reset\nTips again: every first-time tip.\nSeats & views: every kept framing.\nEverything: like new.";
+    if (page == "everything") return "Reset everything?\nSettings, seats, views and friends are wiped, and the first run starts again.";
+    if (page == "about") return "About Take 12\n12 is a number, not a name. It points outward: there is something out there.\n"
+        + "Two digits, because movement needs two poles. Twelve, because it is how we keep time.\nMade in Second Life by 12.";
+    if (page == "help") return "Help\nTracking follows you. Portrait frames you standing.\nFixed keeps your own framing. Scenic shows the place.\nTap: this menu. Double-tap: the strip. Hold: all off.";
+    if (page == "connect")
+    {
+        if (a0 == "") return "Connect\nNobody near you wears Take 12.";
+        return "Connect\nTap a name to share films. They'll be asked.";
+    }
+    if (page == "connected")
+    {
+        if (a0 == "") return "Connect\nNobody connected.\nInvite: Take 12s near you.";
+        return "Connect\n" + llDumpList2String(a, "\n") + "\nTap a name: watch their film, or show them yours.";
+    }
+    if (page == "person") return a0 + "\n" + a1;
+    if (page == "show") return a0 + " shows you their film.";
+    if (page == "ask") return a0 + " wants to share films.";
+    if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
+    if (page == "inview") return "Is the whole strip in view?\nYour viewer's own bars may cover it. Settings › Screen later.";
+    if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
+    if (page == "tour1") return "The strip\nDouble-tap the [12]: the four shots and their options. Tap a shot to start it.";
+    if (page == "tour2") return "Connect\nThe linked rings share films with people near you.";
+    if (page == "tour3") return "Off\nHold the [12]: everything off. Hold again: back as it was.\nDouble-tap the [12] to hide the strip.";
+    return page;
+}
+
+// ============================================================================
+default
+{
+    state_entry()
+    {
+        gOwner = llGetOwner();
+        gNote = link();
+        clearAll();
+        llMessageLinked(LINK_SET, MSG_VER, VERSION, "text");
+    }
+
+    on_rez(integer p)
+    {
+        llResetScript();
+    }
+
+    attach(key id)
+    {
+        if (id != NULL_KEY)
+        {
+            gNote = link();
+            clearAll();
+        }
+    }
+
+    changed(integer c)
+    {
+        if (c & CHANGED_OWNER) llResetScript();
+        if (c & CHANGED_LINK) gNote = link();
+    }
+
+    link_message(integer sender, integer num, string str, key id)
+    {
+        if (num == NOTE)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            note(llList2String(L, 0), llDumpList2String(llList2List(L, 1, -1), "|"));
+        }
+        else if (num == TIP) tip(str);
+        else if (num == FOVMSG)
+        {
+            integer m = llRound(12.0 / llTan((float)str * 0.5));
+            if (m != gMm && gFor < 100.0) show("Lens " + (string)m + " mm", FALSE);   // core only tells a change; not over a note that stays
+            gMm = m;
+        }
+        else if (num == STRIP && str == "eye|off") note("clear", "");    // the eye line is done: its instruction goes
+        else if (num == TXT)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            string p = llList2String(L, 0);
+            llMessageLinked(LINK_SET, TXT_ANS, p + "|" + body(p, llParseStringKeepNulls(llList2String(L, 1), ["~"], [])), id);
+        }
+        else if (num == CFG_CHANGED && str == "all") gNote = link();
+        else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "text");
+        else if (num == STATUS && str == "?")
+            llOwnerSay("[Take 12/text] v" + VERSION + " note part " + (string)gNote + ", tips " + llLinksetDataReadProtected("cin.tips", PASS)
+                + ", free mem " + (string)llGetFreeMemory());
+    }
+
+    timer()
+    {
+        if (gShownT > 0.0 && llGetTime() - gShownT >= gFor)
+        {
+            list t = llGetLinkPrimitiveParams(gNote, [PRIM_TEXT]);
+            if (llList2String(t, 0) == gShown) { llSetLinkPrimitiveParamsFast(gNote, [PRIM_TEXT, "", ZERO_VECTOR, 0.0]); plate(""); }
+            gShownT = 0.0;
+        }
+        if (gShownT == 0.0) llSetTimerEvent(0.0);
+    }
+}

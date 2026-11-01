@@ -1,5 +1,13 @@
 # Changelog
 
+## Take 12 Lab, lab 1 (the Quiet and Direct pages; the product is unchanged)
+- A separate HUD in `lab/` for trying ideas without touching the product: its own strip and screen, the product's
+  other ten scripts copied unchanged (`tools/build_lab.py`), its own builder (two more parts), marks (the fold key and
+  the notch) and guide card. `lab/README.md` says how to build it in-world.
+- **Quiet** (the default): a notch with rounded lower corners, as wide as its words: the Orbit, the running shot, `›`,
+  the frame, the [12], Connect and the shutter; KEEP NEW and UNDO show there too. **Direct**: the full strip, the four
+  shots in Auto too. The shot's name or `›` opens it, `‹` folds it; the page is kept. Tested in `lab_emu`.
+
 ## 8.8.0 (the guide card)
 - **The guide card:** the setup ends on one card in the screen's middle: the strip drawn whole, a number under each
   key (the Orbit, the shots, the frame, the [12], Connect, the options, the shutter) and one line for each. A tap on

@@ -20,6 +20,10 @@ jobs:
         run: python3 tools/art/make_strip.py --check
       - name: The guide card's texts fit the card
         run: python3 tools/art/make_guide.py --check
+      - name: The Take 12 Lab (lab/) - its copies of the product's scripts are current, its tables match its marks
+        run: |
+          python3 tools/build_lab.py --check
+          python3 tools/art/make_lab.py --check
       - name: Run the REAL scripts in the LSL emulator (tools/emu)
         run: |
           python3 tools/sim/layout_emu.py
@@ -41,6 +45,7 @@ jobs:
           python3 tools/sim/fade_emu.py
           python3 tools/sim/free_emu.py
           python3 tools/sim/guide_emu.py
+          python3 tools/sim/lab_emu.py
       - name: Runtime memory on the real scripts - no script runs out of memory at its heaviest (8.0.1)
         run: python3 tools/sim/memory_emu.py
       - name: Connect on the real scripts - scenarios, then a fuzzer on two and three HUDs (and lost messages)

@@ -26,6 +26,10 @@ KEYS = [("orbit", "AUTO", "The camera directs itself as you walk, stop, sit or m
         ("link", "CONNECT", "Share films with friends near you."),
         ("opts", "THE OPTIONS", "The running shot's choices. Tap one to change it."),
         ("shut", "THE SHUTTER", "Holds the moment in your photo frame. Take your snapshot, then tap it again.")]
+KEYS_LAB = [KEYS[0],                     # the Take 12 Lab (lab/): its Quiet page
+            ("shot", "THE SHOT", "What is filming now. Tap it for every shot and its choices."),
+            ("fold", "›  AND  ‹", "Opens every shot and its choices; ‹, in the same place, folds them away."),
+            KEYS[2], KEYS[3], KEYS[4], KEYS[6]]
 GESTURES = [("tap", "TAP", "the menu"), ("double", "DOUBLE-TAP", "show or hide the strip"),
             ("hold", "HOLD", "everything off, and back")]
 GY = 446                                # the touches' row
@@ -45,17 +49,18 @@ def wrap(f, s, width):
     return out
 
 
-def card():
+def card(lab=False):
+    keys = KEYS_LAB if lab else KEYS
     im = Image.new("RGBA", (W * K, H * K), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, fill=INK + (236,))
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, outline=(255, 255, 255, 34), width=2 * K)
     head = font("Inter-SemiBold.otf", 13 * K)
-    spaced(d, 44 * K, 38 * K, "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
+    spaced(d, 44 * K, 38 * K, "TAKE 12 LAB  ·  THE QUIET STRIP" if lab else "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
 
     # ---- the strip, as it is (Tracking · Film · R), its band 40 px, the [12] in the middle ----------------------------
     by0, by1, cy = 62, 102, 82
-    d.rounded_rectangle([28 * K, by0 * K, (W - 28) * K, by1 * K], radius=6 * K, fill=(0, 0, 0, 255))
+    if not lab: d.rounded_rectangle([28 * K, by0 * K, (W - 28) * K, by1 * K], radius=6 * K, fill=(0, 0, 0, 255))
     wf = font("Inter-Medium.otf", int(12.5 * K))
     X = {}
     def word(x, t):
@@ -71,6 +76,7 @@ def card():
             al = c.getchannel("A").point(lambda v: int(v * a)); c.putalpha(al)
         im.alpha_composite(c, (int(cx * K - c.width / 2), int((y if y is not None else cy) * K - c.height / 2)))
     gap = 19
+    if lab: return lab_strip(im, d, wf, word, paste, keys, gap)
     x = 52
     paste(orbit(False), x + 10, 0.65); X["orbit"] = x + 10; x += 20 + gap
     xs = x
@@ -104,23 +110,64 @@ def card():
     if shots_end > fx - 16 or xo + gap < mid + 72:
         raise SystemExit("make_guide: the strip drawing does not fit the card")
 
+    return finish(im, d, X, keys, paste)
+
+
+def lab_strip(im, d, wf, word, paste, keys, gap):
+    """the lab's Quiet page: a notch hanging from the screen's edge (a hairline here), as wide as its words"""
+    by0, by1, cy = 62, 102, 82
+    mid = W / 2
+    X = {}
+    fx = mid - 86
+    xf = fx - 26                                      # the fold key, left of the frame
+    xr = xf - 10 - gap                                # the shot's name ends here
+    tw = spaced_w("TRACKING", wf, 0.14) / K
+    xo = xr - tw - gap - 10                           # the Orbit
+    xs = mid + 48 + 24 + gap + 10                     # the shutter, beside Connect
+    x0, x1 = xo - 10 - 26, xs + 10 + 26
+    d.line([28 * K, by0 * K, (W - 28) * K, by0 * K], fill=(255, 255, 255, 46), width=K)
+    nl = Image.new("RGBA", im.size, (0, 0, 0, 0))   # the notch: rounded below, square where it meets the edge
+    ImageDraw.Draw(nl).rounded_rectangle([x0 * K, (by0 - 14) * K, x1 * K, by1 * K], radius=14 * K, fill=(0, 0, 0, 255))
+    nl.paste((0, 0, 0, 0), (0, 0, W * K, by0 * K))
+    im.alpha_composite(nl)
+    d.line([28 * K, by0 * K, x0 * K, by0 * K], fill=(255, 255, 255, 46), width=K)
+    d.line([x1 * K, by0 * K, (W - 28) * K, by0 * K], fill=(255, 255, 255, 46), width=K)
+    paste(orbit(False), xo, 0.65); X["orbit"] = xo
+    word(xr - tw, "TRACKING"); X["shot"] = xr - tw / 2
+    d.line([((xf - 2) * K, (cy - 6) * K), ((xf + 3) * K, cy * K), ((xf - 2) * K, (cy + 6) * K)], fill=WHITE + (210,), width=int(2 * K), joint="curve")
+    X["fold"] = xf
+    d.rounded_rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy + 6) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
+    d.rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy - 3) * K], fill=WHITE + (218,))
+    d.rectangle([fx * K, (cy + 3) * K, (fx + 22) * K, (cy + 6) * K], fill=WHITE + (218,))
+    spaced(d, (fx + 30) * K, cy * K, "2.39", wf, WHITE + (218,), 0.08)
+    X["frame"] = fx + 26
+    paste(disc(WHITE), mid, size=(28, 28)); paste(ring(1.0, track=False, width=5), mid, 0.85, size=(32, 32)); X["12"] = mid
+    rk = Image.new("RGBA", (64 * K, 48 * K), (0, 0, 0, 0))
+    rings_icon(ImageDraw.Draw(rk), 32, 24, K)
+    paste(rk.resize((64, 48), Image.LANCZOS), mid + 48, 0.75); X["link"] = mid + 48
+    paste(shutter(False), xs, 0.85); X["shut"] = xs
+    if x0 < 40: raise SystemExit("make_guide: the lab's strip drawing does not fit the card")
+    return finish(im, d, X, keys, paste)
+
+
+def finish(im, d, X, keys, paste):
     # ---- the numbers under the keys, then the list ---------------------------------------------------------------------
     nf = font("Inter-SemiBold.otf", 11 * K)
     def num(cx, ccy, i):
         d.ellipse([(cx - 8.5) * K, (ccy - 8.5) * K, (cx + 8.5) * K, (ccy + 8.5) * K], fill=WHITE + (238,))
         d.text((cx * K, (ccy + 0.5) * K), str(i), font=nf, fill=INK + (255,), anchor="mm")
-    for i, (k, _, _) in enumerate(KEYS):
+    for i, (k, _, _) in enumerate(keys):
         num(X[k], 118, i + 1)
     tf = font("Inter-SemiBold.otf", int(14.5 * K))
     bf = font("Inter-Regular.otf", 15 * K)
     bx, bw = 214, W - 214 - 48
-    rows = [wrap(bf, b, bw * K) for _, _, b in KEYS]
+    rows = [wrap(bf, b, bw * K) for _, _, b in keys]
     lines = sum(len(r) for r in rows)
     y = 150
     step, lead = 32, 20                           # a row, a second line
     if y + len(rows) * step + (lines - len(rows)) * lead > GY - 22:
         raise SystemExit("make_guide: the list does not fit the card (%d lines)" % lines)
-    for i, ((_, t, _), r) in enumerate(zip(KEYS, rows)):
+    for i, ((_, t, _), r) in enumerate(zip(keys, rows)):
         num(56, y + 8, i + 1)
         spaced(d, 76 * K, (y + 8) * K, t, tf, WHITE + (255,), 0.06)
         for j, ln in enumerate(r):
@@ -148,10 +195,13 @@ def card():
 
 
 if __name__ == "__main__":
-    im = card()                                   # raises if anything does not fit
+    im, lab = card(), card(lab=True)              # raises if anything does not fit
     if "--check" in sys.argv:
-        print("make_guide: the guide card's texts fit")
+        print("make_guide: the guide cards' texts fit (the product's and the lab's)")
         sys.exit(0)
     os.makedirs(ART, exist_ok=True)
     im.save(os.path.join(ART, "take12_guide_1024.png"))
-    print("wrote hud/art/take12_guide_1024.png")
+    LART = os.path.join(os.path.dirname(ART), "..", "lab", "art")
+    os.makedirs(LART, exist_ok=True)
+    lab.save(os.path.join(LART, "take12_guide_1024.png"))
+    print("wrote hud/art/take12_guide_1024.png and lab/art/take12_guide_1024.png")

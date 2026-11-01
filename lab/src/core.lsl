@@ -1,0 +1,881 @@
+// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***
+// ============================================================================
+//  Take 12  -  core.lsl  (8.0)  - owns the camera
+//  States: wait (your own camera; on wear, Take 12 waits), film (a shot runs), held (you took the camera with an
+//  Alt-click: the lit shot dims, nothing is shared, a movement key or the lit tap gives it back), letgo (flying,
+//  mouselook, a marked vehicle: your camera, then the shot comes back as it was), off (a hold: everything off; a hold
+//  again restores it), watch (you watch someone's film: sync drives the camera, your shot waits).
+//  The four shots (tracking, portrait, fixed, scenic) get START / STOP / NEXT / PAUSE / RESUME and answer with SHOT,
+//  GLIDE, FOLLOW (tracking: the viewer's own follow camera) or NO_SHOT. Directing is manual: nothing switches shot by
+//  itself, except Scenic as the idle camera (cin.idle: off, away, 5 minutes) and Fixed's own seat memory.
+//  Sitting: every shot holds its last frame and FIXED glows once; standing up resumes it (seated in Fixed: the shot you
+//  had before sitting). A marked vehicle (cin.veh, marked by Fixed's LET GO) lets go whenever you sit on it.
+//  The jump-cut rule: an automatic cut less than 30° and one size step from the shot on screen glides instead.
+//  /12 blend on: every cut becomes a 1.5 s glide (to try both in-world). Auto (8.3.0, tracking.lsl) picks the shot as
+//  a tap would (CMD shot|<shot>|auto); in Auto, Esc after an Alt-click gives the shot back too. docs/ARCHITECTURE.md §3–5.
+// ============================================================================
+
+string VERSION = "8.8.0";
+string PASS    = "cinema-1.0-build1";
+integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1: Scenic only
+
+integer START      = 7301;
+integer STOP       = 7302;
+integer NEXT       = 7303;
+integer PAUSE      = 7304;
+integer RESUME     = 7305;
+integer MOVING     = 7306;
+integer SHOT       = 7310;
+integer NO_SHOT    = 7311;
+integer GLIDE      = 7312;
+integer ACK        = 7313;
+integer FOLLOW     = 7314;
+integer FOVMSG     = 7318;
+integer UI_STATE   = 7320;
+integer CAMSET     = 7325;
+integer CFG_CHANGED= 7330;
+integer NOTE       = 7344;
+integer TIP        = 7345;
+integer MSG_VER    = 7360;
+integer STATUS     = 7370;
+integer CMD        = 7371;
+integer CROP       = 7390;
+integer SYNC_CH    = -7712120;      // Connect's channel (sync.lsl)
+integer CTL        = 831;           // the movement keys, Page Up / Down
+
+float   GRACE      = 2.5;           // s after a cut before the camera is checked (held)
+float   FIRST_WAIT = 2.0;           // s for a shot's first answer, then a basic shot
+
+key     gOwner;
+integer gNeed;
+integer gPermOK;
+string  gState = "wait";
+string  gShot;                      // the shot running ("" waiting)
+string  gWhy;                       // "idle": Scenic started by itself
+string  gIdleFrom;                  // ... and what ran before it
+string  gSitFrom;                   // the shot running when you sat down
+string  gOffShot;                   // the shot running when you held: everything off
+string  gLetWhy;                    // letgo: fly / ml / veh
+string  gPend;                      // a shot that came in while it could not be shown
+integer gSat;                       // you sit (last tick)
+integer gSitSeen;                   // ... for the idle clock, in every state
+integer gSitHold;                   // a shot holds its frame because you sat (not Fixed)
+integer gFree;                      // Fixed with no view kept: your own camera to frame it
+integer gFollow;                    // tracking: the viewer's follow camera
+string  gFollowS;                   // ... its parameters
+integer gStandby;                   // an older copy: steps aside (carry)
+integer gAnswered;                  // the shot answered since START
+float   gStartT;
+float   gApplyT;                    // the last cut / glide, and how long it moves
+float   gSettle;
+float   gTpT;                       // a teleport: a fresh frame after this
+float   gClrT;                      // ... and the old frame let go at this (not in the move itself, 8.0.4)
+float   gFovSent;
+integer gLastAct;
+integer gKeys;
+float   gCamT;
+float   gHeldT;                     // the camera off its spot since
+vector  gShotPos;
+vector  gShotFoc;
+vector  gCamPos;
+rotation gCamRot;
+integer gBlend;
+integer gFb;
+integer gAuto;                      // Auto directs (tracking.lsl)
+integer gEyeOn;                     // the eye-line check holds the camera in front of you (ui)
+integer gWatched;                   // someone watches your film (sync): your camera goes out as it moves
+key     gHostA;                     // watching (8.2.0): whose film; their camera is heard here and eased 20 times a second
+integer gHl;
+vector  gO0;                        // ... their camera and focus, relative to them, eased from 0 to 1
+vector  gF0;
+vector  gO1;
+vector  gF1;
+float   gCT;                        // ... the last update came at
+float   gDur = 0.15;                // ... and eases over
+integer gRel;                       // ... relative to them (a HUD before 8.2.0 sends where, not relative)
+float   gTk;                        // the tick, while the timer runs at 20 Hz
+string  gFol;                       // their shape on your bars
+list    gWatchers;                  // ... who (their avatars: core tells them itself, 8.0.7)
+string  gShape = "0";               // your picture's shape (bars: CROP), for them
+float   gEyeT;                      // ... since
+
+string cfg(string k)
+{
+    return llLinksetDataReadProtected("cin." + k, PASS);
+}
+
+ui(string hint)
+{
+    llMessageLinked(LINK_SET, UI_STATE, gState + "|" + gShot + "|" + hint + "|" + gWhy, "");
+}
+
+vector ownerPos()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS]);
+    if (llGetListLength(d) == 0) return ZERO_VECTOR;
+    return llList2Vector(d, 0);
+}
+
+// what your watchers see: exactly what you see (8.0.6: only Take 12's own shots went out, so an Alt-click framing, your
+// own camera or a held shot left them on an old frame). Never mouselook, never while you watch someone, never off.
+// the viewer's own camera's aim, sent to a watcher: you, as deep along its view as you are. A watcher with another lens
+// moves along the view round this point so you stay the same size (8.7.0: a point 3 m on left it 16-25 % off)
+vector aim(vector cp)
+{
+    return cp + llRot2Fwd(llGetCameraRot()) * ((llGetPos() - cp) * llRot2Fwd(llGetCameraRot()));
+}
+
+share()
+{
+    if (gState == "off" || gState == "watch" || (llGetAgentInfo(gOwner) & AGENT_MOUSELOOK))
+        llMessageLinked(LINK_SET, CAMSET, "-", "");
+    else if (gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR)
+        llMessageLinked(LINK_SET, CAMSET, (string)gShotPos + "|" + (string)gShotFoc + "|0|" + (string)llGetCameraFOV(), "");
+    else if (gPermOK)
+    {
+        vector cp = llGetCameraPos();
+        // a negative lag marks a camera that is not a shot (fixed keeps only shots); sync sends it on as 0.25 s
+        llMessageLinked(LINK_SET, CAMSET, (string)cp + "|" + (string)aim(cp) + "|-0.25|" + (string)llGetCameraFOV(), "");
+    }
+}
+
+// ---- the camera ----------------------------------------------------------------------
+// Second Life takes camera calls only from a worn object ("Camera control currently only supported for attachments",
+// seen in-world while crossing into the next region): every call checks it is worn (8.0.4)
+integer worn()
+{
+    return gPermOK && llGetAttached();
+}
+
+clearCam()
+{
+    if (worn()) llClearCameraParams();
+}
+
+// a cut (with /12 blend on, a 1.5 s glide instead, from a shot already on screen)
+setCam(vector p, vector f)
+{
+    if (gBlend && gShotPos != ZERO_VECTOR && !gFree && !gFollow) glide(p, f, 1.5);
+    else cut(p, f);
+}
+
+cut(vector p, vector f)
+{
+    gShotPos = p;
+    gShotFoc = f;
+    gFree = FALSE;
+    gFollow = FALSE;
+    if (!worn()) return;
+    llClearCameraParams();
+    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
+        CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, 0.0, CAMERA_FOCUS_LAG, 0.0, CAMERA_POSITION_THRESHOLD, 0.0,
+        CAMERA_FOCUS_THRESHOLD, 0.0]);
+    gApplyT = llGetTime();
+    gSettle = GRACE;
+    share();
+}
+
+// the viewer eases the camera there over the lag
+glide(vector p, vector f, float lag)
+{
+    if (gFree || gFollow || gShotPos == ZERO_VECTOR) { cut(p, f); return; }
+    gShotPos = p;
+    gShotFoc = f;
+    if (worn()) llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, p, CAMERA_FOCUS, f, CAMERA_POSITION_LOCKED, TRUE,
+        CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, lag, CAMERA_FOCUS_LAG, lag]);
+    gApplyT = llGetTime();
+    gSettle = lag + 2.0;
+    if (gState == "film") llMessageLinked(LINK_SET, CAMSET, (string)p + "|" + (string)f + "|" + (string)lag + "|" + (string)llGetCameraFOV(), "");
+}
+
+// tracking: the viewer's own follow camera, smooth at every frame. "<distance>|<pitch°>|<focus offset>|<behind lag>|
+// <position lag>|<focus lag>", or "lock|<pos>": the camera stays at a corner and the focus follows you
+follow(string s)
+{
+    list L = llParseStringKeepNulls(s, ["|"], []);
+    gFollowS = s;
+    gFree = FALSE;
+    if (!worn()) return;
+    float beh = 10.0;                                   // how far round you it may be (Scenic's Drift: 180, anywhere, 8.0.6)
+    if (llGetListLength(L) > 6) beh = (float)llList2String(L, 6);
+    if (!gFollow && beh < 90.0) llClearCameraParams();   // Drift eases on from where its first cut put the camera
+    gFollow = TRUE;
+    if (llList2String(L, 0) == "lock")
+    {
+        llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, (vector)llList2String(L, 1), CAMERA_POSITION_LOCKED, TRUE,
+            CAMERA_FOCUS_LOCKED, FALSE, CAMERA_FOCUS_OFFSET, <0.0, 0.0, 0.5>, CAMERA_FOCUS_LAG, 0.3, CAMERA_POSITION_LAG, 0.5]);
+    }
+    else
+    {
+        llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION_LOCKED, FALSE, CAMERA_FOCUS_LOCKED, FALSE,
+            CAMERA_DISTANCE, (float)llList2String(L, 0), CAMERA_PITCH, (float)llList2String(L, 1),
+            CAMERA_FOCUS_OFFSET, (vector)llList2String(L, 2), CAMERA_BEHINDNESS_ANGLE, beh,
+            CAMERA_BEHINDNESS_LAG, (float)llList2String(L, 3), CAMERA_POSITION_LAG, (float)llList2String(L, 4),
+            CAMERA_FOCUS_LAG, (float)llList2String(L, 5), CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
+    }
+    gShotPos = ZERO_VECTOR;
+    gApplyT = llGetTime();
+    gSettle = GRACE + 1.0;
+    share();                                            // filming: friends can watch (the camera goes out once watched)
+}
+
+// a basic shot when the shot's script is silent: a level portrait of you, at eye height
+basicShot()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
+    if (llGetListLength(d) < 2) return;
+    vector P = llList2Vector(d, 0);
+    vector F = llRot2Fwd(llList2Rot(d, 1));
+    F.z = 0.0;
+    if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
+    F = llVecNorm(F);
+    vector sz = llGetAgentSize(gOwner);
+    vector E = <P.x, P.y, P.z + 0.37 * sz.z>;
+    vector dir = F * llEuler2Rot(<0.0, 0.0, llList2Float([30.0, -30.0, 150.0, -150.0], gFb % 4) * DEG_TO_RAD>);
+    gFb++;
+    float dist = 3.0;
+    list r = llCastRay(E, E + dir * dist, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+    if (llList2Integer(r, -1) == 1) dist = llVecDist(E, llList2Vector(r, 1)) - 0.4;
+    if (dist < 1.2) dist = 1.2;
+    vector cam = E + dir * dist;
+    setCam(cam, <E.x, E.y, cam.z>);
+}
+
+// an automatic cut that is hardly a new picture (under 30° and one size step) glides instead (no jump cut)
+integer similar(vector p, vector f)
+{
+    if (gShotPos == ZERO_VECTOR || gFree || gFollow) return FALSE;
+    vector a = gShotPos - gShotFoc;
+    vector b = p - f;
+    if (llVecMag(a) < 0.01 || llVecMag(b) < 0.01) return FALSE;
+    float k = llVecMag(b) / llVecMag(a);
+    return (llVecNorm(a) * llVecNorm(b) > 0.866 && k < 1.25 && k > 0.8);
+}
+
+applyShot(string s)
+{
+    list L = llParseStringKeepNulls(s, ["|"], []);
+    vector p = (vector)llList2String(L, 0);
+    vector f = (vector)llList2String(L, 1);
+    string kind = llList2String(L, 2);
+    gAnswered = TRUE;
+    if (kind == "auto" && similar(p, f)) glide(p, f, 1.0);
+    else setCam(p, f);
+}
+
+// ---- states ------------------------------------------------------------------------------
+engage(string shot, string why)
+{
+    if (!gPermOK)
+    {
+        if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
+        return;
+    }
+    if (gStandby) { llMessageLinked(LINK_SET, NOTE, "older", ""); return; }
+    if (LITE && shot != "scenic") { llMessageLinked(LINK_SET, NOTE, "full", ""); return; }
+    if (gState == "watch") llMessageLinked(LINK_SET, CMD, "mine", "");
+    if (gShot != "") llMessageLinked(LINK_SET, STOP, "switch", "");
+    gShot = shot;
+    gWhy = "";
+    if (why == "idle") gWhy = "idle";
+    gState = "film";
+    gFree = FALSE;
+    gFollow = FALSE;
+    gPend = "";
+    gSitHold = FALSE;
+    gAnswered = FALSE;
+    gStartT = llGetTime();
+    gSat = (llGetAgentInfo(gOwner) & AGENT_SITTING) != 0;
+    if (!gSat) gSitFrom = "";
+    gFovSent = llGetCameraFOV();
+    gLastAct = llGetUnixTime();
+    llMessageLinked(LINK_SET, START, shot + "|" + why, "");
+    ui("");
+    llSetTimerEvent(0.25 - 0.1 * gWatched);
+}
+
+// no frame of a shot on screen
+fresh()
+{
+    gFree = FALSE;
+    gFollow = FALSE;
+    gShotPos = ZERO_VECTOR;
+}
+
+// back to your own camera (waiting)
+bail(string why)
+{
+    clearCam();
+    if (gShot != "") llMessageLinked(LINK_SET, STOP, why, "");
+    gShot = "";
+    gWhy = "";
+    gState = "wait";
+    fresh();
+    gPend = "";
+    gSitHold = FALSE;
+    gLastAct = llGetUnixTime();
+    share();
+    ui("");
+    llSetTimerEvent(1.0 - 0.85 * gWatched);
+}
+
+// your camera for now (flying, mouselook, a marked vehicle); the shot comes back as it was
+letgo(string why)
+{
+    if (gState != "film" && gState != "held") return;
+    gLetWhy = why;
+    gState = "letgo";
+    clearCam();
+    gFollow = FALSE;
+    gShotPos = ZERO_VECTOR;
+    llMessageLinked(LINK_SET, PAUSE, why, "");
+    if (why == "fly") llMessageLinked(LINK_SET, TIP, "flying", "");
+    share();
+    ui("");
+}
+
+// the shot again: it frames afresh (after a let go, a hold, sitting, watching)
+resume(string why)
+{
+    gState = "film";
+    gLetWhy = "";
+    fresh();
+    gAnswered = FALSE;
+    gStartT = llGetTime();
+    llMessageLinked(LINK_SET, RESUME, why, "");
+    if (gPend != "") { applyShot(gPend); gPend = ""; }
+    ui("");
+    llSetTimerEvent(0.25 - 0.1 * gWatched);
+}
+
+// the shutter (8.1.0): the moment held exactly where it is, in your photo frame (bars), until it is pressed again,
+// a shot is tapped or everything goes off. You take the snapshot; a script cannot.
+expose()
+{
+    if (gState == "photo") { resume("photo"); return; }
+    if ((gState != "film" && gState != "held") || !gPermOK) return;
+    vector cp = llGetCameraPos();
+    llMessageLinked(LINK_SET, PAUSE, "photo", "");
+    gState = "photo";
+    cut(cp, cp + llRot2Fwd(llGetCameraRot()) * 10.0);
+    ui("");
+}
+
+held()
+{
+    gState = "held";
+    gHeldT = llGetTime();
+    llMessageLinked(LINK_SET, PAUSE, "held", "");
+    share();
+    ui("");
+}
+
+// ---- watching someone's film (8.2.0: the camera stepped 4 times a second; now it eases between their updates and
+// moves with them) ------------------------------------------------------------------------------------------------------
+// their camera through YOUR lens: the same line to the same focus at the distance that keeps the picture size
+receive(list L)
+{
+    vector p = (vector)llList2String(L, 3);
+    vector f = (vector)llList2String(L, 4);
+    float lag = (float)llList2String(L, 5);               // negative: their own live camera; 0: a cut; more: a glide
+    float df = (float)llList2String(L, 6);
+    vector a = (vector)llList2String(L, 8);               // where they are
+    float my = llGetCameraFOV();
+    if (df > 0.05 && my > 0.05)
+    {
+        float k = llTan(df * 0.5) / llTan(my * 0.5);
+        if (k < 0.2) k = 0.2;
+        if (k > 5.0) k = 5.0;
+        vector q = f + (p - f) * k;
+        list r = llCastRay(f, q, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+        if (llList2Integer(r, -1) > 0) q = llList2Vector(r, 1) + llVecNorm(f - q) * 0.3;
+        p = q;
+    }
+    float e = ease();
+    gO0 = gO0 + (gO1 - gO0) * e;                            // from where the camera is now
+    gF0 = gF0 + (gF1 - gF0) * e;
+    gRel = (a != ZERO_VECTOR);
+    gO1 = p - a;
+    gF1 = f - a;
+    gDur = 0.15;
+    if (lag > 0.0) gDur = lag;
+    if (lag == 0.0 || gCT == 0.0) { gO0 = gO1; gF0 = gF1; }   // a cut stays a cut
+    gCT = llGetTime();
+    string s = llGetSubString(llList2String(L, 7), 0, 3);   // "2.39", or 0: no bars
+    if ((float)s == 0.0) s = "full";
+    if (s != gFol)
+    {
+        gFol = s;
+        llMessageLinked(LINK_SET, CMD, "bars|follow " + s, "");
+    }
+    smooth();
+}
+
+float ease()
+{
+    if (gCT == 0.0) return 1.0;
+    float e = (llGetTime() - gCT) / gDur;
+    if (e > 1.0) e = 1.0;
+    return e;
+}
+
+// 20 times a second while you watch: between their last two updates, carried with them
+smooth()
+{
+    if (gCT == 0.0 || !worn()) return;
+    vector b;
+    if (gRel)
+    {
+        list d = llGetObjectDetails(gHostA, [OBJECT_POS]);
+        if (d == []) return;
+        b = llList2Vector(d, 0);
+    }
+    float e = ease();
+    llSetCameraParams([CAMERA_ACTIVE, TRUE, CAMERA_POSITION, b + gO0 + (gO1 - gO0) * e, CAMERA_FOCUS, b + gF0 + (gF1 - gF0) * e,
+        CAMERA_POSITION_LOCKED, TRUE, CAMERA_FOCUS_LOCKED, TRUE, CAMERA_POSITION_LAG, 0.0, CAMERA_FOCUS_LAG, 0.0,
+        CAMERA_POSITION_THRESHOLD, 0.0, CAMERA_FOCUS_THRESHOLD, 0.0]);
+}
+
+// the eye-line check ends without keeping (you walk, teleport, or leave it 2 minutes): your camera again (8.0.3: it
+// stayed locked in front of you)
+eyeQuit()
+{
+    if (!gEyeOn) return;
+    gEyeOn = FALSE;
+    llMessageLinked(LINK_SET, CMD, "eyequit", "");
+    if (gState == "film" || gState == "held") resume("eye");
+    else clearCam();
+}
+
+// ---- the tick -------------------------------------------------------------------------------
+idleCheck(integer now, integer info)
+{
+    string mode = cfg("idle");
+    if (mode == "") mode = "5";
+    if (mode == "off" || gAuto || gState == "off" || gState == "watch" || gState == "photo" || gStandby || gWhy == "idle") return;
+    if (gShot == "scenic" || (info & (AGENT_TYPING | AGENT_MOUSELOOK | AGENT_FLYING))) return;
+    if ((info & AGENT_AWAY) || (mode == "5" && now - gLastAct >= 300))
+    {
+        gIdleFrom = gShot;
+        engage("scenic", "idle");
+    }
+}
+
+// you are here again: idle Scenic hands back to what ran before
+back()
+{
+    if (gWhy != "idle") return;
+    string s = gIdleFrom;
+    gIdleFrom = "";
+    if (s == "") bail("back");
+    else engage(s, "start");
+}
+
+tick()
+{
+    integer now = llGetUnixTime();
+    float t = llGetTime();
+    integer info = llGetAgentInfo(gOwner);
+    // you are here: typing, mouselook, sitting down or standing up, your own camera moving (waiting, framing in
+    // Fixed, holding the camera with an Alt-click)
+    if (info & (AGENT_TYPING | AGENT_MOUSELOOK)) { gLastAct = now; back(); }
+    if (((info & AGENT_SITTING) != 0) != gSitSeen)
+    {
+        gSitSeen = !gSitSeen;
+        gLastAct = now;
+    }
+    if ((gState == "wait" || gState == "held" || gFree) && gPermOK)
+    {
+        vector cp = llGetCameraPos();
+        rotation cr = llGetCameraRot();
+        if (llVecDist(cp, gCamPos) > 0.5 || llAngleBetween(cr, gCamRot) > 0.1) gLastAct = now;
+        gCamPos = cp;
+        gCamRot = cr;
+    }
+    if (gEyeOn && t - gEyeT > 120.0) eyeQuit();
+    if (gClrT > 0.0 && t >= gClrT)
+    {
+        gClrT = 0.0;
+        if (gState == "film" && gShotPos == ZERO_VECTOR && !gFollow) clearCam();   // nothing new yet: the old frame goes
+    }
+    // watched: a camera that moves by itself (Tracking, Drift, your own, an Alt-click) goes out about 7 times a
+    // second, straight to the watchers (8.0.7: through sync it woke all twelve scripts every time), with where you
+    // are: their HUD eases between the updates, 20 times a second, relative to you (8.2.0: it stepped 4 times a second)
+    if (gWatched && t - gCamT > 0.12 && !(gState == "film" && !gFree && !gFollow && gShotPos != ZERO_VECTOR))
+    {
+        gCamT = t;
+        if (gState == "off" || gState == "watch" || (info & AGENT_MOUSELOOK) || !gPermOK) share();
+        else
+        {
+            vector cp = llGetCameraPos();
+            string m = "T12|8|cam|" + (string)cp + "|" + (string)aim(cp) + "|-0.25|"
+                + (string)llGetCameraFOV() + "|" + gShape + "|" + (string)llGetPos();
+            integer i;
+            for (i = 0; i < llGetListLength(gWatchers); i++) llRegionSayTo(llList2Key(gWatchers, i), SYNC_CH, m);
+        }
+    }
+    idleCheck(now, info);
+    if (gState == "wait" || gState == "off" || gState == "watch") return;
+    // flying and mouselook: your camera until it ends
+    integer fly = (info & AGENT_FLYING) != 0;
+    integer ml = (info & AGENT_MOUSELOOK) != 0;
+    if (gState == "letgo")
+    {
+        if ((gLetWhy == "fly" && !fly) || (gLetWhy == "ml" && !ml)) resume(gLetWhy);
+        else if (gLetWhy == "veh" && !(info & AGENT_SITTING)) standUp();
+        return;
+    }
+    if (fly) { letgo("fly"); return; }
+    if (ml) { letgo("ml"); return; }
+    // sitting down, standing up
+    integer sat = (info & AGENT_SITTING) != 0;
+    if (sat != gSat)
+    {
+        gSat = sat;
+        if (sat) sitDown();
+        else standUp();
+        if (gState != "film" && gState != "held") return;
+    }
+    // a teleport: a fresh frame once the place has loaded
+    if (gTpT > 0.0 && t >= gTpT)
+    {
+        gTpT = 0.0;
+        gShotPos = ZERO_VECTOR;
+        gAnswered = FALSE;
+        gStartT = t;
+        llMessageLinked(LINK_SET, START, gShot + "|tp", "");
+    }
+    // your lens: every shot keeps its picture for it
+    float fv = llGetCameraFOV();
+    if (llFabs(fv - gFovSent) > 0.004)
+    {
+        gFovSent = fv;
+        llMessageLinked(LINK_SET, FOVMSG, (string)fv, "");
+    }
+    // a silent shot: a basic shot so the camera never waits (not Fixed: it hands you the camera itself)
+    if (gState == "film" && !gAnswered && !gSitHold && gShot != "fixed" && t - gStartT > FIRST_WAIT)
+    {
+        gAnswered = TRUE;
+        basicShot();
+    }
+    if (gState == "film" || (gState == "held" && gAuto)) heldCheck(t);
+}
+
+// you took the camera (Alt-click, orbit): the shot is held, the lit word dims. Not while you frame in Fixed.
+heldCheck(float t)
+{
+    if (gFree || gSitHold || gEyeOn || t - gApplyT < gSettle) return;
+    vector cp = llGetCameraPos();
+    integer off;
+    if (gFollow)
+    {
+        list L = llParseStringKeepNulls(gFollowS, ["|"], []);
+        if (llList2String(L, 0) == "lock") return;
+        list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
+        if (llGetListLength(d) < 2) return;
+        vector P = llList2Vector(d, 0);
+        vector F = llRot2Fwd(llList2Rot(d, 1));
+        float D = (float)llList2String(L, 0);
+        vector v = cp - P;
+        off = (llVecMag(v) > D * 1.8 + 1.5 || ((v * F) > 0.5 * D + 0.5 && (float)llList2String(L, 6) < 90.0));   // far off, or in front of you (not Drift)
+    }
+    else if (gShotPos != ZERO_VECTOR)
+    {
+        float want = llVecDist(gShotPos, ownerPos());
+        off = (llVecDist(cp, gShotPos) > 1.0 + 0.05 * want || llRot2Fwd(llGetCameraRot()) * llVecNorm(gShotFoc - gShotPos) < 0.97);
+    }
+    if (gState == "held") { if (!off && t - gHeldT > 1.5) resume("held"); return; }   // Auto: Esc, the camera is back
+    if (!off) { gHeldT = 0.0; return; }
+    if (gHeldT == 0.0) gHeldT = t;
+    else if (t - gHeldT > 0.6) held();
+}
+
+sitDown()
+{
+    gSitFrom = gShot;
+    if (marked())
+    {
+        llMessageLinked(LINK_SET, NOTE, "letgo", "");
+        letgo("veh");
+        return;
+    }
+    if (gShot == "fixed") return;                          // Fixed: this seat's own view (fixed.lsl)
+    if (!gAuto && !LITE) { engage("fixed", "sit"); return; }   // 8.6.0: sitting is Fixed's, standing up gives the shot back
+    gSitHold = TRUE;                                       // Auto (its director decides) and the free build: the frame holds
+    llMessageLinked(LINK_SET, PAUSE, "sit", "");
+    ui("fixed");                                           // ... and FIXED glows once: a seat view is here
+}
+
+standUp()
+{
+    gSat = FALSE;
+    if (gState == "letgo" && gLetWhy == "veh")
+    {
+        gState = "film";
+        gLetWhy = "";
+    }
+    if (gSitFrom != "" && gSitFrom != gShot)
+    {
+        string s = gSitFrom;                               // seated in Fixed: back to the shot you had before sitting
+        gSitFrom = "";
+        engage(s, "stand");
+        return;
+    }
+    gSitFrom = "";
+    if (gSitHold || gState == "film")
+    {
+        gSitHold = FALSE;
+        resume("stand");
+    }
+}
+
+// the seat is a vehicle you marked (Fixed › LET GO): its name and creator are in cin.veh
+integer marked()
+{
+    string v = cfg("veh");
+    if (v == "") return FALSE;
+    key root = llList2Key(llGetObjectDetails(gOwner, [OBJECT_ROOT]), 0);
+    if (root == gOwner || root == NULL_KEY) return FALSE;
+    list d = llGetObjectDetails(root, [OBJECT_NAME, OBJECT_CREATOR]);
+    return (llSubStringIndex(";" + v + ";", ";" + llList2String(d, 0) + "|" + llList2String(d, 1) + ";") >= 0);
+}
+
+// ============================================================================
+default
+{
+    state_entry()
+    {
+        gOwner = llGetOwner();
+        gNeed = PERMISSION_TAKE_CONTROLS | PERMISSION_CONTROL_CAMERA | PERMISSION_TRACK_CAMERA;
+        gLastAct = llGetUnixTime();
+        gBlend = (cfg("blend") == "1");
+        llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
+        if (llGetAttached()) llRequestPermissions(gOwner, gNeed);
+        ui("");
+        llSetTimerEvent(1.0);
+    }
+
+    on_rez(integer p)
+    {
+        llResetScript();
+    }
+
+    attach(key id)
+    {
+        if (id == NULL_KEY)
+        {
+            gPermOK = FALSE;
+            if (gShot != "") llMessageLinked(LINK_SET, STOP, "detach", "");
+            return;
+        }
+        gState = "wait";                                    // on wear: your camera, Take 12 waits (a clean start)
+        gShot = "";
+        gWhy = "";
+        gOffShot = "";
+        gStandby = FALSE;
+        llRequestPermissions(gOwner, gNeed);
+        ui("");
+    }
+
+    run_time_permissions(integer p)
+    {
+        gPermOK = ((p & gNeed) == gNeed);
+        if (gPermOK)
+        {
+            llTakeControls(CTL, TRUE, TRUE);               // one request (a second replaces the first); the keys still walk you
+            if (gState != "film" && gState != "held") clearCam();   // nothing left locked by a reset (8.0.3)
+            share();                                        // friends can watch from the start, your own camera too (8.0.7)
+            gCamPos = llGetCameraPos();
+            gCamRot = llGetCameraRot();
+        }
+    }
+
+    changed(integer c)
+    {
+        if (c & CHANGED_OWNER) llResetScript();
+        if (c & (CHANGED_TELEPORT | CHANGED_REGION)) eyeQuit();
+        // walking into the next region in Tracking: its camera follows you there by itself, nothing to set mid-move
+        if ((c & CHANGED_TELEPORT) == 0 && gFollow && gState == "film") return;
+        if ((c & (CHANGED_TELEPORT | CHANGED_REGION)) && (gState == "film" || gState == "held"))
+        {
+            if (gPermOK) llRequestPermissions(gOwner, gNeed);
+            gClrT = llGetTime() + 1.0;                      // the old frame goes once the move is over, a fresh one at 2 s
+            gState = "film";
+            fresh();
+            gTpT = llGetTime() + 2.0;
+            llMessageLinked(LINK_SET, PAUSE, "tp", "");
+            ui("");
+        }
+    }
+
+    control(key id, integer level, integer edge)
+    {
+        if (!(level | edge)) return;
+        if (gEyeOn && (edge & level & 783)) eyeQuit();     // walking or turning ends the eye-line check
+        gLastAct = llGetUnixTime();
+        if (gWhy == "idle") { back(); return; }
+        if (gState == "held" && (level & 15)) { resume("held"); return; }   // walking off: the shot again
+        if (edge & 15)
+        {
+            gKeys = level & 15;
+            llMessageLinked(LINK_SET, MOVING, (string)gKeys, "");
+        }
+    }
+
+    timer()
+    {
+        if (gHl && gState != "watch") { llListenRemove(gHl); gHl = 0; gCT = 0.0; llSetTimerEvent(0.25); }
+        if (gHl)
+        {
+            llSetTimerEvent(0.05);                          // (whatever else set it meanwhile)
+            smooth();                                       // watching: 20 Hz; the tick still 4 times a second
+            if (llGetTime() - gTk < 0.25) return;
+            gTk = llGetTime();
+        }
+        tick();
+    }
+
+    listen(integer ch, string name, key id, string m)
+    {
+        if (gState != "watch" || llGetSubString(m, 0, 9) != "T12|8|cam|" || llGetOwnerKey(id) != gHostA) return;
+        receive(llParseStringKeepNulls(m, ["|"], []));
+    }
+
+    link_message(integer sender, integer num, string str, key id)
+    {
+        if (num == SHOT)
+        {
+            if (gState == "film" && !gSitHold && gTpT == 0.0) applyShot(str);
+            else if (gState != "wait" && gState != "off") gPend = str;
+        }
+        else if (num == GLIDE)
+        {
+            if (gState == "film" && !gSitHold)
+            {
+                list L = llParseStringKeepNulls(str, ["|"], []);
+                float lag = 1.0;
+                if (llGetListLength(L) > 2) lag = (float)llList2String(L, 2);
+                glide((vector)llList2String(L, 0), (vector)llList2String(L, 1), lag);
+            }
+        }
+        else if (num == FOLLOW)
+        {
+            gAnswered = TRUE;
+            if (gState == "film" && !gSitHold) follow(str);
+        }
+        else if (num == NO_SHOT)
+        {
+            gAnswered = TRUE;
+            if (gState != "film") return;
+            if (str == "free")
+            {
+                gFree = TRUE;                               // Fixed, nothing kept here: your own camera to frame it
+                gFollow = FALSE;
+                gShotPos = ZERO_VECTOR;
+                clearCam();
+                share();
+            }
+            else basicShot();
+        }
+        else if (num == ACK) gAnswered = TRUE;
+        else if (num == CMD)
+        {
+            list L = llParseStringKeepNulls(str, ["|"], []);
+            string c = llList2String(L, 0);
+            string a = llList2String(L, 1);
+            if (c == "shot")
+            {
+                gLastAct = llGetUnixTime();
+                if (gState == "off") gState = "wait";
+                if (a == gShot && gWhy != "idle" && (gState == "film" || gState == "held" || gState == "photo"))
+                {
+                    if (gState != "film") resume(gState);   // the lit tap gives the shot back (held, or the shutter open)
+                    else if (gSitHold) { gSitHold = FALSE; resume("stand"); }
+                    else llMessageLinked(LINK_SET, NEXT, "tap", "");   // its one job (section 5)
+                }
+                else if (a == gShot && gState == "letgo") return;
+                else engage(a, "start");
+            }
+            else if (c == "off")
+            {
+                if (gState == "off") return;
+                gOffShot = gShot;
+                if (gWhy == "idle") gOffShot = gIdleFrom;
+                bail("off");
+                gState = "off";
+                ui("");
+            }
+            else if (c == "on")
+            {
+                gState = "wait";
+                if (gOffShot != "") engage(gOffShot, "start");
+                else ui("");
+                gOffShot = "";
+            }
+            else if (c == "letgo" && a == "veh") letgo("veh");
+            else if (c == "takeback" && gState == "letgo" && gLetWhy == "veh") resume("veh");
+            else if (c == "watch")
+            {
+                if (gState == "film" || gState == "held") llMessageLinked(LINK_SET, PAUSE, "watch", "");
+                gState = "watch";
+                gFollow = FALSE;
+                gShotPos = ZERO_VECTOR;
+                gHostA = (key)a;
+                gCT = 0.0;
+                gFol = "";
+                if (!gHl) gHl = llListen(SYNC_CH, "", NULL_KEY, "");
+                llSetTimerEvent(0.05);
+                share();
+                ui("");
+            }
+            else if (c == "unwatch" && gState == "watch")
+            {
+                if (gShot != "") resume("watch");
+                else bail("watch");
+            }
+            else if (c == "hint") ui(a);
+            else if (c == "camq") share();                  // sync: someone connected, what is your film now
+            else if (c == "watched")
+            {
+                gWatchers = llParseString2List(a, [","], []);
+                gWatched = (gWatchers != []);
+                if (gWatched) llSetTimerEvent(0.15);
+                share();
+            }
+            else if (c == "eyecam" && a != "off" && gPermOK)
+            {
+                if (!gEyeOn && (gState == "film" || gState == "held")) llMessageLinked(LINK_SET, PAUSE, "eye", "");
+                gEyeOn = TRUE;
+                gEyeT = llGetTime();
+                cut((vector)a, (vector)llList2String(L, 2));
+            }
+            else if (c == "eyecam" && gEyeOn)
+            {
+                gEyeOn = FALSE;
+                if (gState == "film" || gState == "held") resume("eye");
+                else clearCam();
+            }
+            else if (c == "stop") bail("stop");
+            else if (c == "auto") gAuto = (a == "1");
+            else if (c == "shutter") expose();
+            else if (c == "next" && gState == "film") llMessageLinked(LINK_SET, NEXT, "tap", "");
+            else if (c == "blend")
+            {
+                gBlend = (a == "1");
+                llLinksetDataWriteProtected("cin.blend", a, PASS);
+            }
+            else if (c == "standby")
+            {
+                gStandby = TRUE;                            // an older copy worn with a newer one: it steps aside
+                bail("standby");
+            }
+        }
+        else if (num == CFG_CHANGED && (str == "blend" || str == "all")) gBlend = (cfg("blend") == "1");
+        else if (num == CROP) gShape = llList2String(llParseString2List(str, ["|"], []), 0);
+        else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "core");
+        else if (num == STATUS && str == "?")
+            llOwnerSay("[Take 12/core] v" + VERSION + " " + gState + " " + gShot + " " + gWhy + ", perms " + (string)gPermOK
+                + ", ffsa " + (string)gFollow + (string)gFree + (string)gSitHold + (string)gAuto
+                + ", mem " + (string)llGetFreeMemory());
+    }
+}
