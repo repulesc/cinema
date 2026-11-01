@@ -47,8 +47,12 @@ def island_ok(where):
     IH = 36 * var(h, "screen", "gS") / 1080.0                 # the island scales with the strip's size
     x0, x1 = isl()
     m = R("t12 band")
-    check(on("t12 tab") and on("t12 tab2") and abs(R("t12 tab")[2] - IH) < 1e-4 and abs(R("t12 tab")[3] - IH) < 1e-4,
-          "%s: the island's two round ends (%.0f px)" % (where, R("t12 tab")[2] * 1080))
+    caps = [h.part(n) for n in ("t12 tab", "t12 tab2")]
+    check(all(c.get("type") == C["PRIM_TYPE_CYLINDER"] and abs(c["size"][0] - IH) < 1e-4 and abs(c["size"][1] - IH) < 1e-4
+              and c["alpha"] > 0.5 and abs(abs(c["rot"][1]) - 0.7071) < 1e-3 for c in caps),
+          "%s: the island's two round ends: discs (cylinders facing you), %.0f px, whatever the texture" % (where, caps[0]["size"][1] * 1080))
+    isle = h.part("t12 band")["color"]
+    check(0.05 < isle[0] < 0.2 and h.part("t12 band")["pos"][0] < 0.006, "%s: a lifted black, in front of the film's bars" % where)
     check(abs(m[0]) < 1e-4 and abs(m[2] - (x1 - x0 - IH)) < 1e-4 and abs(m[3] - IH) < 1e-4, "%s: its black middle between them" % where)
     check(abs(x0 + x1) < 1e-4, "%s: centred on the [12] (%.0f, %.0f px)" % (where, x0 * 1080, x1 * 1080))
     check(all(x0 < L(n) and Rt(n) < x1 for n in words_on()), "%s: the island holds every word" % where)
@@ -177,10 +181,15 @@ check(lsd(h2, "drop") == "2" and abs((z0 - rect(h2, bo, "Take 12")[1]) * 1080 - 
 for k in range(4): bo.click("Up"); w2.run(0.5)
 check(lsd(h2, "drop") == "0" and abs(rect(h2, bo, "Take 12")[1] - z0) < 1e-4, "Up stops at the edge")
 bo.click("Done"); w2.run(1)
-check(lsd(h2, "firstrun") == "done" and not card() and bo.dialog is None, "Done: the setup ends, no card again (it came first)")
+check(bo.labels() == ["Cinema", "Full screen"], "then the picture: Cinema or Full screen (%r)" % bo.labels())
+bo.click("Full screen"); w2.run(4)
+check(lsd(h2, "bars") == "0" and rect(h2, bo, "t12 bar2")[4] < 0.02, "Full screen: no bars")
+check(lsd(h2, "firstrun") == "done" and not card() and bo.dialog is None, "the setup ends, no card again (it came first)")
+check(var(h2, "screen", "gOpen") == 1 and var(h2, "tracking", "gAuto") == 1, "... the strip open and Auto filming (the setup really finished)")
 bo.tap(); w2.run(0.6); bo.click("Settings"); w2.run(0.5); bo.click("Reset"); w2.run(0.5); bo.click("Everything"); w2.run(0.5)
 bo.click("Yes, reset"); w2.run(2)
 check(card() and bo.dialog is not None, "Reset > Everything: the guide card again, and the setup")
+check(var(h2, "bars", "gOn") == 1, "... and the film's bars back, as new (the picture is asked again)")
 no_errors(w2, "lab setup")
 h = mem_h
 # ---- runtime memory (as memory_emu: the static estimate, the globals, twice the biggest list; 3 KB must stay free) --

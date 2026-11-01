@@ -1,7 +1,7 @@
-# Take 12 Lab
+# The new design (built in the lab)
 
-A separate HUD for trying ideas that may one day become the product, without touching the product. Wear one or the
-other, never both: take Take 12 off before wearing the Lab.
+A second Take 12 HUD with the new design, built here without touching the product, and named simply "Take 12".
+Wear one or the other, never both.
 
 **Lab 1 and 2: the Quiet and Direct pages, a floating island, a setup that aligns both ways** (from 8.8.0).
 - **Quiet** is the default page: a floating island, like the current iPhone's. It has round ends, sits 8 px in from the screen's edge, is centred on the [12] and is only as wide as its keys.
@@ -15,18 +15,19 @@ other, never both: take Take 12 off before wearing the Lab.
   - the shutter sits beside Connect.
 - **Moving between them:** tap the shot's name or `›` to open Direct, and `‹` (in the same place) to fold it back. Nothing opens or folds by itself, and the page is kept for the next wear.
 - **The island's black:**
-  - its ends are two discs and its middle a black part, so the ends stay round at any width;
-  - where the film's top bar is taller than the island (2.39, 2.00), the island sits inside the bar and only its keys show;
-  - with a thin bar (1.85) it touches the bar.
+  - a lifted black, so it also shows on the film's black bars;
+  - its ends are real round shapes (cylinders facing you), so they are round with any texture;
+
 - **The setup:**
   - the guide card shows first, on the first wear and after Reset › Everything;
   - the alignment step has **Up**, **Down** and **Done**, 10 px a step, so you can go back;
+  - the last step asks for the picture: **Cinema** (the film's black bars) or **Full screen** (none);
   - Settings › Screen › Move in and Move out also move 10 px at a time.
 - **Double-tap** the [12] hides everything but the [12], as in the product.
 
 ## What is the lab's own
 - **Scripts:** only strip, screen, ui and text in `lab/src` are the lab's. The other eight are the product's own, copied from `hud/src` by `tools/build_lab.py`, so they never drift. CI fails if a copy is stale.
-- **Builder:** `lab/build/builder.lsl` is the product's builder with three more parts (`t12 tab` and `t12 tab2`, the island's ends; `t12 fold`) and the root named "Take 12 Lab".
+- **Builder:** `lab/build/builder.lsl` is the product's builder with three more parts (`t12 tab` and `t12 tab2`, the island's round ends; `t12 fold`).
 - **Textures:**
   - `lab/art/take12_marks_1024.png` is the product's marks with three more cells: `›`, `‹` and the island's round end (`tools/art/make_lab.py`);
   - `lab/art/take12_guide_1024.png` is the lab's guide card (`tools/art/make_guide.py`);
@@ -43,21 +44,16 @@ other, never both: take Take 12 off before wearing the Lab.
   - closed.
 
 ## Build it in-world
-1. Rez a box. Put `lab/build/builder.lsl` (as a new script) and a blank box named `t12 part` in it, and touch it. It builds "Take 12 Lab" with every part.
+1. Rez a box. Put `lab/build/builder.lsl` (as a new script) and a blank box named `t12 part` in it, and touch it. It builds the HUD with every part.
 2. Add the twelve scripts of `lab/src/`, each as a new script with the file's name.
 3. Add the textures. All three are in `lab/art/`:
    - **Words:** `take12_words_1024.png` is the product's own, copied. If you already uploaded `take12_words` for Take 12, drop that copy in; no new upload.
    - **Marks and guide:** upload `take12_marks_1024.png` as `take12_marks_lab` and `take12_guide_1024.png` as `take12_guide_lab`, then drop both in.
    - Any name that starts with `take12_words`, `take12_marks` or `take12_guide` is taken.
 4. Optionally add the Read Me.
-5. Take Take 12 off, take the Lab and wear it on HUD Top Center.
-6. Run the setup once (tap the [12]); it ends on the lab's guide card.
-7. `/12 status`: strip says `lab quiet` or `lab direct`, and screen says `lab island found`.
-
-**Updating a Lab built before lab 2:**
-1. Put the builder (`lab/build/builder.lsl`) and `t12 part` back in the Lab HUD and touch it. It adds only the missing part, `t12 tab2`.
-2. Replace the lab's four own scripts: strip, screen, ui and text, from `lab/src`.
-3. Upload `take12_marks_1024.png` and `take12_guide_1024.png` from `lab/art` again, and drop them in.
+5. Take the old Take 12 off, take this one and wear it on HUD Top Center.
+6. The guide card shows; tap it closed, then tap the [12] for the setup.
+7. `/12 status`: strip says `quiet` or `direct`, and screen says `island found`.
 
 ## If it proves itself
 Its two scripts and three cells move into `hud/`, the guide card's Quiet drawing becomes the product's, and `lab/src`,

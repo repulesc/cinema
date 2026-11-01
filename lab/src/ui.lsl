@@ -273,8 +273,7 @@ open(string p)
         page(p, llList2String(["Smooth", "Snappy"], sn) + "~" + llList2String(["Glide", "Reveal"], rv),
             [mark("Smooth", !sn), mark("Snappy", sn), " ", mark("Glide", !rv), mark("Reveal", rv), "‹ Back"]);
     }
-    else if (p == "tour1" || p == "tour2") page(p, "", ["Next ›", "Skip"]);
-    else if (p == "tour3") page(p, "", ["Done"]);
+    else if (p == "picture") page(p, "", ["Cinema", "Full screen"]);   // lab 2.2: the setup's last step (no tour: the card came first)
     else menu();
 }
 
@@ -291,7 +290,7 @@ string up(string p)
 choose(string m)
 {
     string b = bare(m);
-    if (b == "Close" || (b == "Done" && gPage != "tour3") || b == " ") { closeMenu(); return; }   // the tour's Done ends the setup
+    if (b == "Close" || (b == "Done" && gPage != "inview") || b == " ") { closeMenu(); return; }
     if (b == "Skip" && gPage == "lens") { closeMenu(); eyeStart(); return; }
     if (b == "‹ Back") { open(up(gPage)); return; }
     if (gPage == "main")
@@ -413,14 +412,15 @@ choose(string m)
         if (b == "Up") move(-1);
         if (b == "Done")
         {
-            if (cfg("take12_guide") == "") open("tour1");   // without the card's texture, the three pages (as before 8.8.0)
-            else done();                                    // the lab: the card came first, at the start
+            open("picture");                                // the picture: the film's bars, or the full screen
         }
         else open("inview");
     }
-    else if (gPage == "tour1") { if (b == "Skip") done(); else open("tour2"); }
-    else if (gPage == "tour2") { if (b == "Skip") done(); else open("tour3"); }
-    else if (gPage == "tour3") done();
+    else if (gPage == "picture")
+    {
+        set("bars", (string)(b == "Cinema"));               // Cinema: the film's frame (2.39) in bars; Full screen: none
+        done();
+    }
 }
 
 // the guide card (8.8.0: screen shows it, a tap on it closes it), or the Read Me notecard
