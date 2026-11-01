@@ -59,6 +59,7 @@ float   gFeet;
 float   gTall;
 integer gLensL;                     // the lens page shows the live mm
 list    gVer;                       // the scripts that answered
+list    gMiss;                      // ... and the ones that did not: when they answer later, the [12] is white again (8.9.1)
 integer gVerT;                      // the version check: asked at
 integer gVerStep;
 integer gLensTold;
@@ -374,8 +375,7 @@ choose(string m)
         llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
         llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
         gFirst = "start";
-        llMessageLinked(LINK_SET, STRIP, "guide|1", "");   // the lab: the guide card first (screen shows it if it has it)
-        first();
+        note("setup", "");                                  // the setup when you tap the [12], the guide card at its end
     }
     else if (gPage == "help" || gPage == "about")
     {
@@ -453,7 +453,8 @@ done()
     llLinksetDataWriteProtected("cin.firstrun", "done", PASS);
     if (!gOpen) strip("open");                              // the controls stay in view (8.0.4: they vanished after the setup)
     llMessageLinked(LINK_SET, CMD, "auto", "");             // and Auto directs (8.3.0)
-}
+    llMessageLinked(LINK_SET, STRIP, "guide|1", "");       // then the guide card, if the HUD has it (8.9.1: it came first, and
+}                                                           // got in the setup's way)
 
 // ---- the eye line: a line on screen, PgUp / PgDn onto your eyes, tap to keep ----------------------------------------
 eyeStart()
@@ -525,7 +526,13 @@ integer twelve(integer link)
 onTap()
 {
     if (gEye) { eyeEnd(TRUE); return; }
-    if (gFirst == "start" || gFirst == "later") { gFirst = "start"; first(); return; }
+    if (gFirst == "start" || gFirst == "later")
+    {
+        gFirst = "start";
+        llMessageLinked(LINK_SET, STRIP, "guide|0", "");   // the setup starts: the guide card goes (8.9.1)
+        first();
+        return;
+    }
     menu();
 }
 
@@ -656,7 +663,9 @@ default
 
     touch_end(integer n)
     {
-        if (llDetectedKey(0) != gOwner || !twelve(llDetectedLinkNumber(0))) return;
+        // only the end of a touch that began on the [12] (8.9.1: the part was looked at again here, after the touch had
+        // changed it: a tap closing the guide card was taken for the [12]'s and kept the eye line wherever it was)
+        if (llDetectedKey(0) != gOwner || !gHeld) return;
         gHeld = FALSE;
         if (gFill) llMessageLinked(LINK_SET, STRIP, "hold|0", "");
         gFill = 0;
@@ -711,6 +720,12 @@ default
         else if (num == MSG_VER && str != "?")
         {
             if (llListFindList(gVer, [(string)id]) < 0) gVer += [(string)id];
+            integer m = llListFindList(gMiss, [(string)id]);
+            if (m >= 0)                                     // a script missing at the check is here now (added late, or
+            {                                               // started again): when none is missing, no amber
+                gMiss = llDeleteSubList(gMiss, m, m);
+                if (gMiss == []) llMessageLinked(LINK_SET, STRIP, "problem|0", "");
+            }
             if (str != VERSION) note("mixed", (string)id);
         }
         else if (num == STATUS && str == "?")
@@ -761,14 +776,11 @@ default
             {
                 note("missing", llDumpList2String(miss, ", "));
                 llMessageLinked(LINK_SET, STRIP, "problem|1", "");
+                gMiss = miss;
             }
             gVerT = 0;
             gVerStep = 0;
-            if (gFirst == "start")
-            {
-                note("setup", "");
-                llMessageLinked(LINK_SET, STRIP, "guide|1", "");   // the lab: the guide card on the first wear
-            }
+            if (gFirst == "start") note("setup", "");      // (the guide card comes at the setup's end, 8.9.1)
             else if (cfg("open") != "0") strip("open");    // set up: the strip shows as you left it (8.0.5: it started hidden)
         }
         timer0();

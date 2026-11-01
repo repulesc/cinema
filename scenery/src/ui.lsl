@@ -655,7 +655,9 @@ default
 
     touch_end(integer n)
     {
-        if (llDetectedKey(0) != gOwner || !twelve(llDetectedLinkNumber(0))) return;
+        // only the end of a touch that began on the [12] (8.9.1: the part was looked at again here, after the touch had
+        // changed it: a tap closing the guide card was taken for the [12]'s)
+        if (llDetectedKey(0) != gOwner || !gHeld) return;
         gHeld = FALSE;
         if (gFill) llMessageLinked(LINK_SET, STRIP, "hold|0", "");
         gFill = 0;
