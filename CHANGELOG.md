@@ -1,5 +1,14 @@
 # Changelog
 
+## 8.9.2 (Auto stays awake while you are)
+- **Auto dreamt while you were awake** (in-world): standing and clicking things, typing or turning, it cut to Drift after
+  10 s and to Portrait after 4 s, because only walking counted. Now tracking hears a click in the world and the
+  turning keys (taken and passed on: clicking and turning work as ever) and sees you type:
+  - **Drift** waits for 60 s with nothing at all: no walking, no click, no key, no typing;
+  - **Portrait** with someone waits for 15 s together, standing with your hands still (typing is a conversation: it may);
+  - **a click, a key or typing while Auto rests** brings it back behind you at once.
+- New `awake_emu` (in CI) fails on 8.9.1. Every script is 8.9.2.
+
 ## 8.9.1 (every script; the fixes since 8.9.0 under one number)
 - **Alignment opens by itself** on the first wear and after Reset › Everything: no tap needed, because a viewer's
   bars can hide the [12] until the strip is aligned.

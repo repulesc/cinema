@@ -1,7 +1,7 @@
 """Auto (8.3.0; its rhythm 8.4.0, docs/PRODUCT.md "Auto: the guide"), on the REAL scripts: a day with the camera
 directing itself. Moving 1 s (keys or speed): Tracking at once, from any shot, from a hold too, never anything else
-while moving (8.3.0 kept Portrait while you walked a room in short bursts). Still alone 10 s: Scenic Drift; 5 minutes
-or Away: Scenic wide (Far outdoors, Room indoors). Still 4 s with 1-3 people within 3 m: Portrait Us; a crowd: Drift.
+while moving (8.3.0 kept Portrait while you walked a room in short bursts). Still alone 60 s, hands too (8.9.2): Scenic Drift; 5 minutes
+or Away: Scenic wide (Far outdoors, Room indoors). Still 15 s with 1-3 people within 3 m: Portrait Us; a crowd: Drift.
 A seat with a kept view: Fixed; another seat: Drift. 8 s a shot. Auto's options never kept; core's idle start off.
 The strip: the Orbit lit, the shot faint. Manual and back, Connect, a HUD without the Orbit part."""
 from emu_util import *
@@ -46,17 +46,17 @@ o, s0 = rect(h, ana, "t12 auto"), rect(h, ana, "t12 s0")
 check(o[0] < s0[0] - (o[2] + s0[2]) / 2 + 1e-6 and o[0] < rect(h, ana, "t12 shape")[0], "the Orbit at the left end, then the shot")
 no_errors(w, "wear")
 
-# ---- resting: Tracking holds, then Drift after 10 s --------------------------------------------------------------------
-w.run(4)
-check(state(h)[1] == "tracking", "still 6.5 s: Tracking holds")
-t = until(w, lambda: state(h)[1] == "scenic", 6)
-check(t is not None and var(h, "scenic", "gBand") == 0 and lsd(h, "scn") == "2", "still 10 s: Scenic Drift (hers, Room, kept)")
+# ---- resting: Tracking holds, then Drift after 60 s of nothing (8.9.2: 10 s; awake_emu has the clicks and typing) --------
+w.run(50)
+check(state(h)[1] == "tracking", "still 52 s: Tracking holds")
+t = until(w, lambda: state(h)[1] == "scenic", 12)
+check(t is not None and var(h, "scenic", "gBand") == 0 and lsd(h, "scn") == "2", "still 60 s: Scenic Drift (hers, Room, kept)")
 check(faint(h, ana) == {"t12 s3": 0.36}, "the strip: SCENIC, faint %r" % faint(h, ana))
 w.run(8)
-# a key nudged is not a walk
-for i in range(3):
-    ana.keys(C["CONTROL_FWD"], hold=0.15); w.run(3)
-check(state(h)[1] == "scenic", "a nudge: no cut")
+# a key nudged is no walk, but you are here: back behind you (8.9.2: Drift dreamt on)
+ana.keys(C["CONTROL_FWD"], hold=0.15)
+t = until(w, lambda: state(h)[1] == "tracking", 2)
+check(t is not None, "a nudge while Auto rests: you are here, Tracking")
 
 # ---- moving: Tracking at once, also walking a room in short bursts (8.3.0 stayed in Portrait) ----------------------------
 ana.keys(C["CONTROL_FWD"], hold=3)
@@ -70,8 +70,8 @@ no_errors(w, "move and rest")
 
 # ---- someone near: Portrait Us; they leave: Drift ------------------------------------------------------------------------
 ben = w.avatar("Ben", B.add(ana.pos, vec(1.5, 0.5, 0)))
-t = until(w, lambda: state(h)[1] == "portrait", 10)
-check(t is not None and t >= 3.5, "Ben within 3 m, both still: Portrait after 4 s (%s)" % t)
+t = until(w, lambda: state(h)[1] == "portrait", 20)
+check(t is not None and t >= 14.5, "Ben within 3 m, both still: Portrait after 15 s (8.9.2: 4 s) (%s)" % t)
 check(var(h, "portrait", "gSize") == 1 and var(h, "portrait", "gUs") == 1 and lsd(h, "por") == "2|0", "Auto's Portrait: Medium · Us, hers kept")
 w.run(3)
 check(len(var(h, "portrait", "gWith")) == 1, "Us has Ben (%r)" % var(h, "portrait", "gWith"))
@@ -81,11 +81,11 @@ ana.keys(C["CONTROL_FWD"], hold=2)
 t = until(w, lambda: state(h)[1] == "tracking", 2)
 check(t is not None, "walking off from Portrait: Tracking at once")
 ana.walk(ana.pos); w.run(1)
-ben.pos = B.add(ana.pos, vec(1.0, -1.0, 0)); w.run(12)
+ben.pos = B.add(ana.pos, vec(1.0, -1.0, 0)); w.run(20)
 check(state(h)[1] == "portrait", "Ben comes along: Portrait again")
 ben.pos = vec(200, 200, 21)
-t = until(w, lambda: state(h)[1] == "scenic", 8)
-check(t is not None and t >= 2.5, "Ben gone 3 s: Drift (%s)" % t)
+t = until(w, lambda: state(h)[1] == "scenic", 62)
+check(t is not None and t >= 2.5, "Ben gone, still a while: Drift (%s)" % t)
 crowd = [w.avatar("P%d" % i, B.add(ana.pos, vec(1.0 + 0.3 * i, 1.0, 0))) for i in range(5)]
 w.run(16)
 check(state(h)[1] == "scenic", "a crowd within 3 m: Drift, no Portrait")
@@ -128,7 +128,7 @@ w.run(9)
 stool = w.furniture("Stool", B.add(ana.pos, vec(0, 3, -0.5)))
 ana.sit_on(stool); w.run(5)
 check(state(h)[1] == "tracking" and var(h, "core", "gSitHold") == 1, "a seat with nothing kept: the frame holds first %r" % (state(h),))
-t = until(w, lambda: state(h)[1] == "scenic", 8)
+t = until(w, lambda: state(h)[1] == "scenic", 64)
 check(t is not None, "... then Drift")
 ana.stand(); w.run(4)
 sofa = w.furniture("Sofa", B.add(ana.pos, vec(0, -4, -0.5)))
@@ -187,7 +187,7 @@ no_errors(w, "manual")
 w5 = World()
 w5.boxes += room(120, 120, 20.0, 130, 130, 3.0)
 dee, hd = hud(w5, "Dee", (125, 125, 21.0), auto=True)
-w5.run(14)
+w5.run(66)
 check(state(hd)[1] == "scenic" and var(hd, "scenic", "gLocal") == 1, "indoors, resting: Drift in the room")
 dee.away = True
 t = until(w5, lambda: var(hd, "scenic", "gBand") == 2, 4)
