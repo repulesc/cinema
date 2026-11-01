@@ -11,6 +11,7 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 | 8.0.x | Tuning from the in-world test (numbers below) | ⏳ after |
 | Release | Beta (feedback by email) → release candidate → release at L$790; the cinema-black boards, real snapshots as extra images | ⏳ after the in-world test |
 | Later | Portrait Us: an optional shot / reverse shot (cut between two people talking); the script-count review (with the owner's OK); a retro edition (the same engine, the 7.x pixel look, a lower price) | 💤 to discuss |
+| Lab 1 | The Quiet and Direct pages, in the Take 12 Lab (`lab/`, its own HUD; the product untouched) | 🧪 in-world trial; kept as the product only if it proves itself |
 | Later | "Take 12 Lens" add-on (mm and aspect, always on); light companions; other languages | 💤 only on request |
 
 ## Next (after the in-world test, agreed 2026-10-29)
