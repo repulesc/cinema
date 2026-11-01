@@ -17,7 +17,7 @@
 //  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.8.2";
+string VERSION = "8.9.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -31,6 +31,7 @@ integer UI_STATE   = 7320;
 integer TXT        = 7346;
 integer TXT_ANS    = 7347;
 integer CONN       = 7349;
+integer SYNC_CH    = -7712120;      // Connect's (sync.lsl): the two jobs it gave here (8.9.0)
 
 string  MAKER = "panocarver@gmail.com";   // where feedback goes
 
@@ -153,6 +154,27 @@ choose(string b)
         llMessageLinked(LINK_SET, NOTE, "friend|" + sn((key)k), "");
     }
     else llMessageLinked(LINK_SET, CONN, "ans|" + p + "|" + b, k);
+}
+
+// ---- two of Connect's jobs (8.9.0: room for sync) ------------------------------------------------------------------
+// a newer Take 12 met (sync heard another version): said once per version
+newer(string v)
+{
+    if (vnum(v) <= vnum(VERSION) || vnum(v) <= vnum(cfg("newer"))) return;
+    llLinksetDataWriteProtected("cin.newer", v, PASS);
+    llMessageLinked(LINK_SET, NOTE, "newer", "");
+}
+
+// worn again (or sync started again): the ones you were with in the last 30 min are told you are back, and rejoin
+back()
+{
+    list R = llParseString2List(cfg("peers"), [";"], []);
+    integer i;
+    for (i = 0; i < llGetListLength(R); i++)
+    {
+        list kv = llParseString2List(llList2String(R, i), ["="], []);
+        if (llGetUnixTime() - (integer)llList2String(kv, 1) < 1800) llRegionSayTo((key)llList2String(kv, 0), SYNC_CH, "T12|8|back|" + VERSION);
+    }
 }
 
 // ---- the watchdog -------------------------------------------------------------------------------
@@ -280,7 +302,11 @@ default
     {
         gOwner = llGetOwner();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "carry");
-        if (llGetAttached()) hello();
+        if (llGetAttached())
+        {
+            hello();
+            back();                                         // worn again: the ones you were with rejoin (sync asks too)
+        }
         tick();
     }
 
@@ -407,6 +433,8 @@ default
             if (llList2String(L, 0) == gPage || (gPage == "remove" && llList2String(L, 0) == "friends")) llDialog(gOwner, llDumpList2String(llList2List(L, 1, -1), "|"), gBtn, gDch);
         }
         else if (num == CMD && str == "connect|friends") friends(FALSE);
+        else if (num == CMD && str == "back") back();
+        else if (num == CMD && llGetSubString(str, 0, 5) == "newer|") newer(llGetSubString(str, 6, -1));
         else if (num == STATUS && str == "?")
         {
             string r = gRe;

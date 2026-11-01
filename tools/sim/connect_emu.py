@@ -13,13 +13,15 @@ from emu_util import *
 
 CH = -7712120
 NK = C["NULL_KEY"]
+HUD = HUD_SCRIPTS                               # the Take 12 the tests wear (review(): the lab's too)
+HP = PARTS
 
 def S(a, n="sync"): return var(a.hud, n, "__all__") if False else next(s for s in a.hud.scripts if s.name == n).g
 def peers(a): return [a.w.avatars[k].name for k in S(a)["gP"] if k in a.w.avatars]
 def host(a):
     k = S(a)["gHost"]
     return a.w.avatars.get(k) if k and k != NK else None
-def linkst(a): return var(a.hud, "screen", "gLinkSt")
+def linkst(a): return var(a.hud, "strip", "gLinkSt")
 def notes(a, since): return a.notes(since)
 
 def setup(names=("Ana", "Ben"), seed=1, free=()):
@@ -28,7 +30,7 @@ def setup(names=("Ana", "Ben"), seed=1, free=()):
     for i, n in enumerate(names):
         av = w.avatar(n, (128 + 2 * i, 128, 21))
         av.fov = 0.6125
-        av.wear(FREE_SCRIPTS if n in free else HUD_SCRIPTS, lsd=ready(av))
+        av.wear(FREE_SCRIPTS if n in free else HUD, parts=HP, lsd=ready(av))
         avs.append(av)
     w.run(0.5)
     for av in avs: manual(av.hud)                       # the shots by hand (Auto: auto_emu.py)
@@ -46,10 +48,12 @@ def ask(w, a, b, yes=True):
     check(nm, "%s's nearby list has %s: %r" % (a.name, b.name, a.labels()))
     if not nm: return
     a.click(nm[0]); w.run(1)
-    if b.dialog and "share films" in b.dialog[1]:
+    if b.dialog and "wants to share films" in b.dialog[1]:
         b.click("Yes" if yes else "No"); w.run(1.5)
 
 def shot(w, a, n):
+    g = next(x for x in a.hud.scripts if x.name == "strip").g
+    if g.get("gQuiet"): a.touch("t12 fold"); w.run(0.5)              # the new design's Quiet page: Direct first, as you would
     a.touch("t12 s%d" % ["tracking", "portrait", "fixed", "scenic"].index(n)); w.run(3)
 
 def link(w, a):
@@ -88,7 +92,7 @@ def scenarios():
     # one director per pair: Ana can't watch Ben while he watches her
     t = w.t
     link(w, ana)
-    check(host(ana) is None and "Ben isn't filming." in notes(ana, t), "Ana taps Connect while Ben watches her: Ben isn't filming")
+    check(host(ana) is None and "Ben is watching your film." in notes(ana, t), "Ana taps Connect while Ben watches her: Ben is watching your film (8.9.0: it said he wasn't filming)")
     shot(w, ben, "tracking")                                          # Ben picks a shot: his own film again
     check(host(ben) is None and var(ben.hud, "bars", "gFollow") == "", "Ben picks Tracking: his own film, his own bars")
     w.run(2)
@@ -112,7 +116,7 @@ def scenarios():
     kept = dict(ana.hud.lsd)
     ana.take_off(); w.run(8)
     check(host(ben) is None and "Ana left." in notes(ben, t), "Ana's HUD gone: after 6 s Ben's own film, Ana left.")
-    ana.wear(HUD_SCRIPTS, lsd=kept)
+    ana.wear(HUD, parts=HP, lsd=kept)
     w.run(0.5); manual(ana.hud); w.run(7.5)
     check(peers(ana) == ["Ben"] and "Ana" in peers(ben), "Ana wears it again within 30 min: they rejoin (%r %r)" % (peers(ana), peers(ben)))
     # Leave
@@ -127,7 +131,7 @@ def scenarios():
     ben.hud.lsd["cin.friends"] = (str(ana.key) + ",Ana Resident", PASS)
     t = w.t
     ana.say(12, "connect"); w.run(0.5); ana.click("Invite"); w.run(4); ana.click("Ben"); w.run(2)   # alone: the Connect page first (8.6.0)
-    check(peers(ben) == ["Ana"] and not (ben.dialog and "share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
+    check(peers(ben) == ["Ana"] and not (ben.dialog and "wants to share films" in ben.dialog[1]), "Ben has Ana in Friends: she joins without the question")
     # hold: everything off leaves too
     ana.long_press(); w.run(2)
     check(peers(ana) == [] and peers(ben) == [], "Ana holds: everything off, the connection ends")
@@ -199,13 +203,14 @@ def invariants(w, avs):
             if near and b in on and a.name not in peers(b): bad.append("%s has %s, not the other way" % (a.name, b.name))
     return bad
 
-def fuzz(runs, seed, names, drop=0.0):
+def fuzz(runs, seed, names, drop=0.0, mates=False):
     broken = 0
     for r in range(runs):
         rng = random.Random(seed + r)
         w, avs = setup(names, seed=seed + r)
+        if mates: friends(*avs)                                        # 8.9.0: everyone each other's friend (they join by themselves)
         steps = []
-        if rng.random() < 0.7:                                         # most runs start connected
+        if not mates and rng.random() < 0.7:                           # most runs start connected (friends connect themselves)
             for b in avs[1:]: ask(w, avs[0], b)
             FAILS[:] = [f for f in FAILS if "nearby list" not in f]
         w.drop = drop
@@ -223,7 +228,7 @@ def fuzz(runs, seed, names, drop=0.0):
                 nm = [x for x in a.labels() if x.lstrip("★ ").startswith(b.name)]
                 if nm:
                     a.click(nm[0]); w.run(1)
-                    if b.dialog and "share films" in b.dialog[1]: b.click(rng.choice(["Yes", "Yes", "No"]))
+                    if b.dialog and "wants to share films" in b.dialog[1]: b.click(rng.choice(["Yes", "Yes", "No"]))
             elif act == "link":
                 if not peers(a): continue
                 a.dialog = None
@@ -248,7 +253,10 @@ def fuzz(runs, seed, names, drop=0.0):
             elif act == "off": a.long_press()
             elif act == "rewear":
                 if a.hud and a.hud.worn: a.take_off()
-                else: a.wear(HUD_SCRIPTS, lsd=ready(a)); w.run(5); a.double_tap()
+                else:
+                    a.wear(HUD, parts=HP, lsd=ready(a))
+                    if mates: friends(*[x for x in avs if x.hud])
+                    w.run(5); a.double_tap()
             elif act == "leave":
                 a.dialog = None
                 a.say(12, "connect"); w.run(2.5)
@@ -355,7 +363,202 @@ def lens_match():
         check(abs(sw - want) / want < 0.06, "%s, another lens: Ben sees Ana the same size (%.2f m, %.2f for the same size)" % (look or "FILM", sw, want))
         no_errors(w, "lens")
 
+# ---- 8.9.0: the Connect review. Each case was found by reading the scripts end to end; each failed on 8.8.2 -------------
+def friends(*avs):
+    for a in avs:
+        a.hud.lsd["cin.friends"] = (";".join("%s,%s Resident" % (b.key, b.name) for b in avs if b is not a), PASS)
+
+def cams_from(w, name, since):
+    return len([1 for c in w.chatlog if c[1] == name and "|cam|" in c[3] and c[0] >= since])
+
+def review(scripts=HUD_SCRIPTS, parts=PARTS):
+    global HUD, HP
+    HUD, HP = scripts, parts
+    # 1. Leave sticks between friends (8.8.2: they connected again by themselves within 10 s)
+    w, (ana, ben) = setup()
+    friends(ana, ben); w.run(25)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "two friends: connected by themselves")
+    ana.dialog = None; ana.say(12, "connect"); w.run(1); ana.click("Leave"); w.run(40)
+    check(peers(ana) == [] and peers(ben) == [], "Ana leaves her friend: it stays that way (%r %r)" % (peers(ana), peers(ben)))
+    ben.dialog = None; ben.say(12, "connect"); w.run(0.5); ben.click("Invite"); w.run(2)
+    nm = [x for x in ben.labels() if x.lstrip("★ ") == "Ana"]
+    if nm: ben.click(nm[0]); w.run(2)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"] and not ana.dialog, "Ben asks her himself: his friend joins at once, as friends do")
+    ana.dialog = None; ana.say(12, "connect"); w.run(1); ana.click("Leave"); w.run(25)
+    check(peers(ana) == [] and peers(ben) == [], "she leaves again: it stays that way")
+    ana.dialog = None; ana.say(12, "connect"); w.run(0.5); ana.click("Invite"); w.run(2)
+    nm = [x for x in ana.labels() if x.lstrip("★ ") == "Ben"]
+    if nm: ana.click(nm[0]); w.run(2)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "she asks him herself: together again")
+    # 2. a hold (everything off) is off for Connect too; a hold again brings friends back
+    t = w.t
+    ana.long_press(); w.run(30)
+    check(peers(ana) == [] and peers(ben) == [], "Ana holds: everything off, friends stay apart (%r %r)" % (peers(ana), peers(ben)))
+    check(not any(c[1] == "Ana" and "|here|" in c[3] and c[0] > t + 2 for c in w.chatlog), "off: Ana's HUD says nothing to the region")
+    ben.dialog = None; ben.say(12, "connect"); w.run(0.5); ben.click("Invite"); w.run(4)
+    check(not any(x.startswith("Ana") for x in ben.labels()), "off: Ana is not in Ben's list (%r)" % ben.labels())
+    ana.long_press(); w.run(25)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "a hold again: the friends connect by themselves again (%r %r)" % (peers(ana), peers(ben)))
+    no_errors(w, "review: leave and off")
+
+    # 3. a second copy worn: the older one steps aside and keeps out of Connect (8.8.2: it answered for Ana too)
+    w, (ana, ben) = setup()
+    friends(ana, ben); w.run(25)
+    old = ana.hud
+    ana.wear(HUD, parts=HP, lsd=dict(ready(ana), **{"cin.friends": old.lsd["cin.friends"]})); w.run(0.5); manual(ana.hud); w.run(4.5)
+    check(var(old, "carry", "gAside"), "(the older copy stepped aside)")
+    w.run(25)
+    check(peers(ben) == ["Ana"], "Ben is with Ana's new copy (%r)" % peers(ben))
+    shot(w, ana, "portrait"); w.run(2)
+    link(w, ben); w.run(12)
+    check(host(ben) is ana and B.llVecDist(ben.camera()[0], ana.camera()[0]) < 0.05, "Ben watches Ana: the older copy never says she stopped (host %r)" % host(ben))
+    check(S(ana) is not None and not [k for k in next(s for s in old.scripts if s.name == "sync").g["gP"]], "the older copy is connected with nobody")
+    no_errors(w, "review: two copies")
+
+    # 4. a watcher who takes the HUD off (or logs off): no SHARING left, nothing sent on (8.8.2: for up to 30 min)
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ana, "tracking"); w.run(2)
+    link(w, ben); w.run(2)
+    check(linkst(ana) == "shared", "Ben watches: SHARING")
+    ben.take_off(); w.run(15)
+    t = w.t; w.run(3)
+    check(linkst(ana) != "shared" and not S(ana)["gW"], "Ben's HUD is off: Ana's SHARING goes (%s, %r)" % (linkst(ana), S(ana)["gW"]))
+    check(cams_from(w, "Ana", t) == 0, "... and her camera goes to nobody (%d)" % cams_from(w, "Ana", t))
+    no_errors(w, "review: a watcher gone")
+
+    # 5. tapping the rings while someone asks you: their question again (8.8.2: the question could not be answered any more,
+    #    and everyone else asking was "busy" until the HUD was worn again); 6. a Yes after 20 s still connects both
+    w, (ana, ben, cy) = setup(("Ana", "Ben", "Cy"))
+    ana.dialog = None; ana.say(12, "connect"); w.run(0.5); ana.click("Invite"); w.run(3); ana.click("Ben"); w.run(1)
+    check(ben.dialog and "wants to share films" in ben.dialog[1], "Ben is asked")
+    asked = ben.dialog
+    link(w, ben)
+    check(ben.dialog and "wants to share films" in ben.dialog[1], "Ben taps his rings: Ana's question again (%r)" % (ben.dialog and ben.dialog[1]))
+    w.run(30)
+    if ben.dialog and "Yes" in ben.labels(): ben.click("Yes")
+    w.run(2)
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "Ben says yes after 30 s: both connected (%r %r)" % (peers(ana), peers(ben)))
+    w2, (dee, eve) = setup(("Dee", "Eve"))
+    dee.dialog = None; dee.say(12, "connect"); w2.run(0.5); dee.click("Invite"); w2.run(3); dee.click("Eve"); w2.run(1)
+    q = eve.dialog
+    eve.dialog = None; eve.hud.send(7371, "connect|friends"); w2.run(1)            # another of Connect's pages over the question
+    eve.say(q[3], "Yes"); w2.run(80)                                                 # the old question's Yes: nobody listens now
+    t = w2.t
+    fay = w2.avatar("Fay", (130, 130, 21)); fay.fov = 0.6125
+    fay.wear(HUD, parts=HP, lsd=ready(fay)); w2.run(0.5); manual(fay.hud); w2.run(5)
+    fay.dialog = None; fay.say(12, "connect"); w2.run(0.5); fay.click("Invite"); w2.run(3)
+    if "Eve" in fay.labels(): fay.click("Eve"); w2.run(1.5)
+    check(not any("busy" in n for n in fay.notes(t)) and eve.dialog and "Fay wants" in eve.dialog[1], "a question nobody can answer any more ends: Eve is not busy for ever (%r)" % fay.notes(t))
+    no_errors(w, "review: asked"); no_errors(w2, "review: asked 2")
+
+    # 7. the frame of a still shot reaches the watcher when it changes; 8. a still shot stays still for the watcher
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ana, "portrait"); w.run(2)
+    link(w, ben); w.run(2)
+    check(host(ben) is ana, "Ben watches Ana's Portrait")
+    was = var(ben.hud, "bars", "gFollow")
+    want = "1.66" if was != "1.66" else "2.00"
+    ana.hud.lsd["cin.shape"] = (want, PASS); ana.hud.send(7330, "shape"); w.run(3)
+    check(var(ben.hud, "bars", "gFollow") == want, "Ana's frame %s reaches Ben's bars (%r, was %r)" % (want, var(ben.hud, "bars", "gFollow"), was))
+    cam = ana.camera()[0]
+    ana.pos = B.add(ana.pos, vec(0.4, 0.3, 0)); w.run(0.6)
+    check(B.llVecDist(ana.camera()[0], cam) < 0.01 and B.llVecDist(ben.camera()[0], cam) < 0.05,
+          "Ana shifts a little in her still shot: Ben's view stays where hers is (%.2f m off)" % B.llVecDist(ben.camera()[0], ana.camera()[0]))
+    no_errors(w, "review: still shots")
+
+    # 9. a Watch from a dialog left open, on someone out of reach since: nothing (8.8.2: watched them for good)
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ben, "tracking"); w.run(2)
+    ana.dialog = None; ana.say(12, "connect"); w.run(0.5)
+    if "Ben" in ana.labels(): ana.click("Ben"); w.run(0.5)
+    stale = ana.dialog
+    check(stale and "Watch" in ana.labels(), "a name: Watch (%r)" % ana.labels())
+    ben.walk((128, 165, 21), speed=4); w.run(14)
+    ana.dialog = stale; ana.click("Watch"); w.run(3)
+    check(host(ana) is None and var(ana.hud, "core", "gState") != "watch", "Watch on someone out of reach: nothing")
+    no_errors(w, "review: a stale Watch")
+
+    # 10. sync started again while you watch: your own film, not a frozen view
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ana, "tracking"); shot(w, ben, "portrait"); w.run(2)
+    link(w, ben); w.run(2)
+    check(host(ben) is ana, "Ben watches Ana")
+    ben.hud.crash("sync"); w.run(9)
+    check(var(ben.hud, "core", "gState") != "watch" or host(ben) is ana, "Ben's sync started again: he isn't left on a frozen view (core %s)" % var(ben.hud, "core", "gState"))
+    no_errors(w, "review: sync again")
+
+    # 11. the rings while your one friend watches you: "Ben is watching your film." (8.8.2: "Ben isn't filming.")
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ana, "portrait"); w.run(2)
+    link(w, ben); w.run(2)
+    t = w.t
+    link(w, ana)
+    check("Ben is watching your film." in ana.notes(t) and not any("isn't filming" in n for n in ana.notes(t)), "Ana taps her rings: Ben is watching your film (%r)" % ana.notes(t))
+    # 12. standing at 20 m: one "out of reach", not a note at every step
+    link(w, ben); w.run(1)
+    t = w.t
+    for i in range(10):
+        ben.walk((128, 128 + 19.6 + (i % 2) * 0.9, 21), speed=1); w.run(3)
+    n = len([x for x in ana.notes(t) if "out of reach" in x or "is back" in x])
+    check(n <= 2, "Ben steps back and forth across 20 m: at most one out of reach and one back (%d)" % n)
+    no_errors(w, "review: notes")
+
+    # 13. efficiency: a watched camera that stands still goes out once a second, not 7 times
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); shot(w, ana, "tracking"); w.run(4)
+    link(w, ben); w.run(3)
+    t = w.t; w.run(5)
+    n = cams_from(w, "Ana", t)
+    check(n <= 7, "Ana stands still in Tracking, watched: her camera goes out about once a second (%d in 5 s)" % n)
+    ana.walk((140, 128, 21), speed=1.5)
+    t = w.t; w.run(4)
+    n = cams_from(w, "Ana", t)
+    check(n >= 20, "she walks: 7 a second again (%d in 4 s)" % n)
+    no_errors(w, "review: still camera")
+
+    # 14. worn again with every "back" lost (in-world, carry may still be starting when sync asks it): Ben, who kept the
+    #     connection, sends his heartbeat, and that rejoins them
+    w, (ana, ben) = setup()
+    ask(w, ana, ben); w.run(2)
+    kept = dict(ana.hud.lsd)
+    ana.take_off(); w.run(3)
+    say = w.chat
+    w.chat = lambda sp, ch, msg, to=None, name="": None if "|back|" in msg else say(sp, ch, msg, to=to, name=name)
+    ana.wear(HUD, parts=HP, lsd=kept); w.run(0.5); manual(ana.hud); w.run(3)
+    w.chat = say
+    check(peers(ana) == ["Ben"] and peers(ben) == ["Ana"], "worn again, every 'back' lost: Ben's heartbeat rejoins them (%r %r)" % (peers(ana), peers(ben)))
+    ana.dialog = None; ana.say(12, "connect"); w.run(1); ana.click("Leave"); w.run(3)
+    check(peers(ana) == [] and peers(ben) == [], "... and a Leave still ends it")
+    no_errors(w, "review: rejoin")
+
+# ---- 8.9.0: an Alt-click close-up of a thing, watched through another lens. The watcher moved along the view round you,
+# not round what the picture looks at, and could end up past it (in-world: "a wall camera" while a friend framed a toy)
+def closeup(scripts=HUD_SCRIPTS, parts=PARTS):
+    import math
+    global HUD, HP
+    HUD, HP = scripts, parts
+    w, (ana, ben) = setup()
+    ana.fov = 0.6125; ben.fov = 1.047
+    ask(w, ana, ben); w.run(2)
+    toy = (131.0, 126.0, 20.9)                                           # a small thing on the ground, 3.6 m from Ana
+    w.boxes.append(Box((toy[0] - 0.1, toy[1] - 0.1, 20.0, toy[0] + 0.1, toy[1] + 0.1, toy[2]), "toy"))
+    cam = (toy[0] - 0.7, toy[1] + 0.1, toy[2] + 0.25)
+    ana.alt_orbit(to=cam, focus=(toy[0], toy[1], toy[2] - 0.05)); w.run(2)
+    link(w, ben); w.run(3)
+    check(host(ben) is ana, "Ben watches Ana's close-up")
+    c = ben.camera()
+    d0 = B.llVecDist(vec(*cam), vec(*toy))
+    want = d0 * math.tan(0.6125 / 2) / math.tan(1.047 / 2)
+    v = [c[1][i] - c[0][i] for i in range(3)]
+    n = math.sqrt(sum(x * x for x in v))
+    ahead = sum((toy[i] - c[0][i]) * v[i] / n for i in range(3))
+    dist = B.llVecDist(c[0], vec(*toy))
+    check(ahead > 0.1 and abs(dist - want) / want < 0.25, "the toy is in front of Ben's camera, the same size (%.2f m away, %.2f for the same size)" % (dist, want))
+    no_errors(w, "close-up")
+
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["review"]:
+        closeup(); review(); review(LAB_SCRIPTS, LAB_PARTS); done("connect_emu review"); sys.exit()
     runs = int(sys.argv[1]) if len(sys.argv) > 1 else 20
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else 1000
     scenarios()
@@ -365,6 +568,10 @@ if __name__ == "__main__":
     n = fuzz(runs, seed, ("Ana", "Ben"))
     n += fuzz(runs // 2, seed + 5000, ("Ana", "Ben", "Cy"))
     n += fuzz(runs // 2, seed + 9000, ("Ana", "Ben"), drop=0.05)
+    n += fuzz(runs // 2, seed + 13000, ("Ana", "Ben", "Cy"), mates=True)
+    review()
+    review(LAB_SCRIPTS, LAB_PARTS)                                     # the new design (lab/) wears the same Connect
+    closeup()
     check(n == 0, "%d fuzz runs broke an invariant" % n)
     print("connect (real scripts): scenarios, then %d fuzz runs on 2 and 3 HUDs (and lost messages)" % (runs * 2))
     done("connect_emu")

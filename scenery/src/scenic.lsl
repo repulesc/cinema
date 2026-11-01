@@ -18,7 +18,7 @@
 //  (8.0.6's breathing in and out is gone: too much of one feeling.)
 // ============================================================================
 
-string VERSION = "8.8.2";
+string VERSION = "8.9.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
