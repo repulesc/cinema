@@ -13,7 +13,7 @@
 //  after the setup, from Help › Guide and /12 guide; a tap on it closes it. Its UUID is kept in the part's description.
 // ============================================================================
 
-string VERSION = "8.8.1";
+string VERSION = "8.8.2";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
