@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The Take 12 Lab's marks texture (lab/art/take12_marks_1024.png): the product's marks (make_strip.py), every cell where
 it is, plus the lab's three in the free space of the last row: the fold key (› opens the Direct page, ‹ folds it) and
-the Quiet page's island end (a disc, tinted black by screen.lsl: one at each end of the island, lab 2).
+the Quiet page's island end (a disc, tinted black by screen.lsl: one at each end of the island, lab 2), and let go's
+mini x (8.10.0).
 The cell tables are written into lab/src/strip.lsl and lab/src/screen.lsl, as make_strip.py does for the product.
 
     python3 tools/art/make_lab.py           # writes the PNG and the tables
@@ -30,6 +31,19 @@ def chevron(right):
     return M.down(im, 64, CELL_H)
 
 
+def free():
+    """let go (8.10.0): a mini x, two short thin strokes; quiet off, bright when the camera is your viewer's"""
+    im, k = M.ss(64, CELL_H)
+    d = ImageDraw.Draw(im)
+    r = 4.4
+    for a, b in (((32 - r, 24 - r), (32 + r, 24 + r)), ((32 - r, 24 + r), (32 + r, 24 - r))):
+        d.line([(a[0] * k, a[1] * k), (b[0] * k, b[1] * k)], fill=M.WHITE + (255,), width=int(2.2 * k))
+        for x, y in (a, b):
+            e = 1.1 * k
+            d.ellipse([x * k - e, y * k - e, x * k + e, y * k + e], fill=M.WHITE + (255,))
+    return M.down(im, 64, CELL_H)
+
+
 def cap():
     """an end of the Quiet page's island (lab 2): a disc, tinted black by screen.lsl; one at each end of a black middle,
     so the ends stay round however wide the island is"""
@@ -41,7 +55,7 @@ def cap():
 def marks():
     sheet, table = M.marks()
     y = 512 + 6 * CELL_H                                 # the shutter's and the Orbit's row; free after x 256
-    for name, im, x in (("foldR", chevron(True), 256), ("foldL", chevron(False), 320), ("cap", cap(), 384)):
+    for name, im, x in (("foldR", chevron(True), 256), ("foldL", chevron(False), 320), ("cap", cap(), 384), ("free", free(), 448)):
         sheet.alpha_composite(im, (x, y))
         table.append((name, x, y, im.width, im.height, im.width))
     return sheet, table

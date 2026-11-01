@@ -1,5 +1,27 @@
 # Changelog
 
+## 8.10.0 (the new design: the island directs; a mini x lets go)
+- **The island holds the whole strip's keys** (the new design's Quiet page, the user's call): the x (let go) at the far
+  left, the Orbit, the four shots, the [12], the frame, Connect, the shutter, and `›` at the right end. One tap on a
+  shot directs it; the lit shot's tap keeps its job (its next view). Before, the island showed only the running shot,
+  and a tap on it opened the full strip.
+- **The island never changes its shape:** the same keys every time, so it stays as it is from shot to shot, and
+  nothing opens below it. A short prompt (KEEP NEW, UNDO) joins its left end while it lasts.
+- **The x lets go in one tap:** your viewer's camera, with Take 12 still on (the strip, Connect, the bars); the x turns
+  bright and the shots quiet. A tap on the x again, or a shot, or the Orbit, takes it back: Auto, if Auto was
+  directing. Nothing takes it back by itself (Idle start still shows Scenic while you are away, then your camera
+  again; the x still remembers). It replaces the 0.8 s holds on the lit shot and the Orbit, which were
+  slow and unseen. While you watch a friend's film, the x gives you your own viewer's camera and your friend sees
+  that you stopped watching.
+- **`›` opens the full strip** (Direct: the same keys edge to edge, with the running shot's options), and `‹` in the
+  same place folds it back. The page is kept for the next wear.
+- **A new part and a new cell:** `t12 free` (the x; the lab's builder adds it to a HUD you already built) and the x's
+  cell on the marks texture. A HUD without the part says once how to add it, and works without the x.
+- **The guide card** shows the island: the x, the Orbit, the shots, the keys and `›  and  ‹`.
+- Tests: `lab_emu` rewritten for the island (its shape from shot to shot, the x in every case, every window, size and
+  place, a prompt with THEIR FILM at every size, a HUD without the x); `connect_emu review` (the x while watching);
+  `builder_emu` (the lab's builder adds the x). Every script is 8.10.0. The product (`hud/`) changes only its number.
+
 ## 8.9.2 (Auto stays awake while you are)
 - **Auto dreamt while you were awake** (in-world): standing and clicking things, typing or turning, it cut to Drift after
   10 s and to Portrait after 4 s, because only walking counted. Now tracking hears a click in the world and the

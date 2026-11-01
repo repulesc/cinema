@@ -16,7 +16,7 @@
 //  (0 to 24). On Direct, the band edge to edge as in the product. lab/README.md.
 // ============================================================================
 
-string VERSION = "8.9.2";
+string VERSION = "8.10.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -50,6 +50,7 @@ integer gGuide;                    // the guide card's part (t12 guide, 8.8.0)
 integer gTab;                      // the lab: the Quiet island's two round ends (t12 tab, t12 tab2)
 integer gTab2;
 integer gTold;                     // ... missing parts said once (a HUD built with the product's builder)
+integer gX;                        // ... the x (t12 free, 8.10.0: let go), the strip's; here only to say it is missing
 float   gQ0;                       // ... its sides from the [12] (strip's "band|x0|x1"); equal: Direct's band
 float   gQ1;
 string  gTG = "";                  // its texture
@@ -80,7 +81,7 @@ float px(float v)
 
 find()
 {
-    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0; gBand = 0; gGuide = 0; gTab = 0; gTab2 = 0;
+    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0; gBand = 0; gGuide = 0; gTab = 0; gTab2 = 0; gX = 0;
     integer i;
     for (i = 2; i <= llGetNumberOfPrims(); i++)
     {
@@ -94,6 +95,7 @@ find()
         else if (n == "t12 guide") gGuide = i;
         else if (n == "t12 tab") gTab = i;
         else if (n == "t12 tab2") gTab2 = i;
+        else if (n == "t12 free") gX = i;
     }
 }
 
@@ -281,10 +283,10 @@ layout()
         part(gBand, (gQ0 + gQ1) * 0.5, 0.0, 0.004, gQ1 - gQ0 - cw, ih, blank, ISLE, 1.0, 0.0);
         cap(gTab, gQ0 + ih * 0.5, ih);
         cap(gTab2, gQ1 - ih * 0.5, ih);
-        if (!(gTab && gTab2) && !gTold)
+        if (!(gTab && gTab2 && gX) && !gTold)
         {
             gTold = TRUE;
-            llOwnerSay("[Take 12] The island's round ends are missing (t12 tab, t12 tab2). Put lab/build/builder.lsl and t12 part in this HUD and touch it: it adds them.");
+            llOwnerSay("[Take 12] Parts are missing (the island's round ends, or the x: t12 tab, t12 tab2, t12 free). Put lab/build/builder.lsl and t12 part in this HUD and touch it: it adds them.");
         }
     }
     else
