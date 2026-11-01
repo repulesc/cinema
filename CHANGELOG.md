@@ -1,5 +1,13 @@
 # Changelog
 
+## The new design (lab 2.2): round ends whatever the texture, seen on the bars, the picture asked, no "lab" name
+- The island's round ends are real round shapes (cylinders turned to face you), no longer a cell of the marks texture
+  (a marks texture uploaded for lab 1 drew them square in-world). Its black is lifted, so it shows on the film's bars.
+- The setup's last step asks for the picture: Cinema (the film's bars) or Full screen. Its alignment step's Done really
+  ends the setup now (in lab 2 it only closed the menu: no Auto, the strip not opened). The tour pages are gone (the
+  guide card comes first).
+- Nothing the wearer sees says "lab": the HUD is "Take 12", the guide card "TAKE 12", chat and `/12 status` plain.
+
 ## Take 12 Lab, lab 2.1 (the island always shows; lab/ holds only the Lab)
 - The strip sends the island to screen again whenever screen starts (in-world the scripts go in one by one: a screen
   started after the strip never heard of the island and drew the full band, the product's look).

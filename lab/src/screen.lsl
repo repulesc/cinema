@@ -10,8 +10,8 @@
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
 //  The guide card (8.8.0): take12_guide (tools/art/make_guide.py) on its own part, t12 guide, in the screen's middle
 //  after the setup, from Help › Guide and /12 guide; a tap on it closes it. Its UUID is kept in the part's description.
-//  TAKE 12 LAB (lab 2): on the Quiet page the band is an island, floating: a black middle (t12 band) between two round
-//  ends (t12 tab, t12 tab2: a disc each, so the ends stay round at any width), as wide as strip says ("band|x0|x1"),
+//  TAKE 12 LAB (lab 2): on the Quiet page the band is an island, floating: a near-black middle (t12 band) between two
+//  round ends (t12 tab, t12 tab2: cylinders turned to face you, lab 2.2, so round with any texture), as wide as strip says ("band|x0|x1"),
 //  centred on the [12]. The strip sits 8 px in from the screen's edge on both pages, and the alignment steps are 10 px
 //  (0 to 24). On Direct, the band edge to edge as in the product. lab/README.md.
 // ============================================================================
@@ -35,6 +35,7 @@ string MARKS = "~disc|0|0|256|256|256~discamber|256|0|256|256|256~dot|512|0|64|6
 list    PLACES = ["top", "topl", "bot", "both"];
 list    MARGIN = [0.0, 52.0, 46.0, 96.0];         // px from the edge of the world view, per place (strip.lsl has the same)
 vector  WHITE  = <1.0, 1.0, 1.0>;
+vector  ISLE   = <0.11, 0.11, 0.12>;  // the lab's island: a lifted black, seen on the film's black bars too
 
 key     gOwner;
 string  gTW = "";                  // the words texture (strip draws with it; kept here with the marks)
@@ -235,6 +236,16 @@ part(integer link, float x, float z, float d, float w, float h, list tex, vector
         + tex + [PRIM_COLOR, ALL_SIDES, col, a, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, glow]);
 }
 
+// an end of the lab's island: a cylinder turned to face you, so a disc, round at any size and with any texture
+cap(integer link, float x, float d)
+{
+    if (!link) return;
+    llSetLinkPrimitiveParamsFast(link, [PRIM_TYPE, PRIM_TYPE_CYLINDER, PRIM_HOLE_DEFAULT, <0.0, 1.0, 0.0>, 0.0, ZERO_VECTOR,
+        <1.0, 1.0, 0.0>, ZERO_VECTOR, PRIM_POS_LOCAL, <0.004, -x * gSY, 0.0>, PRIM_ROT_LOCAL, llEuler2Rot(<0.0, PI_BY_TWO, 0.0>),
+        PRIM_SIZE, <d, d, 0.01>, PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0,
+        PRIM_COLOR, ALL_SIDES, ISLE, 1.0, PRIM_FULLBRIGHT, ALL_SIDES, TRUE, PRIM_GLOW, ALL_SIDES, 0.0]);
+}
+
 // the [12]'s x from the screen's middle: the middle (8.5.6, as in 8.4.4; 8.5.0 and 8.5.5 had it at the left)
 float rootX()
 {
@@ -262,16 +273,18 @@ layout()
     float ih = px(36.0);                                    // the island's height
     if (gOpen && gQ1 - gQ0 > ih)
     {
-        // the lab's Quiet page: the island on the strip's line, floating, its two ends round. Without its two end parts
+        // the lab's Quiet page: the island on the strip's line, floating, its two ends round. Lab 2.2: a lifted black,
+        // so it shows on the film's black bars too (in front of them), and its ends are real round shapes (a
+        // cylinder seen end-on), not a texture's cell: round whatever marks texture is in. Without its two end parts
         // (a HUD built with the product's builder) it still floats, square-ended, and says once what to do
         float cw = ih * (gTab && gTab2);
-        part(gBand, (gQ0 + gQ1) * 0.5, 0.0, 0.004, gQ1 - gQ0 - cw, ih, blank, ZERO_VECTOR, 1.0, 0.0);
-        part(gTab, gQ0 + ih * 0.5, 0.0, 0.004, ih, ih, mark("cap"), ZERO_VECTOR, 1.0, 0.0);
-        part(gTab2, gQ1 - ih * 0.5, 0.0, 0.004, ih, ih, mark("cap"), ZERO_VECTOR, 1.0, 0.0);
+        part(gBand, (gQ0 + gQ1) * 0.5, 0.0, 0.004, gQ1 - gQ0 - cw, ih, blank, ISLE, 1.0, 0.0);
+        cap(gTab, gQ0 + ih * 0.5, ih);
+        cap(gTab2, gQ1 - ih * 0.5, ih);
         if (!(gTab && gTab2) && !gTold)
         {
             gTold = TRUE;
-            llOwnerSay("[Take 12 Lab] The island's round ends are missing (t12 tab, t12 tab2). Put lab/build/builder.lsl and t12 part in this HUD and touch it: it adds them.");
+            llOwnerSay("[Take 12] The island's round ends are missing (t12 tab, t12 tab2). Put lab/build/builder.lsl and t12 part in this HUD and touch it: it adds them.");
         }
     }
     else
@@ -441,7 +454,7 @@ default
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/screen] v" + VERSION + " " + llList2String(PLACES, gPlace) + ", size " + (string)gS + ", window " + (string)gA
                 + ", parts " + llList2String(["missing (build the HUD with the builder)", "found"], gRing && gNote)
-                + ", textures " + llList2String(["missing", "kept"], gTM != TEXTURE_BLANK) + ", guide " + llList2String(["missing", "kept"], gTG != "") + ", lab island " + llList2String(["missing", "found"], gTab && gTab2) + ", free mem " + (string)llGetFreeMemory());
+                + ", textures " + llList2String(["missing", "kept"], gTM != TEXTURE_BLANK) + ", guide " + llList2String(["missing", "kept"], gTG != "") + ", island " + llList2String(["missing", "found"], gTab && gTab2) + ", free mem " + (string)llGetFreeMemory());
     }
 
     timer()

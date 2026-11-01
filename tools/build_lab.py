@@ -5,7 +5,7 @@ The lab owns only what it tries (lab/src/strip.lsl and screen.lsl: the Quiet and
 lab 2; ui.lsl and text.lsl: the setup's alignment in fine steps and the guide card first, lab 2);
 every other script is the product's own, copied here from hud/src unchanged, so the lab never drifts from the product
 on anything else. The lab's builder is the product's with the lab's two parts added (t12 tab, the Quiet page's notch;
-t12 fold, the key that opens and folds the Direct page) and the root named "Take 12 Lab".
+t12 fold, the key that opens and folds the Direct page). Nothing the wearer sees says "lab": it is built here, not named so.
 
     python3 tools/build_lab.py            write lab/src (the copied scripts), lab/build/builder.lsl and lab/art's copy of
                                           the product's words texture (so lab/art holds every texture the Lab needs)
@@ -24,13 +24,12 @@ COPIED = ["core.lsl", "bars.lsl", "tracking.lsl", "portrait.lsl", "fixed.lsl", "
           "sync.lsl", "carry.lsl"]
 HEADER = "// *** TAKE 12 LAB: the product's own script, copied by tools/build_lab.py from hud/src: do not edit here ***\n"
 PARTS = ('"t12 plate", "t12 guide"]', '"t12 plate", "t12 guide", "t12 tab", "t12 fold", "t12 tab2"]')
-NAME = ('PRIM_NAME, "Take 12",', 'PRIM_NAME, "Take 12 Lab",')
 BHEAD = "// *** TAKE 12 LAB: the product's builder with the lab's parts, made by tools/build_lab.py: do not edit here ***\n"
 
 
 def builder():
     s = open(os.path.join(ROOT, "hud", "build", "builder.lsl")).read()
-    for a, b in (PARTS, NAME):
+    for a, b in (PARTS,):
         assert s.count(a) == 1, "builder.lsl: expected exactly one %r" % a
         s = s.replace(a, b)
     return BHEAD + s

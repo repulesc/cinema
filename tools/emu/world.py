@@ -650,6 +650,8 @@ class Obj:
             elif cur == C["LINK_ALL_CHILDREN"]: targets = list(range(2, len(s.prims) + 1))
             if r == C["PRIM_TYPE"]:
                 n = {C["PRIM_TYPE_BOX"]: 6, C["PRIM_TYPE_CYLINDER"]: 6, C["PRIM_TYPE_PRISM"]: 6}.get(rules[i + 1], 6)
+                for t in targets:                                                   # its shape (the lab's round ends)
+                    if 1 <= t <= len(s.prims): s.prims[t - 1]["type"] = rules[i + 1]
                 i += 2 + n; continue
             n = _NARGS.get(r, 1)
             a = rules[i + 1:i + 1 + n]

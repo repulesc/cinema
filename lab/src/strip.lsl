@@ -682,7 +682,7 @@ default
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "strip");
         else if (num == STATUS && str == "?")
-            llOwnerSay("[Take 12/strip] v" + VERSION + " lab " + llList2String(["direct", "quiet"], gQuiet) + " " + llList2String(["closed", "open"], gOpen) + ", window " + (string)gA
+            llOwnerSay("[Take 12/strip] v" + VERSION + " " + llList2String(["direct", "quiet"], gQuiet) + " " + llList2String(["closed", "open"], gOpen) + ", window " + (string)gA
                 + ", parts " + llList2String(["missing", "found"], gFound) + ", free mem " + (string)llGetFreeMemory());
     }
 

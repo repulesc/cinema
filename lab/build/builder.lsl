@@ -36,7 +36,7 @@ next()
 {
     if (gTodo == [])
     {
-        llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_NAME, "Take 12 Lab", PRIM_TYPE, PRIM_TYPE_BOX, PRIM_HOLE_DEFAULT,
+        llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_NAME, "Take 12", PRIM_TYPE, PRIM_TYPE_BOX, PRIM_HOLE_DEFAULT,
             <0.0, 1.0, 0.0>, 0.0, ZERO_VECTOR, <1.0, 1.0, 0.0>, ZERO_VECTOR, PRIM_SIZE, <0.01, 0.04, 0.04>,
             PRIM_ROTATION, ZERO_ROTATION, PRIM_COLOR, ALL_SIDES, <1.0, 1.0, 1.0>, 1.0]);
         llOwnerSay("Built: " + (string)llGetNumberOfPrims() + " parts. Now add the scripts of hud/src, drop take12_words, "

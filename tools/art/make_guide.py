@@ -55,7 +55,7 @@ def card(lab=False):
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, fill=INK + (236,))
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, outline=(255, 255, 255, 34), width=2 * K)
     head = font("Inter-SemiBold.otf", 13 * K)
-    spaced(d, 44 * K, (27 if lab else 38) * K, "TAKE 12 LAB  ·  THE QUIET STRIP" if lab else "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
+    spaced(d, 44 * K, (27 if lab else 38) * K, "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
 
     # ---- the strip, as it is (Tracking · Film · R), its band 40 px, the [12] in the middle ----------------------------
     by0, by1, cy = 62, 102, 82
