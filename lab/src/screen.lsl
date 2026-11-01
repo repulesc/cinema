@@ -48,6 +48,7 @@ integer gBand;                     // the strip's band (8.5.2: here, strip short
 integer gGuide;                    // the guide card's part (t12 guide, 8.8.0)
 integer gTab;                      // the lab: the Quiet island's two round ends (t12 tab, t12 tab2)
 integer gTab2;
+integer gTold;                     // ... missing parts said once (a HUD built with the product's builder)
 float   gQ0;                       // ... its sides from the [12] (strip's "band|x0|x1"); equal: Direct's band
 float   gQ1;
 string  gTG = "";                  // its texture
@@ -259,12 +260,19 @@ layout()
     if (gPlace >= 2) bz = -bz;
     list blank = [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1.0, 1.0, 0.0>, ZERO_VECTOR, 0.0];
     float ih = px(36.0);                                    // the island's height
-    if (gOpen && gTab && gTab2 && gQ1 - gQ0 > ih)
+    if (gOpen && gQ1 - gQ0 > ih)
     {
-        // the lab's Quiet page: the island on the strip's line, floating, its two ends round
-        part(gBand, (gQ0 + gQ1) * 0.5, 0.0, 0.004, gQ1 - gQ0 - ih, ih, blank, ZERO_VECTOR, 1.0, 0.0);
+        // the lab's Quiet page: the island on the strip's line, floating, its two ends round. Without its two end parts
+        // (a HUD built with the product's builder) it still floats, square-ended, and says once what to do
+        float cw = ih * (gTab && gTab2);
+        part(gBand, (gQ0 + gQ1) * 0.5, 0.0, 0.004, gQ1 - gQ0 - cw, ih, blank, ZERO_VECTOR, 1.0, 0.0);
         part(gTab, gQ0 + ih * 0.5, 0.0, 0.004, ih, ih, mark("cap"), ZERO_VECTOR, 1.0, 0.0);
         part(gTab2, gQ1 - ih * 0.5, 0.0, 0.004, ih, ih, mark("cap"), ZERO_VECTOR, 1.0, 0.0);
+        if (!(gTab && gTab2) && !gTold)
+        {
+            gTold = TRUE;
+            llOwnerSay("[Take 12 Lab] The island's round ends are missing (t12 tab, t12 tab2). Put lab/build/builder.lsl and t12 part in this HUD and touch it: it adds them.");
+        }
     }
     else
     {

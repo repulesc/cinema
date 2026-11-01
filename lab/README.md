@@ -63,11 +63,6 @@ other, never both: take Take 12 off before wearing the Lab.
 Its two scripts and three cells move into `hud/`, the guide card's Quiet drawing becomes the product's, and `lab/src`,
 `lab/build` and `lab/art` are cleared for the next idea.
 
-## Older work kept here (not built, not checked by CI)
-- **`frame-full-4.5.0/`**: the full 4.5.0 "Photographer" mode, with four subjects (you, a picked person, a group, the
-  landscape), five framings each, photo shapes 16:9 / 4:3 / 3:2, a lens line in mm, and its own menus and person picker.
-  Take 12 ships a slim version of it as Frame (`hud/src/frame.lsl`). This is the starting point for a
-  possible later, more serious composition tool. `photographer_sim.py` there still runs
-  (`python3 lab/frame-full-4.5.0/photographer_sim.py`) and checks its own script.
-- **`softkeys/`**: a concept for up to five quiet keys beside the clapper, shown only in a few busy moments (live as
-  the director, Freehand, Still), with a mockup (`python3 lab/softkeys/make_mockup.py`). To decide; nothing is built.
+## Older experiments
+The 7.x-era experiments that used to sit here (the full 4.5.0 Photographer mode, the soft keys concept) are now in
+`legacy/old-lab/`, so this folder holds only the Lab.

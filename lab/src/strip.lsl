@@ -643,7 +643,13 @@ default
         else if (num == STRIP)
         {
             if (llGetSubString(str, 0, 4) == "note|" || llGetSubString(str, 0, 4) == "band|" || str == "aspect?") return;   // screen's
-            if (llGetSubString(str, 0, 6) == "aspect|") { gA = (float)llGetSubString(str, 7, -1); layout(); return; }
+            if (llGetSubString(str, 0, 6) == "aspect|")
+            {
+                gA = (float)llGetSubString(str, 7, -1);
+                gBandS = "-";                               // the lab: screen (re)started: send it the island again
+                layout();
+                return;
+            }
             list L = llParseStringKeepNulls(str, ["|"], []);
             string a = llList2String(L, 0);
             if (a == "toggle" || a == "open" || a == "close")
