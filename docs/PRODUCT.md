@@ -125,7 +125,7 @@ Each shot remembers its options across logins; a tap on the lit shot does its on
 
 ## Around the shots
 - **Sitting:** the shot holds its frame and FIXED glows once. Standing up resumes it; from Fixed, standing up goes back to the shot you had before you sat.
-- **Alt-click:** the shot is held: the lit word dims, nothing is shared. A movement key or the lit tap gives it back.
+- **Alt-click:** the shot is held: the lit word dims (whoever watches your film sees your look too). A movement key or the lit tap gives it back.
 - **Flying, mouselook, a marked vehicle:** your camera; it comes back as it was.
 - **Teleport or region crossing:** the same shot, a fresh frame after about 2 s.
 - **Idle** (Settings › Idle start: Off · Away · 5 min): Scenic starts by itself; a key or typing brings back your shot. Framing your own camera counts as activity.

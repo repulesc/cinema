@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.8.2)
+TAKE 12  -  READ ME  (8.9.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -110,8 +110,7 @@ The dialogs and the note give the snapshot size for the frame (Snapshot > Custom
 === WHAT HAPPENS BY ITSELF ==============================
 
 SITTING        Fixed by itself: the seat's kept view, or frame it. Standing up, the shot you had. (Auto: its own rules.)
-ALT-CLICK      your camera, for a look round: the lit shot dims and nothing is shared. A movement key or the lit
-               tap gives the shot back.
+ALT-CLICK      your camera, for a look round: the lit shot dims. A movement key or the lit tap gives the shot back.
 FLYING, MOUSELOOK   your own camera until you land (or leave mouselook), then the shot comes back.
 TELEPORT       the same shot, a fresh picture once the place has loaded.
 IDLE           Scenic starts when you are Away, or after 5 minutes with no key and no typing (Settings > Idle start).
@@ -129,8 +128,10 @@ Share films with people near you who wear Take 12. Two equal cameras: each of yo
 - With one other person, the Connect key flips between your film and theirs. Menu > Connect lists everyone and
   where they are (filming, watching your film, away); tap a name: Watch, or Show my film.
 - The strip says SHARING while someone watches your film, THEIR FILM while you watch theirs.
-- Only Take 12's shots are shared: never your own camera, an Alt-click look or mouselook.
-- More than 20 m apart, it rests; close again, it comes back by itself. Leave (Menu > Connect) or a hold ends it.
+- Whoever watches your film sees what you see, your own camera and an Alt-click look too; never mouselook.
+- More than 20 m apart, it rests; close again, it comes back by itself.
+- Leave (Menu > Connect) ends it, and your friends don't join you again by themselves until one of you asks
+  the other. A hold (everything off) ends it too, and nobody near sees you; hold again and your friends join again.
 - The free Take 12 Scenery can watch your film too.
 
 

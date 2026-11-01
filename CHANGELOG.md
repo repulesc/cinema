@@ -1,5 +1,30 @@
 # Changelog
 
+## 8.9.0 (Connect, start to finish: a deep review)
+Every script path of Connect was read end to end; each problem below was first a failing test (`connect_emu`'s
+review, on the product and on the new design), then fixed. docs/CONNECT.md has the details.
+- **Leave sticks:** two friends were joined again by themselves 10 s after a Leave. Asking each other still works.
+- **Everything off is off for Connect:** after a hold, friends were joined again 10 s later and others could still
+  ask you. Now nobody near sees you until you hold again; then your friends join again.
+- **An older copy worn with a newer one** answered for you too, and whoever watched you was sent back every second.
+  It now keeps out of Connect.
+- **SHARING stayed** (and your camera went on to them) for up to 30 min after a watcher took the HUD off, logged off
+  or walked away. It goes within 10 s now.
+- **A question could get stuck:** tapping the rings when the chime sounded opened the Connect page over it; it could
+  not be answered, and everyone else asking you was told you were busy until you wore the HUD again. The rings now
+  show the question again, and it ends by itself.
+- **A Yes after 20 s** connected only the one who said it. The asker now waits as long as the question stays open.
+- **What the watcher sees:** a still shot no longer drifts as you shift in place; a new frame reaches them at once; an
+  Alt-click close-up of a small thing comes out the right size through their lens (it came out four times too small,
+  or from behind it: the "wall camera" seen in an early test).
+- **Quieter:** at 20 m a step back and forth is no longer an "out of reach" note each time; the rings, while your one
+  friend watches you, say so (they said the friend wasn't filming); a still camera is sent once a second, not 7 times.
+- **Sturdier:** worn again, you rejoin even if the first message is lost; sync started again while you watch gives
+  you your own film, not a frozen view.
+- The Read Me's Connect section now says what is shared (what you see, an Alt-click look too; never mouselook).
+- sync, core and carry change (carry took two small jobs from sync, which needed the room); every script is 8.9.0,
+  the new design's too. Replace all twelve scripts.
+
 ## 8.8.2 (a given copy keeps its textures)
 - **A HUD given to someone else drew grey and white squares** (a friend's test): on a new owner the scripts wiped all
   of Linkset Data, the texture UUIDs with the last owner's settings, and the copy of them in the root's description is
