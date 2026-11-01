@@ -257,7 +257,7 @@ auto(integer on)
     gBandA = "";
     gStillA = 0.0;
     llMessageLinked(LINK_SET, CMD, "auto|" + (string)on, "");
-    if (on) llSensorRepeat("", NULL_KEY, AGENT, 3.0, PI, 1.0);   // 16 at most, never the region's list (8.0.1)
+    if (on) { llSensorRepeat("", NULL_KEY, AGENT, 3.0, PI, 1.0); llSetTimerEvent(0.5); }   // 16 at most, never the region's list (8.0.1)
     else { llSensorRemove(); gWith = 0; }
 }
 
@@ -432,7 +432,7 @@ default
 
     timer()
     {
-        llSetTimerEvent(0.5);
+        llSetTimerEvent(0.5 * (gOn || gAuto || gWearing));   // nothing to do (another shot, Auto off): it rests (8.9.1)
         if (gSnap == 2) { gSnap = 0; if (gOn && gMode == "") send(TRUE); }
         if (gOn && !gHold) check();
         direct();

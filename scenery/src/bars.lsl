@@ -18,6 +18,7 @@
 string VERSION = "8.9.0";
 string PASS    = "cinema-1.0-build1";
 
+integer SHOT        = 7310;          // the basic shot (core asks: CMD "basic", 8.9.1)
 integer UI_STATE    = 7320;
 integer CFG_CHANGED = 7330;
 integer TIP         = 7345;
@@ -44,12 +45,36 @@ string  gFollow;                   // watching: their shape ("" none)
 integer gOn = TRUE;                // /12 bars: on or off for every shot
 float   gDim = 1.0;                // Black 1.0, Dimmed 0.6
 string  gSent;
+integer gFb;                        // the basic shot's turn round you
 vector  gRootAt;                   // where the root was when the bars were cut (screen moves it: place, size)
 integer gChan;                     // the frame dialog (8.1.0: moved here from ui, which had no room)
 integer gLh;
 integer gDlgT;
 string  gPage;                     // its shot, or "photo"
 list    gBtn;
+
+// a basic shot when a shot's script is silent, or Scenic finds no view (core asks; 8.9.1: it lived in core, which needed
+// the room): a level portrait of you, at eye height, from a new side each time
+basic()
+{
+    list d = llGetObjectDetails(gOwner, [OBJECT_POS, OBJECT_ROT]);
+    if (llGetListLength(d) < 2) return;
+    vector P = llList2Vector(d, 0);
+    vector F = llRot2Fwd(llList2Rot(d, 1));
+    F.z = 0.0;
+    if (llVecMag(F) < 0.01) F = <1.0, 0.0, 0.0>;
+    F = llVecNorm(F);
+    vector sz = llGetAgentSize(gOwner);
+    vector E = <P.x, P.y, P.z + 0.37 * sz.z>;
+    vector dir = F * llEuler2Rot(<0.0, 0.0, llList2Float([30.0, -30.0, 150.0, -150.0], gFb % 4) * DEG_TO_RAD>);
+    gFb++;
+    float dist = 3.0;
+    list r = llCastRay(E, E + dir * dist, [RC_REJECT_TYPES, RC_REJECT_AGENTS, RC_MAX_HITS, 1]);
+    if (llList2Integer(r, -1) == 1) dist = llVecDist(E, llList2Vector(r, 1)) - 0.4;
+    if (dist < 1.2) dist = 1.2;
+    vector cam = E + dir * dist;
+    llMessageLinked(LINK_SET, SHOT, (string)cam + "|" + (string)<E.x, E.y, cam.z> + "|", "");
+}
 
 string cfg(string k)
 {
@@ -300,6 +325,7 @@ default
             gShot = llList2String(L, 1);
             cut();
         }
+        else if (num == CMD && str == "basic") basic();
         else if (num == CMD && str == "bars")
         {
             if (gShot == "" || gState == "wait" || gState == "off") return;   // your own camera: the key is dim

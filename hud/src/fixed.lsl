@@ -685,12 +685,15 @@ default
             show("cut");
         }
         else if (num == OPT) option(llList2String(llParseStringKeepNulls(str, ["|"], []), 1));
-        else if (num == CAMSET && str != "-" && llGetSubString(llList2String(llParseString2List(str, ["|"], []), 2), 0, 0) != "-")
+        else if (num == CAMSET)                             // (LSL tests every part of an &&: the parse ran for every message, 8.9.1)
         {
             list L = llParseString2List(str, ["|"], []);       // a shot on screen (not your own camera: a negative lag)
-            gCam = (vector)llList2String(L, 0);
-            gFoc = (vector)llList2String(L, 1);
-            gFov = (float)llList2String(L, 3);
+            if (str != "-" && llGetSubString(llList2String(L, 2), 0, 0) != "-")
+            {
+                gCam = (vector)llList2String(L, 0);
+                gFoc = (vector)llList2String(L, 1);
+                gFov = (float)llList2String(L, 3);
+            }
         }
         else if (num == FOVMSG) zoom((float)str);
         else if (num == MOVING) gKeys = (integer)str;

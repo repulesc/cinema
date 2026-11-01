@@ -110,13 +110,13 @@ The free **Take 12 Scenery** is generated (`tools/build_scenery.py`): core, ui, 
 | 7304 PAUSE / 7305 RESUME | core → the running shot | `held` / `sit` / `stand` / `watch` / `fly` / `ml` / `tp` / `off` |
 | 7306 MOVING | core → shots | `<movement keys held>` (0: let go) |
 | 7310 SHOT | shot → core | `<pos>\|<focus>\|<kind>`: `cut` (always a cut), `auto` (the jump-cut rule), `keep` (the same view again) |
-| 7311 NO_SHOT | shot → core | `free` (Fixed: no view kept, your own camera to frame it) or a reason (core's basic shot) |
+| 7311 NO_SHOT | shot → core | `free` (Fixed: no view kept, your own camera to frame it) or a reason (the basic shot: core asks bars, CMD `basic`, 8.9.1) |
 | 7312 GLIDE | shot → core | `<pos>\|<focus>\|<lag>` |
 | 7313 ACK | shot → core | `<shot>` |
 | 7314 FOLLOW | tracking → core | `<distance>\|<pitch°>\|<focus offset>\|<behindness lag>\|<position lag>\|<focus lag>`, or `lock\|<pos>` (the camera stays at a corner, the focus follows you) |
 | 7318 FOVMSG | core → shots | your lens, radians |
 | 7320 UI_STATE | core → all | `<state>\|<shot>\|<hint>\|<why>`: hint = a shot to glow once (`fixed`, `portrait`) |
-| 7325 CAMSET | core → sync | `<pos>\|<focus>\|<lag>\|<fov>` while filming; `-` when it stops (nothing is shared then) |
+| 7325 CAMSET | core → sync, fixed | `<pos>\|<focus>\|<lag>\|<fov>` while filming; `-` when it stops (nothing is shared then). Every link message wakes all twelve scripts, so a camera that moves by itself (a negative lag) goes only while someone watches, or once after a `-` (8.9.1: Drift sent it at every step) |
 | 7330 CFG_CHANGED | any → all | the `cin.` key changed (`all` after a reset) |
 | 7340 OPTS | shot → strip | `<shot>\|<words, comma>\|<states, comma>`; a word `/` is the divider; states `` · `lit` · `accent` · `dim` |
 | 7341 OPT | strip → shots | `<shot>\|<word>` |
