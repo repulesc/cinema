@@ -266,8 +266,7 @@ string body(string page, list a)
     if (page == "show") return a0 + " shows you their film.";
     if (page == "ask") return a0 + " wants to share films.";
     if (page == "size") return "Easy to read?\nThe strip at the top of your screen.";
-    if (page == "inview") return "Align the strip\nUp, Down: 10 px a step. Just under your viewer's bars is best.";
-    if (page == "first") return "Welcome to Take 12\nA one-minute setup: your lens, your eye line and the size of the strip.";
+    if (page == "inview") return "Welcome to Take 12\nFirst, the strip: Up, Down, 10 px a step. Just under your viewer's bars is best.\nThen your lens, your eye line and the size.";
     if (page == "picture") return "The picture\nCinema: black bars, the film's 2.39 frame.\nFull screen: no bars.\nThe frame key on the strip changes it any time.";
     return page;
 }

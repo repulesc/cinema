@@ -21,7 +21,8 @@ Wear one or the other, never both.
 - **The setup:**
   - on the first wear and after Reset › Everything, a tap on the [12] starts it; the guide card shows at its end
     (8.9.1: it came first and got in the setup's way);
-  - the alignment step has **Up**, **Down** and **Done**, 10 px a step, so you can go back;
+  - its very first step aligns the strip (8.9.1): **Up**, **Down** and **Done**, 10 px a step, so you can go back
+    (or **Later**); then the lens, the eye line, the size and the picture;
   - the last step asks for the picture: **Cinema** (the film's black bars) or **Full screen** (none);
   - Settings › Screen › Move in and Move out also move 10 px at a time.
 - **Double-tap** the [12] hides everything but the [12], as in the product.
@@ -37,7 +38,7 @@ Wear one or the other, never both.
   - the pages and the fold key;
   - the island: round ends, its middle, centred, floating, balanced, holding every key;
   - the last shot while you hold the camera;
-  - the setup: the guide first, Up and Down, Reset › Everything;
+  - the setup: alignment first, Up and Down, the guide card at its end, Reset › Everything;
   - KEEP NEW on Quiet;
   - Auto;
   - every window and size with no overlaps;

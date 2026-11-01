@@ -1,5 +1,10 @@
 # Changelog
 
+## 8.9.0, ui and text updated (the setup aligns the strip first; replace ui and text)
+- **Alignment is the setup's very first step** (the user's call): a tap on the [12] opens the strip and asks Up, Down,
+  Done (or Later), with the welcome in the same page; then the lens, the eye line, the size, the picture, and the
+  guide card at the end. The separate welcome page is gone. Only the new design's ui and text change.
+
 ## 8.9.0, lighter (replace core, bars, fixed, tracking and ui)
 A profile of the real scripts through a session (waiting, Tracking, Portrait, Scenic, Auto) counted every event, link
 message and prim or camera update. Every link message wakes all twelve scripts, so the messages sent often are what
