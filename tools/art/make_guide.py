@@ -29,7 +29,7 @@ KEYS = [("orbit", "AUTO", "The camera directs itself as you walk, stop, sit or m
 KEYS_LAB = [KEYS[0],                     # the Take 12 Lab (lab/): its Quiet page
             ("shot", "THE SHOT", "What is filming now. Tap it for every shot and its choices."),
             ("fold", "›  AND  ‹", "Opens every shot and its choices; ‹, in the same place, folds them away."),
-            KEYS[2], KEYS[3], KEYS[4], KEYS[6]]
+            KEYS[3], KEYS[2], KEYS[4], KEYS[6]]         # lab 2: the [12], then the frame right of it
 GESTURES = [("tap", "TAP", "the menu"), ("double", "DOUBLE-TAP", "show or hide the strip"),
             ("hold", "HOLD", "everything off, and back")]
 FOOT = "Tap the card to close it.   Help › Guide shows it again."
@@ -59,7 +59,7 @@ def card(lab=False):
 
     # ---- the strip, as it is (Tracking · Film · R), its band 40 px, the [12] in the middle ----------------------------
     by0, by1, cy = 62, 102, 82
-    if lab: cy = 66                               # the lab's strip: on the screen's top edge (lab_strip)
+    if lab: cy = 74                               # the lab's strip: 8 px in from the screen's edge (lab_strip)
     if not lab: d.rounded_rectangle([28 * K, by0 * K, (W - 28) * K, by1 * K], radius=6 * K, fill=(0, 0, 0, 255))
     wf = font("Inter-Medium.otf", int(12.5 * K))
     X = {}
@@ -114,22 +114,24 @@ def card(lab=False):
 
 
 def lab_strip(im, d, wf, word, paste, keys, gap):
-    """the lab's Quiet page as it is on screen: a slice of the picture, the film's top bar across it (1.85: thinner than
-    the strip, so the notch shows; at 2.39 the bar is taller and the notch is lost in it), and the notch hanging from
-    the screen's edge, joined to the bar, as wide as its words. Square where it meets the bar, as in-world (two parts)"""
+    """the lab's Quiet page as it is on screen (lab 2): a slice of the picture, and the island floating in it, 8 px under
+    the screen's edge, centred on the [12], its ends round: the Orbit, the shot and the fold key left of the [12], the
+    frame, Connect and the shutter right of it"""
     st, sb = 46, 120                                  # the screen slice
-    cy = st + 20                                      # the strip: 40 px from the screen's edge
-    bar = st + 21                                     # 1.85's bar on a 16:9 window: 21 px
+    cy = st + 8 + 20                                  # the strip's line: 8 px in from the edge
+    ih = 36                                           # the island's height
     mid = W / 2
     X = {}
-    fx = mid - 86
-    xf = fx - 26                                      # the fold key, left of the frame
-    xr = xf - 10 - gap                                # the shot's name ends here
+    xf = mid - 36 - 10                                # the fold key, just left of the [12]
     tw = spaced_w("TRACKING", wf, 0.14) / K
+    xr = xf - 10 - gap                                # the shot's name ends here
     xo = xr - tw - gap - 10                           # the Orbit
-    xs = mid + 48 + 24 + gap + 10                     # the shutter, beside Connect
-    x0, x1 = xo - 10 - 26, xs + 10 + 26
-    # the picture: a dusk, darkened, so the black reads against it
+    fx = mid + 36                                     # the frame key, just right of the [12]
+    fw = 22 + 8 + spaced_w("FULL", wf, 0.08) / K
+    xl = fx + 68 + gap                                # Connect (after FULL's width, as on screen)
+    xs = xl + 24 + gap + 10                           # the shutter, beside Connect
+    half = max(mid - (xo - 10), xs + 10 - mid) + 16
+    x0, x1 = mid - half, mid + half
     pic = Image.new("RGBA", (1, sb - st), (0, 0, 0, 255))
     for yy in range(sb - st):
         t = yy / float(sb - st - 1)
@@ -138,26 +140,18 @@ def lab_strip(im, d, wf, word, paste, keys, gap):
     m = Image.new("L", pic.size, 0)
     ImageDraw.Draw(m).rounded_rectangle([0, 0, pic.width - 1, pic.height - 1], radius=8 * K, fill=255)
     im.paste(pic, (28 * K, st * K), m)
-    # the black: the bar across the picture, the notch hanging from the edge, one shape
-    nl = Image.new("L", pic.size, 0)
-    nd = ImageDraw.Draw(nl)
-    nd.rectangle([0, 0, pic.width - 1, (bar - st) * K], fill=255)
-    nd.rounded_rectangle([(x0 - 28) * K, -14 * K, (x1 - 28) * K, (cy + 20 - st) * K], radius=12 * K, fill=255)
-    nl = Image.composite(nl, Image.new("L", pic.size, 0), m)
-    im.paste(Image.new("RGBA", pic.size, (0, 0, 0, 255)), (28 * K, st * K), nl)
+    d.rounded_rectangle([x0 * K, (cy - ih / 2) * K, x1 * K, (cy + ih / 2) * K], radius=ih / 2 * K, fill=(0, 0, 0, 255))
     paste(orbit(False), xo, 0.65); X["orbit"] = xo
     word(xr - tw, "TRACKING"); X["shot"] = xr - tw / 2
     d.line([((xf - 2) * K, (cy - 6) * K), ((xf + 3) * K, cy * K), ((xf - 2) * K, (cy + 6) * K)], fill=WHITE + (210,), width=int(2 * K), joint="curve")
     X["fold"] = xf
-    d.rounded_rectangle([fx * K, (cy - 5) * K, (fx + 22) * K, (cy + 5) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
-    d.rectangle([fx * K, (cy - 5) * K, (fx + 22) * K, (cy - 3) * K], fill=WHITE + (218,))
-    d.rectangle([fx * K, (cy + 3) * K, (fx + 22) * K, (cy + 5) * K], fill=WHITE + (218,))
-    spaced(d, (fx + 30) * K, cy * K, "1.85", wf, WHITE + (218,), 0.08)
-    X["frame"] = fx + 26
     paste(disc(WHITE), mid, size=(28, 28)); paste(ring(1.0, track=False, width=5), mid, 0.85, size=(32, 32)); X["12"] = mid
+    d.rounded_rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy + 6) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
+    spaced(d, (fx + 30) * K, cy * K, "FULL", wf, WHITE + (218,), 0.08)
+    X["frame"] = fx + fw / 2
     rk = Image.new("RGBA", (64 * K, 48 * K), (0, 0, 0, 0))
     rings_icon(ImageDraw.Draw(rk), 32, 24, K)
-    paste(rk.resize((64, 48), Image.LANCZOS), mid + 48, 0.75); X["link"] = mid + 48
+    paste(rk.resize((64, 48), Image.LANCZOS), xl + 12, 0.75); X["link"] = xl + 12
     paste(shutter(False), xs, 0.85); X["shut"] = xs
     if x0 < 40: raise SystemExit("make_guide: the lab's strip drawing does not fit the card")
     return finish(im, d, X, keys, paste, ny=sb + 15, y0=sb + 38)

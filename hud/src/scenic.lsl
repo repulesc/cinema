@@ -11,13 +11,13 @@
 //  Indoors (a build floor with a roof over you, or a skybox) every band stays in the room: Far is dim, Near and Drift
 //  stay inside. Outdoors Room is dim. Always within 60 m of you, inside your region, above the ground and the water.
 //  Started by its key, or by core when you are idle (cin.idle); a key or typing hands back to the shot you had.
-//  Drift's glide (8.7.0, the default): close on you, then the camera slides slowly round you at eye height, about 40°
+//  Drift's glide (8.7.0, the default; 8.8.1 on the viewer's follow camera, smooth): close on you, then the camera swings slowly round you at eye height, about 40°
 //  over 24 s, and a clean cut to a new close from another side; never along a path a wall crosses, never in a cabin.
 //  Settings › Motion › Reveal (cin.drift "reveal", 8.1.0): rising and pulling back to show the place, held wide.
 //  (8.0.6's breathing in and out is gone: too much of one feeling.)
 // ============================================================================
 
-string VERSION = "8.8.0";
+string VERSION = "8.8.1";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -80,7 +80,8 @@ float   gNextT;                     // the next cut (still frames)
 integer gRetry;
 integer gCompany;                   // someone within 10 m (the sensor)
 // Drift
-integer gDir;                       // the glide's way round: 1, -1; 9 walls both ways; 0 not chosen yet
+integer gDir;                       // the glide's way round: 1, -1; 9 it holds (a wall, or behind you already); 0 not chosen yet
+float   gTh;                        // ... how far round from behind you it started (degrees)
 vector  gB;                         // the first spot (camera), and the focus beside you (relative)
 vector  gFb;
 float   gLegT;                      // this leg began
@@ -610,36 +611,50 @@ reveal()
     dolly(d0 + (d1 - d0) * k, k);
 }
 
-// the glide (8.7.0): held close, then the camera slides round you at the same distance and height, 20 times a second
-// (a locked camera does not ease: small steps make it smooth, as Connect's watching does), held, then a new close
+// the glide (8.7.0; 8.8.1 smooth): held close, then the camera swings round you at the same distance and height, then a
+// new close. 8.7.0 moved a locked camera 20 times a second, and Second Life does not ease a locked camera: in-world it
+// was choppy. Now the viewer's own follow camera does it, eased every frame as Tracking is: its behindness angle (how
+// far round from behind you it may be) narrows a little every half second, and the viewer swings the camera in to it.
+// So the glide goes round you toward your back, on the side the close cut chose, never along a path a wall crosses
 glide()
 {
     float t = llGetTime() - gLegT;
+    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
+    float d0 = llVecDist(<gB.x, gB.y, 0.0>, <E.x, E.y, 0.0>);
+    if (gFolT > 0.0 && llGetTime() >= gFolT)
+    {
+        gFolT = 0.0;                                        // the follow camera takes the close view, still
+        gDir = 0;
+        dolly(d0, 0.0);
+        return;
+    }
     if (t >= GL_HOLD + GL_MOVE + GL_END)
     {
         gLastAz = [gAz];                                    // the next close: another side
-        llSetTimerEvent(0.5);
         drift();
         return;
     }
-    if (t < GL_HOLD || t > GL_HOLD + GL_MOVE || gTight || !here()) { llSetTimerEvent(0.5); return; }
-    vector E = <gOP.x, gOP.y, gFloorZ + 1.6>;
-    vector h = gB - E;
-    float r = llVecMag(<h.x, h.y, 0.0>);
-    if (gDir == 0)                                          // which way: the side whose path no wall crosses
+    if (t < GL_HOLD || t > GL_HOLD + GL_MOVE || gTight || gFolT > 0.0 || !here()) return;
+    if (gDir == 0)                                          // the start: how far round from behind you, and the way
     {
+        vector bk = -llRot2Fwd(llGetRootRotation());
+        float ab = llAtan2(bk.y, bk.x);
+        float df = ab - gAz;
+        while (df > PI) df -= TWO_PI;
+        while (df < -PI) df += TWO_PI;
+        gTh = llFabs(df) * RAD_TO_DEG;
         gDir = 9;
-        integer s;
-        for (s = 1; s >= -1 && gDir == 9; s -= 2)
-            if (llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC * 0.5) * (r + 0.5)), 0) == 0
-                && llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC) * (r + 0.5)), 0) == 0) gDir = s;
+        integer s = 1;
+        if (df < 0.0) s = -1;
+        if (gTh - GL_ARC * RAD_TO_DEG >= 15.0 && llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC * 0.5) * (d0 + 0.5)), 0) == 0
+            && llList2Integer(ray(E, E + dirOf(gAz + s * GL_ARC) * (d0 + 0.5)), 0) == 0) gDir = s;
     }
-    if (gDir == 9) return;                                  // walls both ways: the view holds
-    llSetTimerEvent(0.05);
+    if (gDir == 9) return;                                  // a wall that way, or already behind you: the view holds
     float k = (t - GL_HOLD) / GL_MOVE;
     k = k * k * (3.0 - 2.0 * k);                            // eased in and out
-    vector c = E + dirOf(gAz + gDir * GL_ARC * k) * r + <0.0, 0.0, h.z>;
-    llMessageLinked(LINK_SET, GLIDE, (string)c + "|" + (string)(E + gFb) + "|0.0", "");
+    float p = llAtan2(0.3 + 0.12 * d0, d0) * RAD_TO_DEG;    // as the close view (dolly)
+    llMessageLinked(LINK_SET, FOLLOW, (string)d0 + "|" + (string)p + "|<0.0, 0.0, 0.2>|1.0|1.5|1.0|"
+        + (string)(gTh - GL_ARC * RAD_TO_DEG * k), "");
 }
 
 // Drift's clock: the glide by default, the reveal by choice

@@ -425,6 +425,6 @@ check(abs(D[28][0] - D[24][0]) < 0.3, "... held wide (%.1f, %.1f)" % (D[24][0], 
 check(any(x[0] < d_wide * 0.6 for x in D[30:]), "... then a cut to a new close (%r)" % [round(x[0], 1) for x in D[28:]])
 h.lsd["cin.drift"] = ("breathe", "cinema-1.0-build1")                 # 8.0.6's breathing, set before 8.7.0: the glide now
 ana.touch(opt_part(h, "DRIFT")); w.run(8)
-check(h.cam.get("plock") and not h.cam.get("distance"), "an old Breathe: the glide (a moving locked camera, no follow camera)")
+check(h.cam.get("distance") and not h.cam.get("plock") and var(h, "scenic", "gDir") != 0, "an old Breathe: the glide (on the follow camera, 8.8.1; gDir %r)" % var(h, "scenic", "gDir"))
 no_errors(w, "drift")
 done("inworld_emu")

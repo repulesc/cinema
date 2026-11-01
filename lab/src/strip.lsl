@@ -21,7 +21,7 @@
 //  Connect on both pages. lab/README.md.
 // ============================================================================
 
-string VERSION = "8.8.0";
+string VERSION = "8.8.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                // the free Take 12 Scenery build sets this to 1: only Scenic, the rest dim
 
@@ -59,7 +59,8 @@ integer gAutoP;                     // the Orbit (8.3.0), at the left end
 integer gAuto;                      // ... lit: Auto directs
 integer gFold;                      // the lab: the fold key (› / ‹)
 integer gQuiet = TRUE;              // ... the Quiet page (the default) or Direct
-string  gBandS = "-";               // the notch last sent to screen ("band|x0|x1", "band|": Direct's band)
+string  gBandS = "-";               // the island last sent to screen ("band|x0|x1", "band|": Direct's band)
+string  gLast;                      // lab 2: the last shot that ran (Quiet shows it faintly while the camera is yours)
 integer gSep;
 integer gShp;
 integer gLnk;
@@ -289,9 +290,9 @@ layout()
     float Wc = gA;
     if (Wc > 1.778) Wc = 1.778;
     float FW = llList2Float(mark("shapeFULL"), 4) / 48.0 * hw;
-    float need = FW + fw + gap + aw + gap * (aw > 0.0);
+    float need = fw + gap + aw + gap * (aw > 0.0);
     for (i = 0; i < 4; i++) need += wordW(llList2String(SHOTS, i), hw) + gap;
-    float optsW = llList2Float(mark("linkTHEIR FILM"), 4) / 48.0 * hw + shw + gap + px(400.0) + gap;
+    float optsW = FW + gap + llList2Float(mark("linkTHEIR FILM"), 4) / 48.0 * hw + gap + shw + gap + px(400.0) + gap;
     if (optsW > need) need = optsW;
     float inset = 200.0 / 1080.0;
     float q = (Wc * 0.5 - mid - 0.02) / (need + gap);
@@ -302,13 +303,13 @@ layout()
     integer halo;
     // the middle: the fold key, the frame key left of the [12] (its mark where FULL's starts), Connect and the shutter
     // right of it (the shutter beside Connect on both pages: it never moves between them)
-    float xf = -mid - FW - gap - fw * 0.5;
+    float xf = -mid - fw * 0.5;                       // lab 2: the fold key just left of the [12], the frame right of it
     if (gFold) show(gFold, xf, 0.0, 0.001, fw, hw, uvMark(llList2String(["foldL", "foldR"], gQuiet)), WHITE, 0.8 * f, 0.0);
     float ssa = 0.86;
     if (gShapeL == "DIM") ssa = 0.27;
-    show(gShp, -mid - FW + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
-    show(gLnk, mid + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
-    float xs = mid + lw + gap + shw * 0.5;
+    show(gShp, mid + sw * 0.5, 0.0, 0.001, sw, hw, uvMark("shape" + gShapeL), WHITE, ssa * f, 0.0);
+    show(gLnk, mid + FW + gap + lw * 0.5, 0.0, 0.001, lw, hw, uvMark("link" + lk), WHITE, la * f, 0.0);   // no glow: it blurs the word
+    float xs = mid + FW + gap + lw + gap + shw * 0.5;
     if (shw > 0.0)
     {
         float sa = 0.8;
@@ -371,7 +372,8 @@ layout()
         string w = llList2String(SHOTS, i);
         list c = word(w);
         integer mine = (llToLower(w) == gShot && gShot != "");
-        if (gQuiet && !mine) put(away(llList2Integer(gSL, i)));
+        integer last = (gQuiet && gShot == "" && llToLower(w) == gLast);     // the camera yours: the last shot, faint
+        if (gQuiet && !mine && !last) put(away(llList2Integer(gSL, i)));
         else
         {
             float wd = llList2Float(c, 2) / 48.0 * hw;
@@ -397,6 +399,7 @@ layout()
                 a = 1.0;
             }
             if (gState == "watch" && st != "lit") a = 0.27;
+            if (last) a = 0.36;
             show(llList2Integer(gSL, i), cx, 0.0, 0.001, wd, hw, uv(gTW, llList2Float(c, 0), llList2Float(c, 1), llList2Float(c, 2), 48.0), WHITE, a * f, 0.0);
             x += wd + gap;
             xq -= wd + gap;
@@ -411,9 +414,14 @@ layout()
     go();
     // the notch (screen draws it): Quiet, as wide as its widest left side (the Orbit, FIXED and KEEP NEW) to the shutter,
     // so it keeps its width from shot to shot; Direct, the band edge to edge
+    // lab 2: the island, centred on the [12], as wide each side as the wider side (the left kept for TRACKING, so it
+    // keeps its width from shot to shot; a prompt or THEIR FILM widens it)
     string b = "band|";
-    if (gQuiet) b += (string)(xf - fw * 0.5 - gap - aw - gap - wordW("FIXED", hw) - gap - wordW("KEEP NEW", hw) - px(18.0))
-        + "|" + (string)(xs + shw * 0.5 + px(18.0));
+    float half = mid + fw + gap + wordW("TRACKING", hw) + gap + aw;
+    if (aw - xq > half) half = aw - xq;                     // the Orbit's left edge (a prompt widens the left)
+    if (xs + shw * 0.5 > half) half = xs + shw * 0.5;
+    half += px(16.0);
+    if (gQuiet) b += (string)(-half) + "|" + (string)half;
     if (b != gBandS) llMessageLinked(LINK_SET, STRIP, b, "");
     gBandS = b;
 }
@@ -461,6 +469,7 @@ touched(integer link)
     if (h == "t12 s" && k < 4)
     {
         string w = llList2String(SHOTS, k);
+        if (gQuiet && gShot == "" && llToLower(w) == gLast) { llMessageLinked(LINK_SET, CMD, "shot|" + gLast, ""); return; }   // take it back
         if (gQuiet) { page(FALSE); return; }               // the lab: the shot's name opens Direct
         if (LITE && k < 3) { llMessageLinked(LINK_SET, NOTE, "full", ""); return; }
         if (gAuto)
@@ -590,6 +599,7 @@ default
             list L = llParseStringKeepNulls(str, ["|"], []);
             gState = llList2String(L, 0);
             gShot = llList2String(L, 1);
+            if (gShot != "") gLast = gShot;
             string h = llList2String(L, 2);
             if (h != "")
             {
