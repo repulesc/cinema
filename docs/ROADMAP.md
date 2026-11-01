@@ -35,8 +35,8 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 
 ## Build it in-world
 1. `hud/build/README.md`: rez a box, put `builder.lsl` and a blank box named `t12 part` in it, touch it.
-2. Add the twelve scripts of `hud/src/`; upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png`
-   (as `take12_words`, `take12_marks`) and drop them in; add the Read Me (`hud/notecard/read_me.txt`) and, optionally,
+2. Add the twelve scripts of `hud/src/`; upload `hud/art/take12_words_1024.png`, `hud/art/take12_marks_1024.png` and
+   `hud/art/take12_guide_1024.png` (as `take12_words`, `take12_marks`, `take12_guide`) and drop them in; add the Read Me (`hud/notecard/read_me.txt`) and, optionally,
    a chime sound.
 3. Take it, wear it on HUD Top Center. `/12 status`: every script answers, "parts found", "textures kept".
 4. The free build: the same with the nine scripts of `scenery/src/` and `scenery/notecard/read_me.txt`.
@@ -48,7 +48,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 
 **The strip and the [12]**
 - [ ] First wear: only "Tap the [12] to set up." under the [12]; nothing else pops up; no text from before.
-- [ ] The setup: the lens page shows a live mm while you zoom; the eye line moves with Page Up / Page Down and a tap keeps it; Easy to read? changes the size; the tour.
+- [ ] The setup: the lens page shows a live mm while you zoom; the eye line moves with Page Up / Page Down and a tap keeps it; Easy to read? changes the size; the setup ends on the guide card, centred, sharp, every line readable; a tap on it closes it; Help › Guide and `/12 guide` show it again.
 - [ ] Double-tap opens with a short fade; the words are readable and do not overlap; corner HUDs keep their space; a click on the empty strip area falls through when closed.
 - [ ] Top, Top lower, Bottom, Bottom higher each clear your viewer's own bars.
 - [ ] The ring while filming, the dot while connected, the soft glow while shared, the hold fill, amber (take a script out).
@@ -66,7 +66,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
   in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.7.0", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.8.0", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).

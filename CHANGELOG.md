@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.8.0 (the guide card)
+- **The guide card:** the setup ends on one card in the screen's middle: the strip drawn whole, a number under each
+  key (the Orbit, the shots, the frame, the [12], Connect, the options, the shutter) and one line for each. A tap on
+  the card closes it; Help › Guide and `/12 guide` show it again (the strip opens with it). Hiding the strip or
+  everything off closes it too. It replaces the three tour pages.
+- **In-world:** one new part, `t12 guide` (touch the builder in the HUD: it adds only what is missing), and one new
+  texture, `hud/art/take12_guide_1024.png` (`tools/art/make_guide.py`), uploaded as `take12_guide` and dropped in.
+  Its UUID is kept like the others, and in its part's own description, so a new owner has it.
+- **Without the texture** (the free build, or before it is dropped in): the three tour pages as before, and Help ›
+  Guide gives the Read Me. About › Read Me always gives the notecard.
+- screen, ui and carry change; every script is 8.8.0. Tested in `guide_emu` (the setup, closing, Help › Guide,
+  `/12 guide`, a 5:4 window at L, Reset › Everything, a new owner, and without the texture).
+
 ## 8.7.0 (Tracking for film and for play; Drift's glide)
 - **The Tracking looks, higher and further** (Film looked up from chest height: too low for play; Shoulder was too
   close): **Film** 3.6 m, at about head height looking 6° down, you on a third; **Shoulder** 2.2 m, 8° down;

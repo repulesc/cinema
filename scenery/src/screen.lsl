@@ -9,9 +9,11 @@
 //  is placed from the attach point (wear it on HUD Top Center; any point works); every part is placed from it.
 //  Textures: drop take12_words and take12_marks (tools/art/make_strip.py) into the HUD: their UUIDs are kept in the
 //  root's description and the textures leave the contents, so the HUD can be given away. docs/ARCHITECTURE.md §1–2.
+//  The guide card (8.8.0): take12_guide (tools/art/make_guide.py) on its own part, t12 guide, in the screen's middle
+//  after the setup, from Help › Guide and /12 guide; a tap on it closes it. Its UUID is kept in the part's description.
 // ============================================================================
 
-string VERSION = "8.7.0";
+string VERSION = "8.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -40,6 +42,9 @@ integer gNote;
 integer gEyeL;                     // the eye line's part (t12 u2)
 integer gPlate;                    // the notes' plate (t12 plate, 8.5.0)
 integer gBand;                     // the strip's band (8.5.2: here, strip short of memory)
+integer gGuide;                    // the guide card's part (t12 guide, 8.8.0)
+string  gTG = "";                  // its texture
+integer gCard;                     // the card is shown
 integer gNoteC;                    // the note shown: its longest line (characters) and its lines, 0: none
 integer gNoteL;
 float   gA = 1.778;
@@ -66,7 +71,7 @@ float px(float v)
 
 find()
 {
-    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0; gBand = 0;
+    gRing = 0; gDot = 0; gNote = 0; gEyeL = 0; gPlate = 0; gBand = 0; gGuide = 0;
     integer i;
     for (i = 2; i <= llGetNumberOfPrims(); i++)
     {
@@ -77,6 +82,7 @@ find()
         else if (n == "t12 u2") gEyeL = i;
         else if (n == "t12 plate") gPlate = i;
         else if (n == "t12 band") gBand = i;
+        else if (n == "t12 guide") gGuide = i;
     }
 }
 
@@ -94,6 +100,7 @@ load()
     gTW = tex("take12_words");
     gTM = tex("take12_marks");
     if (gTM == "") gTM = TEXTURE_BLANK;
+    gTG = tex("take12_guide");
     keep();
 }
 
@@ -109,10 +116,18 @@ string tex(string tag)
 {
     string k = cfg(tag);
     if (k != "") return k;
-    list D = llParseString2List(desc(), [";", " "], []);
+    string d = desc();
+    if (tag == "take12_guide") d = guideDesc();            // the root's 127 characters hold two UUIDs, not three
+    list D = llParseString2List(d, [";", " "], []);
     integer i = llListFindList(D, [tag]);
     if (i >= 0) return llList2String(D, i + 1);
     return "";
+}
+
+string guideDesc()
+{
+    if (!gGuide) return "";
+    return llList2String(llGetLinkPrimitiveParams(gGuide, [PRIM_DESC]), 0);
 }
 
 // both places hold the same UUIDs: written again after Settings › Reset › Everything or a new owner empties Linkset Data
@@ -130,15 +145,20 @@ keep()
         d += ";take12_marks " + gTM;
     }
     if (d != "" && d != desc()) llSetLinkPrimitiveParamsFast(LINK_ROOT, [PRIM_DESC, d]);   // 99 characters: within 127
+    if (gTG != "")
+    {
+        llLinksetDataWriteProtected("cin.take12_guide", gTG, PASS);
+        if (gGuide && guideDesc() != "take12_guide " + gTG) llSetLinkPrimitiveParamsFast(gGuide, [PRIM_DESC, "take12_guide " + gTG]);
+    }
 }
 
 // a texture dropped in (yours, full permissions): its UUID is kept, the texture leaves the contents
 adopt()
 {
     integer t;
-    for (t = 0; t < 2; t++)
+    for (t = 0; t < 3; t++)
     {
-        string tag = llList2String(["take12_words", "take12_marks"], t);
+        string tag = llList2String(["take12_words", "take12_marks", "take12_guide"], t);
         string n = "";
         integer i;
         for (i = llGetInventoryNumber(INVENTORY_TEXTURE) - 1; i >= 0; i--)
@@ -147,7 +167,8 @@ adopt()
         if (n != "") k = llGetInventoryKey(n);
         if (k != NULL_KEY)
         {
-            if (t) gTM = (string)k;
+            if (t == 2) gTG = (string)k;
+            else if (t) gTM = (string)k;
             else gTW = (string)k;
             keep();
             llRemoveInventory(n);
@@ -244,6 +265,12 @@ layout()
     else part(gPlate, 0.0, 0.0, 0.02, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     // the eye-line guide (the first run, Settings › Eye line): a line across the screen at screen height gEye
     float s = px(1.0) / 0.01;                                // a ~2 px line: a blank face cut down with PRIM_SLICE (8.0.4)
+    // the guide card: in the screen's middle, 960 px wide at M (its texture 1024 x 512), never wider than the window
+    float cw = px(960.0);
+    if (cw > gA * 0.94) cw = gA * 0.94;
+    if (gCard && gTG != "") part(gGuide, -rootX(), -midZ(), -0.006, cw, cw * 0.5, [PRIM_TEXTURE, ALL_SIDES, gTG, <1.0, 1.0, 0.0>,
+        ZERO_VECTOR, 0.0], WHITE, 1.0, 0.0);
+    else part(gGuide, 0.0, 0.0, 0.02, 0.01, 0.01, [], WHITE, 0.0, 0.0);
     if (gEye > -9.0) part(gEyeL, -rootX(), gEye - midZ(), -0.003, gA, 0.01, [PRIM_TEXTURE, ALL_SIDES, TEXTURE_BLANK, <1.0, 1.0, 0.0>,
         ZERO_VECTOR, 0.0, PRIM_SLICE, <0.5 - s, 0.5 + s, 0.0>], <1.0, 0.85, 0.5>, 1.0, 0.0);
 }
@@ -291,6 +318,7 @@ default
         gProblem = FALSE;
         gHold = 0;
         gEye = -9.0;
+        gCard = FALSE;
         llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
     }
 
@@ -313,6 +341,15 @@ default
         if (c & CHANGED_INVENTORY) adopt();
     }
 
+    touch_start(integer n)
+    {
+        if (gCard && llDetectedLinkNumber(0) == gGuide && llDetectedKey(0) == gOwner)
+        {
+            gCard = FALSE;                                  // a tap on the card closes it
+            layout();
+        }
+    }
+
     linkset_data(integer a, string n, string v)
     {
         if (a == LINKSETDATA_RESET || (a == LINKSETDATA_DELETE && llSubStringIndex(n, "cin.take12_") == 0)) keep();
@@ -323,7 +360,7 @@ default
         if (num == UI_STATE)
         {
             gState = llList2String(llParseStringKeepNulls(str, ["|"], []), 0);
-            if (gState == "off") gOpen = FALSE;
+            if (gState == "off") { gOpen = FALSE; gCard = FALSE; }
             layout();
         }
         else if (num == LINKST)
@@ -332,15 +369,16 @@ default
             layout();
         }
         else if (num == NOTE && str == "commands|")       // /12 help: every command (here since 8.5.10: text had no room)
-            llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · feedback · status · debug on|off · blend on|off · lower · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip");
+            llOwnerSay("[Take 12] /12 auto · tracking · portrait · fixed · scenic · bars · next · off · strip · connect · guide · feedback · status · debug on|off · blend on|off · lower · place top|topl|bot|both · size s|m|l · idle off|away|5 · flip");
         else if (num == STRIP)
         {
             list L = llParseStringKeepNulls(str, ["|"], []);
             string a = llList2String(L, 0);
             if (str == "aspect?") aspect();                 // strip, started again
-            if (a == "toggle") gOpen = !gOpen;
+            if (a == "toggle") { gOpen = !gOpen; gCard = FALSE; }
             else if (a == "open") gOpen = TRUE;
-            else if (a == "close") gOpen = FALSE;
+            else if (a == "close") { gOpen = FALSE; gCard = FALSE; }
+            else if (a == "guide") gCard = (llList2String(L, 1) == "1");
             else if (a == "hold") gHold = (integer)llList2String(L, 1);
             else if (a == "problem") gProblem = (integer)llList2String(L, 1);
             else if (a == "note")
@@ -368,7 +406,7 @@ default
         else if (num == STATUS && str == "?")
             llOwnerSay("[Take 12/screen] v" + VERSION + " " + llList2String(PLACES, gPlace) + ", size " + (string)gS + ", window " + (string)gA
                 + ", parts " + llList2String(["missing (build the HUD with the builder)", "found"], gRing && gNote)
-                + ", textures " + llList2String(["missing", "kept"], gTM != TEXTURE_BLANK) + ", free mem " + (string)llGetFreeMemory());
+                + ", textures " + llList2String(["missing", "kept"], gTM != TEXTURE_BLANK) + ", guide " + llList2String(["missing", "kept"], gTG != "") + ", free mem " + (string)llGetFreeMemory());
     }
 
     timer()

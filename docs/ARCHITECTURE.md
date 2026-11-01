@@ -27,6 +27,7 @@ Every part is found by its name (any link order):
 | `t12 note` | carries the 3 s notes (llSetText), just under the strip (above it at the bottom) |
 | `t12 bar0` … `t12 bar3` | the letterbox (or pillarbox) bars |
 | `t12 shut` | the shutter, at the right end (8.1.0): ready, or lit while the moment is held |
+| `t12 guide` | the guide card (8.8.0): `take12_guide`, 960 × 480 px at M in the screen's middle, after the setup, from Help › Guide or `/12 guide`; a tap on it closes it, as do hiding the strip and everything off. Parked otherwise |
 | `t12 auto` | Auto's Orbit, at the left end (8.3.0): lit while Auto directs, quiet in manual; an older HUD without it works, Auto then shows the shots as usual |
 
 Textures (made by `tools/art/make_strip.py`, uploaded once, dropped into the HUD; `screen` adopts them, keeping each UUID
@@ -38,6 +39,10 @@ on every load (8.4.2: the viewer's Edit window could put the old description bac
   The script tints a word per state. The cell tables (column, row, width in px) are generated into `strip.lsl` (WORDS, the strip's marks) and `screen.lsl` (the [12]'s marks).
 - `take12_marks` (1024²): the [12] disc, the ring frames, the dot, the halo, and the shape and link cells (256 × 48; the photo frames' cells after the links, 8.0.9).
   The box, underline and band-fade cells are still on the sheet but drawn by nothing since 8.0.4 (no new upload).
+- `take12_guide` (1024 × 512, `tools/art/make_guide.py`, 8.8.0): the guide card, whole: the strip drawn with a number
+  under each key and one line for each, so it reads the same on any window and wherever the strip sits. Its UUID is
+  kept in `cin.take12_guide` and in the `t12 guide` part's own description (the root's 127 characters hold the other
+  two). Without it the setup ends on the three tour pages, and Help › Guide gives the Read Me (the free build).
 
 ## 2. Screen geometry (`screen.lsl`: the [12]; `strip.lsl`: the strip)
 - **HUD space:** 1.0 tall (the window's height) and `llGetCameraAspect()` wide; +Y to the left, +Z up, +X into the
