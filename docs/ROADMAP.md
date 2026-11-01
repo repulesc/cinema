@@ -64,10 +64,10 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - [ ] One film frame for every shot (the ▭: cinema frames while filming, the snapshot size), Black and Dimmed. The shutter: the view holds in 3:2 while walking with Tracking; the ▭ then lists the photo frames; a 1800 × 1200 snapshot matches the pillarbox; pressed again, the film goes on.
 - [ ] Drift: the reveal (rising, pulling back, a cut to a new close); Settings › Motion › Breathe gives the in and out.
 - [ ] Auto (the guide, 8.4.0): worn, it starts after 3 s with the Orbit lit and the shot faint; walking round a room
-  in short steps, Tracking all along; stop 10 s, Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
+  in short steps, Tracking all along; stop 60 s with nothing (no click, key or typing), Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.9.1", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.9.2", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).
@@ -87,5 +87,5 @@ windowed and full screen. `/12 debug on` prints every Connect message.
 - Fixed: the capture time (1 s still), KEEP NEW's 5 s, the spot sizes (0.5 m and 45°; 2 m on the ground).
 - Scenic: the 15 s hold, Drift's legs (15 s; the distances 5–26 m alone, 4.5–7 m near people), Near's 3–8 m.
 - Connect: QUIET 10 s, GONE 3 s, NEAR 20 m.
-- Auto: moving over 0.5 m/s for 1 s, Drift after 10 s, wide after 5 min, Portrait after 4 s with 1-3 people within
+- Auto: moving over 0.5 m/s for 1 s, Drift after 60 s of nothing (8.9.2), wide after 5 min, Portrait after 15 s with 1-3 people within
   3 m (gone 3 s), 8 s a shot, the 3 s on wear, Esc's 1.5 s.

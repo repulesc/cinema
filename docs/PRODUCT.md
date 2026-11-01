@@ -78,11 +78,11 @@ The camera that directs itself, for the everyday: you need not think about shots
 | You | Auto films | After |
 |---|---|---|
 | **Moving** (walking, running: the keys or your speed) | **Tracking** (your own look and side; Smooth or Snappy as set) | the walking keys at once (held 0.25 s), otherwise 1 s of moving, from any shot, and from an Alt-click's hold (walking off). Never anything else while you move. |
-| **Stopped, alone** | Tracking holds behind you, then **Scenic · Drift** (its glide round you, or the reveal) | 10 s still |
+| **Stopped, alone** | Tracking holds behind you, then **Scenic · Drift** (its glide round you, or the reveal) | 60 s with nothing: no walking, no click in the world, no turning key, no typing (8.9.2: 10 s of not walking). A click, a key or typing while it rests: Tracking at once |
 | **Still a long while, alone**, or Away | **Scenic · Far** outdoors, **Scenic · Room** indoors: the place, wide | 5 min still (Away: as soon as the shot has had its 8 s) |
-| **Stopped with someone** (1–3 people within 3 m: a conversation) | **Portrait · Us**, Medium (a two-shot; a group of 3–4) | 4 s still together; it holds while they stay; 3 s after they leave, the rows above |
+| **Stopped with someone** (1–3 people within 3 m: a conversation) | **Portrait · Us**, Medium (a two-shot; a group of 3–4) | 15 s still together, hands still too (typing is fine: a conversation; 8.9.2: 4 s); it holds while they stay; 3 s after they leave, the rows above |
 | **A crowd** (more than 3 within 3 m) | Scenic · Drift (it stays near when people are around) | 10 s |
-| **Sitting** | **Fixed** where the seat has a view you kept; otherwise **Scenic · Drift** | 2 s seated (Drift: 10 s) |
+| **Sitting** | **Fixed** where the seat has a view you kept; otherwise **Scenic · Drift** | 2 s seated (Drift: 60 s) |
 | **Flying, mouselook, a marked vehicle** | your own camera | as in manual |
 
 - **Calm:** a shot stays at least 8 s, except Tracking as you move, which comes at once. A key tapped (under 1 s)

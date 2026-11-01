@@ -25,7 +25,7 @@
 //  Orbit is tapped again. Auto's options are never kept as yours.
 // ============================================================================
 
-string VERSION = "8.9.1";
+string VERSION = "8.9.2";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;
@@ -81,6 +81,9 @@ float   gStillA;                       // still since (sitting down or standing 
 integer gSatA;
 integer gKeysA;                        // the movement keys held (core's MOVING)
 float   gKeyT;                          // ... pressed at
+float   gActA;                          // your hands, last (8.9.2): a click in the world, a turn (taken here, passed on: they
+                                        // work as ever). Standing and clicking is not resting
+float   gTypeA;                         // typing, last (8.9.2)
 integer gWith;                         // people within 3 m (the sensor), since, gone since
 float   gWithT;
 float   gGoneT;
@@ -301,8 +304,14 @@ direct()
     else { gMoveT = 0.0; if (gStillA == 0.0) gStillA = t; }
     if (gCore == "held" && !moving) return;                  // your Alt-click: until you walk off (or Esc, core)
     float still = t - gStillA;
+    if (info & AGENT_TYPING) gTypeA = t;
+    float idle = still;                                     // still, and your hands still too (no click, no turn)
+    if (t - gActA < idle) idle = t - gActA;
+    float rest = idle;                                      // ... and not typing either
+    if (t - gTypeA < rest) rest = t - gTypeA;
     integer kept = sat && cfg("seat." + llList2String(d, 1)) != "";
-    integer with = (gWith > 0 && gWith <= 3 && t - gWithT >= 4.0) || (gCShot == "portrait" && t - gGoneT < 3.0);
+    // together 15 s (8.9.2: 4 s), or just after they left a Portrait
+    integer with = (gWith > 0 && gWith <= 3 && t - gWithT >= 15.0) || (gCShot == "portrait" && t - gGoneT < 3.0);
     if (moving)
     {
         // the walking keys: at once (held 0.25 s: a nudge is no walk); moving otherwise (pushed, a slope): 1 s (8.4.4)
@@ -311,10 +320,14 @@ direct()
     }
     if (kept && still >= 2.0) { pick("fixed", "", "a kept seat"); return; }
     if (gCShot == "") { if (sat) pick("scenic", "drift", "seated"); else pick("tracking", "", "worn"); return; }
+    // awake (a click, a turn, typing) while Auto rests: back behind you at once (8.9.2: it dreamt on while you clicked)
+    if (gCShot == "scenic" && !sat && rest < 1.0 && !(info & AGENT_AWAY)) { pick("tracking", "", "awake"); return; }
     if (t - gShotT < 8.0) return;                           // a shot stays 8 s
-    if (with && !sat && still >= 4.0) pick("portrait", "", (string)gWith + " near");
-    else if (still >= 300.0 || (info & AGENT_AWAY)) pick("scenic", "wide", "a long while");
-    else if (still >= 10.0 && !(kept && gCShot == "fixed")) pick("scenic", "drift", "resting");
+    // with someone: 15 s still, hands too (typing is a conversation: it may); alone: 60 s with nothing at all (8.9.2: 4 s
+    // and 10 s of not walking, so clicking or typing in place cut to Portrait and Drift)
+    if (with && !sat && idle >= 15.0) pick("portrait", "", (string)gWith + " near");
+    else if (rest >= 300.0 || (info & AGENT_AWAY)) pick("scenic", "wide", "a long while");
+    else if (rest >= 60.0 && !(kept && gCShot == "fixed")) pick("scenic", "drift", "resting");
 }
 
 default
@@ -324,7 +337,18 @@ default
         gOwner = llGetOwner();
         load();
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
-        if (llGetAttached()) { gWear = llGetTime(); gWearing = TRUE; llSetTimerEvent(0.5); }
+        if (llGetAttached()) { gWear = llGetTime(); gWearing = TRUE; llSetTimerEvent(0.5); llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS); }
+    }
+
+    // your hands (8.9.2): a click in the world and the turning keys, passed on (they work as ever): you are here
+    run_time_permissions(integer p)
+    {
+        if (p & PERMISSION_TAKE_CONTROLS) llTakeControls(CONTROL_LBUTTON | CONTROL_ROT_LEFT | CONTROL_ROT_RIGHT, TRUE, TRUE);
+    }
+
+    control(key id, integer level, integer edge)
+    {
+        gActA = llGetTime();
     }
 
     attach(key id)
@@ -336,6 +360,7 @@ default
         gWear = llGetTime();
         gWearing = (id != NULL_KEY);
         llSetTimerEvent(0.5 * (id != NULL_KEY));
+        if (id != NULL_KEY) llRequestPermissions(gOwner, PERMISSION_TAKE_CONTROLS);
     }
 
     on_rez(integer p)
@@ -395,6 +420,7 @@ default
         else if (num == MOVING)
         {
             gKeysA = ((integer)str != 0);
+            gActA = llGetTime();                                // (a nudge too: you are here, 8.9.2)
             if (gKeysA && gAuto) { gKeyT = llGetTime(); llSetTimerEvent(0.3); }   // Auto looks again in 0.3 s
         }
         else if (num == MSG_VER && str == "?") llMessageLinked(LINK_SET, MSG_VER, VERSION, "tracking");
