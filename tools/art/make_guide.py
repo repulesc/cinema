@@ -32,7 +32,6 @@ KEYS_LAB = [KEYS[0],                     # the Take 12 Lab (lab/): its Quiet pag
             KEYS[2], KEYS[3], KEYS[4], KEYS[6]]
 GESTURES = [("tap", "TAP", "the menu"), ("double", "DOUBLE-TAP", "show or hide the strip"),
             ("hold", "HOLD", "everything off, and back")]
-GY = 446                                # the touches' row
 FOOT = "Tap the card to close it.   Help › Guide shows it again."
 SHOTS = ["TRACKING", "PORTRAIT", "FIXED", "SCENIC"]
 OPTS = ["SHOULDER", "FILM", "CLASSIC", "/", "L", "R"]
@@ -165,7 +164,7 @@ def finish(im, d, X, keys, paste):
     lines = sum(len(r) for r in rows)
     y = 150
     step, lead = 32, 20                           # a row, a second line
-    if y + len(rows) * step + (lines - len(rows)) * lead > GY - 22:
+    if y + len(rows) * step + (lines - len(rows)) * lead > H - 112:
         raise SystemExit("make_guide: the list does not fit the card (%d lines)" % lines)
     for i, ((_, t, _), r) in enumerate(zip(keys, rows)):
         num(56, y + 8, i + 1)
@@ -173,24 +172,34 @@ def finish(im, d, X, keys, paste):
         for j, ln in enumerate(r):
             d.text((bx * K, (y + 8 + j * lead) * K), ln, font=bf, fill=WHITE + (196,), anchor="lm")
         y += step + (len(r) - 1) * lead
-    # ---- the [12]'s three touches, each drawn: one ripple, two ripples, the ring filling as you hold -------------------
-    d.line([44 * K, (GY - 22) * K, (W - 44) * K, (GY - 22) * K], fill=(255, 255, 255, 30), width=K)
+    # ---- the [12]'s three touches: one grid, one size. The same disc in each, its rings in one 1.5 px stroke: one ring
+    # (a tap), two (a double-tap), the ring filling (a hold). The divider, the row and the footer evenly spaced -------
+    fy = H - 26                                   # the footer
+    lc = y - step + 8                             # the list's last line
+    g = (fy - lc - 8 - 2 * 17.6 - 7) / 3.0        # one gap, seen: list to divider, divider to the touches, them to the footer
+    dy = lc + 8 + g                               # the divider
+    gy = dy + g + 17.6                            # the touches' row
+    if gy + 18 > fy - 14: raise SystemExit("make_guide: the touches do not fit under the list")
+    d.line([44 * K, dy * K, (W - 44) * K, dy * K], fill=(255, 255, 255, 30), width=K)
     gt = font("Inter-SemiBold.otf", int(13.5 * K))
+    sw = 1.5 * K
     for i, (kind, t, b) in enumerate(GESTURES):
-        x0 = 56 + i * 316
-        c = x0 + 14
-        paste(disc(WHITE), c, size=(24, 24), y=GY)
+        x0 = 44 + i * (W - 88) / 3.0              # three equal columns over the list's width
+        c = x0 + 17
+        paste(disc(WHITE), c, size=(24, 24), y=gy)
+        box = lambda r_: [(c - r_) * K, (gy - r_) * K, (c + r_) * K, (gy + r_) * K]
         if kind == "tap":
-            d.ellipse([(c - 17) * K, (GY - 17) * K, (c + 17) * K, (GY + 17) * K], outline=WHITE + (150,), width=int(1.5 * K))
+            d.ellipse(box(16.5), outline=WHITE + (170,), width=int(sw))
         elif kind == "double":
-            for r_, a_ in ((17, 170), (22.5, 90)):
-                d.ellipse([(c - r_) * K, (GY - r_) * K, (c + r_) * K, (GY + r_) * K], outline=WHITE + (a_,), width=int(1.5 * K))
+            d.ellipse(box(14.8), outline=WHITE + (190,), width=int(sw))
+            d.ellipse(box(17.6), outline=WHITE + (110,), width=int(sw))
         else:
-            paste(ring(0.62), c, size=(34, 34), y=GY)
-        spaced(d, (x0 + 40) * K, (GY - 9) * K, t, gt, WHITE + (255,), 0.08)
-        d.text(((x0 + 40) * K, (GY + 10) * K), b, font=bf, fill=WHITE + (196,), anchor="lm")
+            d.ellipse(box(16.5), outline=WHITE + (50,), width=int(sw))
+            d.arc(box(16.5), -90, -90 + 360 * 0.62, fill=WHITE + (245,), width=int(2.6 * K))   # the fill reads at a glance
+        spaced(d, (c + 30) * K, (gy - 9) * K, t, gt, WHITE + (255,), 0.08)
+        d.text(((c + 30) * K, (gy + 10) * K), b, font=bf, fill=WHITE + (196,), anchor="lm")
     ff = font("Inter-Regular.otf", 13 * K)
-    d.text((W / 2 * K, (H - 22) * K), FOOT, font=ff, fill=WHITE + (138,), anchor="mm")
+    d.text((W / 2 * K, fy * K), FOOT, font=ff, fill=WHITE + (138,), anchor="mm")
     return im.resize((W, H), Image.LANCZOS)
 
 
