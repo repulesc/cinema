@@ -6,7 +6,8 @@ every other script is the product's own, copied here from hud/src unchanged, so 
 on anything else. The lab's builder is the product's with the lab's two parts added (t12 tab, the Quiet page's notch;
 t12 fold, the key that opens and folds the Direct page) and the root named "Take 12 Lab".
 
-    python3 tools/build_lab.py            write lab/src (the copied scripts) and lab/build/builder.lsl
+    python3 tools/build_lab.py            write lab/src (the copied scripts), lab/build/builder.lsl and lab/art's copy of
+                                          the product's words texture (so lab/art holds every texture the Lab needs)
     python3 tools/build_lab.py --check    fail if they are out of date (CI); a note if the product's strip or screen
                                           changed since the lab took its own (the lab may want the change too)
 """
@@ -36,13 +37,16 @@ def main():
     check = "--check" in sys.argv
     want = {os.path.join(OUT, n): HEADER + open(os.path.join(SRC, n)).read() for n in COPIED}
     want[os.path.join(ROOT, "lab", "build", "builder.lsl")] = builder()
+    words = open(os.path.join(ROOT, "hud", "art", "take12_words_1024.png"), "rb").read()
+    want[os.path.join(ROOT, "lab", "art", "take12_words_1024.png")] = words      # the Lab's words: the product's own
     bad = []
     for path, text in want.items():
+        mode = "b" if isinstance(text, bytes) else ""
         if check:
-            if not os.path.exists(path) or open(path).read() != text: bad.append(os.path.relpath(path, ROOT))
+            if not os.path.exists(path) or open(path, "r" + mode).read() != text: bad.append(os.path.relpath(path, ROOT))
         else:
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            open(path, "w").write(text)
+            open(path, "w" + mode).write(text)
     extra = sorted(set(os.listdir(OUT)) - set(COPIED) - set(OWN))
     for n, sha in OWN.items():
         if not os.path.exists(os.path.join(OUT, n)): bad.append("lab/src/" + n + " (missing)")
@@ -51,10 +55,10 @@ def main():
     if check:
         bad += ["lab/src/" + n + " (not the lab's)" for n in extra]
         if bad: print("lab is out of date, run python3 tools/build_lab.py:", ", ".join(bad)); raise SystemExit(1)
-        print("lab is up to date: %d scripts copied from hud/src, strip and screen its own" % len(COPIED))
+        print("lab is up to date: %d scripts copied from hud/src, strip and screen its own, the words texture copied" % len(COPIED))
     else:
         for n in extra: os.remove(os.path.join(OUT, n))
-        print("wrote %d scripts to lab/src and lab/build/builder.lsl" % len(COPIED))
+        print("wrote %d scripts to lab/src, lab/build/builder.lsl and lab/art/take12_words_1024.png" % len(COPIED))
 
 
 if __name__ == "__main__":
