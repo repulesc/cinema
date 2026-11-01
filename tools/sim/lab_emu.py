@@ -167,9 +167,7 @@ h2 = bo.wear(LAB_SCRIPTS, parts=LAB_PARTS, lsd={"cin.owner": (str(bo.key), PASS)
 w2.run(1)
 textures(h2); h2.drop("take12_guide_1024"); w2.run(6)
 card = lambda: rect(h2, bo, "t12 guide")[4] > 0.5 and rect(h2, bo, "t12 guide")[2] > 0.02
-check(card(), "the first wear: the guide card first")
-bo.touch("t12 guide"); w2.run(0.5)
-check(not card(), "a tap on it closes it")
+check(not card() and any("Tap the [12] to set up." in n for n in bo.notes()), "the first wear: the setup, not the guide card (8.9.1: the card first got in its way)")
 bo.tap(); w2.run(0.6); bo.click("Start"); w2.run(0.5); bo.click("Skip"); w2.run(0.5)
 bo.tap(); w2.run(0.6); bo.click("Good"); w2.run(0.5)
 check(bo.labels() == ["Up", "Down", "Done"], "the setup aligns the strip both ways: %r" % bo.labels())
@@ -184,18 +182,58 @@ bo.click("Done"); w2.run(1)
 check(bo.labels() == ["Cinema", "Full screen"], "then the picture: Cinema or Full screen (%r)" % bo.labels())
 bo.click("Full screen"); w2.run(4)
 check(lsd(h2, "bars") == "0" and rect(h2, bo, "t12 bar2")[4] < 0.02, "Full screen: no bars")
-check(lsd(h2, "firstrun") == "done" and not card() and bo.dialog is None, "the setup ends, no card again (it came first)")
+check(lsd(h2, "firstrun") == "done" and card() and bo.dialog is None, "the setup ends with the guide card")
+bo.touch("t12 guide"); w2.run(0.5)
+check(not card() and bo.dialog is None, "a tap on it closes it, and opens nothing")
 check(var(h2, "screen", "gOpen") == 1 and var(h2, "tracking", "gAuto") == 1, "... the strip open and Auto filming (the setup really finished)")
 bo.tap(); w2.run(0.6); bo.click("Settings"); w2.run(0.5); bo.click("Reset"); w2.run(0.5); bo.click("Everything"); w2.run(0.5)
 bo.click("Yes, reset"); w2.run(2)
-check(card() and bo.dialog is not None, "Reset > Everything: the guide card again, and the setup")
+check(not card() and bo.dialog is None and any("Tap the [12] to set up." in n for n in bo.notes(w2.t - 3)),
+      "Reset > Everything: the setup again when you tap the [12] (8.9.1: the card and the setup at once, the card over it)")
 check(var(h2, "bars", "gOn") == 1, "... and the film's bars back, as new (the picture is asked again)")
+bo.tap(); w2.run(0.6)
+check(not card() and bo.dialog and "Start" in bo.labels(), "a tap on the [12]: the setup starts (%r)" % bo.labels())
 no_errors(w2, "lab setup")
+
+# ---- 8.9.1 (in-world): a tap that closes the guide card is not a tap on the [12]. ui read the touched part's size at the
+# touch's end, after the card had gone (and shrunk): it took the card's tap for the [12]'s, kept the eye line wherever it
+# was in the setup, or opened the menu
+w4 = World()
+cy4 = w4.avatar("Cy", (128, 128, 21))
+h4 = cy4.wear(LAB_SCRIPTS, parts=LAB_PARTS, lsd={"cin.owner": (str(cy4.key), PASS)})
+w4.run(1); textures(h4); h4.drop("take12_guide_1024"); w4.run(6)
+card4 = lambda: rect(h4, cy4, "t12 guide")[4] > 0.5 and rect(h4, cy4, "t12 guide")[2] > 0.02
+cy4.tap(); w4.run(0.6); cy4.click("Start"); w4.run(0.5); cy4.click("Skip"); w4.run(1)
+check(var(h4, "ui", "gEye"), "(the eye-line step)")
+h4.send(7343, "guide|1"); w4.run(0.5)                                     # the card over the eye-line step (/12 guide)
+check(card4(), "(the card shows)")
+cy4.touch("t12 guide"); w4.run(1.5)
+check(not card4() and var(h4, "ui", "gEye") and cy4.dialog is None, "a tap on the card closes it, and the eye-line step goes on (%r)" % (cy4.dialog and cy4.labels()))
+cy4.tap(); w4.run(0.6)
+check(not var(h4, "ui", "gEye") and "Good" in cy4.labels(), "a tap on the [12] keeps the eye line, as before")
+cy4.click("Good"); w4.run(0.5); cy4.click("Done"); w4.run(0.5); cy4.click("Cinema"); w4.run(4)
+h4.send(7343, "guide|1"); w4.run(0.5)
+cy4.touch("t12 guide"); w4.run(1.5)
+check(not card4() and cy4.dialog is None and var(h4, "core", "gState") != "off", "after the setup: the card, and closing it opens nothing")
+cy4.touch("t12 s0", hold=0.1); w4.run(0.3)                                 # a touch that starts on a part that changes size
+check(var(h4, "core", "gState") != "off", "... and a touch on a strip part is never taken for a hold of the [12]")
+no_errors(w4, "lab: the card's tap")
+
+# ---- 8.9.1 (in-world): a script missing at the check (being replaced, or stopped and started again by carry) turned the
+# [12] amber until the HUD was worn again, though the script was there and running
+w5 = World()
+dee = w5.avatar("Dee", (128, 128, 21))
+h5 = dee.wear(LAB_SCRIPTS, parts=LAB_PARTS, lsd=ready(dee)); w5.run(0.5)
+h5.crash("strip"); w5.run(4)
+check(any("missing: strip" in n for n in dee.notes()) and var(h5, "screen", "gProblem"), "strip stopped at the check: the note, and the [12] amber")
+w5.run(6)
+check(not var(h5, "screen", "gProblem"), "strip started again (carry): the [12] is white again")
+no_errors(w5, "lab: a script late")
 h = mem_h
 # ---- runtime memory (as memory_emu: the static estimate, the globals, twice the biggest list; 3 KB must stay free) --
 for sc in h.scripts:
     if sc.name in ("strip", "screen", "ui", "text"):
         free = LIMIT - world.static(sc.prog.path) - sc.globals_bytes() - 2 * sc.peak
         check(free >= 3 * 1024, "lab %s: %.1f KB free at its peak (a list of %.1f KB in %s)" % (sc.name, free / 1024, sc.peak / 1024, sc.peak_at))
-        print("lab %s: %.1f KB free at its peak" % (sc.name, free / 1024))
+        print("lab %s: %.1f KB free at its peak (static %.1f KB, globals %.1f KB, a list of %.1f KB in %s)" % (sc.name, free / 1024, world.static(sc.prog.path) / 1024, sc.globals_bytes() / 1024, sc.peak / 1024, sc.peak_at))
 done("lab_emu")

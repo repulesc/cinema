@@ -1,5 +1,16 @@
 # Changelog
 
+## 8.9.0, ui updated (the setup and the guide card; replace ui only)
+- **A tap closing the guide card was taken for a tap on the [12]** (in-world): ui looked at the touched part again when
+  the touch ended, after the card had gone. In the setup's eye-line step it kept the line wherever it was; two such
+  taps toggled the strip. Now the end of a touch counts only if it began on the [12] (the product's ui too).
+- **The guide card comes at the setup's end** (the user's call): it came first, on the first wear and after
+  Reset › Everything, over the setup. A tap on the [12] starts the setup, and the card closes if it is up.
+- **A script late at the check** (being replaced, or stopped and started again) turned the [12] amber until the HUD
+  was worn again, though the script was there. When it answers, the [12] is white again.
+- Only ui changes (the new design's, and the product's touch fix); the version stays 8.9.0 so nothing else needs
+  replacing.
+
 ## 8.9.0 (Connect, start to finish: a deep review)
 Every script path of Connect was read end to end; each problem below was first a failing test (`connect_emu`'s
 review, on the product and on the new design), then fixed. docs/CONNECT.md has the details.

@@ -19,7 +19,8 @@ Wear one or the other, never both.
   - its ends are real round shapes (cylinders facing you), so they are round with any texture;
 
 - **The setup:**
-  - the guide card shows first, on the first wear and after Reset › Everything;
+  - on the first wear and after Reset › Everything, a tap on the [12] starts it; the guide card shows at its end
+    (8.9.1: it came first and got in the setup's way);
   - the alignment step has **Up**, **Down** and **Done**, 10 px a step, so you can go back;
   - the last step asks for the picture: **Cinema** (the film's black bars) or **Full screen** (none);
   - Settings › Screen › Move in and Move out also move 10 px at a time.
@@ -52,7 +53,7 @@ Wear one or the other, never both.
    - Any name that starts with `take12_words`, `take12_marks` or `take12_guide` is taken.
 4. Optionally add the Read Me.
 5. Take the old Take 12 off, take this one and wear it on HUD Top Center.
-6. The guide card shows; tap it closed, then tap the [12] for the setup.
+6. Tap the [12] for the setup; the guide card shows at its end (tap it closed).
 7. `/12 status`: strip says `quiet` or `direct`, and screen says `island found`.
 
 ## If it proves itself
