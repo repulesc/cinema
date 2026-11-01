@@ -264,9 +264,8 @@ open(string p)
     else if (p == "everything") page(p, "", ["Yes, reset", "‹ Back"]);
     else if (p == "help") page(p, "", ["Guide", "Tips again", "About", "‹ Back"]);
     else if (p == "about") page(p, "", ["Read Me", "‹ Back", "Close"]);   // what 12 means (8.1.1); the notecard (8.8.0: Guide is the card)
-    else if (p == "first") page(p, "", ["Start", "Later"]);
     else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
-    else if (p == "inview") page(p, "", ["Up", "Down", "Done"]);   // the lab: align it, both ways, 10 px a step
+    else if (p == "inview") page(p, "", ["Up", "Down", "Done", "Later"]);   // the setup's first step (8.9.1): align it, 10 px a step
     else if (p == "feel")
     {
         // Motion: Tracking snappy to steer by (the default, 8.0.8) or smooth; Drift the reveal (8.1.0) or breathing
@@ -383,12 +382,6 @@ choose(string m)
         else if (b == "Guide" || b == "Read Me") { closeMenu(); guide(b == "Guide"); }
         else if (b == "About") open("about");
     }
-    else if (gPage == "first")
-    {
-        llLinksetDataWriteProtected("cin.firstrun", "done", PASS);   // asked once: a re-wear never starts it again (8.0.6)
-        if (b == "Start") { gFirst = "lens"; open("lens"); }
-        else { closeMenu(); gFirst = "later"; }
-    }
     else if (gPage == "size")
     {
         integer i = llListFindList(["s", "m", "l"], [cfg("size")]);
@@ -396,7 +389,7 @@ choose(string m)
         if (b == "Smaller" && i > 0) i--;
         if (b == "Larger" && i < 2) i++;
         set("size", llList2String(["s", "m", "l"], i));
-        if (b == "Good") open("inview");
+        if (b == "Good") open("picture");                  // the picture: the film's bars, or the full screen
         else open("size");
     }
     else if (gPage == "feel")
@@ -409,12 +402,11 @@ choose(string m)
     {
         // taller viewer bars (favourites, navigation) can cover the strip: a step further in each press, up to 6 (8.5.7:
         // 8.0.6 had one step, and a second press did nothing)
+        llLinksetDataWriteProtected("cin.firstrun", "done", PASS);   // asked once: a re-wear never starts it again (8.0.6)
         if (b == "Down") move(1);
         if (b == "Up") move(-1);
-        if (b == "Done")
-        {
-            open("picture");                                // the picture: the film's bars, or the full screen
-        }
+        if (b == "Later") { closeMenu(); gFirst = "later"; }
+        else if (b == "Done") { gFirst = "lens"; open("lens"); }   // then your lens, your eye line, the size, the picture
         else open("inview");
     }
     else if (gPage == "picture")
@@ -443,7 +435,9 @@ guide(integer c)
 // ---- the first run ------------------------------------------------------------------------
 first()
 {
-    if (gFirst == "start") open("first");
+    if (gFirst != "start") return;
+    strip("open");                                          // the strip in view first, to align it (8.9.1: after the size)
+    open("inview");
 }
 
 done()
