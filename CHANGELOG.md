@@ -1,5 +1,13 @@
 # Changelog
 
+## 8.8.2 (a given copy keeps its textures)
+- **A HUD given to someone else drew grey and white squares** (a friend's test): on a new owner the scripts wiped all
+  of Linkset Data, the texture UUIDs with the last owner's settings, and the copy of them in the root's description is
+  not saved in-world when a script sets it on a worn HUD. The new owner's wipe now keeps `cin.take12_*`: the HUD's own
+  textures, not anyone's settings. Every buyer would have hit this.
+- ui changes (and the new design's ui); every script is 8.8.2. `textures_emu` gives a working HUD away with its
+  description unsaved, in four script start orders (it fails before the fix).
+
 ## The new design (lab 2.2): round ends whatever the texture, seen on the bars, the picture asked, no "lab" name
 - The island's round ends are real round shapes (cylinders turned to face you), no longer a cell of the marks texture
   (a marks texture uploaded for lab 1 drew them square in-world). Its black is lifted, so it shows on the film's bars.

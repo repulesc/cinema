@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.8.1";
+string VERSION = "8.8.2";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -108,7 +108,8 @@ checkOwner()
     integer wiped = (cfg("owner") != (string)gOwner || (v != "" && llGetSubString(v, 0, 0) != "8"));
     if (cfg("owner") != (string)gOwner)
     {
-        llLinksetDataReset();
+        wipe("^cin\\.([^t]|t[^a])");                      // the last owner's settings; never the HUD's own textures
+        // (cin.take12_*, 8.8.2: a new owner's copy drew grey squares, its description's copy of them unsaved in-world)
         llLinksetDataWriteProtected("cin.owner", (string)gOwner, PASS);
     }
     else if (v != "" && llGetSubString(v, 0, 0) != "8")

@@ -61,6 +61,23 @@ h.lsd = {}
 h.attach(); w.run(8)
 marks("a new owner", new_m)
 
+# 8.8.2: a working HUD given away as it is in-world: its Linkset Data goes with it (the last owner's settings and the
+# HUD's own texture UUIDs), and the description a script set while it was worn was never saved (empty here). Every
+# script starts again for the new owner, in any order. The textures stay: the new owner's wipe keeps cin.take12_*
+import random
+for order in range(4):
+    cy = w.avatar("Cy%d" % order, (150 + order, 128, 21))
+    owner = h.owner
+    owner.take_off(h); w.run(1)
+    h.owner, h.owner_name = cy, cy.name
+    cy.huds.append(h)
+    h.prims[0]["desc"] = ""
+    live = list(h.live()); random.Random(order).shuffle(live)
+    for sc in live: h.reset(sc)
+    h.attach(); w.run(8)
+    marks("given away (order %d), its description unsaved" % order, new_m)
+    check(lsd(h, "owner") == str(cy.key) and not lsd(h, "firstrun"), "... the last owner's settings gone, the setup again")
+
 # a description with words of its own: the two UUIDs are never cut at 127 characters
 h.prims[0]["desc"] = "My camera, built on a Sunday afternoon at the beach, with love and a lot of coffee"
 h.drop("take12_words_1024"); w.run(3)
