@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""(7.x, kept for lab/softkeys/make_mockup.py only: 8.0's mark is the [12] disc of tools/art/make_strip.py. Running
+"""(7.x, kept for legacy/old-lab/softkeys/make_mockup.py only: 8.0's mark is the [12] disc of tools/art/make_strip.py. Running
 this file on its own would write the retired 7.x icons back into hud/, scenery/ and watch/.)
 
 Take 12 icon: a deliberately pixel-art clapperboard with "12" on the slate, 16x16, two frames.
@@ -186,7 +186,7 @@ def look_sheet():
     return s
 
 if __name__ == "__main__":
-    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "hud", "art")
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "hud", "art")
     os.makedirs(os.path.join(root, "variants"), exist_ok=True)
     for v in LOOKS:                                 # single-look sheets (2 frames), if you want only one look
         sheet(v).save(os.path.join(root, "variants", v + "_256x128.png"))

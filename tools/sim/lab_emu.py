@@ -137,8 +137,24 @@ for pl in ("topl", "bot", "both"):
 ana.say(12, "place top"); w.run(2.5)
 ana.double_tap(); w.run(1.5)
 check(not on("t12 tab") and not on("t12 tab2") and not on("t12 fold") and not on("t12 band"), "closed: the island, the fold key and the band go")
+# ---- the screen script started again after the strip (in-world: scripts added one by one): the island comes back --------
+for sc in h.live():                                              # (the strip closed, as left above)
+    if sc.name == "screen": h.reset(sc)
+w.run(4)
+ana.double_tap(); w.run(1.5)                                       # opened again: the strip sends the island anew
+island_ok("screen started again")
 no_errors(w, "lab")
 mem_h = h
+
+# ---- a Lab built with the product's builder (no island parts): it still floats, and says what to do ---------------------------
+w3 = World()
+cy, h3 = hud(w3, name="Cy", scripts=LAB_SCRIPTS, parts=PARTS)
+textures(h3); w3.run(2)
+cy.double_tap(); w3.run(1); cy.say(12, "tracking"); w3.run(3)
+m = rect(h3, cy, "t12 band")
+check(m[4] > 0.5 and m[2] < 0.6 and abs(m[0]) < 1e-4, "no island parts: the island still floats, square-ended (%.0f px wide)" % (m[2] * 1080))
+check(any("round ends are missing" in str(c) for c in cy.chat), "... and says once how to add its parts")
+no_errors(w3, "lab, product builder")
 
 # ---- the setup (lab 2): the guide card first, then Up and Down, 10 px a step ------------------------------------------------
 w2 = World()

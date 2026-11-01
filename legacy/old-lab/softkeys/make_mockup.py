@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Soft keys, a concept (not in the HUD): draws lab/softkeys/softkeys_mockup.png.
+"""Soft keys, a concept (not in the HUD): draws legacy/old-lab/softkeys/softkeys_mockup.png.
 
 The clapper alone at rest; in a few busy moments, up to five quiet keys beside it. Thin 1 px line icons in chalk on a
 near-black key, a small-caps label in the HUD's pixel font, the key in use marked by a coral underline.
 
-    python3 lab/softkeys/make_mockup.py
+    python3 legacy/old-lab/softkeys/make_mockup.py
 """
 import os, sys
 from PIL import Image, ImageDraw

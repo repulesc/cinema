@@ -31,4 +31,4 @@ Chosen: one strip prim, the three moments below (Live, Freehand, Still), plus th
 2. Labels under the icons, or icons only?
 3. A row to the left of the button (as drawn), or a column below it?
 
-Redraw the mockup with `python3 lab/softkeys/make_mockup.py`.
+Redraw the mockup with `python3 legacy/old-lab/softkeys/make_mockup.py`.

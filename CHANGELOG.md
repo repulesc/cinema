@@ -1,5 +1,12 @@
 # Changelog
 
+## Take 12 Lab, lab 2.1 (the island always shows; lab/ holds only the Lab)
+- The strip sends the island to screen again whenever screen starts (in-world the scripts go in one by one: a screen
+  started after the strip never heard of the island and drew the full band, the product's look).
+- A Lab built with the product's builder (no `t12 tab`, `t12 tab2`): the island still floats, square-ended, and says
+  once in chat how to add its round ends.
+- The old 7.x experiments (the 4.5.0 Photographer mode, soft keys) moved from `lab/` to `legacy/old-lab/`.
+
 ## 8.8.1 (Drift's glide, smooth)
 - **The glide was choppy in-world:** 8.7.0 moved a locked camera 20 times a second, and Second Life does not ease a
   locked camera. Now the viewer's own follow camera does it, eased every frame as Tracking is: its behindness angle (how
