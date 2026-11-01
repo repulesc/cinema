@@ -27,7 +27,7 @@ other, never both: take Take 12 off before wearing the Lab.
 - **Textures:**
   - `lab/art/take12_marks_1024.png` is the product's marks with three more cells: `›`, `‹` and the notch (`tools/art/make_lab.py`);
   - `lab/art/take12_guide_1024.png` is the lab's guide card (`tools/art/make_guide.py`);
-  - the words texture is the product's.
+  - `lab/art/take12_words_1024.png` is the product's words texture, copied by `tools/build_lab.py` (CI checks it matches).
 - **Tests:** `tools/sim/lab_emu.py` runs the real lab scripts. It checks:
   - the pages and the fold key;
   - the notch;
@@ -40,9 +40,10 @@ other, never both: take Take 12 off before wearing the Lab.
 ## Build it in-world
 1. Rez a box. Put `lab/build/builder.lsl` (as a new script) and a blank box named `t12 part` in it, and touch it. It builds "Take 12 Lab" with every part.
 2. Add the twelve scripts of `lab/src/`, each as a new script with the file's name.
-3. Add the textures:
-   - **Words:** the product's `take12_words` texture, which you already have; drop a copy in.
-   - **Marks and guide:** upload `lab/art/take12_marks_1024.png` as `take12_marks_lab` and `lab/art/take12_guide_1024.png` as `take12_guide_lab`, then drop both in. Any name that starts with `take12_marks` or `take12_guide` is taken.
+3. Add the textures. All three are in `lab/art/`:
+   - **Words:** `take12_words_1024.png` is the product's own, copied. If you already uploaded `take12_words` for Take 12, drop that copy in; no new upload.
+   - **Marks and guide:** upload `take12_marks_1024.png` as `take12_marks_lab` and `take12_guide_1024.png` as `take12_guide_lab`, then drop both in.
+   - Any name that starts with `take12_words`, `take12_marks` or `take12_guide` is taken.
 4. Optionally add the Read Me.
 5. Take Take 12 off, take the Lab and wear it on HUD Top Center.
 6. Run the setup once (tap the [12]); it ends on the lab's guide card.
