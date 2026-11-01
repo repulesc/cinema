@@ -1,5 +1,9 @@
 # Changelog
 
+## The guide cards' bottom row (texture only, the product's and the lab's)
+- The three touches (tap, double-tap, hold) drawn at one size on one grid, the divider no longer against them, the
+  list, the divider, the touches and the footer evenly spaced. Upload `take12_guide` again; no script changes.
+
 ## Take 12 Lab, lab 1 (the Quiet and Direct pages; the product is unchanged)
 - A separate HUD in `lab/` for trying ideas without touching the product: its own strip and screen, the product's
   other ten scripts copied unchanged (`tools/build_lab.py`), its own builder (two more parts), marks (the fold key and
