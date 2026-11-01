@@ -10,7 +10,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.9.0";
+string VERSION = "8.9.1";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;                 // the free Take 12 Scenery build sets this to 1
 
@@ -374,7 +374,7 @@ choose(string m)
         llLinksetDataWriteProtected("cin.ver", VERSION, PASS);
         llMessageLinked(LINK_SET, CFG_CHANGED, "all", "");
         gFirst = "start";
-        note("setup", "");                                  // the setup when you tap the [12], the guide card at its end
+        first();                                            // alignment at once, the guide card at the setup's end
     }
     else if (gPage == "help" || gPage == "about")
     {
@@ -777,7 +777,7 @@ default
             }
             gVerT = 0;
             gVerStep = 0;
-            if (gFirst == "start") note("setup", "");      // (the guide card comes at the setup's end, 8.9.1)
+            if (gFirst == "start") first();                 // alignment opens by itself: a viewer's bars may hide the [12] (8.9.1)
             else if (cfg("open") != "0") strip("open");    // set up: the strip shows as you left it (8.0.5: it started hidden)
         }
         timer0();
