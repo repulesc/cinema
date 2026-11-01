@@ -1,5 +1,10 @@
 # Changelog
 
+## The lab's guide card: the hood as it is on screen (texture only)
+- The Quiet strip drawn on a slice of the picture: the film's top bar across it (1.85; at 2.39 the bar is taller and
+  the notch is lost in it) and the notch hanging from the screen's edge, joined to the bar. Upload `take12_guide_lab`
+  again.
+
 ## The guide cards' bottom row (texture only, the product's and the lab's)
 - The three touches (tap, double-tap, hold) drawn at one size on one grid, the divider no longer against them, the
   list, the divider, the touches and the footer evenly spaced. Upload `take12_guide` again; no script changes.

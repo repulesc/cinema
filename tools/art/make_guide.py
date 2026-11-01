@@ -55,10 +55,11 @@ def card(lab=False):
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, fill=INK + (236,))
     d.rounded_rectangle([3 * K, 3 * K, (W - 3) * K, (H - 3) * K], radius=18 * K, outline=(255, 255, 255, 34), width=2 * K)
     head = font("Inter-SemiBold.otf", 13 * K)
-    spaced(d, 44 * K, 38 * K, "TAKE 12 LAB  ·  THE QUIET STRIP" if lab else "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
+    spaced(d, 44 * K, (27 if lab else 38) * K, "TAKE 12 LAB  ·  THE QUIET STRIP" if lab else "TAKE 12  ·  THE STRIP", head, WHITE + (150,), 0.14)
 
     # ---- the strip, as it is (Tracking · Film · R), its band 40 px, the [12] in the middle ----------------------------
     by0, by1, cy = 62, 102, 82
+    if lab: cy = 66                               # the lab's strip: on the screen's top edge (lab_strip)
     if not lab: d.rounded_rectangle([28 * K, by0 * K, (W - 28) * K, by1 * K], radius=6 * K, fill=(0, 0, 0, 255))
     wf = font("Inter-Medium.otf", int(12.5 * K))
     X = {}
@@ -113,8 +114,12 @@ def card(lab=False):
 
 
 def lab_strip(im, d, wf, word, paste, keys, gap):
-    """the lab's Quiet page: a notch hanging from the screen's edge (a hairline here), as wide as its words"""
-    by0, by1, cy = 62, 102, 82
+    """the lab's Quiet page as it is on screen: a slice of the picture, the film's top bar across it (1.85: thinner than
+    the strip, so the notch shows; at 2.39 the bar is taller and the notch is lost in it), and the notch hanging from
+    the screen's edge, joined to the bar, as wide as its words. Square where it meets the bar, as in-world (two parts)"""
+    st, sb = 46, 120                                  # the screen slice
+    cy = st + 20                                      # the strip: 40 px from the screen's edge
+    bar = st + 21                                     # 1.85's bar on a 16:9 window: 21 px
     mid = W / 2
     X = {}
     fx = mid - 86
@@ -124,21 +129,30 @@ def lab_strip(im, d, wf, word, paste, keys, gap):
     xo = xr - tw - gap - 10                           # the Orbit
     xs = mid + 48 + 24 + gap + 10                     # the shutter, beside Connect
     x0, x1 = xo - 10 - 26, xs + 10 + 26
-    d.line([28 * K, by0 * K, (W - 28) * K, by0 * K], fill=(255, 255, 255, 46), width=K)
-    nl = Image.new("RGBA", im.size, (0, 0, 0, 0))   # the notch: rounded below, square where it meets the edge
-    ImageDraw.Draw(nl).rounded_rectangle([x0 * K, (by0 - 14) * K, x1 * K, by1 * K], radius=14 * K, fill=(0, 0, 0, 255))
-    nl.paste((0, 0, 0, 0), (0, 0, W * K, by0 * K))
-    im.alpha_composite(nl)
-    d.line([28 * K, by0 * K, x0 * K, by0 * K], fill=(255, 255, 255, 46), width=K)
-    d.line([x1 * K, by0 * K, (W - 28) * K, by0 * K], fill=(255, 255, 255, 46), width=K)
+    # the picture: a dusk, darkened, so the black reads against it
+    pic = Image.new("RGBA", (1, sb - st), (0, 0, 0, 255))
+    for yy in range(sb - st):
+        t = yy / float(sb - st - 1)
+        pic.putpixel((0, yy), (int(52 + 46 * t), int(40 + 24 * t), int(70 + 22 * t), 255))
+    pic = pic.resize(((W - 56) * K, (sb - st) * K), Image.BILINEAR)
+    m = Image.new("L", pic.size, 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, pic.width - 1, pic.height - 1], radius=8 * K, fill=255)
+    im.paste(pic, (28 * K, st * K), m)
+    # the black: the bar across the picture, the notch hanging from the edge, one shape
+    nl = Image.new("L", pic.size, 0)
+    nd = ImageDraw.Draw(nl)
+    nd.rectangle([0, 0, pic.width - 1, (bar - st) * K], fill=255)
+    nd.rounded_rectangle([(x0 - 28) * K, -14 * K, (x1 - 28) * K, (cy + 20 - st) * K], radius=12 * K, fill=255)
+    nl = Image.composite(nl, Image.new("L", pic.size, 0), m)
+    im.paste(Image.new("RGBA", pic.size, (0, 0, 0, 255)), (28 * K, st * K), nl)
     paste(orbit(False), xo, 0.65); X["orbit"] = xo
     word(xr - tw, "TRACKING"); X["shot"] = xr - tw / 2
     d.line([((xf - 2) * K, (cy - 6) * K), ((xf + 3) * K, cy * K), ((xf - 2) * K, (cy + 6) * K)], fill=WHITE + (210,), width=int(2 * K), joint="curve")
     X["fold"] = xf
-    d.rounded_rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy + 6) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
-    d.rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy - 3) * K], fill=WHITE + (218,))
-    d.rectangle([fx * K, (cy + 3) * K, (fx + 22) * K, (cy + 6) * K], fill=WHITE + (218,))
-    spaced(d, (fx + 30) * K, cy * K, "2.39", wf, WHITE + (218,), 0.08)
+    d.rounded_rectangle([fx * K, (cy - 5) * K, (fx + 22) * K, (cy + 5) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
+    d.rectangle([fx * K, (cy - 5) * K, (fx + 22) * K, (cy - 3) * K], fill=WHITE + (218,))
+    d.rectangle([fx * K, (cy + 3) * K, (fx + 22) * K, (cy + 5) * K], fill=WHITE + (218,))
+    spaced(d, (fx + 30) * K, cy * K, "1.85", wf, WHITE + (218,), 0.08)
     X["frame"] = fx + 26
     paste(disc(WHITE), mid, size=(28, 28)); paste(ring(1.0, track=False, width=5), mid, 0.85, size=(32, 32)); X["12"] = mid
     rk = Image.new("RGBA", (64 * K, 48 * K), (0, 0, 0, 0))
@@ -146,23 +160,23 @@ def lab_strip(im, d, wf, word, paste, keys, gap):
     paste(rk.resize((64, 48), Image.LANCZOS), mid + 48, 0.75); X["link"] = mid + 48
     paste(shutter(False), xs, 0.85); X["shut"] = xs
     if x0 < 40: raise SystemExit("make_guide: the lab's strip drawing does not fit the card")
-    return finish(im, d, X, keys, paste)
+    return finish(im, d, X, keys, paste, ny=sb + 15, y0=sb + 38)
 
 
-def finish(im, d, X, keys, paste):
+def finish(im, d, X, keys, paste, ny=118, y0=150):
     # ---- the numbers under the keys, then the list ---------------------------------------------------------------------
     nf = font("Inter-SemiBold.otf", 11 * K)
     def num(cx, ccy, i):
         d.ellipse([(cx - 8.5) * K, (ccy - 8.5) * K, (cx + 8.5) * K, (ccy + 8.5) * K], fill=WHITE + (238,))
         d.text((cx * K, (ccy + 0.5) * K), str(i), font=nf, fill=INK + (255,), anchor="mm")
     for i, (k, _, _) in enumerate(keys):
-        num(X[k], 118, i + 1)
+        num(X[k], ny, i + 1)
     tf = font("Inter-SemiBold.otf", int(14.5 * K))
     bf = font("Inter-Regular.otf", 15 * K)
     bx, bw = 214, W - 214 - 48
     rows = [wrap(bf, b, bw * K) for _, _, b in keys]
     lines = sum(len(r) for r in rows)
-    y = 150
+    y = y0
     step, lead = 32, 20                           # a row, a second line
     if y + len(rows) * step + (lines - len(rows)) * lead > H - 112:
         raise SystemExit("make_guide: the list does not fit the card (%d lines)" % lines)
