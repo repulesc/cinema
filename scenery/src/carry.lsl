@@ -17,7 +17,7 @@
 //  again, so Connect or a shot never stays dead until a new copy (/12 status names what was restarted).
 // ============================================================================
 
-string VERSION = "8.7.0";
+string VERSION = "8.8.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -34,7 +34,7 @@ integer CONN       = 7349;
 
 string  MAKER = "panocarver@gmail.com";   // where feedback goes
 
-list    SKIP = ["cin.peers", "cin.ver", "cin.cfgv", "cin.owner", "cin.take12_words", "cin.take12_marks"];   // the copy's own, not carried (its textures too, 8.4.2)
+list    SKIP = ["cin.peers", "cin.ver", "cin.cfgv", "cin.owner", "cin.take12_words", "cin.take12_marks", "cin.take12_guide"];   // the copy's own, not carried (its textures too, 8.4.2)
 
 key     gOwner;
 integer gCh;

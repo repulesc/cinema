@@ -11,7 +11,7 @@
 //  Settings live in protected Linkset Data (cin.*); an owner change wipes them; a 7.x HUD's settings are migrated.
 // ============================================================================
 
-string VERSION = "8.7.0";
+string VERSION = "8.8.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 1;                 // the free Take 12 Scenery build sets this to 1
 
@@ -262,7 +262,7 @@ open(string p)
     else if (p == "reset") page(p, "", ["Tips again", "Seats & views", "Everything", "‹ Back"]);
     else if (p == "everything") page(p, "", ["Yes, reset", "‹ Back"]);
     else if (p == "help") page(p, "", ["Guide", "Tips again", "About", "‹ Back"]);
-    else if (p == "about") page(p, "", ["Guide", "‹ Back", "Close"]);   // what 12 means (8.1.1)
+    else if (p == "about") page(p, "", ["Read Me", "‹ Back", "Close"]);   // what 12 means (8.1.1); the notecard (8.8.0: Guide is the card)
     else if (p == "first") page(p, "", ["Start", "Later"]);
     else if (p == "size") page(p, "", ["Smaller", "Good", "Larger"]);
     else if (p == "inview") page(p, "", ["Yes", "Lower it"]);
@@ -380,7 +380,7 @@ choose(string m)
     else if (gPage == "help" || gPage == "about")
     {
         if (b == "Tips again") { llLinksetDataDeleteProtected("cin.tips", PASS); closeMenu(); }
-        else if (b == "Guide") { closeMenu(); guide(); }
+        else if (b == "Guide" || b == "Read Me") { closeMenu(); guide(b == "Guide"); }
         else if (b == "About") open("about");
     }
     else if (gPage == "first")
@@ -410,7 +410,11 @@ choose(string m)
         // taller viewer bars (favourites, navigation) can cover the strip: a step further in each press, up to 6 (8.5.7:
         // 8.0.6 had one step, and a second press did nothing)
         if (b == "Lower it") move(1);
-        if (b == "Yes") open("tour1");
+        if (b == "Yes")
+        {
+            if (cfg("take12_guide") == "") open("tour1");   // without the card's texture, the three pages (as before 8.8.0)
+            else { done(); guide(TRUE); }
+        }
         else open("inview");
     }
     else if (gPage == "tour1") { if (b == "Skip") done(); else open("tour2"); }
@@ -418,8 +422,15 @@ choose(string m)
     else if (gPage == "tour3") done();
 }
 
-guide()
+// the guide card (8.8.0: screen shows it, a tap on it closes it), or the Read Me notecard
+guide(integer c)
 {
+    if (c && cfg("take12_guide") != "")
+    {
+        if (!gOpen) strip("open");
+        llMessageLinked(LINK_SET, STRIP, "guide|1", "");
+        return;
+    }
     string card = "";
     integer i;
     for (i = llGetInventoryNumber(INVENTORY_NOTECARD) - 1; i >= 0; i--)
@@ -570,6 +581,7 @@ command(string m)
     else if (c == "size" && llListFindList(["s", "m", "l"], [a]) >= 0) set("size", a);
     else if (c == "idle" && llListFindList(["off", "away", "5"], [a]) >= 0) set("idle", a);
     else if (c == "connect") llMessageLinked(LINK_SET, CMD, "connect|menu", "");
+    else if (c == "guide") guide(TRUE);
     else note("commands", "");
 }
 

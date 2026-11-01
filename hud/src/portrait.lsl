@@ -17,7 +17,7 @@
 //  Every distance scales with your size. The solver (7.x frame.lsl): docs/ARCHITECTURE.md §5.
 // ============================================================================
 
-string VERSION = "8.7.0";
+string VERSION = "8.8.0";
 string PASS    = "cinema-1.0-build1";
 
 integer START      = 7301;

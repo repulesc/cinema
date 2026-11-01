@@ -14,13 +14,16 @@ and name parts by hand. HUD prims have no land impact.
 5. **Add the scripts:** the 12 files of `hud/src/` (core, ui, text, screen, strip, bars, tracking, portrait, fixed, scenic,
    sync, carry), each as a new script with the file's name. Optionally a sound for the Connect chime (any sound in the
    contents; Settings › Friends › Chime turns it off).
-6. **The textures:** upload `hud/art/take12_words_1024.png` and `hud/art/take12_marks_1024.png` once (name them
-   `take12_words` and `take12_marks`) and drop both into the HUD. The screen script keeps their UUIDs (in its Linkset Data,
-   with a copy in the root's description) and takes them out of the contents, so the HUD can be given away (full-permission textures are not
+6. **The textures:** upload `hud/art/take12_words_1024.png`, `hud/art/take12_marks_1024.png` and
+   `hud/art/take12_guide_1024.png` once (name them `take12_words`, `take12_marks` and `take12_guide`) and drop them into
+   the HUD. The screen script keeps their UUIDs (in its Linkset Data, with a copy in the root's description, and the
+   guide's in its own part's description) and takes them out of the contents, so the HUD can be given away (full-permission textures are not
    needed in the copy you sell).
 7. **Take it and wear it on HUD Top Center.** A note under the [12] says "Tap the [12] to set up."
 
 Notes
 - The HUD can be worn on any HUD point: it lays itself out from the point it is on.
 - If parts look misplaced after a viewer's HUD zoom, use the viewer's "reset HUD zoom" (the guide says how).
-- `/12 status` prints one line per script, with its free memory, and whether the parts and the textures were found.
+- `/12 status` prints one line per script, with its free memory, and whether the parts, the textures and the guide card were found.
+- **Adding the guide card to a HUD built before 8.8.0:** put `builder.lsl` and `t12 part` in the HUD again and touch it:
+  it adds only the missing part (`t12 guide`). Then drop `take12_guide` in.

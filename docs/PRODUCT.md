@@ -63,7 +63,8 @@ Wearing it: your own camera for 3 s, then Auto (once set up; the setup's last st
 - the lens: one of the viewer's own zoom stops, 21 · 26 · 32 · 38 (default) · 47 · 56 mm, with a live mm reading (8.2.0: the classic 24 · 28 · 35 · 40 · 50 could not be reached with the zoom keys);
 - the eye line: a line on screen that Page Up / Page Down move onto your eyes, and a tap keeps it;
 - "Easy to read?" (the strip's size);
-- a three-page tour.
+- the guide card (8.8.0): the strip drawn whole, a number under each key and one line for each; a tap closes it, and
+  Help › Guide or `/12 guide` shows it again. (Without its texture, as in the free build: three short tour pages.)
 
 ## Auto (8.3.0; the guide, 8.4.0)
 The camera that directs itself, for the everyday: you need not think about shots at all.

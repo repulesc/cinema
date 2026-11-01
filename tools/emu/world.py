@@ -42,7 +42,7 @@ def rot_yaw(q):
 # the parts of the 8.0 HUD (hud/build/builder.lsl makes them)
 PARTS = ["t12 ring", "t12 dot", "t12 band", "t12 s0", "t12 s1", "t12 s2", "t12 s3", "t12 box", "t12 halo",
          "t12 o0", "t12 o1", "t12 o2", "t12 o3", "t12 o4", "t12 o5", "t12 sep", "t12 u0", "t12 u1", "t12 u2",
-         "t12 shape", "t12 link", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 shut", "t12 auto", "t12 plate"]
+         "t12 shape", "t12 link", "t12 note", "t12 bar0", "t12 bar1", "t12 bar2", "t12 bar3", "t12 shut", "t12 auto", "t12 plate", "t12 guide"]
 
 
 # ---- builds the rays see -----------------------------------------------------------------------------------------
@@ -535,7 +535,7 @@ class Obj:
     def llEmail(s, sc, to, subject, body):
         s.w.emails.append((round(s.w.t, 2), sc.name, to, subject, body))   # (the script's 20 s pause is not emulated)
     def llLoadURL(s, sc, av, msg, url): s.owner.chat.append((round(s.w.t, 2), sc.name, "[url] " + url))
-    def llGiveInventory(s, sc, k, name): pass
+    def llGiveInventory(s, sc, k, name): s.w.given.append((str(k), None, [name]))   # (to, no folder, the item)
     def llGiveInventoryList(s, sc, k, folder, items):
         s.w.given.append((str(k), folder, list(items)))                    # (to, folder, the items)
     def llPlaySound(s, sc, snd, vol): s.owner.sounds.append((round(s.w.t, 2), snd))

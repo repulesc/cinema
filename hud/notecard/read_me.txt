@@ -1,4 +1,4 @@
-TAKE 12  -  READ ME  (8.7.0)
+TAKE 12  -  READ ME  (8.8.0)
 A cinematic camera for Second Life. It only moves your view: nothing is recorded.
 
 
@@ -10,7 +10,7 @@ A cinematic camera for Second Life. It only moves your view: nothing is recorded
              Ctrl+0 zooms in a stop, Ctrl+8 out, Ctrl+9 back to 21. The page shows your lens live while you zoom.
    EYE LINE  a line on the screen: Page Up / Page Down move it onto your eyes, a tap on the [12] keeps it.
    SIZE      is the strip easy to read? Smaller, Good or Larger.
-   A TOUR    three short pages.
+   THE GUIDE one card: the strip, key by key. Tap the card to close it; Help > Guide (or /12 guide) shows it again.
 3. Double-tap the [12]: the strip.
 
 Once it is set up, Take 12 is in AUTO when you wear it: it picks the shot for you (below). Tap a shot, or the ring
@@ -149,7 +149,7 @@ RESET    Tips again · Seats & views · Everything
 
 Type these in chat, or put them in a gesture on a key:
   /12 auto   /12 tracking   /12 portrait   /12 fixed   /12 scenic   /12 bars   /12 next   /12 off   /12 strip
-  /12 connect    /12 feedback   /12 status     /12 lower | place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
+  /12 connect    /12 guide   /12 feedback   /12 status     /12 lower | place top | topl | bot | both   /12 size s | m | l   /12 idle off | away | 5
 
 
 === ABOUT ===============================================
