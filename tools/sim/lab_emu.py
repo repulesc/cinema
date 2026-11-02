@@ -27,7 +27,7 @@ OP = ["t12 o%d" % i for i in range(6)]
 PREV, NEXT = "t12 o4", "t12 o5"                                  # Quiet's ‹ and ›: option parts 4 and 5 (no new parts)
 MIDDLE = ["t12 free", "t12 auto", "t12 fold", "t12 shape", "Take 12", "t12 link", "t12 shut"]
 PX = lambda v: v * var(h, "screen", "gS") / 1080.0
-CELL = {"foldL": 320 + 32, "more": 512 + 32, "prev": 576 + 16, "next": 608 + 16}   # the cells' middles (make_lab.py)
+CELL = {"foldL": 320 + 32, "foldR": 256 + 32, "more": 512 + 32}   # the cells' middles (make_lab.py)
 tex_is = lambda n, c: abs(h.part(n)["tex"][2][0] - (CELL[c] / 1024.0 - 0.5)) < 1e-4
 core_st = lambda: (var(h, "core", "gState"), var(h, "core", "gShot"))
 slot = lambda: [n for n in SH if on(n)]
@@ -85,7 +85,7 @@ tap("t12 s0", 3)
 check(core_st() == ("film", "tracking"), "a tap on it films it (%r)" % (core_st(),))
 check(slot() == ["t12 s0"] and R("t12 s0")[4] > 0.9 and on("t12 box") and abs(R("t12 box")[0] - R("t12 s0")[0]) < 1e-4,
       "Quiet: TRACKING bright and underlined, the only shot (%r)" % slot())
-check(on(PREV) and on(NEXT) and tex_is(PREV, "prev") and tex_is(NEXT, "next") and var(h, "strip", "gOptVis") == [] and not any(on(n) for n in OP[:4]),
+check(on(PREV) and on(NEXT) and tex_is(PREV, "foldL") and tex_is(NEXT, "foldR") and var(h, "strip", "gOptVis") == [] and not any(on(n) for n in OP[:4]),
       "Quiet: ‹ and › either side of it, no options")
 check(all(on(n) for n in MIDDLE), "Quiet: the x, the Orbit, the frame, the [12], Connect, the shutter, ··· (%r)" % [n for n in MIDDLE if not on(n)])
 order = ["t12 free", "t12 auto", PREV, "t12 s0", NEXT, "Take 12", "t12 shape", "t12 link", "t12 shut", "t12 fold"]
@@ -95,6 +95,10 @@ check(tex_is("t12 fold", "more"), "Quiet: the fold key reads ···")
 c12 = R("Take 12")[0]
 lw_, rw_ = c12 - L("t12 free"), Rt("t12 fold") - c12
 check(abs(lw_ - rw_) < 20 / 1080.0, "the keys balance on the [12]: %.0f px left, %.0f px right" % (lw_ * 1080, rw_ * 1080))
+CARD = {"t12 free": -194.5, "t12 auto": -164.5, PREV: -131.3, NEXT: -36.0, "t12 shut": 164.2, "t12 fold": 192.2}   # make_guide.py
+off = {n: round((R(n)[0] - c12) * 1080 - v, 1) for n, v in CARD.items()}
+check(all(abs(d) <= 6 for d in off.values()), "8.11.1: the island's keys where the guide card has them, within 6 px (%r)" % off)
+check((isl()[1] - isl()[0]) * 1080 < 460, "... and as compact: %.0f px wide (8.11.0: 604)" % ((isl()[1] - isl()[0]) * 1080))
 check(0.4 < R("t12 free")[4] < 0.7, "Quiet: the x quiet while filming (%.2f)" % R("t12 free")[4])
 island_ok("Quiet, Tracking")
 b0 = isl()

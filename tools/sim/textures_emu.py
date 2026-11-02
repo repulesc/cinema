@@ -84,4 +84,28 @@ h.drop("take12_words_1024"); w.run(3)
 d = h.prims[0]["desc"]
 check(len(d) <= 127 and d.count("take12_") == 2 and str(new_m) in d, "the description holds both UUIDs whole: %r" % d)
 no_errors(w, "textures")
+
+# 8.11.1 (in-world): the new pictures dropped in while the scripts were being replaced (no screen running to see them
+# arrive) stayed in the contents for good: screen took a texture only when the contents changed while it ran. Now it
+# looks when it starts, and while it runs; for the product and the new design alike
+from emu_util import new_key
+for name, sc, parts in (("the product", HUD_SCRIPTS, PARTS), ("the new design", LAB_SCRIPTS, LAB_PARTS)):
+    w2 = World()
+    bo, h2 = hud(w2, name="Bo", scripts=sc, parts=parts)
+    textures(h2); w2.run(2)
+    for sc2 in h2.live():
+        if sc2.name == "screen": h2.crash("screen")             # the old screen taken out
+    h2.inventory["take12_marks_lab"] = ("texture", new_key(), True)      # the pictures go in: nobody runs to see them
+    h2.inventory["take12_guide_lab"] = ("texture", new_key(), True)
+    want = h2.inventory["take12_marks_lab"][1]
+    w2.run(2)
+    for sc2 in h2.scripts:
+        if sc2.name == "screen": h2.reset(sc2)                   # the new screen added
+    w2.run(3)
+    check("take12_marks_lab" not in h2.inventory and "take12_guide_lab" not in h2.inventory and lsd(h2, "take12_marks") == str(want),
+          "%s: pictures dropped in before screen ran are taken when it starts (%r)" % (name, sorted(h2.inventory)))
+    h2.inventory["take12_marks_x"] = ("texture", new_key(), True)          # ... and one put in without a change event
+    w2.run(3)
+    check("take12_marks_x" not in h2.inventory, "%s: and while it runs, any it missed" % name)
+    no_errors(w2, name + ": textures taken at start")
 done("textures_emu")

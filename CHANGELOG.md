@@ -1,5 +1,18 @@
 # Changelog
 
+## 8.11.1 (the textures always taken; the island as on the guide card)
+- **New pictures dropped into the HUD stayed in its contents** (in-world, both HUDs, our bug): screen took a texture
+  only when the contents changed while it ran. Pictures dropped while the scripts were being replaced, with no screen
+  running, were never taken, and wearing the HUD again did not help. Now screen looks when it starts and twice a second
+  while it runs. In-world 8.11.0 therefore kept its old marks texture, whose cells have no `···`.
+- **The island was much wider than the guide card shows:** every round key took a 35 px cell for a 12-28 px glyph,
+  22 px apart. Now each key is cut to its glyph, 8 px between keys and 12 px between groups, so every key sits within
+  6 px of where the card draws it. The island is 445 px wide at 1080p (8.11.0: 604), still centred on the [12].
+- **The arrows are cut from `‹` and `›`,** which every new-design marks texture has; `···` needs the 8.11.0 marks,
+  which screen now takes.
+- Tests: `textures_emu` drops pictures in while no screen runs, for both HUDs (it fails on 8.11.0); `lab_emu` checks
+  the keys against the guide card's positions. Every script is 8.11.1; no texture changes.
+
 ## 8.11.0 (the new design: one shot between ‹ and ›, a balanced island)
 - **The island balances on the [12]** (the user's call, design A of the mockups): four shot words on one side and three
   small keys on the other made it lean far to the left (about 465 px left of the [12], 285 px right). Now the shot sits
