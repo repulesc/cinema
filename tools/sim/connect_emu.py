@@ -52,7 +52,15 @@ def ask(w, a, b, yes=True):
         b.click("Yes" if yes else "No"); w.run(1.5)
 
 def shot(w, a, n):
-    a.touch("t12 s%d" % ["tracking", "portrait", "fixed", "scenic"].index(n)); w.run(3)   # (the lab's Quiet island holds the four too)
+    k = ["tracking", "portrait", "fixed", "scenic"].index(n)
+    g = next(x for x in a.hud.scripts if x.name == "strip").g
+    if g.get("gQuiet") and g.get("gSlot") != n:                    # the lab's island shows one shot: ‹ › to reach it
+        j = ["tracking", "portrait", "fixed", "scenic"].index(g.get("gSlot") or "tracking")
+        arrow = "t12 o5" if (k - j) % 4 <= 2 else "t12 o4"
+        for i in range(min((k - j) % 4, (j - k) % 4)): a.touch(arrow); w.run(0.5)
+    else:
+        a.touch("t12 s%d" % k)
+    w.run(3)
 
 def link(w, a):
     a.touch("t12 link"); w.run(2)

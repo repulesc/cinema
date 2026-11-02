@@ -8,7 +8,7 @@
 //  Voice: calm, short, second person, no jargon, no exclamation marks (tools/sim/text_check.py checks it).
 // ============================================================================
 
-string VERSION = "8.10.0";
+string VERSION = "8.11.0";
 string PASS    = "cinema-1.0-build1";
 integer LITE   = 0;               // the free Take 12 Scenery build (tools/build_scenery.py) sets this to 1
 
@@ -79,8 +79,8 @@ list TIPS = [
     "VIEW A", "Two kept views for this place. After an Alt-click, Esc gives the camera back to see them.",
     "FORGET SEAT", "Forget this seat's view: frame it again.",
     "kept", "Kept. Press Esc to give the camera back to Take 12.",
-    "hintportrait", "Standing still: Portrait is ready. Tap it for a standing shot.",
-    "hintfixed", "Sitting: Fixed has a view for this seat. Tap it.",
+    "hintportrait", "Standing still: Portrait is ready. Tap the outlined key.",
+    "hintfixed", "Sitting: Fixed has a view for this seat. Tap the outlined key.",
     "seated", "FORGET SEAT: frame this seat again. LET GO: your viewer's camera whenever you sit here (boats, cars).",
     "flying", "Flying: your own camera until you land.",
     "snapshot", "The bars are on your screen, not in snapshots. Tap the frame by the [12] for its snapshot size.",
