@@ -12,7 +12,7 @@
 //  after the setup, from Help › Guide and /12 guide; a tap on it closes it. Its UUID is kept in the part's description.
 // ============================================================================
 
-string VERSION = "8.11.0";
+string VERSION = "8.11.1";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;
@@ -301,6 +301,7 @@ default
         if (llGetAttached()) llRequestPermissions(gOwner, PERMISSION_TRACK_CAMERA);
         llMessageLinked(LINK_SET, MSG_VER, VERSION, "screen");
         layout();
+        adopt();                                            // 8.11.1: pictures dropped in before this script ran
         llSetTimerEvent(0.5);
     }
 
@@ -411,5 +412,6 @@ default
     timer()
     {
         measure();
+        if (llGetInventoryNumber(INVENTORY_TEXTURE)) adopt();   // 8.11.1: any texture missed (dropped in while no screen ran)
     }
 }

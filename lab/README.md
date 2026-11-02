@@ -82,6 +82,9 @@ reworked in 8.10.0 and 8.11.0).
 6. Tap the [12] for the setup; the guide card shows at its end (tap it closed).
 7. `/12 status`: strip says `quiet` or `direct`, and screen says `island found`.
 
+**Updating a lab HUD to 8.11.1:** replace the twelve scripts and wear it again. The 8.11.0 pictures, if they are still
+in the HUD's contents, are taken at once (8.11.0's screen missed pictures dropped in while no screen ran).
+
 **Updating a lab HUD to 8.11.0:** upload the new `take12_marks_1024.png` and `take12_guide_1024.png` and drop them
 in, replace the twelve scripts, and wear it again. No new parts: the switch's arrows use two option parts every HUD
 has. (From before 8.10.0, add the x first, as below.)
