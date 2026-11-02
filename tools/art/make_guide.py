@@ -27,10 +27,10 @@ KEYS = [("orbit", "AUTO", "The camera directs itself as you walk, stop, sit or m
         ("opts", "THE OPTIONS", "The running shot's choices. Tap one to change it."),
         ("shut", "THE SHUTTER", "Holds the moment in your photo frame. Take your snapshot, then tap it again.")]
 KEYS_LAB = [("free", "LET GO", "Your own camera; Take 12 stays on. Tap it again, or a shot: it films again."),
-            ("orbit", "AUTO", "The camera directs itself. Tap it to let it direct again."),   # the new design (8.10.0)
-            ("shots", "THE SHOTS", "Tap one to direct it yourself. Its next view: tap it again."),
+            ("orbit", "AUTO", "The camera directs itself. Tap it to let it direct again."),   # the new design (8.10.0, 8.11.0)
+            ("shots", "‹  THE SHOT  ›", "The shot before or after: one tap films it. The shot itself: its next view."),
             KEYS[3], KEYS[2], KEYS[4], KEYS[6],
-            ("fold", "›  AND  ‹", "The full strip: every key and the running shot's choices."),]
+            ("fold", "···  AND  ‹", "The full strip, every shot and its choices; ‹ folds it back."),]
 GESTURES = [("tap", "TAP", "the menu"), ("double", "DOUBLE-TAP", "show or hide the strip"),
             ("hold", "HOLD", "everything off, and back")]
 FOOT = "Tap the card to close it.   Help › Guide shows it again."
@@ -115,28 +115,28 @@ def card(lab=False):
 
 
 def lab_strip(im, d, wf, word, paste, keys, gap):
-    """the new design's island as it is on screen (8.10.0): a slice of the picture, and the island floating in it, 8 px
-    under the screen's edge, its ends round, as wide as its keys: the x (let go), the Orbit, the four shots, the [12],
-    the frame, Connect, the shutter and the fold key"""
+    """the new design's island as it is on screen (8.11.0): a slice of the picture, and the island floating in it, 8 px
+    under the screen's edge, its ends round, centred on the [12]: the x (let go), the Orbit, ‹ TRACKING ›, the [12],
+    the frame, Connect, the shutter and ···"""
     st, sb = 46, 120                                  # the screen slice
     cy = st + 8 + 20                                  # the strip's line: 8 px in from the edge
     ih = 36                                           # the island's height
     mid = W / 2
     X = {}
     g = gap * 0.8
-    ws = [spaced_w(w, wf, 0.14) / K for w in SHOTS]
-    x = mid - 30
-    xs_ = []
-    for w in reversed(ws):
-        x -= w; xs_.insert(0, x); x -= g
-    xo = x - 12 + g * 0.2                             # the Orbit
+    tw = spaced_w("TRACKING", wf, 0.14) / K
+    xn = mid - 30 - 6                                 # ›, then the slot (TRACKING's width), then ‹
+    xw = xn - 9 - tw
+    xp = xw - 9
+    xo = xp - 6 - g - 12                              # the Orbit
     xx = xo - 30                                      # the x
     fx = mid + 30                                     # the frame key, just right of the [12]
     fw = 22 + 8 + spaced_w("FULL", wf, 0.08) / K
     xl = fx + fw + g + 10                             # Connect
     xsh = xl + 24 + g + 6                             # the shutter
     xfold = xsh + 28                                  # the fold key
-    x0, x1 = xx - 18, xfold + 16
+    half = max(mid - (xx - 18), xfold + 16 - mid)    # centred on the [12]
+    x0, x1 = mid - half, mid + half
     pic = Image.new("RGBA", (1, sb - st), (0, 0, 0, 255))
     for yy in range(sb - st):
         t = yy / float(sb - st - 1)
@@ -151,8 +151,11 @@ def lab_strip(im, d, wf, word, paste, keys, gap):
         d.line([(a[0] * K, a[1] * K), (b[0] * K, b[1] * K)], fill=WHITE + (150,), width=int(1.9 * K))
     X["free"] = xx
     paste(orbit(True), xo, 1.0); X["orbit"] = xo
-    for w, xw in zip(SHOTS, xs_): word(xw, w)          # TRACKING lit, as on the product's card
-    X["shots"] = (xs_[0] + xs_[-1] + ws[-1]) / 2
+    word(xw, "TRACKING")                              # lit, as on the product's card
+    for xc, right in ((xp, False), (xn, True)):      # ‹ and ›
+        sg = 1 if right else -1
+        d.line([((xc - 2 * sg) * K, (cy - 6) * K), ((xc + 3 * sg) * K, cy * K), ((xc - 2 * sg) * K, (cy + 6) * K)], fill=WHITE + (160,), width=int(1.8 * K), joint="curve")
+    X["shots"] = xw + tw / 2
     paste(disc(WHITE), mid, size=(28, 28)); paste(ring(1.0, track=False, width=5), mid, 0.85, size=(32, 32)); X["12"] = mid
     d.rounded_rectangle([fx * K, (cy - 6) * K, (fx + 22) * K, (cy + 6) * K], radius=2 * K, outline=WHITE + (218,), width=int(1.6 * K))
     spaced(d, (fx + 30) * K, cy * K, "FULL", wf, WHITE + (218,), 0.08)
@@ -161,7 +164,8 @@ def lab_strip(im, d, wf, word, paste, keys, gap):
     rings_icon(ImageDraw.Draw(rk), 32, 24, K)
     paste(rk.resize((64, 48), Image.LANCZOS), xl + 12, 0.75); X["link"] = xl + 12
     paste(shutter(False), xsh, 0.85); X["shut"] = xsh
-    d.line([((xfold - 2) * K, (cy - 6) * K), ((xfold + 3) * K, cy * K), ((xfold - 2) * K, (cy + 6) * K)], fill=WHITE + (210,), width=int(2 * K), joint="curve")
+    for dx in (-7, 0, 7):                             # ···
+        d.ellipse([(xfold + dx - 1.6) * K, (cy - 1.6) * K, (xfold + dx + 1.6) * K, (cy + 1.6) * K], fill=WHITE + (210,))
     X["fold"] = xfold
     if x0 < 40 or x1 > W - 40: raise SystemExit("make_guide: the new design's island does not fit the card")
     return finish(im, d, X, keys, paste, ny=sb + 15, y0=sb + 38)

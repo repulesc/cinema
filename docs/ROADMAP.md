@@ -11,7 +11,7 @@ What it is: `docs/PRODUCT.md`. How it is built: `docs/ARCHITECTURE.md`. Earlier 
 | 8.0.x | Tuning from the in-world test (numbers below) | ⏳ after |
 | Release | Beta (feedback by email) → release candidate → release at L$790; the cinema-black boards, real snapshots as extra images | ⏳ after the in-world test |
 | Later | Portrait Us: an optional shot / reverse shot (cut between two people talking); the script-count review (with the owner's OK); a retro edition (the same engine, the 7.x pixel look, a lower price) | 💤 to discuss |
-| Lab 1-2 | The new design (`lab/`, its own HUD): the Quiet island and the Direct strip; 8.10.0: the island directs, the x lets go | 🧪 in-world trial; the main product from 2026-11-01, moved into `hud/` when the owner says |
+| Lab 1-2 | The new design (`lab/`, its own HUD): the Quiet island and the Direct strip; 8.10.0: the x lets go; 8.11.0: one shot between ‹ and ›, the island balanced | 🧪 in-world trial; the main product from 2026-11-01, moved into `hud/` when the owner says |
 | Later | "Take 12 Lens" add-on (mm and aspect, always on); light companions; other languages | 💤 only on request |
 
 ## Next (after the in-world test, agreed 2026-10-29)
@@ -48,12 +48,13 @@ Viewers: the official viewer, Firestorm and one more. UI scale 1.0 and 1.25. Win
 windowed and full screen. `/12 debug on` prints every Connect message.
 
 **The new design (`lab/`, 8.10.0)**
-- [ ] The island: the x, the Orbit, the four shots, the [12], the frame, Connect, the shutter, `›`; round ends, a
-  lifted black, clear of the viewer's bars; the same shape from shot to shot.
-- [ ] One tap on a shot directs it; the lit shot again: its next view. In Auto, a tap on a shot is yours.
+- [ ] The island: the x, the Orbit, `‹ TRACKING ›`, the [12], the frame, Connect, the shutter, `···`; centred on the
+  [12], round ends, a lifted black, clear of the viewer's bars; the same shape from shot to shot.
+- [ ] `›` and `‹` film the next and the previous shot, round; the shot itself again: its next view. In Auto, an
+  arrow or the shot is yours. Standing still: the arrow toward Portrait is outlined; sitting: toward Fixed.
 - [ ] The x: your viewer's camera at once (Alt-click, zoom, as without Take 12); the x again, a shot or the Orbit takes
   it back (Auto again if Auto directed). While watching a friend: your own camera, and they see you stopped watching.
-- [ ] `›` opens the full strip, `‹` folds it; KEEP NEW joins the island's left end.
+- [ ] `···` opens the full strip, `‹` folds it; KEEP NEW joins the island's left end.
 
 **The strip and the [12]**
 - [ ] First wear: only "Tap the [12] to set up." under the [12]; nothing else pops up; no text from before.
@@ -75,7 +76,7 @@ windowed and full screen. `/12 debug on` prints every Connect message.
   in short steps, Tracking all along; stop 60 s with nothing (no click, key or typing), Drift; 5 minutes or Away, Far (Room indoors); a friend beside you
   4 s, Portrait Us; they leave, Drift; a seat you framed, Fixed; another seat, Drift; Alt-click waits, Esc or walking
   goes on; tap the faint shot: manual; tap the Orbit: Auto. If anything sticks, `/12 debug on` says why.
-- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.10.0", and it takes itself off.
+- [ ] The box: Add it from the inventory: a card on the screen, the folder "Take 12 8.11.0", and it takes itself off.
 
 **Connect** (two people, then three, then with the free build)
 - [ ] Ask, Yes / No, a friend without asking, the chime (and Chime off).

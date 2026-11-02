@@ -16,7 +16,7 @@
 //  (0 to 24). On Direct, the band edge to edge as in the product. lab/README.md.
 // ============================================================================
 
-string VERSION = "8.10.0";
+string VERSION = "8.11.0";
 string PASS    = "cinema-1.0-build1";
 
 integer UI_STATE    = 7320;

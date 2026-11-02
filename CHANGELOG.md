@@ -1,5 +1,25 @@
 # Changelog
 
+## 8.11.0 (the new design: one shot between ‹ and ›, a balanced island)
+- **The island balances on the [12]** (the user's call, design A of the mockups): four shot words on one side and three
+  small keys on the other made it lean far to the left (about 465 px left of the [12], 285 px right). Now the shot sits
+  between two arrows: `x · Orbit · ‹ TRACKING › · [12] · frame · Connect · shutter · ···`, centred on the [12].
+- **The switch:** `›` films the next shot, `‹` the one before, round, so every shot is at most two taps away. A tap
+  on the shot keeps its job (its next view). In Auto, an arrow or the shot is yours from there. While waiting, the slot
+  shows the last shot (TRACKING at first), ready to film.
+- **The same shape always:** the shot's slot is as wide as TRACKING. A prompt (KEEP NEW, UNDO) joins the left end while
+  it lasts; Connect's word widens both ends, so the island stays centred.
+- **Hints:** Portrait ready (standing) or Fixed ready (sitting) outlines the arrow that leads there, the shorter way;
+  the tips say "Tap the outlined key".
+- **`···` opens the full strip** (it was `›`, now the switch's sign); Direct is as before, `‹` folds it back.
+- **No new parts:** the arrows are two option parts the island never needed. In-world: the new marks texture (the
+  `···` and the narrow arrows), the new guide card, and the twelve scripts.
+- The strip's memory: the x and the Orbit are placed once for both pages, let go and the keys' taps are shorter, and
+  its table drops the `›` cell it no longer uses (15.9 KB free by the estimate, 8.10.0 had 15.8).
+- Tests: `lab_emu` for the switch (round both ways, the slot, the shape, the balance, hints, the x with the arrows,
+  every window and size, every tap on a key that shows), mutation-checked; `connect_emu`'s shots reach a shot with
+  the arrows on the island. Every script is 8.11.0. The product (`hud/`) changes only its number.
+
 ## 8.10.0 (the new design: the island directs; a mini x lets go)
 - **The island holds the whole strip's keys** (the new design's Quiet page, the user's call): the x (let go) at the far
   left, the Orbit, the four shots, the [12], the frame, Connect, the shutter, and `›` at the right end. One tap on a
